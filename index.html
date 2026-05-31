@@ -58,6 +58,10 @@
             overflow: hidden;
         }
 
+        .no-anim * {
+            animation-play-state: paused !important;
+        }
+
         /* ── Top bar ── */
         #topbar {
             width: 100%;
@@ -4792,11 +4796,26 @@ else                glyph = '*';        // asterisk</code></pre>
             updateCanvasTexture();
         }
 
+        var isGridAnimOn = true;
+        function toggleGridAnimation() {
+            isGridAnimOn = !isGridAnimOn;
+            var grid = document.getElementById('gallery-grid');
+            var btn = document.getElementById('btn-grid-anim');
+            if (!isGridAnimOn) {
+                grid.classList.add('no-anim');
+                if (btn) btn.innerHTML = '&#9654; Play Animation';
+            } else {
+                grid.classList.remove('no-anim');
+                if (btn) btn.innerHTML = '&#9724; Stop Animation';
+            }
+        }
+
     </script>
     <div id="gallery-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:var(--bg); z-index:9999; overflow-y:auto; padding: 0 0 40px 0; box-sizing: border-box;">
         <div id="topbar" style="margin-bottom: 20px;">
             <div id="title">CURATED GALLERY</div>
             <div class="btn-group">
+                <button id="btn-grid-anim" onclick="toggleGridAnimation()">&#9724; Stop Animation</button>
                 <button onclick="toggleGalleryModal()">Close</button>
             </div>
         </div>
