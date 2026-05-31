@@ -4543,15 +4543,21 @@ else                glyph = '*';        // asterisk</code></pre>
                 var totalFrames = 32;
                 var NUM_GROUPS = 32;
                 
+                console.log('[GalleryRec] Animating ' + targetPaths.length + ' paths across ' + NUM_GROUPS + ' groups');
+                
                 for (var f = 0; f < totalFrames; f++) {
-                    var styleBlock = "<style>\n";
+                    var styleEl = doc.createElementNS("http://www.w3.org/2000/svg", "style");
+                    var styleContent = "";
                     for (var g = 0; g < NUM_GROUPS; g++) {
                         var seed = (g * 999) + f;
-                        var vis = (hash(seed) * 100 < 47) ? 'visible' : 'hidden';
-                        styleBlock += ".keyanim-g" + g + " { visibility: " + vis + " !important; }\n";
+                        var vis = (hash(seed) * 100 < 47) ? '1' : '0';
+                        styleContent += ".keyanim-g" + g + " { opacity: " + vis + " !important; }\n";
                     }
-                    styleBlock += "</style>";
-                    var frameSvg = baseSvg.replace("</svg>", styleBlock + "</svg>");
+                    styleEl.textContent = styleContent;
+                    doc.documentElement.appendChild(styleEl);
+                    
+                    var frameSvg = new XMLSerializer().serializeToString(doc.documentElement);
+                    doc.documentElement.removeChild(styleEl);
                     
                     var blob = new Blob([frameSvg], { type: 'image/svg+xml' });
                     var url = URL.createObjectURL(blob);
