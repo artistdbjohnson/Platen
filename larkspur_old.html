@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Platen</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0d0b12;
+            --panel: #1a1724;
+            --border: #2a2535;
+            --purple: #6839aa;
+            --text: #DEE4D7;
+            --dim: rgba(222, 228, 215, 0.35);
+            --canvas-bg: #151515;
+            --body-bg: #100e13;
+            --shadow: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+        }
+
+        [data-theme="light"] {
+            --bg: #ffffff;
+            --panel: #ffffff;
+            --border: #000000;
+            --purple: #000000;
+            --text: #000000;
+            --dim: rgba(0, 0, 0, 0.5);
+            --canvas-bg: #ffffff;
+            --body-bg: #ffffff;
+            --shadow: none;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            overflow: hidden;
+        }
+
+        /* ── Top bar ── */
+        #topbar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--panel);
+            z-index: 10;
+        }
+
+        .title {
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--dim);
+        }
+
+        .title span {
+            color: var(--purple);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--dim);
+            font-family: inherit;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            padding: 5px 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.15s;
+        }
+
+        button:hover,
+        button.active {
+            border-color: var(--purple);
+            color: var(--text);
+            background: rgba(104, 57, 170, 0.15);
+        }
+
+        button.active {
+            background: rgba(104, 57, 170, 0.25);
+        }
+
+        #btn-randomize {
+            border-color: var(--purple);
+            color: var(--purple);
+        }
+
+        #btn-randomize:hover {
+            background: var(--purple);
+            color: var(--text);
+        }
+
+        /* ── Trait bar ── */
+        #traitbar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 7px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--panel);
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            color: var(--dim);
+            flex-wrap: wrap;
+        }
+
+        .trait {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .trait-label {
+            opacity: 0.5;
+        }
+
+        .trait-val {
+            color: var(--text);
+        }
+
+        .trait-select {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            padding: 2px 6px;
+            cursor: pointer;
+            text-transform: lowercase;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            outline: none;
+        }
+
+        .trait-select:hover,
+        .trait-select:focus {
+            border-color: var(--purple);
+            background: rgba(104, 57, 170, 0.15);
+        }
+
+        .trait-select option {
+            background: var(--panel);
+            color: var(--text);
+        }
+
+        /* Hide scrollbar on select dropdowns */
+        .trait-select::-webkit-scrollbar {
+            display: none;
+        }
+
+        .trait-select {
+            scrollbar-width: none;
+        }
+
+        .platen-panel {
+            background-image: url('platen_canvas_black.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: var(--shadow);
+            position: relative;
+            cursor: grab;
+            transform-origin: center center;
+            transition: transform 0.1s ease-out;
+            /* smooth interaction */
+        }
+
+        /* Blending modes for ink-on-canvas effect */
+        .canvas-tan svg,
+        .canvas-olive svg,
+        .canvas-white svg {
+            mix-blend-mode: multiply;
+            opacity: 1.0;
+            filter: saturate(3.0) contrast(1.3) brightness(1.5);
+        }
+
+        .canvas-black svg {
+            mix-blend-mode: normal;
+            opacity: 0.95;
+            filter: saturate(1.2) contrast(1.05);
+        }
+
+        .platen-panel:active {
+            cursor: grabbing;
+            transition: none;
+            /* instant follow while dragging */
+        }
+
+        /* ── Canvas area — fills remaining viewport, no scroll ── */
+        #canvas-wrap {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            width: 100%;
+            overflow: auto;
+            gap: 20px;
+            min-height: 0;
+            background: var(--canvas-bg);
+        }
+
+        /* Banner (16:9): 3 panels side by side, landscape */
+        #canvas-wrap.banner {
+            flex-direction: row;
+            align-items: stretch;
+            aspect-ratio: 16 / 9;
+            max-height: 100%;
+            max-width: 100%;
+        }
+
+        #canvas-wrap.banner .platen-panel {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvas-wrap.banner .platen-panel svg {
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+        }
+
+        /* Panel (9:16): single panel, portrait */
+        #canvas-wrap.panel {
+            flex-direction: row;
+        }
+
+        #canvas-wrap.panel #panel2,
+        #canvas-wrap.panel #panel3 {
+            display: none;
+        }
+
+        #canvas-wrap.panel .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            aspect-ratio: 9 / 16;
+            min-height: 80vh;
+            /* Ensure size while loading */
+        }
+
+        #canvas-wrap.panel .platen-panel svg {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: 100%;
+        }
+
+        .platen-panel svg {
+            transform-origin: center center;
+        }
+
+        /* Single: 1 centered panel, full height, panels 2+3 hidden */
+        #canvas-wrap.single {
+            flex-direction: row;
+        }
+
+        #canvas-wrap.single #panel2,
+        #canvas-wrap.single #panel3 {
+            display: none;
+        }
+
+        #canvas-wrap.single .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        #canvas-wrap.single .platen-panel svg {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: 100%;
+        }
+
+        .c {
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            font-size: 9px;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--body-bg);
+            color: var(--text);
+            font-family: 'IBM Plex Mono', monospace;
+            overflow: hidden;
+            /* Prevent scrolling on body */
+        }
+
+        /* ── Status bar ── */
+        #statusbar {
+            width: 100%;
+            padding: 6px 20px;
+            border-top: 1px solid var(--border);
+            background: var(--panel);
+            font-size: 9px;
+            color: var(--dim);
+            letter-spacing: 0.08em;
+            display: flex;
+            gap: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="topbar">
+        <div id="title">PLATEN</div>
+        <div class="btn-group">
+            <button id="btn-theme" onclick="toggleTheme()" title="Toggle Light/Dark Mode">☀︎</button>
+            <button id="btn-randomize" onclick="randomize()">&#9632; Randomize</button>
+            <button id="btn-regen" onclick="regenerate()">&#8635; Regenerate</button>
+            <button id="btn-panel" class="active" onclick="setLayout('panel')" disabled>Panel 9:16</button>
+            <button id="btn-banner" onclick="setLayout('banner')" disabled>Banner 16:9</button>
+            <button id="btn-out-svg" onclick="saveSVG()" title="Download SVG" disabled>&#8595; SVG</button>
+            <button id="btn-out-png" onclick="savePNG()" title="Download PNG" disabled>&#8595; PNG</button>
+            <button id="btn-out-triptych" onclick="saveTriptych()" title="Download Triptych (3 Panels)" disabled>&#8595;
+                TRIPTYCH</button>
+            <button id="btn-out-dst" onclick="saveDST()" title="Download DST (Embroidery)" disabled>&#8595; DST</button>
+            <button id="btn-out-plot" onclick="savePlotterSVG()" title="Download SVG for Plotter (Inkscape Layers)"
+                disabled>&#8595; PLOT</button>
+        </div>
+    </div>
+
+    <div id="traitbar">
+        <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym"
+                onchange="TRAITS.symmetry=this.value" disabled></select></div>
+
+        <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space"
+                onchange="TRAITS.space=this.value" disabled></select></div>
+        <div class="trait"><span class="trait-label">Chromes</span><select class="trait-select" id="t-chrome"
+                onchange="TRAITS.chromes=this.value" disabled></select></div>
+        <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine"
+                onchange="TRAITS.engine=this.value" disabled></select></div>
+        <div class="trait"><span class="trait-label">Canvas</span><select class="trait-select" id="t-canvas"
+                onchange="TRAITS.canvas=this.value; updateCanvasTexture()" disabled></select></div>
+    </div>
+
+    <!-- Always 3 panels — quantity is always 3 -->
+    <div id="canvas-wrap" class="panel">
+        <div class="platen-panel" id="panel1"><svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg"></svg></div>
+        <div class="platen-panel" id="panel2"><svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg"></svg></div>
+        <div class="platen-panel" id="panel3"><svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    </div>
+
+    <div id="statusbar">
+        <span id="st-info">rendering...</span>
+    </div>
+
+    <script src="js/platen-core.js"></script>
+    <script src="js/platen-motifs.js"></script>
+    <script src="js/platen-engines.js"></script>
+    <script>
+        // ─────────────────────────────────────────────────────────────────────────────
+        // PLATEN — always a triptych
+        // Platen flowers replace pixels. Code lives in the blooms.
+        // by Douglxss
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        function toggleTheme() {
+            var el = document.documentElement;
+            var btn = document.getElementById('btn-theme');
+            if (el.getAttribute('data-theme') === 'light') {
+                el.removeAttribute('data-theme');
+                btn.textContent = '☀︎';
+            } else {
+                el.setAttribute('data-theme', 'light');
+                btn.textContent = '☾';
+            }
+        }
+
+        // ── Platen flower path (normalized to 20×20 viewBox) ───────────────────────
+        // Original SVG coords: x[245.567–265.878], y[7639–7659]
+        // Normalized: translate(-245.567,-7639) then scale(0.9847)
+        var FLOWER_PATH = (function () {
+            var s = 0.9847, ox = 245.567, oy = 7639.0;
+            function p(x, y) {
+                return ((x - ox) * s).toFixed(3) + "," + ((y - oy) * s).toFixed(3);
+            }
+            return [
+                "M", p(259.133, 7656.050),
+                "C", p(259.660, 7655.155), p(259.967, 7654.115), p(259.967, 7653.000),
+                "C", p(259.967, 7651.327), p(259.287, 7647.777), p(258.191, 7644.670),
+                "C", p(259.337, 7643.563), p(260.430, 7642.688), p(261.207, 7642.350),
+                "C", p(261.473, 7642.234), p(261.788, 7642.380), p(261.866, 7642.661),
+                "C", p(262.514, 7644.964), p(261.414, 7654.113), p(259.133, 7656.050),
+                "M", p(256.773, 7655.862),
+                "C", p(255.277, 7657.329), p(252.940, 7657.341), p(251.414, 7656.005),
+                "C", p(250.577, 7655.271), p(250.036, 7654.203), p(250.036, 7653.000),
+                "C", p(250.036, 7650.015), p(252.092, 7643.144), p(253.646, 7641.366),
+                "C", p(253.835, 7641.150), p(254.178, 7641.147), p(254.368, 7641.363),
+                "C", p(255.920, 7643.132), p(257.981, 7649.957), p(257.981, 7653.000),
+                "C", p(257.981, 7654.122), p(257.516, 7655.135), p(256.773, 7655.862),
+                "M", p(248.559, 7655.385),
+                "C", p(247.006, 7653.703), p(245.623, 7645.135), p(246.307, 7642.664),
+                "C", p(246.385, 7642.382), p(246.702, 7642.234), p(246.968, 7642.352),
+                "C", p(247.721, 7642.684), p(248.763, 7643.528), p(249.882, 7644.600),
+                "C", p(248.902, 7647.350), p(247.366, 7652.612), p(248.559, 7655.385),
+                "M", p(261.801, 7640.198),
+                "C", p(260.588, 7640.198), p(258.989, 7641.233), p(257.392, 7642.672),
+                "C", p(256.431, 7640.561), p(255.265, 7639.000), p(254.008, 7639.000),
+                "C", p(252.763, 7639.000), p(251.607, 7640.530), p(250.651, 7642.612),
+                "C", p(249.414, 7641.506), p(247.062, 7639.641), p(245.567, 7640.358),
+                "C", p(242.596, 7641.782), p(244.510, 7652.585), p(245.924, 7655.577),
+                "C", p(246.944, 7657.735), p(249.077, 7658.998), p(251.064, 7659.000),
+                "L", p(255.918, 7659.000), "L", p(255.918, 7658.992),
+                "C", p(258.784, 7659.054), p(260.883, 7657.563), p(261.823, 7655.577),
+                "C", p(263.317, 7652.416), p(265.878, 7640.198), p(261.801, 7640.198)
+            ].join(" ");
+        })();
+
+
+        // ── Traits ────────────────────────────────────────────────────────────────────
+        var TRAITS = {
+            symmetry: 'horizontal',
+            space: 'euclidean',
+            chromes: 'panar',
+            engine: 'mastor',
+            canvas: 'black'
+        };
+
+        var currentLayout = 'panel';
+
+        // Global render seed — drives lns pattern generation.
+        // Changes on every Randomize so patterns are genuinely different each time.
+        var RENDER_SEED = Math.floor(Math.random() * 999983) + 1;
+
+        function setLayout(mode) {
+            currentLayout = mode;
+            document.getElementById('canvas-wrap').className = mode;
+
+            // Toggle active state for layout buttons
+            var btnPanel = document.getElementById('btn-panel');
+            var btnBanner = document.getElementById('btn-banner');
+
+            if (mode === 'panel') {
+                btnPanel.classList.add('active');
+                btnBanner.classList.remove('active');
+            } else {
+                btnPanel.classList.remove('active');
+                btnBanner.classList.add('active');
+            }
+            // Auto-render on layout change
+            renderAll();
+        }
+
+        function randomize() {
+            RENDER_SEED = Math.floor(Math.random() * 999983) + 1;
+            // Skip 'random' (index 0) for concrete random selection
+            TRAITS.symmetry = SYMMETRY_OPTS[Math.floor(Math.random() * (SYMMETRY_OPTS.length - 1)) + 1];
+            TRAITS.space = SPACE_OPTS[Math.floor(Math.random() * SPACE_OPTS.length)];
+            TRAITS.chromes = CHROME_OPTS[Math.floor(Math.random() * (CHROME_OPTS.length - 1)) + 1];
+            TRAITS.engine = ENGINE_OPTS[Math.floor(Math.random() * (ENGINE_OPTS.length - 1)) + 1];
+
+            console.log('[Platen] Randomized:', RENDER_SEED,
+                '| sym:', TRAITS.symmetry,
+                '| space:', TRAITS.space, '| chrome:', TRAITS.chromes,
+                '| engine:', TRAITS.engine);
+            renderAll();
+        }
+
+        function regenerate() {
+            RENDER_SEED = Math.floor(Math.random() * 999983) + 1;
+            renderAll();
+        }
+
+
+        function populateSelect(id, opts, val) {
+            var sel = document.getElementById(id);
+            if (sel.options.length === 0) {
+                for (var i = 0; i < opts.length; i++) {
+                    var o = document.createElement('option');
+                    var key = opts[i];
+                    var desc = "";
+                    if (id === 't-chrome' && CHROME_DESCS[key] && key !== 'random') {
+                        desc = " [" + CHROME_DESCS[key] + "]";
+                    } else if (id === 't-engine' && ENGINE_DESCS[key] && key !== 'random') {
+                        desc = " [" + ENGINE_DESCS[key] + "]";
+                    }
+                    o.value = key;
+                    o.textContent = key + desc;
+                    sel.appendChild(o);
+                }
+            }
+            sel.value = val;
+        }
+
+        function updateTraitBar() {
+            populateSelect('t-sym', SYMMETRY_OPTS, TRAITS.symmetry);
+            populateSelect('t-space', SPACE_OPTS, TRAITS.space);
+            populateSelect('t-chrome', CHROME_OPTS, TRAITS.chromes);
+            populateSelect('t-engine', ENGINE_OPTS, TRAITS.engine);
+            populateSelect('t-canvas', CANVAS_OPTS, TRAITS.canvas);
+        }
+
+        function activePanels() {
+            if (currentLayout === 'banner') return [1, 2, 3];
+            return [1];
+        }
+
+        function renderAll() {
+            updateTraitBar();
+            // updateCanvasTexture(); // Wait for trait resolution for WYSIWYG
+            document.getElementById('st-info').textContent = 'rendering...';
+            setTimeout(function () {
+                var t0 = performance.now();
+                console.group('[Platen] renderAll — seed ' + RENDER_SEED);
+                var infos = [];
+                var panels = activePanels();
+                var pi = 0;
+
+                function renderNext() {
+                    if (pi >= panels.length) {
+                        var totalTime = (performance.now() - t0).toFixed(0);
+                        console.log('Total render time: ' + totalTime + 'ms');
+                        console.groupEnd();
+
+                        var traitStr = "sym: " + runTraits.symmetry + " · space: " + runTraits.space + " · chrome: " + runTraits.chromes + " · engine: " + runTraits.engine + " · canvas: " + runTraits.canvas;
+                        var prefix = infos.length > 0 ? infos.join('  ·  ') : 'ready (' + totalTime + 'ms)';
+                        document.getElementById('st-info').textContent = prefix + '  ·  #' + RENDER_SEED + '  |  ' + traitStr;
+                        return;
+                    }
+
+                    var id = panels[pi];
+                    // Render one panel asynchronously
+                    var t1 = performance.now();
+                    renderPlaten('s' + id, id, runTraits).then(function (r) {
+                        var dt = (performance.now() - t1).toFixed(0);
+                        console.log('  v' + id + ': ' + r.flowers + ' flowers, ' + r.attempts + ' att, ' + dt + 'ms');
+                        infos.push('v' + id + ': ' + r.flowers + ' flowers');
+                        pi++;
+                        // Yield to main thread
+                        setTimeout(renderNext, 20);
+                    }).catch(function (e) {
+                        console.error('Error rendering panel ' + id, e);
+                        pi++;
+                        setTimeout(renderNext, 20);
+                    });
+                }
+
+                // Resolve 'random' traits to concrete values for this render pass
+                var runTraits = Object.assign({}, TRAITS);
+                if (runTraits.symmetry === 'random') runTraits.symmetry = SYMMETRY_OPTS[Math.floor(Math.random() * (SYMMETRY_OPTS.length - 1)) + 1];
+                if (runTraits.chromes === 'random') runTraits.chromes = CHROME_OPTS[Math.floor(Math.random() * (CHROME_OPTS.length - 1)) + 1];
+                if (runTraits.engine === 'random') runTraits.engine = ENGINE_OPTS[Math.floor(Math.random() * (ENGINE_OPTS.length - 1)) + 1];
+
+                // Ensure background matches resolved traits immediately
+                updateCanvasTexture();
+
+                console.log('[Platen] Render traits resolved:', runTraits);
+
+                // Start chain
+                renderNext();
+
+                // Enable UI elements now that we have rendered
+                document.getElementById('btn-panel').disabled = false;
+                document.getElementById('btn-banner').disabled = false;
+                document.getElementById('btn-out-svg').disabled = false;
+                document.getElementById('btn-out-png').disabled = false;
+                document.getElementById('btn-out-triptych').disabled = false;
+                document.getElementById('btn-out-dst').disabled = false;
+                document.getElementById('btn-out-plot').disabled = false;
+
+                document.getElementById('t-sym').disabled = false;
+                document.getElementById('t-space').disabled = false;
+                document.getElementById('t-chrome').disabled = false;
+                document.getElementById('t-engine').disabled = false;
+                document.getElementById('t-canvas').disabled = false;
+            }, 10);
+        }
+
+
+        // ── PLATEN ENGINE (Worker Version) ──────────────────────────────────────────
+        // Grid is ALWAYS 78 wide × 148 tall (portrait).
+        function renderPlaten(svgId, id, traits) {
+            return new Promise(function (resolve, reject) {
+                var svgNS = "http://www.w3.org/2000/svg";
+                var dc = document;
+                var svg = dc.getElementById(svgId);
+                if (!svg) return resolve({ flowers: 0 });
+
+                id = Math.min(Math.max(id | 0, 1), 3);
+                var w = 78, h = 148, size = 16, rSize = 14;
+
+                // Clear
+                while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+                var svgW = (w + 8) * size;
+                var svgH = (h + 8) * size;
+                svg.setAttribute("width", svgW);
+                svg.setAttribute("height", svgH);
+                svg.setAttribute("viewBox", "0 0 " + svgW + " " + svgH);
+
+                var bg = dc.createElementNS(svgNS, "rect");
+                bg.setAttribute("width", svgW); bg.setAttribute("height", svgH);
+                bg.setAttribute("fill", "transparent");
+                svg.appendChild(bg);
+
+                var gEl = dc.createElementNS(svgNS, "g");
+                svg.appendChild(gEl);
+
+                // Setup the worker
+                var worker = new Worker('js/platen-worker.js');
+
+                worker.onmessage = function (e) {
+                    var data = e.data;
+                    var flowers = data.flowers; // Array of {x, y, c, flip}
+
+                    // Draw flowers using returned data
+                    for (var i = 0; i < flowers.length; i++) {
+                        var f = flowers[i];
+                        var px = (f.x + 4) * size + 1;
+                        var py = (f.y + 4) * size + 1;
+                        var sc = rSize / 20;
+                        var path = dc.createElementNS(svgNS, "path");
+                        var xform = "translate(" + px + "," + py + ") scale(" + sc + ")";
+                        if (f.flip) xform += " rotate(180,10,10)";
+                        path.setAttribute("transform", xform);
+                        path.setAttribute("d", FLOWER_PATH);
+                        path.setAttribute("fill", f.c);
+                        gEl.appendChild(path);
+                    }
+
+                    worker.terminate();
+                    resolve({ flowers: data.flowerCount, seed: data.seed, attempts: data.attempts });
+                };
+
+                worker.onerror = function (err) {
+                    console.error("Worker error in panel " + id + ":", err.message);
+                    worker.terminate();
+                    reject(err);
+                };
+
+                // Dispatch payload
+                worker.postMessage({
+                    id: id,
+                    traits: traits,
+                    seed: RENDER_SEED,
+                    w: w,
+                    h: h,
+                    size: size,
+                    rSize: rSize
+                });
+            });
+        }
+
+
+        function svgToString(svgEl) {
+            var s = new XMLSerializer();
+            return s.serializeToString(svgEl);
+        }
+
+        function downloadBlob(blob, filename) {
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+        }
+
+        function saveSVG() {
+            var panels = activePanels();
+            panels.forEach(function (id) {
+                var svg = document.getElementById('s' + id);
+                if (!svg) return;
+                var str = svgToString(svg);
+                var blob = new Blob([str], { type: 'image/svg+xml' });
+                var name = 'platen-' + RENDER_SEED + '-v' + id + '.svg';
+                downloadBlob(blob, name);
+            });
+            console.log('[Platen] Saved SVG(s) for panels:', panels);
+        }
+
+        // ── Plotter SVG Export (Inkscape Ready) ─────────────────────────────────────
+        function savePlotterSVG() {
+            var svgNS = "http://www.w3.org/2000/svg";
+            var panels = activePanels();
+            panels.forEach(function (pid) {
+                var srcSvg = document.getElementById('s' + pid);
+                if (!srcSvg) return;
+
+                // Clone to modify structure
+                var svg = srcSvg.cloneNode(true);
+
+                // Add Inkscape namespace
+                svg.setAttribute('xmlns:inkscape', 'http://www.inkscape.org/namespaces/inkscape');
+
+                // Clear existing content container to rebuild with layers
+                // The structure is: svg > rect(bg) > g > path...
+                // careful not to kill <defs> if any.
+                // We know structure: bg rect, g(flowers), t(text).
+
+                var gEl = svg.querySelector('g'); // flowers
+                var tEl = svg.querySelector('g + g') || svg.querySelector('tspan')?.parentNode; // text is usually in tEl appended after gEl
+                // My code appends gEl then tEl.
+                // Actually tEl is a separate group? No, tEl is a group.
+                // Let's find them by content or just generic iter.
+
+                // Group paths by color
+                var paths = Array.from(svg.querySelectorAll('path'));
+                var text = Array.from(svg.querySelectorAll('text, tspan'));
+
+                // Map colors
+                var groups = {};
+                paths.forEach(function (p) {
+                    var fill = p.getAttribute('fill') || '#000000';
+                    if (!groups[fill]) groups[fill] = [];
+                    groups[fill].push(p);
+                });
+
+                // Clear the main group(s)
+                // Better approach: Create a new SVG content structure.
+                // Keep dimensions/viewbox.
+                var newSvg = srcSvg.cloneNode(false); // shallow clone (attributes only)
+                newSvg.setAttribute('xmlns:inkscape', 'http://www.inkscape.org/namespaces/inkscape');
+
+                // 1. Text Layer (usually plotted first or last? Let's do last "Reference")
+                // Text is tricky on plotters if filled. Converting to outline is hard in JS.
+                // We'll put text in a separate layer "Text".
+                // Note: User's 'text' are <tspan> inside <text> or just <tspan> in <g>?
+                // In my code: t = dc.createElementNS(svgNS, "tspan"); tEl.appendChild(t).
+                // Wait, tEl must be a <text> element or <g>?
+                // In `boot`: var tEl = dc.createElementNS(svgNS, "text");
+                // So all tspans are inside one text element.
+                // If it's a <text> element, it behaves as one object.
+                // We can just clone tEl.
+                var srcTEl = srcSvg.querySelector('text');
+                if (srcTEl) {
+                    var layerT = document.createElementNS(svgNS, 'g');
+                    layerT.setAttribute('inkscape:groupmode', 'layer');
+                    layerT.setAttribute('inkscape:label', 'Text');
+
+                    var tClone = srcTEl.cloneNode(true);
+                    // Simplify text for plotter? Plotters often can't do filled text.
+                    // But standard SVG text is fill. 
+                    // We'll leave it as is, user can Hershey-font it in Inkscape.
+                    // Or change fill to stroke? 
+                    // tClone.setAttribute('fill', 'none'); tClone.setAttribute('stroke', '#000');
+                    // Text without fill might be invisible if stroke is not set.
+                    // Let's keep it filled for readability, Inkscape handles text conversion.
+                    layerT.appendChild(tClone);
+                    newSvg.appendChild(layerT);
+                }
+
+                // 2. Color Layers
+                Object.keys(groups).sort().forEach(function (color) {
+                    var g = document.createElementNS(svgNS, 'g');
+                    g.setAttribute('inkscape:groupmode', 'layer');
+                    g.setAttribute('inkscape:label', color);
+                    g.setAttribute('id', 'layer-' + color.replace('#', ''));
+
+                    groups[color].forEach(function (p) {
+                        // Plotter optimization: Fill=none, Stroke=color
+                        p.setAttribute('fill', 'none');
+                        p.setAttribute('stroke', color);
+                        p.setAttribute('stroke-width', '1'); // 1px stroke (for visibility)
+                        // Adjust stroke width based on scale? 
+                        // SVG units 1440. 1px is fine.
+                        g.appendChild(p);
+                    });
+                    newSvg.appendChild(g);
+                });
+
+                var str = svgToString(newSvg);
+                var blob = new Blob([str], { type: 'image/svg+xml' });
+                var name = 'platen-' + RENDER_SEED + '-v' + pid + '-plot.svg';
+                downloadBlob(blob, name);
+
+                var penText = "Platen Axidraw Pen Mapping\nSeed: " + RENDER_SEED + "\nPanel: " + pid + "\n\n";
+                Object.keys(groups).sort().forEach(function (color) {
+                    var hex = color.toUpperCase();
+                    var penName = PEN_MAP[hex] || "Unknown Pen";
+                    penText += "Layer: " + color + " -> " + penName + "\n";
+                });
+                var txtBlob = new Blob([penText], { type: 'text/plain' });
+                var txtName = 'platen-' + RENDER_SEED + '-v' + pid + '-pens.txt';
+                downloadBlob(txtBlob, txtName);
+            });
+            console.log('[Platen Quine] Saved Plotter SVG(s) and Pen Text map');
+        }
+        function saveDST() {
+            var panels = activePanels();
+            panels.forEach(function (pid) {
+                // Generate stitches for this panel
+                var stitches = generateStitches(pid); // returns { dx, dy, type }
+                var buffer = encodeDST(stitches, 'platen-' + RENDER_SEED);
+                var blob = new Blob([buffer], { type: 'application/octet-stream' });
+                var name = 'platen-' + RENDER_SEED + '-v' + pid + '.dst';
+                downloadBlob(blob, name);
+            });
+            console.log('[Platen Quine] Saved DST(s) for panels:', panels);
+        }
+
+        function generateStitches(pid) {
+            // Re-run the render logic virtually to capture positions
+            // Grid 78x148. Units: 0.1mm. 
+            // 1440px width -> map to ~14.4cm (144mm). Scale ~ 1.0 (1px = 0.1mm)
+            var scale = 1.0;
+
+            // Flower path parsing cache
+            // Decompose FLOWER_PATH into 2D points (centered at 0,0)
+            var flowerPoints = parsePathToPoints(FLOWER_PATH, 4); // 4 segments per curve
+
+            var moves = [];
+            var lastX = 0, lastY = 0;
+
+            function addStitch(x, y, flags) {
+                // Coordinates in DST are relative moves.
+                // We calculate absolute position in 0.1mm units, then difference.
+                // Center logic: map top-left (0,0) to center relative? 
+                // Default: start at 0,0 (center of design).
+                // Let's assume start position is center.
+
+                x = Math.round(x);
+                y = Math.round(y);
+                var dx = x - lastX;
+                var dy = y - lastY;
+                moves.push({ dx: dx, dy: dy, flags: flags || 0 }); // 0=normal, JUMP, STOP
+                lastX = x;
+                lastY = y;
+            }
+
+            var JUMP = 0x80;
+            var STOP = 0x40; // Color change
+
+            // Center offset
+            var w = 78, h = 148, size = 16;
+            var cx = (w * size) / 2;
+            var cy = (h * size) / 2;
+
+            // Find SVG elements to get transformed positions
+            var svgEl = document.getElementById('s' + pid);
+            if (!svgEl) return [];
+
+            var paths = svgEl.querySelectorAll('path'); // Flowers
+            var pathsArr = Array.prototype.slice.call(paths);
+
+            // Group paths by fill color to minimize thread changes
+            var groups = {};
+            pathsArr.forEach(function (p) {
+                var fill = p.getAttribute('fill');
+                if (!groups[fill]) groups[fill] = [];
+                groups[fill].push(p);
+            });
+
+            var lastColor = null;
+
+            // Iterate colors
+            Object.keys(groups).forEach(function (color) {
+                // Add STOP code if not first group
+                if (lastColor !== null) {
+                    // Force a jump-in-place STOP? Or simple STOP flag on next stitch.
+                    // Usually STOP command is tied to a stitch. We can emit a 0,0 move with STOP.
+                    addStitch(lastX, lastY, STOP);
+                }
+                lastColor = color;
+
+                var gPaths = groups[color];
+                gPaths.forEach(function (path) {
+                    // Parse transform
+                    var tr = path.getAttribute('transform');
+                    // transform="translate(px,py) scale(sc) ... rotate..."
+                    // regex parse
+                    var tM = /translate\(([^,]+),([^)]+)\)/.exec(tr);
+                    var px = tM ? parseFloat(tM[1]) : 0;
+                    var py = tM ? parseFloat(tM[2]) : 0;
+
+                    var sM = /scale\(([^)]+)\)/.exec(tr);
+                    var sc = sM ? parseFloat(sM[1]) : 1;
+
+                    var rM = /rotate\(([^,]+)/.exec(tr);
+                    var ang = rM ? parseFloat(rM[1]) : 0;
+                    var isFlip = Math.abs(ang - 180) < 1; // logical flip
+
+                    // Map center-relative for embroidery
+                    // Start 0,0 is center of hoop.
+                    // Screen 0,0 is top-left.
+                    // Target (dx, dy) = (px - cx, py - cy)
+                    var ox = (px - cx) * scale;
+                    var oy = (py - cy) * scale;
+
+                    // Walk the flower points
+                    var first = true;
+                    for (var i = 0; i < flowerPoints.length; i++) {
+                        var fp = flowerPoints[i];
+                        var fpx = fp.x;
+                        var fpy = fp.y;
+
+                        // Apply local transform: scale -> rotate -> translate
+                        // FLOWER_PATH points are roughly 0..20 box.
+                        // Rotate 180 around (10,10) if flipped.
+                        if (isFlip) {
+                            fpx = 20 - fpx;
+                            fpy = 20 - fpy;
+                        }
+
+                        // Scale
+                        var rx = fpx * sc;
+                        var ry = fpy * sc;
+
+                        // Translate
+                        var absX = ox + rx * scale;
+                        var absY = oy + ry * scale;
+
+                        if (first) {
+                            addStitch(absX, absY, JUMP);
+                            first = false;
+                        } else {
+                            addStitch(absX, absY, 0);
+                        }
+                    }
+                });
+            });
+
+            return moves;
+        }
+
+        function parsePathToPoints(d, seg) {
+            var parts = d.match(/[a-zA-Z]|[-0-9.]+/g);
+            var pts = [];
+            var cur = { x: 0, y: 0 };
+
+            for (var i = 0; i < parts.length; i++) {
+                var cmd = parts[i];
+                if (cmd === 'M') {
+                    cur.x = parseFloat(parts[++i]);
+                    cur.y = parseFloat(parts[++i]);
+                    pts.push({ x: cur.x, y: cur.y });
+                } else if (cmd === 'C') {
+                    var cp1 = { x: parseFloat(parts[++i]), y: parseFloat(parts[++i]) };
+                    var cp2 = { x: parseFloat(parts[++i]), y: parseFloat(parts[++i]) };
+                    var end = { x: parseFloat(parts[++i]), y: parseFloat(parts[++i]) };
+                    // Subdivide
+                    for (var t = 1; t <= seg; t++) {
+                        var k = t / seg;
+                        var nk = 1 - k;
+                        var bx = nk * nk * nk * cur.x + 3 * nk * nk * k * cp1.x + 3 * nk * k * k * cp2.x + k * k * k * end.x;
+                        var by = nk * nk * nk * cur.y + 3 * nk * nk * k * cp1.y + 3 * nk * k * k * cp2.y + k * k * k * end.y;
+                        pts.push({ x: bx, y: by });
+                    }
+                    cur = end;
+                } else if (cmd === 'L') {
+                    cur.x = parseFloat(parts[++i]);
+                    cur.y = parseFloat(parts[++i]);
+                    pts.push({ x: cur.x, y: cur.y });
+                }
+            }
+            return pts;
+        }
+
+        function encodeDST(moves, label) {
+            var header = new Uint8Array(512);
+            for (var i = 0; i < 512; i++) header[i] = 32;
+            var la = "LA:" + label.substring(0, 16) + "\r";
+            for (var i = 0; i < la.length; i++) header[i] = la.charCodeAt(i);
+
+            var body = [];
+
+            moves.forEach(function (m) {
+                var dx = m.dx;
+                var dy = m.dy;
+                dy = -dy; // DST Y+ is UP
+
+                var flags = m.flags;
+
+                if (flags === 0x80) { // Jump
+                    encodeStitch(dx, dy, true, false, body);
+                } else if (flags === 0x40) { // Stop
+                    encodeStitch(dx, dy, false, true, body);
+                } else {
+                    // Long jumps
+                    while (Math.abs(dx) > 121 || Math.abs(dy) > 121) {
+                        var sx = dx > 121 ? 121 : (dx < -121 ? -121 : dx);
+                        var sy = dy > 121 ? 121 : (dy < -121 ? -121 : dy);
+                        dx -= sx;
+                        dy -= sy;
+                        encodeStitch(sx, sy, true, false, body);
+                    }
+                    encodeStitch(dx, dy, false, false, body);
+                }
+            });
+
+            // Allow 3 bytes for EOF
+            var file = new Uint8Array(512 + body.length + 3);
+            file.set(header, 0);
+            file.set(body, 512);
+            file[512 + body.length] = 0x00;
+            file[512 + body.length + 1] = 0x00;
+            file[512 + body.length + 2] = 0xF3;
+
+            return file;
+        }
+
+        function encodeStitch(dx, dy, jump, stop, arr) {
+            var b0 = 0, b1 = 0, b2 = 0;
+            if (jump) b2 |= 0x80;
+            if (stop) b2 |= 0x40;
+            // Byte 1
+            if (dy > 0) { if (dy & 1) b0 |= 0x80; if (dy & 9) b0 |= 0x20; }
+            else { if (-dy & 1) b0 |= 0x40; if (-dy & 9) b0 |= 0x10; }
+            if (dx < 0) { if (-dx & 9) b0 |= 0x08; if (-dx & 3) b0 |= 0x02; }
+            else { if (dx & 9) b0 |= 0x04; if (dx & 3) b0 |= 0x01; }
+            // Byte 2
+            if (dy > 0) { if (dy & 3) b1 |= 0x80; if (dy & 27) b1 |= 0x20; }
+            else { if (-dy & 3) b1 |= 0x40; if (-dy & 27) b1 |= 0x10; }
+            if (dx < 0) { if (-dx & 27) b1 |= 0x08; if (-dx & 1) b1 |= 0x02; }
+            else { if (dx & 27) b1 |= 0x04; if (dx & 1) b1 |= 0x01; }
+            // Byte 3
+            if (dy > 0) { if (dy & 81) b2 |= 0x20; } else { if (-dy & 81) b2 |= 0x10; }
+            if (dx < 0) { if (-dx & 81) b2 |= 0x08; } else { if (dx & 81) b2 |= 0x04; }
+
+            b2 |= 0x03; // Standard set bits
+            arr.push(b0, b1, b2);
+        }
+
+        // Canvas textures — preload both
+        var CANVAS_BLACK_PATH = 'platen_canvas_black.png';
+        var CANVAS_TAN_PATH = 'platen_canvas_tan.png';
+        var CANVAS_OLIVE_PATH = 'platen_canvas_olive.png';
+        var CANVAS_WHITE_PATH = 'platen_canvas_white.png';
+
+        var _canvasBlackImg = null;
+        var _canvasTanImg = null;
+        var _canvasOliveImg = null;
+        var _canvasWhiteImg = null;
+        var _activeCanvasImg = null;
+
+        var _canvasBlackDataURL = null; // for CSS
+        var _canvasTanDataURL = null;
+        var _canvasOliveDataURL = null;
+        var _canvasWhiteDataURL = null;
+        var _activeCanvasDataURL = null;
+
+        var _alertedFileProtocol = false;
+        function preloadTexture(path, callback) {
+            if (window.location.protocol === 'file:') {
+                if (!_alertedFileProtocol) {
+                    _alertedFileProtocol = true;
+                    console.warn('Platen Warning: Canvas textures cannot be exported directly from file:// due to browser security restrictions. Export will use solid color backgrounds. Generation will continue.');
+                }
+                return; // skip XHR to avoid console spam
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', path, true);
+            xhr.responseType = 'blob';
+            xhr.onload = function () {
+                var reader = new FileReader();
+                reader.onloadend = function () {
+                    callback(reader.result);
+                };
+                reader.readAsDataURL(xhr.response);
+            };
+            xhr.onerror = function () {
+                console.error('[Platen] Failed to load texture: ' + path);
+            };
+            xhr.send();
+        }
+
+        (function preloadTextures() {
+            preloadTexture(CANVAS_BLACK_PATH, function (data) {
+                _canvasBlackDataURL = data;
+                _canvasBlackImg = new Image();
+                _canvasBlackImg.onload = function () {
+                    console.log('[Platen] Black canvas texture preloaded');
+                    updateCanvasTexture();
+                };
+                _canvasBlackImg.src = data;
+            });
+            preloadTexture(CANVAS_TAN_PATH, function (data) {
+                _canvasTanDataURL = data;
+                _canvasTanImg = new Image();
+                _canvasTanImg.onload = function () {
+                    console.log('[Platen] Tan canvas texture preloaded');
+                    updateCanvasTexture();
+                };
+                _canvasTanImg.src = data;
+            });
+            preloadTexture(CANVAS_OLIVE_PATH, function (data) {
+                _canvasOliveDataURL = data;
+                _canvasOliveImg = new Image();
+                _canvasOliveImg.onload = function () {
+                    console.log('[Platen] Olive canvas texture preloaded');
+                    updateCanvasTexture();
+                };
+                _canvasOliveImg.src = data;
+            });
+            preloadTexture(CANVAS_WHITE_PATH, function (data) {
+                _canvasWhiteDataURL = data;
+                _canvasWhiteImg = new Image();
+                _canvasWhiteImg.onload = function () {
+                    console.log('[Platen] White canvas texture preloaded');
+                    updateCanvasTexture();
+                };
+                _canvasWhiteImg.src = data;
+            });
+        })();
+
+        function updateCanvasTexture() {
+            var url = CANVAS_BLACK_PATH;
+            var dataUrl = _canvasBlackDataURL;
+            var img = _canvasBlackImg;
+            var canvasClass = 'canvas-black';
+
+            if (TRAITS.canvas === 'tan') {
+                url = CANVAS_TAN_PATH;
+                dataUrl = _canvasTanDataURL;
+                img = _canvasTanImg;
+                canvasClass = 'canvas-tan';
+            } else if (TRAITS.canvas === 'olive') {
+                url = CANVAS_OLIVE_PATH;
+                dataUrl = _canvasOliveDataURL;
+                img = _canvasOliveImg;
+                canvasClass = 'canvas-olive';
+            } else if (TRAITS.canvas === 'white') {
+                url = CANVAS_WHITE_PATH;
+                dataUrl = _canvasWhiteDataURL;
+                img = _canvasWhiteImg;
+                canvasClass = 'canvas-white';
+            }
+
+            // Update CSS for display
+            document.querySelectorAll('.platen-panel').forEach(function (el) {
+                el.style.backgroundImage = 'url("' + url + '")';
+                // Reset classes except for base
+                el.className = 'platen-panel ' + canvasClass;
+            });
+
+            // Set active data URL for export
+            _activeCanvasDataURL = dataUrl;
+            _activeCanvasImg = img;
+        }
+
+        function savePNG() {
+            var panels = activePanels();
+            panels.forEach(function (id) {
+                var svg = document.getElementById('s' + id);
+                if (!svg) return;
+                var svgW = parseInt(svg.getAttribute('width'));
+                var svgH = parseInt(svg.getAttribute('height'));
+
+                // Target: full resolution 1440x2560
+                var outW = 1440, outH = 2560;
+                var scaleX = outW / svgW, scaleY = outH / svgH;
+
+                // Serialize SVG with transparent background
+                var str = svgToString(svg);
+                var blob = new Blob([str], { type: 'image/svg+xml' });
+                var svgUrl = URL.createObjectURL(blob);
+
+                var svgImg = new Image();
+                svgImg.onload = function () {
+                    // Load texture from data URL (avoids tainted canvas)
+                    function doComposite(texImg) {
+                        var canvas = document.createElement('canvas');
+                        canvas.width = outW; canvas.height = outH;
+                        var ctx = canvas.getContext('2d');
+
+                        // Layer 1: canvas texture (full res)
+                        if (texImg) {
+                            ctx.drawImage(texImg, 0, 0, outW, outH);
+                        } else {
+                            ctx.fillStyle = '#1a1724';
+                            ctx.fillRect(0, 0, outW, outH);
+                        }
+
+                        // Layer 2: SVG pattern scaled to fill with ink blending
+                        ctx.save();
+                        if (TRAITS.canvas === 'tan' || TRAITS.canvas === 'olive' || TRAITS.canvas === 'white') {
+                            ctx.globalCompositeOperation = 'multiply';
+                            ctx.globalAlpha = 1.0;
+                            ctx.filter = 'saturate(3.0) contrast(1.3) brightness(1.5)';
+                        } else {
+                            ctx.globalAlpha = 0.95;
+                            ctx.filter = 'saturate(1.2) contrast(1.05)';
+                        }
+                        ctx.drawImage(svgImg, 0, 0, outW, outH);
+                        ctx.restore();
+
+                        canvas.toBlob(function (pngBlob) {
+                            var name = 'platen-' + RENDER_SEED + '-v' + id + '.png';
+                            downloadBlob(pngBlob, name);
+                            console.log('[Platen] Saved PNG: ' + name + ' (' + outW + 'x' + outH + ')');
+                        }, 'image/png');
+                    }
+
+                    if (_activeCanvasImg) {
+                        doComposite(_activeCanvasImg);
+                    } else {
+                        doComposite(null);
+                    }
+                };
+                svgImg.src = svgUrl;
+            });
+        }
+
+        function saveTriptych() {
+            var ids = [1, 2, 3];
+            var promises = ids.map(function (id) {
+                return new Promise(function (resolve) {
+                    var svg = document.getElementById('s' + id);
+                    if (!svg) { resolve(null); return; }
+                    var str = svgToString(svg);
+                    var blob = new Blob([str], { type: 'image/svg+xml' });
+                    var url = URL.createObjectURL(blob);
+                    var img = new Image();
+                    img.onload = function () { resolve(img); };
+                    img.src = url;
+                });
+            });
+
+            Promise.all(promises).then(function (images) {
+                var w = 1440, h = 2560;
+                var gap = 100;
+                var margin = 100;
+                var totalW = margin * 2 + w * 3 + gap * 2;
+                var totalH = margin * 2 + h;
+
+                var canvas = document.createElement('canvas');
+                canvas.width = totalW;
+                canvas.height = totalH;
+                var ctx = canvas.getContext('2d');
+
+                // Fill background (matte)
+                ctx.fillStyle = '#151515';
+                ctx.fillRect(0, 0, totalW, totalH);
+
+                function drawComposite(texImg) {
+                    images.forEach(function (img, i) {
+                        if (!img) return;
+                        var x = margin + i * (w + gap);
+                        var y = margin;
+
+                        // Draw deckled canvas texture background per panel 
+                        if (texImg) {
+                            ctx.save();
+                            ctx.drawImage(texImg, x, y, w, h);
+                            ctx.restore();
+                        } else {
+                            ctx.fillStyle = '#1a1724';
+                            ctx.fillRect(x, y, w, h);
+                        }
+
+                        // Draw SVG content with ink blending
+                        ctx.save();
+                        if (TRAITS.canvas === 'tan' || TRAITS.canvas === 'olive' || TRAITS.canvas === 'white') {
+                            ctx.globalCompositeOperation = 'multiply';
+                            ctx.globalAlpha = 1.0;
+                            ctx.filter = 'saturate(3.0) contrast(1.3) brightness(1.5)';
+                        } else {
+                            ctx.globalAlpha = 0.95;
+                            ctx.filter = 'saturate(1.2) contrast(1.05)';
+                        }
+                        ctx.drawImage(img, x, y, w, h);
+                        ctx.restore();
+                    });
+
+                    canvas.toBlob(function (blob) {
+                        var name = 'platen-' + RENDER_SEED + '-triptych.png';
+                        downloadBlob(blob, name);
+                        console.log('[Platen] Saved Triptych: ' + name);
+                    }, 'image/png');
+                }
+
+                if (_activeCanvasImg) {
+                    drawComposite(_activeCanvasImg);
+                } else {
+                    drawComposite(null);
+                }
+            });
+        }
+
+        // ── Pan & Zoom Logic ──────────────────────────────────────────────────────────
+        (function () {
+            var state = {}; // { id: { scale:1, x:0, y:0 } }
+
+            function getOrCreateState(id) {
+                if (!state[id]) state[id] = { scale: 1, x: 0, y: 0 };
+                return state[id];
+            }
+
+            function applyTransform(panel, s) {
+                if (!panel) return;
+                panel.style.transform = 'translate(' + s.x + 'px, ' + s.y + 'px) scale(' + s.scale + ')';
+            }
+
+            var wrap = document.getElementById('canvas-wrap');
+
+            // Zoom (Wheel)
+            wrap.addEventListener('wheel', function (e) {
+                var panel = e.target.closest('.platen-panel');
+                if (!panel) return;
+                e.preventDefault();
+                // Bring to front
+                document.querySelectorAll('.platen-panel').forEach(function (p) { p.style.zIndex = 0; });
+                panel.style.zIndex = 100;
+
+                document.getElementById('st-info').innerHTML = 'zoom active &bull; double-click to reset';
+                var id = panel.id || 'p';
+                var s = getOrCreateState(id);
+                var delta = e.deltaY > 0 ? -0.1 : 0.1;
+                var oldScale = s.scale;
+                s.scale = Math.min(Math.max(s.scale + delta, 1), 8);
+                // Adjust pan to zoom towards center (simplified)
+                applyTransform(panel, s);
+            }, { passive: false });
+
+            // Pan (Drag)
+            var isDragging = false;
+            var startX, startY;
+            var currentPanelId = null;
+
+            wrap.addEventListener('mousedown', function (e) {
+                var panel = e.target.closest('.platen-panel');
+                if (!panel) return;
+                // Only allow drag if zoomed in slightly? Or always. User asked for "when in zoom mode".
+                // But dragging at 1x is harmless if constrained. Let's allow free drag.
+                var svg = panel.querySelector('svg');
+                if (!svg) return;
+
+                // Bring to front
+                document.querySelectorAll('.platen-panel').forEach(function (p) { p.style.zIndex = 0; });
+                panel.style.zIndex = 100;
+
+                isDragging = true;
+                currentPanelId = panel.id || 'p';
+                document.getElementById('st-info').innerHTML = 'pan active &bull; double-click to reset';
+                startX = e.clientX;
+                startY = e.clientY;
+                e.preventDefault(); // prevent text selection
+            });
+
+            window.addEventListener('mousemove', function (e) {
+                if (!isDragging || !currentPanelId) return;
+                var s = getOrCreateState(currentPanelId);
+
+                var dx = e.clientX - startX;
+                var dy = e.clientY - startY;
+
+                s.x += dx;
+                s.y += dy;
+
+                startX = e.clientX;
+                startY = e.clientY;
+
+                var panel = document.getElementById(currentPanelId);
+                applyTransform(panel, s);
+            });
+
+            window.addEventListener('mouseup', function () {
+                isDragging = false;
+                currentPanelId = null;
+            });
+
+            // Double-click reset
+            wrap.addEventListener('dblclick', function (e) {
+                var panel = e.target.closest('.platen-panel');
+                if (!panel) return;
+                var id = panel.id || 'p';
+                state[id] = { scale: 1, x: 0, y: 0 };
+                applyTransform(panel, state[id]);
+                document.getElementById('st-info').innerHTML = 'view reset';
+            });
+        })();
+
+        // ── Boot ──────────────────────────────────────────────────────────────────────
+        // Initial render: start immediately with random art
+        setTimeout(randomize, 100);
+    </script>
+</body>
+
+</html>

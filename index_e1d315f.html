@@ -1,0 +1,3605 @@
+﻿<!DOCTYPE html>
+<!-- Vercel Production Deploy Trigger -->
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Platen</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #151515;
+            --panel: #151515;
+            --border: #2a2c2e;
+            --purple: #7d858c;
+            --text: #DEE4D7;
+            --dim: rgba(222, 228, 215, 0.35);
+            --canvas-bg: #151515;
+            --body-bg: #151515;
+            --shadow: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+            --label-opacity: 0.5;
+        }
+
+        [data-theme="light"] {
+            --bg: #ffffff;
+            --panel: #ffffff;
+            --border: #000000;
+            --purple: #000000;
+            --text: #000000;
+            --dim: #000000;
+            --canvas-bg: #ffffff;
+            --body-bg: #ffffff;
+            --shadow: none;
+            --label-opacity: 1.0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            overflow: hidden;
+        }
+
+        /* ΓöÇΓöÇ Top bar ΓöÇΓöÇ */
+        #topbar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+            z-index: 10;
+        }
+
+        #title {
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--dim);
+            margin-right: 40px; /* Space between title and About button */
+        }
+
+        #title span {
+            color: var(--purple);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--dim);
+            font-family: inherit;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            padding: 5px 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.15s;
+        }
+
+        button:hover,
+        button.active {
+            border-color: var(--purple);
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        button.active {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        #btn-randomize:hover,
+        #btn-randomize.active {
+            border-color: var(--purple);
+            color: var(--purple);
+        }
+
+        #btn-randomize:hover {
+            background: var(--purple);
+            color: var(--text);
+        }
+
+        /* ΓöÇΓöÇ Info Popups (Tooltips) ΓöÇΓöÇ */
+        .btn-group {
+            position: relative;
+        }
+
+        [data-info] {
+            position: relative;
+        }
+
+        [data-info]::after {
+            content: attr(data-info);
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000;
+            color: var(--text);
+            font-size: 8px;
+            padding: 4px 8px;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s ease-out;
+            z-index: 1000;
+            letter-spacing: 0.05em;
+            text-transform: none;
+        }
+
+        #topbar [data-info]::after {
+            bottom: auto;
+            top: calc(100% + 10px);
+        }
+
+        [data-info]:hover::after {
+            opacity: 1;
+        }
+
+        /* ΓöÇΓöÇ Trait bar ΓöÇΓöÇ */
+        #traitbar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 7px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+            font-size: 8px;
+            letter-spacing: 0.08em;
+            color: var(--dim);
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .trait {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .trait-label {
+            opacity: var(--label-opacity, 0.5);
+        }
+
+        .trait-val {
+            color: var(--text);
+        }
+
+        .trait-select {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 8px;
+            letter-spacing: 0.08em;
+            padding: 1px 4px;
+            cursor: pointer;
+            text-transform: lowercase;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            outline: none;
+        }
+
+        .trait-select:hover,
+        .trait-select:focus {
+            border-color: var(--purple);
+            background: rgba(104, 57, 170, 0.15);
+        }
+
+        .trait-select option {
+            background: var(--panel);
+            color: var(--text);
+        }
+
+        /* Hide scrollbar on select dropdowns */
+        .trait-select::-webkit-scrollbar {
+            display: none;
+        }
+
+        .trait-select {
+            scrollbar-width: none;
+        }
+
+        .platen-panel {
+            /* instant placeholder until texture loads */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            cursor: grab;
+            transform-origin: center center;
+            transition: transform 0.1s ease-out;
+        }
+
+        /* Blending modes for ink-on-canvas effect */
+        .canvas-tan svg,
+        .canvas-olive svg,
+        .canvas-white svg {
+            mix-blend-mode: normal;
+            opacity: 1.0;
+        }
+
+        .canvas-black svg {
+            mix-blend-mode: normal;
+            opacity: 1.0;
+        }
+
+        /* High-contrast grid numbers for lighter canvas textures */
+        .canvas-white .grid-numbers text {
+            fill: #1D1D1D !important;
+        }
+        .canvas-tan .grid-numbers text {
+            fill: #4E3629 !important;
+        }
+
+        /* ΓöÇΓöÇ Screen-Only Visual Typewriter Sizing Locks ΓöÇΓöÇ */
+        .typewriter-header text {
+            font-size: 11pt !important;
+        }
+        /* Scale US Letter up on screen to counteract its large SVG canvas height (1760px) */
+        #canvas-wrap.grid_us_letter .typewriter-header text,
+        #canvas-wrap.banner_us_letter .typewriter-header text {
+            font-size: 20.5pt !important;
+        }
+        /* Scale Gallery mode up to counteract its 1456px SVG canvas height */
+        #canvas-wrap.gallery .typewriter-header text {
+            font-size: 17pt !important;
+        }
+        /* Scale Square mode up to counteract its 1056px SVG canvas height */
+        #canvas-wrap.square .typewriter-header text {
+            font-size: 12.3pt !important;
+        }
+        /* Scale Compact grids down slightly to keep them crisp on screen */
+        #canvas-wrap.grid_32_40 .typewriter-header text,
+        #canvas-wrap.banner_32_40 .typewriter-header text {
+            font-size: 9pt !important;
+        }
+        #canvas-wrap.grid_39_39 .typewriter-header text,
+        #canvas-wrap.banner_39_39 .typewriter-header text {
+            font-size: 8.8pt !important;
+        }
+        .canvas-olive .grid-numbers text {
+            fill: #1B4D3E !important;
+        }
+
+        .platen-panel:active {
+            cursor: grabbing;
+            transition: none;
+            /* instant follow while dragging */
+        }
+
+        /* ΓöÇΓöÇ Canvas area ΓÇö fills remaining viewport, no scroll ΓöÇΓöÇ */
+        #canvas-wrap {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            width: 100%;
+            overflow: auto;
+            gap: 20px;
+            min-height: 0;
+            background: var(--canvas-bg);
+        }
+
+        /* Banner 16:9: 3 panels side by side */
+        #canvas-wrap.banner {
+            flex-direction: row;
+            gap: 20px;
+            padding: 20px;
+            max-height: 100%;
+            max-width: 100%;
+        }
+
+        #canvas-wrap.banner .platen-panel {
+            width: min(calc((100vw - 120px) / 3), calc(80vh * 9 / 16));
+            height: min(80vh, calc(((100vw - 120px) / 3) * 16 / 9));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvas-wrap.banner .platen-panel svg {
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+        }
+
+        /* Panel (9:16): single panel, portrait */
+        #canvas-wrap.panel {
+            flex-direction: row;
+        }
+
+        #canvas-wrap.panel #panel2,
+        #canvas-wrap.panel #panel3,
+        #canvas-wrap.grid_32_40 #panel2,
+        #canvas-wrap.grid_32_40 #panel3,
+        #canvas-wrap.grid_39_51 #panel2,
+        #canvas-wrap.grid_39_51 #panel3,
+        #canvas-wrap.grid_us_letter #panel2,
+        #canvas-wrap.grid_us_letter #panel3,
+        #canvas-wrap.grid_39_39 #panel2,
+        #canvas-wrap.grid_39_39 #panel3 {
+            display: none;
+        }
+
+        #canvas-wrap.panel .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            aspect-ratio: 9 / 16;
+            min-height: 80vh;
+            /* Ensure size while loading */
+        }
+
+        #canvas-wrap.panel .platen-panel svg {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: 100%;
+        }
+
+        #canvas-wrap.panel #panel2,
+        #canvas-wrap.panel #panel3,
+        #canvas-wrap.square #panel2,
+        #canvas-wrap.square #panel3,
+        #canvas-wrap.grid_32_40 #panel2,
+        #canvas-wrap.grid_32_40 #panel3,
+        #canvas-wrap.grid_39_51 #panel2,
+        #canvas-wrap.grid_39_51 #panel3,
+        #canvas-wrap.grid_us_letter #panel2,
+        #canvas-wrap.grid_us_letter #panel3,
+        #canvas-wrap.grid_39_39 #panel2,
+        #canvas-wrap.grid_39_39 #panel3,
+        #canvas-wrap.gallery #panel2,
+        #canvas-wrap.gallery #panel3,
+        #canvas-wrap.graph_paper #panel2,
+        #canvas-wrap.graph_paper #panel3,
+        #canvas-wrap.graph_paper_sq #panel2,
+        #canvas-wrap.graph_paper_sq #panel3 {
+            display: none !important;
+        }
+
+        /* Gallery (16:9): Single large horizontal panel */
+        #canvas-wrap.gallery {
+            flex-direction: row;
+        }
+
+        #canvas-wrap.gallery #panel2,
+        #canvas-wrap.gallery #panel3 {
+            display: none;
+        }
+
+        #canvas-wrap.gallery .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            min-height: 0;
+        }
+
+        #canvas-wrap.gallery .platen-panel svg {
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+        }
+
+        /* Square (1:1): Single large square panel */
+        #canvas-wrap.square {
+            flex-direction: row;
+        }
+
+        #canvas-wrap.square .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            aspect-ratio: 1 / 1;
+            min-height: 80vh;
+            max-height: 80vh;
+        }
+
+        /* Banner 1:1: 3 square panels side by side */
+        #canvas-wrap.banner_sq {
+            flex-direction: row;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        #canvas-wrap.banner_sq .platen-panel {
+            width: min(calc((100vw - 120px) / 3), calc(80vh * 1 / 1));
+            height: min(80vh, calc(((100vw - 120px) / 3) * 1 / 1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvas-wrap.banner_sq .platen-panel svg {
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+        }
+
+        #canvas-wrap.square .platen-panel svg {
+            width: auto;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Grid 32x40 (Gallery Canvas ΓÇö 48" ├ù 60") */
+        #canvas-wrap.grid_32_40 .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            aspect-ratio: 32 / 40;
+            min-height: 80vh;
+        }
+
+        #canvas-wrap.grid_32_40 .platen-panel svg {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: 100%;
+        }
+
+        /* Banner 32x40: 3 panels side by side */
+        #canvas-wrap.banner_32_40 {
+            flex-direction: row;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        #canvas-wrap.banner_32_40 .platen-panel {
+            flex: 0 0 31%;
+            aspect-ratio: 32 / 40;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            height: auto;
+            max-height: 80vh;
+        }
+
+        #canvas-wrap.banner_32_40 .platen-panel svg {
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+        }
+
+        /* Grid 39x51 (Portrait) */
+        #canvas-wrap.grid_39_51 .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            aspect-ratio: 39 / 51;
+            min-height: 80vh;
+        }
+
+        #canvas-wrap.grid_39_51 .platen-panel svg {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: 100%;
+        }
+
+        /* Banner 39x51: 3 panels (39x51) side by side */
+        #canvas-wrap.banner_39_51 {
+            flex-direction: row;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        #canvas-wrap.banner_39_51 .platen-panel {
+            flex: 0 0 31%;
+            aspect-ratio: 39 / 51;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            height: auto;
+            max-height: 80vh;
+        }
+
+        #canvas-wrap.banner_39_51 .platen-panel svg {
+            width: auto;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Grid US Letter (8.5x11) */
+        #canvas-wrap.grid_us_letter .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            aspect-ratio: 8.5 / 11;
+            min-height: 80vh;
+        }
+
+        #canvas-wrap.grid_us_letter .platen-panel svg {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: 100%;
+        }
+
+        /* Banner US Letter: 3 panels (8.5x11) side by side */
+        #canvas-wrap.banner_us_letter {
+            flex-direction: row;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        #canvas-wrap.banner_us_letter .platen-panel {
+            width: min(calc((100vw - 120px) / 3), calc(80vh * 8.5 / 11));
+            height: min(80vh, calc(((100vw - 120px) / 3) * 11 / 8.5));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvas-wrap.banner_us_letter .platen-panel svg {
+            width: auto;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Grid 39x39 (Square) */
+        #canvas-wrap.grid_39_39 .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            aspect-ratio: 1 / 1;
+            min-height: 80vh;
+        }
+
+        #canvas-wrap.grid_39_39 .platen-panel svg {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Banner 32x40: 3 panels (32x40) side by side */
+        #canvas-wrap.banner_32_40 {
+            flex-direction: row;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        #canvas-wrap.banner_32_40 .platen-panel {
+            width: min(calc((100vw - 120px) / 3), calc(80vh * 32 / 40));
+            height: min(80vh, calc(((100vw - 120px) / 3) * 40 / 32));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvas-wrap.banner_32_40 .platen-panel svg {
+            width: auto;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Banner 39x39: 3 panels (39x39) side by side */
+        #canvas-wrap.banner_39_39 {
+            flex-direction: row;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        #canvas-wrap.banner_39_39 .platen-panel {
+            width: min(calc((100vw - 120px) / 3), calc(80vh * 1 / 1));
+            height: min(80vh, calc(((100vw - 120px) / 3) * 1 / 1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvas-wrap.banner_39_39 .platen-panel svg {
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+        }
+        #canvas-wrap.graph_paper .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            aspect-ratio: 1696 / 2192;
+            min-height: 80vh;
+            margin: 0 auto;
+            background-size: 100% 100% !important;
+        }
+        #canvas-wrap.graph_paper_sq .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            aspect-ratio: 1696 / 1707.08;
+            min-height: 80vh;
+            margin: 0 auto;
+            background-size: 100% auto !important;
+            background-position: top center !important;
+        }
+        #canvas-wrap.graph_paper_banner {
+            flex-direction: row;
+            gap: 20px;
+            padding: 20px;
+            max-height: 100%;
+            max-width: 100%;
+        }
+        #canvas-wrap.graph_paper_banner .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: min(calc((100vw - 120px) / 3), calc(80vh * 1696 / 2192));
+            height: min(80vh, calc(((100vw - 120px) / 3) * 2192 / 1696));
+            background-size: 100% 100% !important;
+        }
+        #canvas-wrap.graph_paper_sq_banner {
+            flex-direction: row;
+            gap: 20px;
+            padding: 20px;
+            max-height: 100%;
+            max-width: 100%;
+        }
+        #canvas-wrap.graph_paper_sq_banner .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: min(calc((100vw - 120px) / 3), calc(80vh * 1696 / 1707.08));
+            height: min(80vh, calc(((100vw - 120px) / 3) * 1707.08 / 1696));
+            background-size: 100% auto !important;
+            background-position: top center !important;
+        }
+        #canvas-wrap.graph_paper .platen-panel svg,
+        #canvas-wrap.graph_paper_sq .platen-panel svg,
+        #canvas-wrap.graph_paper_banner .platen-panel svg,
+        #canvas-wrap.graph_paper_sq_banner .platen-panel svg {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .platen-panel svg {
+            transform-origin: center center;
+        }
+
+        .platen-loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--text);
+            font-size: 10px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            pointer-events: none;
+            z-index: 5;
+            display: none;
+        }
+
+        .platen-panel.loading .platen-loader {
+            display: block;
+        }
+
+        /* ΓöÇΓöÇ About Modal ΓöÇΓöÇ */
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        #modal-overlay.active {
+            display: flex;
+        }
+
+        #about-modal {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            max-width: 700px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 50px;
+            position: relative;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        #about-modal h2 {
+            font-size: 14px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--purple);
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+        }
+
+        #about-modal p {
+            font-size: 12px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            color: var(--text);
+            opacity: 0.9;
+        }
+
+        #about-modal .tech-specs {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        #about-modal .spec-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            margin-bottom: 10px;
+            letter-spacing: 0.05em;
+        }
+
+        #about-modal .spec-label {
+            color: var(--dim);
+            text-transform: uppercase;
+        }
+
+        #close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 18px;
+            opacity: 0.5;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        #close-modal:hover {
+            opacity: 1;
+        }
+
+        /* ΓöÇΓöÇ Seed Modal ΓöÇΓöÇ */
+        #modal-seed {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        #modal-seed.active {
+            display: flex;
+        }
+
+        #seed-modal-content {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            max-width: 400px;
+            width: 100%;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        #seed-modal-content h2 {
+            font-size: 14px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--purple);
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+        }
+
+        #seed-modal-content p {
+            font-size: 11px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: var(--text);
+            opacity: 0.9;
+        }
+
+        .seed-input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        #seed-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 14px;
+            padding: 10px 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #seed-input:focus {
+            border-color: var(--purple);
+        }
+
+        #btn-seed-confirm {
+            padding: 10px 20px;
+            font-size: 11px;
+            font-weight: 500;
+            background: var(--purple);
+            color: var(--bg);
+            border-color: var(--purple);
+        }
+
+        #btn-seed-confirm:hover {
+            background: var(--text);
+            border-color: var(--text);
+            color: var(--bg);
+        }
+
+        #close-seed-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 18px;
+            opacity: 0.5;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        #close-seed-modal:hover {
+            opacity: 1;
+        }
+
+        /* Single: 1 centered panel, full height, panels 2+3 hidden */
+        #canvas-wrap.single {
+            flex-direction: row;
+        }
+
+        #canvas-wrap.single #panel2,
+        #canvas-wrap.single #panel3 {
+            display: none;
+        }
+
+        #canvas-wrap.single .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        #canvas-wrap.single .platen-panel svg {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: 100%;
+        }
+
+        .c {
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            font-size: 9px;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--body-bg);
+            color: var(--text);
+            font-family: 'IBM Plex Mono', monospace;
+            overflow: hidden;
+            /* Prevent scrolling on body */
+        }
+
+        /* ΓöÇΓöÇ Status bar ΓöÇΓöÇ */
+        #statusbar {
+            width: 100%;
+            padding: 6px 20px;
+            border-top: 1px solid var(--border);
+            background: var(--bg);
+            font-size: 9px;
+            color: var(--dim);
+            letter-spacing: 0.08em;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        /* ΓöÇΓöÇ Auto-randomizer toggle ΓöÇΓöÇ */
+        #btn-auto {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: transparent;
+            padding: 0;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
+        }
+
+        #btn-auto.auto-on {
+            background: var(--purple);
+            border-color: var(--purple);
+            box-shadow: 0 0 6px rgba(125, 133, 140, 0.6);
+        }
+
+        /* ΓöÇΓöÇ Animation Layer ΓöÇΓöÇ */
+        .platen-anim-canvas {
+            display: none;
+            image-rendering: pixelated;
+        }
+
+        #btn-animate.anim-on {
+            background: var(--purple);
+            border-color: var(--purple);
+            color: var(--bg);
+            box-shadow: 0 0 8px rgba(125, 133, 140, 0.5);
+        }
+
+        /* ΓöÇΓöÇ Mobile Optimization ΓöÇΓöÇ */
+        @media (max-width: 768px) {
+            body {
+                height: 100dvh; /* Use dynamic viewport height for mobile browsers */
+            }
+
+            #topbar {
+                padding: 8px 12px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            #topbar #title {
+                font-size: 10px;
+                margin-bottom: 4px;
+            }
+
+            .btn-group {
+                width: 100%;
+                overflow-x: auto;
+                padding-bottom: 8px;
+                gap: 4px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none; /* Hide scrollbar for cleaner look */
+            }
+
+            .btn-group::-webkit-scrollbar {
+                display: none;
+            }
+
+            button {
+                padding: 6px 10px;
+                font-size: 8px;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+
+            #traitbar {
+                padding: 8px 12px;
+                gap: 12px;
+                scrollbar-width: none;
+            }
+
+            #traitbar::-webkit-scrollbar {
+                display: none;
+            }
+
+            .trait {
+                gap: 4px;
+            }
+
+            .trait-label {
+                font-size: 7px;
+            }
+
+            .trait-select {
+                font-size: 10px;
+                padding: 4px 6px;
+                height: 24px; /* Better touch target */
+            }
+
+            #canvas-wrap {
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .platen-panel {
+                max-width: 90vw;
+            }
+
+            #statusbar {
+                padding: 8px 12px;
+                flex-wrap: wrap;
+                gap: 10px;
+                height: auto;
+                min-height: 30px;
+            }
+
+            #st-info {
+                width: 100%;
+                font-size: 7px;
+                line-height: 1.4;
+                white-space: normal;
+                word-break: break-all;
+            }
+
+            #about-modal {
+                padding: 30px 20px;
+                margin: 20px;
+            }
+
+            #about-modal h2 {
+                font-size: 12px;
+                margin-bottom: 20px;
+            }
+
+            #about-modal p {
+                font-size: 11px;
+                line-height: 1.6;
+            }
+
+            .tech-specs {
+                margin-top: 20px;
+            }
+
+            /* Prevent tooltips on mobile since they stick after touch */
+            [data-info]::after {
+                display: none !important;
+            }
+        }
+
+        /* ΓöÇΓöÇ Extra Small Devices ΓöÇΓöÇ */
+        @media (max-width: 480px) {
+            #topbar #title {
+                display: none; /* Hide title to save vertical space */
+            }
+            
+            .platen-panel {
+                max-height: 70vh;
+            }
+        }
+
+        #btn-record.recording {
+            background: #c0392b;
+            border-color: #c0392b;
+            color: #fff;
+            box-shadow: 0 0 8px rgba(192, 57, 43, 0.6);
+            animation: rec-pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes rec-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .anim-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 60px;
+            height: 3px;
+            background: var(--border);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .anim-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 8px;
+            height: 8px;
+            background: var(--purple);
+            cursor: pointer;
+        }
+
+        .anim-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 10px;
+            padding-left: 10px;
+            border-left: 1px solid var(--border);
+        }
+
+        .anim-controls label {
+            font-size: 7px;
+            color: var(--dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            cursor: default;
+        }
+
+        .anim-controls .anim-val {
+            font-size: 8px;
+            color: var(--text);
+            min-width: 18px;
+            text-align: right;
+        }
+        .hide-grid-nums .grid-numbers {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="topbar">
+        <div id="title">PLATEN</div>
+        <div class="btn-group">
+            <button id="btn-about" onclick="toggleAbout()">About</button>
+            <button id="btn-theme" onclick="toggleTheme()" title="Toggle Light/Dark Mode">ΓÿÇ∩╕Ä</button>
+            <button id="btn-randomize" onclick="randomize()">&#9632; Randomize</button>
+            <button id="btn-regen" onclick="regenerate()">&#8635; Regenerate</button>
+            <button id="btn-panel" onclick="setLayout('panel')">Panel 9:16</button>
+            <button id="btn-banner" onclick="setLayout('banner')">Banner 16:9</button>
+            <button id="btn-square" onclick="setLayout('square')">Square 1:1</button>
+            <button id="btn-banner-sq" onclick="setLayout('banner_sq')">Banner 1:1</button>
+            <button id="btn-graph-paper" onclick="setLayout('graph_paper')">Graph Paper Scan</button>
+            <button id="btn-graph-paper-banner" onclick="setLayout('graph_paper_banner')">Graph Paper Scan Triptych</button>
+            <button id="btn-graph-paper-sq" onclick="setLayout('graph_paper_sq')">Graph Paper 1:1</button>
+            <button id="btn-graph-paper-sq-banner" onclick="setLayout('graph_paper_sq_banner')">Graph Paper 1:1 Triptych</button>
+            <!-- <button id="btn-gallery" onclick="setLayout('gallery')">Gallery 16:9</button> -->
+            <button id="btn-out-svg" onclick="saveSVG()" title="Download SVG"
+                data-info="download resolution-independent vector paths">&#8595; SVG</button>
+            <button id="btn-out-png" onclick="savePNG()" title="Download PNG"
+                data-info="download high-resolution raster image">&#8595; PNG</button>
+            <div style="display: flex; align-items: center; gap: 4px; border: 1px solid var(--border); padding: 5px 8px; border-radius: 0; cursor: help;"
+                data-info="include canvas texture and background color in export">
+                <input type="checkbox" id="inc-bg" checked
+                    style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple);">
+                <label for="inc-bg"
+                    style="font-size: 8px; color: var(--text); cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">Inc.
+                    BG</label>
+            </div>
+            <button id="btn-out-triptych" onclick="saveTriptych()" title="Download Triptych (3 Panels)"
+                data-info="download all 3 panels in a single layout">&#8595;
+                TRIPTYCH</button>
+            <button id="btn-out-dst" onclick="saveDST()" title="Download DST (Embroidery)"
+                data-info="download tajima industrial embroidery file">&#8595; DST</button>
+            <button id="btn-out-plot" onclick="savePlotterSVG()" title="Download SVG for Plotter (Inkscape Layers)"
+                data-info="download svg with plotter-optimized layers">&#8595; PLOT</button>
+            <button id="btn-out-cnc" onclick="saveCNCBlocks()" title="Download SVG for CNC/Woodcut (Mirrored Blocks)"
+                data-info="download mirrored blocks for woodcut/cnc">&#8595; CNC</button>
+            <button id="btn-out-height" onclick="saveHeightmap()" title="Download Grayscale Heightmap"
+                data-info="download grayscale depth map for height modeling">&#8595;
+                HEIGHT</button>
+            <button id="btn-out-zsvg" onclick="saveZSVG()" title="Download Z-Layered SVG"
+                data-info="download svg with depth-layered objects">&#8595;
+                Z-SVG</button>
+        </div>
+    </div>
+
+    <div id="traitbar">
+        <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym"
+                onchange="TRAITS.symmetry=this.value; renderAll()"></select></div>
+
+        <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space"
+                onchange="TRAITS.space=this.value; renderAll()"></select></div>
+        <div class="trait"><span class="trait-label">Pattern</span><select class="trait-select" id="t-motif"
+                onchange="TRAITS.motif=this.value; renderAll()"></select></div>
+        <div class="trait"><span class="trait-label">Chromes</span><select class="trait-select" id="t-chrome"
+                onchange="TRAITS.chromes=this.value; renderAll()"></select></div>
+        <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine"
+                onchange="TRAITS.engine=this.value; renderAll()"></select></div>
+        <div class="trait"><span class="trait-label">Canvas</span><select class="trait-select" id="t-canvas"
+                onchange="TRAITS.canvas=this.value; updateCanvasTexture()"></select></div>
+        <div class="trait" style="border: 1px solid var(--border); padding: 1px 6px; display: flex; align-items: center; gap: 4px; cursor: help;" data-info="fill motifs with solid color instead of outlines">
+            <input type="checkbox" id="t-solid" checked onchange="TRAITS.solid=this.checked; renderAll()" style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple);">
+            <label for="t-solid" style="font-size: 8px; color: var(--text); cursor: pointer; text-transform: uppercase;">Solid</label>
+        </div>
+        <div class="trait" style="border: 1px solid var(--border); padding: 1px 6px; display: flex; align-items: center; gap: 4px; cursor: help;" data-info="show row and column numbers on the grid">
+            <input type="checkbox" id="t-grid-nums" onchange="toggleGridNums(this.checked)" style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple);">
+            <label for="t-grid-nums" style="font-size: 8px; color: var(--text); cursor: pointer; text-transform: uppercase;">Grid Nums</label>
+        </div>
+        <div class="trait" style="border: 1px solid var(--border); padding: 1px 6px; display: flex; align-items: center; gap: 4px; cursor: help;" data-info="invert graph paper colors">
+            <input type="checkbox" id="t-invert-graph" onchange="toggleInvertGraph(this.checked)" style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple);">
+            <label for="t-invert-graph" style="font-size: 8px; color: var(--text); cursor: pointer; text-transform: uppercase;">Invert Paper</label>
+        </div>
+    </div>
+
+    <!-- Always 3 panels ΓÇö quantity is always 3 -->
+    <div id="canvas-wrap" class="panel">
+        <div class="platen-panel" id="panel1">
+            <div class="platen-loader">rendering...</div>
+            <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="platen-panel" id="panel2">
+            <div class="platen-loader">rendering...</div>
+            <svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="platen-panel" id="panel3">
+            <div class="platen-loader">rendering...</div>
+            <svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+    </div>
+
+    <div id="statusbar">
+        <span id="st-info">rendering...</span>
+        <div style="display: flex; align-items: center; gap: 8px; cursor: help;"
+            data-info="toggle automatic pattern rendering cycle">
+            <button id="btn-auto" onclick="toggleAuto()" title="Toggle automatic cycle"></button>
+            <span
+                style="font-size: 8px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; user-select: none;"
+                onclick="toggleAuto()">Auto Cycle</span>
+            <span id="auto-guide" style="font-size: 8px; color: var(--purple); text-transform: uppercase; letter-spacing: 0.05em; display: none; margin-left: 4px;">
+                (Select Randomize or Regenerate to start)
+            </span>
+        </div>
+        <button id="btn-set-seed" onclick="setSeed()" title="Enter a specific seed"
+            style="margin-left: auto; padding: 2px 8px; font-size: 9px;"># Set Seed</button>
+        <div class="anim-controls" id="anim-controls" style="display: none;">
+            <button id="btn-animate" onclick="toggleAnimate()" title="Toggle real-time animation"
+                style="padding: 2px 8px; font-size: 9px;" data-info="GPU-accelerated motif flicker">&#9586; Animate</button>
+            <div class="anim-control-group">
+                <label>SPD</label>
+                <input type="range" class="anim-slider" id="anim-speed" min="1" max="60" value="24" oninput="onAnimSpeed(this.value)">
+                <span class="anim-val" id="anim-speed-val">24</span>
+            </div>
+            <div class="anim-control-group">
+                <label>PROB</label>
+                <input type="range" class="anim-slider" id="anim-prob" min="0" max="100" value="50" oninput="onAnimProb(this.value)">
+                <span class="anim-val" id="anim-prob-val">50</span>
+            </div>
+            <div class="anim-control-group">
+                <label>THR</label>
+                <input type="range" class="anim-slider" id="anim-thresh" min="0" max="100" value="40" oninput="onAnimThresh(this.value)">
+                <span class="anim-val" id="anim-thresh-val">40</span>
+            </div>
+            <button id="btn-record" onclick="toggleRecord()" title="Record animation as video"
+                style="padding: 2px 8px; font-size: 9px;" data-info="capture animation as downloadable video">&#9210; Record</button>
+        </div>
+    </div>
+
+    <div id="modal-overlay" onclick="toggleAbout()">
+        <div id="about-modal" onclick="event.stopPropagation()">
+            <div id="close-modal" onclick="toggleAbout()">├ù</div>
+            <h2>Platen ΓÇö Systems Synthesis</h2>
+            <p>
+                Platen is a high-resolution generative textile system that bridges the gap between deep mathematical
+                search and physical craftsmanship. At its core, the project functions as a study in
+                <strong>Computational
+                    Ethnomathematics</strong>, codifying and evolving the structural logics of ancient textile
+                traditionsΓÇöfrom the staggered weaves of Asante Kente and Navajo rug bands to the resist-dye patterns of
+                Yoruba Adire and the intricate geometric embroidery of the Mordvinian Erzya.
+            </p>
+            <p>
+                The engine utilizes a custom-authored <strong>Deterministic Multi-Pass Simulation</strong> layer. In
+                each
+                generation, the system executes an asynchronous search across hundreds of iterations to locate the
+                aesthetic optimalΓÇöbalancing chaos and density. Every output is resolution-independent, rendered as
+                precision vector paths specifically optimized for industrial physical production.
+            </p>
+            <p>
+                Platen is more than a system; it is a signature. Named for the birth flower of **July**ΓÇöthe authorΓÇÖs
+                own
+                birth monthΓÇöthe Platen represents high spirits, strong bonds of love, and a light-hearted grace. In
+                this
+                digital landscape, a **single Platen** is used to seed the field, replacing a single pixel with a
+                burst
+                of recursive geometry. Each bloom is a mathematical coordinate where code lives within the petals,
+                anchoring the ephemeral logic of the simulation into the structure of a flower.
+            </p>
+            <p>
+                Driven by a specialized <strong>Park-Miller PRNG</strong>, Platen transforms a single integer seed
+                into
+                a unique, unrepeatable coordinate in a vastly complex mathematical landscape. It is art designed for
+                physicality: the system produces machine-ready instructions for robotic pen plotters (SVG) and
+                industrial embroidery systems (DST), anchoring ephemeral digital logic into tangible materiality.
+            </p>
+
+            <div class="tech-specs">
+                <div class="spec-item">
+                    <span class="spec-label">Architecture</span>
+                    <span>Asynchronous Web Worker Compute Layer</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Rendering</span>
+                    <span>Resolution-Independent Vector (SVG / DST)</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Integrity</span>
+                    <span>Deterministic Park-Miller Seed Logic</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Author</span>
+                    <span>Douglxss</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-seed" onclick="toggleSeed()">
+        <div id="seed-modal-content" onclick="event.stopPropagation()">
+            <div id="close-seed-modal" onclick="toggleSeed()">├ù</div>
+            <h2>Set Engine Seed</h2>
+            <p>Enter a specific numerical seed to regenerate an exact coordinate in the landscape:</p>
+            <div class="seed-input-row">
+                <input type="number" id="seed-input" onkeydown="if(event.key === 'Enter') confirmSeed()" />
+                <button id="btn-seed-confirm" onclick="confirmSeed()">Regenerate</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/platen-core.js?v=typewriter"></script>
+    <script src="js/platen-motifs.js"></script>
+    <script src="js/platen-engines.js"></script>
+    <script src="js/platen-animate.js"></script>
+    <script src="js/platen-recorder.js"></script>
+    <script>
+        // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // PLATEN ΓÇö always a triptych
+        // Platen flowers replace pixels. Code lives in the blooms.
+        // by Douglxss
+        // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+        function toggleTheme() {
+            var el = document.documentElement;
+            var btn = document.getElementById('btn-theme');
+            if (el.getAttribute('data-theme') === 'light') {
+                el.removeAttribute('data-theme');
+                btn.textContent = 'ΓÿÇ∩╕Ä';
+            } else {
+                el.setAttribute('data-theme', 'light');
+                btn.textContent = 'Γÿ╛';
+            }
+        }
+
+        function toggleAbout() {
+            var modal = document.getElementById('modal-overlay');
+            modal.classList.toggle('active');
+        }
+
+        function toggleSeed() {
+            var modal = document.getElementById('modal-seed');
+            modal.classList.toggle('active');
+            if (modal.classList.contains('active')) {
+                var input = document.getElementById('seed-input');
+                input.value = RENDER_SEED;
+                setTimeout(function () { input.focus(); input.select(); }, 50);
+            }
+        }
+
+        // ΓöÇΓöÇ Auto-randomizer ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        var _autoTimeout = null;
+        var _autoMode = null; // null until selected
+
+        function toggleAuto() {
+            if (_autoTimeout) {
+                stopAuto();
+            } else {
+                startAuto();
+            }
+        }
+
+        function startAuto() {
+            stopAuto();
+            var btnAuto = document.getElementById('btn-auto');
+            if (btnAuto) btnAuto.classList.add('auto-on');
+            
+            // Mark as active but without a scheduled timer if no mode is chosen yet
+            _autoTimeout = "waiting"; 
+
+            var guide = document.getElementById('auto-guide');
+            if (guide) {
+                if (!_autoMode) {
+                    guide.textContent = "(Select Randomize or Regenerate to start)";
+                    guide.style.display = "inline";
+                } else {
+                    guide.textContent = "(" + (_autoMode === 'regenerate' ? 'Regenerating' : 'Randomizing') + " cycle active)";
+                    guide.style.display = "inline";
+                    
+                    // Schedule next
+                    scheduleAutoTimer();
+                }
+            }
+            updateAutoUI();
+        }
+
+        function scheduleAutoTimer() {
+            if (_autoTimeout && _autoTimeout !== "waiting" && _autoTimeout !== "running") {
+                clearTimeout(_autoTimeout);
+            }
+            if (!_autoMode) return;
+            
+            _autoTimeout = setTimeout(function () {
+                var fn = (_autoMode === 'regenerate') ? regenerate : randomize;
+                fn();
+            }, 30000);
+        }
+
+        function stopAuto() {
+            if (_autoTimeout && _autoTimeout !== "waiting" && _autoTimeout !== "running") {
+                clearTimeout(_autoTimeout);
+            }
+            _autoTimeout = null;
+            var btnAuto = document.getElementById('btn-auto');
+            if (btnAuto) btnAuto.classList.remove('auto-on');
+            
+            var guide = document.getElementById('auto-guide');
+            if (guide) guide.style.display = "none";
+            
+            updateAutoUI();
+        }
+
+        function updateAutoUI() {
+            var btnRand = document.getElementById('btn-randomize');
+            var btnRegen = document.getElementById('btn-regen');
+            if (btnRand) btnRand.classList.toggle('active', !!_autoTimeout && _autoMode === 'randomize');
+            if (btnRegen) btnRegen.classList.toggle('active', !!_autoTimeout && _autoMode === 'regenerate');
+        }
+
+        // ΓöÇΓöÇ Platen flower path (normalized to 20├ù20 viewBox) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // Original SVG coords: x[245.567ΓÇô265.878], y[7639ΓÇô7659]
+        // Normalized: translate(-245.567,-7639) then scale(0.9847)
+        var FLOWER_PATH = (function () {
+            var s = 0.9847, ox = 245.567, oy = 7639.0;
+            function p(x, y) {
+                return ((x - ox) * s).toFixed(3) + "," + ((y - oy) * s).toFixed(3);
+            }
+            return [
+                "M", p(259.133, 7656.050),
+                "C", p(259.660, 7655.155), p(259.967, 7654.115), p(259.967, 7653.000),
+                "C", p(259.967, 7651.327), p(259.287, 7647.777), p(258.191, 7644.670),
+                "C", p(259.337, 7643.563), p(260.430, 7642.688), p(261.207, 7642.350),
+                "C", p(261.473, 7642.234), p(261.788, 7642.380), p(261.866, 7642.661),
+                "C", p(262.514, 7644.964), p(261.414, 7654.113), p(259.133, 7656.050),
+                "M", p(256.773, 7655.862),
+                "C", p(255.277, 7657.329), p(252.940, 7657.341), p(251.414, 7656.005),
+                "C", p(250.577, 7655.271), p(250.036, 7654.203), p(250.036, 7653.000),
+                "C", p(250.036, 7650.015), p(252.092, 7643.144), p(253.646, 7641.366),
+                "C", p(253.835, 7641.150), p(254.178, 7641.147), p(254.368, 7641.363),
+                "C", p(255.920, 7643.132), p(257.981, 7649.957), p(257.981, 7653.000),
+                "C", p(257.981, 7654.122), p(257.516, 7655.135), p(256.773, 7655.862),
+                "M", p(248.559, 7655.385),
+                "C", p(247.006, 7653.703), p(245.623, 7645.135), p(246.307, 7642.664),
+                "C", p(246.385, 7642.382), p(246.702, 7642.234), p(246.968, 7642.352),
+                "C", p(247.721, 7642.684), p(248.763, 7643.528), p(249.882, 7644.600),
+                "C", p(248.902, 7647.350), p(247.366, 7652.612), p(248.559, 7655.385),
+                "M", p(261.801, 7640.198),
+                "C", p(260.588, 7640.198), p(258.989, 7641.233), p(257.392, 7642.672),
+                "C", p(256.431, 7640.561), p(255.265, 7639.000), p(254.008, 7639.000),
+                "C", p(252.763, 7639.000), p(251.607, 7640.530), p(250.651, 7642.612),
+                "C", p(249.414, 7641.506), p(247.062, 7639.641), p(245.567, 7640.358),
+                "C", p(242.596, 7641.782), p(244.510, 7652.585), p(245.924, 7655.577),
+                "C", p(246.944, 7657.735), p(249.077, 7658.998), p(251.064, 7659.000),
+                "L", p(255.918, 7659.000), "L", p(255.918, 7658.992),
+                "C", p(258.784, 7659.054), p(260.883, 7657.563), p(261.823, 7655.577),
+                "C", p(263.317, 7652.416), p(265.878, 7640.198), p(261.801, 7640.198)
+            ].join(" ");
+        })();
+
+        if (typeof MOTIF_PATHS !== 'undefined') {
+            MOTIF_PATHS['platen'] = FLOWER_PATH;
+            MOTIF_PATHS['platen-flower'] = FLOWER_PATH;
+        }
+
+
+        // ΓöÇΓöÇ Traits ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        var TRAITS = {
+            symmetry: 'random',
+            space: 'planar',
+            motif: 'tatreez',
+            chromes: 'random',
+            engine: 'random',
+            canvas: 'black',
+            solid: true,
+            showGridNums: false,
+            invertGraph: false
+        };
+
+        var currentLayout = 'square';
+
+        // Global render seed ΓÇö drives lns pattern generation.
+        // Changes on every Randomize so patterns are genuinely different each time.
+        var RENDER_SEED = Math.floor(Math.random() * 999983) + 1;
+        window._lastFlowers = {}; // Store raw flower data for heightmap/CNC/Z-SVG
+        window.RESOLVED_TRAITS = null; // Store traits resolved during the last render pass
+
+        function setLayout(mode) {
+            currentLayout = mode;
+            document.getElementById('canvas-wrap').className = mode;
+
+            var btnPanel = document.getElementById('btn-panel');
+            var btnBanner = document.getElementById('btn-banner');
+            var btnBannerSq = document.getElementById('btn-banner-sq');
+            var btnGallery = document.getElementById('btn-gallery');
+            var btnSquare = document.getElementById('btn-square');
+            var btnGraphPaper = document.getElementById('btn-graph-paper');
+            var btnGraphPaperSq = document.getElementById('btn-graph-paper-sq');
+            var btnGraphPaperBanner = document.getElementById('btn-graph-paper-banner');
+            var btnGraphPaperSqBanner = document.getElementById('btn-graph-paper-sq-banner');
+
+            if (btnPanel) btnPanel.classList.remove('active');
+            if (btnBanner) btnBanner.classList.remove('active');
+            if (btnBannerSq) btnBannerSq.classList.remove('active');
+            if (btnGallery) btnGallery.classList.remove('active');
+            if (btnSquare) btnSquare.classList.remove('active');
+            if (btnGraphPaper) btnGraphPaper.classList.remove('active');
+            if (btnGraphPaperSq) btnGraphPaperSq.classList.remove('active');
+            if (btnGraphPaperBanner) btnGraphPaperBanner.classList.remove('active');
+            if (btnGraphPaperSqBanner) btnGraphPaperSqBanner.classList.remove('active');
+
+            if (mode === 'panel' && btnPanel) btnPanel.classList.add('active');
+            else if (mode === 'banner' && btnBanner) btnBanner.classList.add('active');
+            else if (mode === 'banner_sq' && btnBannerSq) btnBannerSq.classList.add('active');
+            else if (mode === 'gallery' && btnGallery) btnGallery.classList.add('active');
+            else if (mode === 'square' && btnSquare) btnSquare.classList.add('active');
+            else if (mode === 'graph_paper' && btnGraphPaper) btnGraphPaper.classList.add('active');
+            else if (mode === 'graph_paper_sq' && btnGraphPaperSq) btnGraphPaperSq.classList.add('active');
+            else if (mode === 'graph_paper_banner' && btnGraphPaperBanner) btnGraphPaperBanner.classList.add('active');
+            else if (mode === 'graph_paper_sq_banner' && btnGraphPaperSqBanner) btnGraphPaperSqBanner.classList.add('active');
+            // Auto-render on layout change
+            renderAll();
+        }
+
+        function randomize() {
+            _autoMode = 'randomize';
+            var guide = document.getElementById('auto-guide');
+            if (_autoTimeout) {
+                if (_autoTimeout !== "running" && _autoTimeout !== "waiting") clearTimeout(_autoTimeout);
+                _autoTimeout = "running"; // Temporarily mark as running while rendering
+                if (guide) {
+                    guide.textContent = "(Randomizing cycle active)";
+                    guide.style.display = "inline";
+                }
+                updateAutoUI();
+            }
+
+            RENDER_SEED = Math.floor(Math.random() * 999983) + 1;
+            // Skip 'random' (index 0) for concrete random selection
+            TRAITS.symmetry = SYMMETRY_OPTS[Math.floor(Math.random() * (SYMMETRY_OPTS.length - 1)) + 1];
+            TRAITS.space = SPACE_OPTS[Math.floor(Math.random() * (SPACE_OPTS.length - 1)) + 1];
+            TRAITS.motif = MOTIF_OPTS[Math.floor(Math.random() * (MOTIF_OPTS.length - 1)) + 1];
+            TRAITS.chromes = CHROME_OPTS[Math.floor(Math.random() * (CHROME_OPTS.length - 1)) + 1];
+            TRAITS.engine = ENGINE_OPTS[Math.floor(Math.random() * (ENGINE_OPTS.length - 1)) + 1];
+            TRAITS.solid = Math.random() < 0.3; // 30% chance of solid motifs on random
+
+            console.log('[Platen] Randomized:', RENDER_SEED,
+                '| sym:', TRAITS.symmetry,
+                '| space:', TRAITS.space, '| motif:', TRAITS.motif, '| chrome:', TRAITS.chromes,
+                '| engine:', TRAITS.engine);
+
+            updateTraitBar(); // Ensure dropdowns match the new randomized traits
+            renderAll();
+        }
+
+        function regenerate() {
+            _autoMode = 'regenerate';
+            var guide = document.getElementById('auto-guide');
+            if (_autoTimeout) {
+                if (_autoTimeout !== "running" && _autoTimeout !== "waiting") clearTimeout(_autoTimeout);
+                _autoTimeout = "running";
+                if (guide) {
+                    guide.textContent = "(Regenerating cycle active)";
+                    guide.style.display = "inline";
+                }
+                updateAutoUI();
+            }
+
+            RENDER_SEED = Math.floor(Math.random() * 999983) + 1;
+            renderAll();
+        }
+
+        function setSeed() {
+            toggleSeed();
+        }
+
+        function confirmSeed() {
+            var inputRaw = document.getElementById('seed-input').value;
+            var newSeed = parseInt(inputRaw, 10);
+            if (!isNaN(newSeed)) {
+                RENDER_SEED = newSeed;
+                toggleSeed();
+                renderAll();
+            } else {
+                alert("Invalid seed. Please enter a number.");
+            }
+        }
+
+
+        function populateSelect(id, opts, val) {
+            var sel = document.getElementById(id);
+            if (sel.options.length === 0) {
+                for (var i = 0; i < opts.length; i++) {
+                    var o = document.createElement('option');
+                    var key = opts[i];
+                    var desc = "";
+                    if (id === 't-chrome' && CHROME_DESCS[key] && key !== 'random') {
+                        desc = " [" + CHROME_DESCS[key] + "]";
+                    } else if (id === 't-engine' && ENGINE_DESCS[key] && key !== 'random') {
+                        desc = " [" + ENGINE_DESCS[key] + "]";
+                    } else if (id === 't-motif' && MOTIF_DESCS[key] && key !== 'random') {
+                        desc = " [" + MOTIF_DESCS[key] + "]";
+                    }
+                    o.value = key;
+                    o.textContent = key + desc;
+                    sel.appendChild(o);
+                }
+            }
+            sel.value = val;
+        }
+
+        function updateTraitBar() {
+            populateSelect('t-sym', SYMMETRY_OPTS, TRAITS.symmetry);
+            populateSelect('t-space', SPACE_OPTS, TRAITS.space);
+            populateSelect('t-motif', MOTIF_OPTS, TRAITS.motif);
+            populateSelect('t-chrome', CHROME_OPTS, TRAITS.chromes);
+            populateSelect('t-engine', ENGINE_OPTS, TRAITS.engine);
+            populateSelect('t-canvas', CANVAS_OPTS, TRAITS.canvas);
+            
+            var canvasSelect = document.getElementById('t-canvas');
+            if (canvasSelect) {
+                var disableGraphPaper = ['panel', 'banner', 'square', 'banner_sq', 'grid_32_40', 'banner_32_40'].includes(currentLayout);
+                for (var i = 0; i < canvasSelect.options.length; i++) {
+                    if (canvasSelect.options[i].value === 'graph_paper') {
+                        canvasSelect.options[i].disabled = disableGraphPaper;
+                        if (disableGraphPaper && TRAITS.canvas === 'graph_paper') {
+                            TRAITS.canvas = 'white';
+                            canvasSelect.value = 'white';
+                        }
+                    }
+                }
+            }
+
+            var cbSolid = document.getElementById('t-solid');
+            if (cbSolid) cbSolid.checked = !!TRAITS.solid;
+            var cbGridNums = document.getElementById('t-grid-nums');
+            if (cbGridNums) {
+                cbGridNums.checked = !!TRAITS.showGridNums;
+                // Sync CSS state
+                toggleGridNums(TRAITS.showGridNums, true);
+            }
+            var cbInvertGraph = document.getElementById('t-invert-graph');
+            if (cbInvertGraph) cbInvertGraph.checked = !!TRAITS.invertGraph;
+        }
+
+        function toggleInvertGraph(invert) {
+            TRAITS.invertGraph = invert;
+            updateCanvasTexture();
+        }
+
+        function toggleGridNums(show, skipRender) {
+            TRAITS.showGridNums = show;
+            var wrap = document.getElementById('canvas-wrap');
+            if (!wrap) return;
+            if (show) {
+                wrap.classList.remove('hide-grid-nums');
+            } else {
+                wrap.classList.add('hide-grid-nums');
+            }
+        }
+
+        function activePanels() {
+            if (currentLayout === 'banner' || currentLayout === 'banner_sq' || currentLayout === 'banner_32_40' || currentLayout === 'banner_39_51' || currentLayout === 'banner_39_39' || currentLayout === 'banner_us_letter' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner') return [1, 2, 3];
+            return [1];
+        }
+
+        function renderAll() {
+            // Abort any currently running background renders to prevent ghost flashes and timer overlaps
+            initWorkers();
+
+            updateTraitBar();
+            // updateCanvasTexture(); // Wait for trait resolution for WYSIWYG
+            document.getElementById('st-info').textContent = 'rendering...';
+            setTimeout(function () {
+                var t0 = performance.now();
+                console.group('[Platen] renderAll ΓÇö seed ' + RENDER_SEED);
+                var infos = [];
+                var panels = activePanels();
+                var pi = 0;
+
+                function renderNext() {
+                    if (pi >= panels.length) {
+                        var totalTime = (performance.now() - t0).toFixed(0);
+                        console.log('Total render time: ' + totalTime + 'ms');
+                        console.groupEnd();
+
+                        var traitStr = "sym: " + runTraits.symmetry + " ┬╖ space: " + runTraits.space + " ┬╖ motif: " + runTraits.motif + " ┬╖ chrome: " + runTraits.chromes + " ┬╖ engine: " + runTraits.engine + " ┬╖ canvas: " + runTraits.canvas;
+                        var prefix = infos.length > 0 ? infos.join('  ┬╖  ') : 'ready (' + totalTime + 'ms)';
+                        document.getElementById('st-info').textContent = prefix + '  ┬╖  #' + RENDER_SEED + '  |  ' + traitStr;
+
+                        // Wait 30 seconds after rendering before triggering next cycle
+                        if (_autoTimeout) {
+                            scheduleAutoTimer();
+                        }
+
+                        // Refresh animation textures if animation is active
+                        if (typeof PlatenAnimate !== 'undefined') {
+                            PlatenAnimate.onRenderComplete();
+                        }
+
+                        return;
+                    }
+
+                    var id = panels[pi];
+                    // Render one panel asynchronously
+                    var t1 = performance.now();
+                    renderPlaten('s' + id, id, runTraits).then(function (r) {
+                        var dt = (performance.now() - t1).toFixed(0);
+                        console.log('  v' + id + ': ' + r.flowers + ' flowers, ' + r.attempts + ' att, ' + dt + 'ms');
+                        infos.push('v' + id + ': ' + (r.flowers||0) + ' flowers');
+                        
+                        // Update status bar incrementally
+                        var traitStr = "sym: " + runTraits.symmetry + " ┬╖ space: " + runTraits.space + " ┬╖ motif: " + runTraits.motif + " ┬╖ chrome: " + runTraits.chromes + " ┬╖ engine: " + runTraits.engine + " ┬╖ canvas: " + runTraits.canvas;
+                        document.getElementById('st-info').textContent = infos.join('  ┬╖  ') + '  ┬╖  #' + RENDER_SEED + '  |  ' + traitStr;
+
+                        pi++;
+                        // Yield to main thread
+                        setTimeout(renderNext, 20);
+                    }).catch(function (e) {
+                        console.error('Error rendering panel ' + id, e);
+                        pi++;
+                        setTimeout(renderNext, 20);
+                    });
+                }
+
+                // Resolve 'random' traits to concrete values for this render pass
+                var runTraits = Object.assign({}, TRAITS);
+                if (runTraits.symmetry === 'random') runTraits.symmetry = SYMMETRY_OPTS[Math.floor(Math.random() * (SYMMETRY_OPTS.length - 1)) + 1];
+                if (runTraits.space === 'random') runTraits.space = SPACE_OPTS[Math.floor(Math.random() * (SPACE_OPTS.length - 1)) + 1];
+                if (runTraits.motif === 'random') runTraits.motif = MOTIF_OPTS[Math.floor(Math.random() * (MOTIF_OPTS.length - 1)) + 1];
+                
+                // Force a typewriter chrome for typewriter motif if none is selected
+                if (runTraits.motif === 'typewriter') {
+                    if (runTraits.chromes !== 'typewriter_ribbon' && 
+                        runTraits.chromes !== 'typewriter_black' && 
+                        runTraits.chromes !== 'typewriter_black_red') {
+                        runTraits.chromes = 'typewriter_ribbon'; // default to typewriter_ribbon
+                    }
+                } else if (runTraits.motif === 'stars_and_stripes') {
+                    if (runTraits.chromes === 'random') {
+                        runTraits.chromes = 'stars_and_stripes';
+                    }
+                } else if (runTraits.chromes === 'random') {
+                    runTraits.chromes = CHROME_OPTS[Math.floor(Math.random() * (CHROME_OPTS.length - 1)) + 1];
+                }
+                if (runTraits.engine === 'random') runTraits.engine = ENGINE_OPTS[Math.floor(Math.random() * (ENGINE_OPTS.length - 1)) + 1];
+
+                RESOLVED_TRAITS = runTraits;
+
+                // Ensure background matches resolved traits immediately
+                updateCanvasTexture();
+
+                console.log('[Platen] Render traits resolved:', runTraits);
+
+                // Start chain
+                renderNext();
+
+                // Enable UI elements now that we have rendered
+                document.getElementById('btn-panel').disabled = false;
+                document.getElementById('btn-banner').disabled = false;
+                document.getElementById('btn-banner-sq').disabled = false;
+                document.getElementById('btn-square').disabled = false;
+                document.getElementById('btn-grid-39-51').disabled = false;
+                document.getElementById('btn-banner-39-51').disabled = false;
+                document.getElementById('btn-grid-us-letter').disabled = false;
+                document.getElementById('btn-banner-us-letter').disabled = false;
+                document.getElementById('btn-grid-39-39').disabled = false;
+                document.getElementById('btn-banner-39-39').disabled = false;
+                document.getElementById('btn-out-svg').disabled = false;
+                document.getElementById('btn-out-png').disabled = false;
+                document.getElementById('btn-out-triptych').disabled = false;
+                document.getElementById('btn-out-dst').disabled = false;
+                document.getElementById('btn-out-plot').disabled = false;
+                document.getElementById('btn-out-cnc').disabled = false;
+                document.getElementById('btn-out-height').disabled = false;
+                document.getElementById('btn-out-zsvg').disabled = false;
+
+                document.getElementById('t-sym').disabled = false;
+                document.getElementById('t-space').disabled = false;
+                document.getElementById('t-motif').disabled = false;
+                document.getElementById('t-chrome').disabled = false;
+                document.getElementById('t-engine').disabled = false;
+                document.getElementById('t-canvas').disabled = false;
+            }, 10);
+        }
+
+
+        // ΓöÇΓöÇ PRE-WARMED WORKER POOL ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        var WorkerPool = [];
+        var ActiveWorkers = []; // Track workers currently running
+        var MAX_WORKERS = 3; // Maximum active panels
+        var _renderGeneration = 0; // Increment to track generation requests
+
+        function initWorkers() {
+            // Kill all running workers to completely cancel any pending background tasks
+            ActiveWorkers.forEach(function (w) { w.terminate(); });
+            WorkerPool.forEach(function (w) { w.terminate(); });
+            ActiveWorkers = [];
+            WorkerPool = [];
+
+            for (var i = 0; i < MAX_WORKERS; i++) {
+                WorkerPool.push(new Worker('js/platen-worker.js?t=' + Date.now()));
+            }
+            console.log('[Platen] Worker pool re-initialized. Active processes aborted.');
+        }
+
+        // Initialize workers as soon as the script parses
+        initWorkers();
+
+        // ΓöÇΓöÇ PLATEN ENGINE (Worker Version) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // ΓöÇΓöÇ Layout Sizing Helper ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        function getLayoutSizes(layout) {
+            var w = 78;
+            var h = 148;
+            var sizeX = 16;
+            var sizeY = 16;
+            var rSize = 14;
+
+            if (layout === 'gallery') {
+                w = 148; h = 83;
+            } else if (layout === 'square' || layout === 'banner_sq') {
+                w = 58; h = 58;
+            } else if (layout === 'grid_32_40' || layout === 'banner_32_40') {
+                w = 32; h = 40;
+            } else if (layout === 'grid_39_51' || layout === 'banner_39_51') {
+                w = 39; h = 51;
+            } else if (layout === 'grid_us_letter' || layout === 'banner_us_letter') {
+                // Physically accurate Pica (10 CPI, 6 LPI) US Letter Layout
+                // Total cells (including 8 margins): w + 8 = 85 cells horizontally (8.5 inches at 10 CPI)
+                // Total cells (including 8 margins): h + 8 = 66 cells vertically (11.0 inches at 6 LPI)
+                w = 77;           // 7.7 inches printable width
+                h = 58;           // 9.67 inches printable height
+                sizeX = 16;       // 10 CPI (0.1" per character)
+                sizeY = 26.6667;  // 6 LPI (0.1667" per line)
+            } else if (layout === 'grid_39_39' || layout === 'banner_39_39') {
+                w = 39; h = 39;
+            } else if (layout === 'graph_paper' || layout === 'graph_paper_sq' || layout === 'graph_paper_banner' || layout === 'graph_paper_sq_banner') {
+                if (layout === 'graph_paper' || layout === 'graph_paper_banner') {
+                    w = 41;
+                    h = 54;
+                } else {
+                    w = 39;
+                    h = 39;
+                }
+                sizeX = 40.4146;
+                sizeY = 39.7407;
+                rSize = 36; // Increased from default 14 to properly fill the graph paper squares
+                TRAITS.canvas = 'graph_paper';
+                setTimeout(function() {
+                    updateTraitBar();
+                    updateCanvasTexture();
+                }, 0);
+            }
+
+            return { w: w, h: h, sizeX: sizeX, sizeY: sizeY, rSize: rSize };
+        }
+
+        function getTypewriterHeaderLines(traits, seed, w) {
+            function shortenEngineName(name) {
+                name = String(name || '').toLowerCase().trim();
+                if (!name) return "MASTR";
+                var dict = {
+                    'circuit': 'CRCIT', 'mastor': 'MASTR', 'adama': 'ADAMA', 'adire': 'ADIRE',
+                    'argyle': 'ARGYL', 'arraiolos': 'ARRLS', 'art_deco': 'ARTDC', 'asanoha': 'ASNHA',
+                    'axonometric': 'AXNMT', 'azulejo': 'AZLJO', 'blueprint': 'BLPRN', 'blueprint_cyan': 'BLCYN',
+                    'bogolan': 'BOGLN', 'bricolage': 'BRCLG', 'brutalist': 'BRUTL', 'castelo_branco': 'CSTLO',
+                    'cherokee': 'CHRKE', 'chiefs': 'CHIEF', 'chipaz': 'CHIPZ', 'collage': 'COLLG',
+                    'concrete': 'CNCRT', 'cubist': 'CUBST', 'current': 'CRRNT', 'cyber_mesh': 'CYBMS',
+                    'cypress_hills': 'CYHIL', 'dazzler': 'DAZLR', 'flow': 'FLOWM', 'framed_vista': 'FRMVS',
+                    'fret_bands': 'FRTBD', 'glitch': 'GLTCH', 'interlace': 'INTLC', 'kagome': 'KAGOM',
+                    'kanzemizu': 'KNZMZ', 'kente': 'KENTE', 'kepe': 'KEPEM', 'kikkou': 'KIKKO',
+                    'kishtima': 'KSHTM', 'kolya': 'KOLYA', 'kshtir': 'KSHTR', 'kuba': 'KUBAM',
+                    'kudo': 'KUDOM', 'malevich': 'MALVC', 'narmuny': 'NRMNY', 'navajo': 'NAVJO',
+                    'optical_box': 'OPTBX', 'orak': 'ORAKM', 'pakshats': 'PKSHT', 'panks': 'PANKS',
+                    'panoramic_dunes': 'PNDUN', 'pre_columbian': 'PRCLM', 'pulay': 'PULAY',
+                    'river_flow': 'RIVFL', 'rolling_hills': 'RLHIL', 'seigaiha': 'SEIGH',
+                    'serape_net': 'SRPNT', 'sermat': 'SRMAT', 'sermat-kudo': 'SRMKD', 'shippo': 'SHIPO',
+                    'shiprock': 'SHPRK', 'sierra_sunset': 'SRSUN', 'spider_cross': 'SPDRC', 'stolz': 'STOLZ',
+                    'structural': 'STRCT', 'tangents': 'TNGNT', 'tol': 'TOLM', 'ved': 'VEDM',
+                    'verena': 'VERNA', 'viana': 'VIANA', 'virma': 'VIRMA', 'wari': 'WARIM',
+                    'woodcut': 'WDCDT', 'yagasuri': 'YGSRI', 'yoshiwara': 'YSHWR'
+                };
+                if (dict[name]) return dict[name];
+                var upper = name.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                if (upper.length <= 5) return upper.padEnd(5, 'M');
+                var candidate = upper[0] + upper.substring(1).replace(/[AEIOU]/g, '');
+                return candidate.length >= 5 ? candidate.substring(0, 5) : upper.substring(0, 5);
+            }
+
+            function shortenSymmetryName(name) {
+                name = String(name || '').toLowerCase().trim();
+                if (!name) return "NONE";
+                var dict = {
+                    'none': 'NONE', 'both': 'BOTH', 'diagonal': 'DIAGN', 'glide': 'GLIDE',
+                    'horizontal': 'HORIZ', 'kaleidoscope': 'KLIDR', 'quad': 'QUADR',
+                    'radial': 'RADIL', 'rotational': 'ROTAT', 'vertical': 'VERTC'
+                };
+                if (dict[name]) return dict[name];
+                var upper = name.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                if (upper.length <= 5) return upper.padEnd(5, 'M');
+                var candidate = upper[0] + upper.substring(1).replace(/[AEIOU]/g, '');
+                return candidate.length >= 5 ? candidate.substring(0, 5) : upper.substring(0, 5);
+            }
+
+            var d = new Date();
+            var year = d.getFullYear();
+            var month = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            var hour = String(d.getHours()).padStart(2, '0');
+            var dateHourStamp = year + '.' + month + '.' + day + ' \\\\ ' + hour + ':00';
+
+            var engineName = shortenEngineName(traits.engine);
+            var symName = shortenSymmetryName(traits.symmetry);
+
+            // Resolve chrome name and shorten appropriately
+            var chromeRaw = traits.chromes || 'typewriter_ribbon';
+            var chromeName = "RIBBON";
+            if (chromeRaw === 'typewriter_black') chromeName = "BLACK";
+            else if (chromeRaw === 'typewriter_black_red') chromeName = "BLK/RED";
+            else if (!chromeRaw.startsWith('typewriter_')) {
+                chromeName = String(chromeRaw).toUpperCase().substring(0, 10);
+            }
+
+            // 1. Title Line (PLATEN GENERATIVE ART  ┬╖  BY DLGXSS  ┬╖  SEED #seed)
+            var title = "";
+            var fullTitle = "PLATEN GENERATIVE ART  ┬╖  BY DLGXSS  ┬╖  SEED #" + seed;
+            var medTitle = "PLATEN ART  ┬╖  BY DLGXSS  ┬╖  SEED #" + seed;
+            var compTitle = "PLATEN  ┬╖  DLGXSS  ┬╖  #" + seed;
+
+            if (w >= fullTitle.length) {
+                // Dynamically pad the title to span exactly from column 1 to column w
+                var neededSpaces = w - fullTitle.length;
+                if (neededSpaces >= 4) {
+                    var space1 = Math.floor(neededSpaces / 2);
+                    var space2 = neededSpaces - space1;
+                    title = "PLATEN GENERATIVE ART" + " ".repeat(space1) + "┬╖  BY DLGXSS  ┬╖" + " ".repeat(space2) + "SEED #" + seed;
+                } else {
+                    title = fullTitle;
+                }
+            } else if (w >= medTitle.length) {
+                title = medTitle;
+            } else {
+                title = compTitle.substring(0, w);
+            }
+
+            // 2. Typewriter Halftone Impact Legend (Renamed columns with exact original character spacing)
+            var c1 = "LEVEL 1      GLYPH  .   DENSITY 0.20    TO 0.50";
+            var c2 = "LEVEL 2      GLYPH  X   DENSITY 0.50    TO 0.80";
+            var c3 = "LEVEL 3      GLYPH  #   DENSITY 0.80    TO 1.00";
+
+            if (w < 44) {
+                c1 = "LEVEL 1  GLYPH .  DENSITY 0.20  TO 0.50";
+                c2 = "LEVEL 2  GLYPH X  DENSITY 0.50  TO 0.80";
+                c3 = "LEVEL 3  GLYPH #  DENSITY 0.80  TO 1.00";
+            }
+            if (w < 38) {
+                c1 = "L1   GLYPH .   DEN 0.20 - 0.50";
+                c2 = "L2   GLYPH X   DEN 0.50 - 0.80";
+                c3 = "L3   GLYPH #   DEN 0.80 - 1.00";
+            }
+            c1 = c1.substring(0, w);
+            c2 = c2.substring(0, w);
+            c3 = c3.substring(0, w);
+
+            // 3. Info Line (with Chrome / Ink Parameter)
+            var p1 = "DATE & HOUR: " + dateHourStamp;
+            var p2 = "ENGINE: " + engineName;
+            var p3 = "SYMMETRY: " + symName;
+            var p4 = "INK: " + chromeName;
+
+            var fullLen = p1.length + p2.length + p3.length + p4.length + 9; // with 3 spacers "  ┬╖  "
+            if (w < fullLen) {
+                p1 = "DATE: " + dateHourStamp;
+                p2 = "ENG: " + engineName;
+                p3 = "SYM: " + symName;
+                p4 = "INK: " + chromeName;
+            }
+
+            var totalPartsLen = p1.length + p2.length + p3.length + p4.length;
+            var minSpacersLen = 9; // three spacers " ┬╖ " is 9 chars
+            var neededSpacesInfo = w - totalPartsLen;
+
+            var infoLine = "";
+            if (neededSpacesInfo >= minSpacersLen) {
+                var remainingSpaces = neededSpacesInfo - 3; // Subtract the three "┬╖" characters
+                var space1 = Math.floor(remainingSpaces / 6); // 6 space sections: [p1] s1 ┬╖ s2 [p2] s3 ┬╖ s4 [p3] s5 ┬╖ s6 [p4]
+                var spaceSum = space1 * 6;
+                var extra = remainingSpaces - spaceSum;
+                
+                var padL1 = " ".repeat(space1 + (extra > 0 ? 1 : 0));
+                var padR1 = " ".repeat(space1 + (extra > 1 ? 1 : 0));
+                var padL2 = " ".repeat(space1 + (extra > 2 ? 1 : 0));
+                var padR2 = " ".repeat(space1 + (extra > 3 ? 1 : 0));
+                var padL3 = " ".repeat(space1 + (extra > 4 ? 1 : 0));
+                var padR3 = " ".repeat(space1);
+                
+                infoLine = p1 + padL1 + "┬╖" + padR1 + p2 + padL2 + "┬╖" + padR2 + p3 + padL3 + "┬╖" + padR3 + p4;
+            } else {
+                infoLine = (p1 + " ┬╖ " + p2 + " ┬╖ " + p3 + " ┬╖ " + p4).substring(0, w);
+            }
+
+            return [
+                "",
+                title,
+                "",
+                c1,
+                c2,
+                c3,
+                "",
+                infoLine
+            ];
+        }
+
+        // ΓöÇΓöÇ PLATEN ENGINE (Worker Version) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        function renderPlaten(svgId, id, traits, expectedGen) {
+            return new Promise(function (resolve, reject) {
+                var svgNS = "http://www.w3.org/2000/svg";
+                var dc = document;
+                var svg = dc.getElementById(svgId);
+                if (!svg) return resolve({ flowers: 0 });
+
+                id = Math.min(Math.max(id | 0, 1), 3);
+                var panel = dc.getElementById('panel' + id);
+                // Delayed loader to prevent flicker for fast renders
+                var loadTimeout = setTimeout(function () {
+                    if (panel) panel.classList.add('loading');
+                }, 200);
+
+                var sizes = getLayoutSizes(currentLayout);
+                if (id !== 1 && currentLayout !== 'banner' && currentLayout !== 'banner_sq' && currentLayout !== 'banner_32_40' && currentLayout !== 'banner_39_51' && currentLayout !== 'banner_us_letter' && currentLayout !== 'banner_39_39' && currentLayout !== 'graph_paper_banner' && currentLayout !== 'graph_paper_sq_banner') {
+                    sizes = getLayoutSizes('panel');
+                }
+
+                var w = sizes.w;
+                var h = sizes.h;
+                var sizeX = sizes.sizeX;
+                var sizeY = sizes.sizeY;
+                var rSize = sizes.rSize;
+
+                var margin = 0;
+                var w_gen = w - 2 * margin;
+                var h_gen = h - 2 * margin - (traits.motif === 'typewriter' ? 8 : 0);
+
+                // Clear the old SVG immediately to show the blank canvas during generation
+                while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+                // We will build a new DocumentFragment to hold the new elements,
+                // and swap it out once the worker completes.
+
+                var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
+                var svgW = (w + 8) * sizeX;
+                var svgH = (h + 8) * sizeY;
+
+                if (isGraphPaper) {
+                    svgW = 1696;
+                    svgH = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner') ? 1707.08 : 2192;
+                }
+
+                var frag = dc.createDocumentFragment();
+
+                var bg = dc.createElementNS(svgNS, "rect");
+                bg.setAttribute("width", svgW); bg.setAttribute("height", svgH);
+                bg.setAttribute("fill", "transparent");
+                frag.appendChild(bg);
+
+                var gEl = dc.createElementNS(svgNS, "g");
+                frag.appendChild(gEl);
+
+                // Get an available worker from the pool, or spawn a temporary one if pool is empty
+                var worker = WorkerPool.pop() || new Worker('js/platen-worker.js?t=' + Date.now());
+                ActiveWorkers.push(worker); // Track active worker
+
+                worker.onmessage = function (e) {
+                    var awIdx = ActiveWorkers.indexOf(worker);
+                    if (awIdx > -1) ActiveWorkers.splice(awIdx, 1);
+
+                    clearTimeout(loadTimeout);
+                    if (panel) panel.classList.remove('loading');
+                    var data = e.data;
+                    var flowers = data.flowers; // Array of {x, y, c, flip}
+
+                    // Draw flowers using returned data into the DocumentFragment first
+                    for (var i = 0; i < flowers.length; i++) {
+                        var f = flowers[i];
+                        var px = (f.x + 4 + margin) * sizeX;
+                        var py = (f.y + 4 + margin + (traits.motif === 'typewriter' ? 8 : 0)) * sizeY;
+                        
+                        var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
+                        if (isGraphPaper) {
+                            var offX = isGraphPaperSq ? 1 : 0;
+                            var offY = isGraphPaperSq ? 1 : 0;
+                            px = 9 + (f.x + offX) * sizeX;
+                            py = 38 + (f.y + offY) * sizeY;
+                        }
+
+                        var sc = rSize / 20;
+
+                        // Support Typewriter Halftone (Density Shading)
+                        var motifPath = MOTIF_PATHS[traits.motif];
+                        if (traits.motif === 'typewriter') {
+                            if (f.wt < 0.2) {
+                                // Skip low density cells entirely
+                                continue;
+                            } else if (f.wt >= 0.2 && f.wt < 0.5) {
+                                motifPath = MOTIF_PATHS['typewriter_dot'];
+                            } else if (f.wt >= 0.5 && f.wt < 0.8) {
+                                motifPath = MOTIF_PATHS['typewriter_x'];
+                            } else {
+                                motifPath = MOTIF_PATHS['typewriter_hash'];
+                            }
+                        } else if (traits.motif === 'stars_and_stripes') {
+                            if (f.c.toUpperCase() === '#002868' || f.c.toUpperCase() === '#FFFFFF') {
+                                motifPath = MOTIF_PATHS['star'];
+                            } else {
+                                motifPath = MOTIF_PATHS['stripes'];
+                            }
+                        }
+
+                        var path = dc.createElementNS(svgNS, "path");
+                        var scX = sc, scY = sc;
+                        var tx = px + (sizeX - rSize) / 2;
+                        var ty = py + (sizeY - rSize) / 2;
+                        if (isGraphPaper && traits.motif === 'stars_and_stripes') {
+                            scX = sizeX / 20;
+                            scY = sizeY / 20;
+                            tx = px;
+                            ty = py;
+                        }
+                        var xform = "translate(" + tx + "," + ty + ") scale(" + scX + "," + scY + ")";
+                        if (f.flip) xform += " rotate(180,10,10)";
+                        if (f.rot) xform += " rotate(" + f.rot + ",10,10)";
+                        path.setAttribute("transform", xform);
+                        path.setAttribute("d", motifPath);
+                        path.setAttribute("fill", f.c);
+                        if (traits.motif === 'ichthus') {
+                            if (traits.solid) {
+                                path.setAttribute("stroke", "none");
+                            } else {
+                                path.setAttribute("fill", "none");
+                                path.setAttribute("stroke", f.c);
+                                path.setAttribute("stroke-width", "2.4");
+                            }
+                        }
+                        if (traits.motif === 'quatrefoil' || traits.motif === 'tatreez' || traits.motif === 'typewriter' || traits.motif === 'typewriter_hash' || traits.motif === 'stars_and_stripes') path.setAttribute("fill-rule", "evenodd");
+                        gEl.appendChild(path);
+                    }
+
+                    // Add typewriter printout header metadata at the top of the grid
+                    if (traits.motif === 'typewriter') {
+                        var headerLines = getTypewriterHeaderLines(traits, RENDER_SEED, w);
+                        var textCol = traits.chromes === 'typewriter_black_red' ? '#cc0000' : 'var(--text)'; // Use red ink for headers on red/black chrome!
+                        if (traits.chromes === 'typewriter_black') textCol = '#000000'; // Pure black ink for black chrome
+                        else if (traits.chromes === 'typewriter_ribbon') textCol = '#1a1a1a'; // Dark typewriter ink
+
+                        var headerG = dc.createElementNS(svgNS, "g");
+                        headerG.setAttribute("class", "typewriter-header");
+                        for (var row = 0; row < headerLines.length; row++) {
+                            var lineText = headerLines[row];
+                            if (!lineText) continue;
+                            // Left alignment to column 1 of the grid
+                            var startCol = 0;
+                            for (var col = 0; col < lineText.length; col++) {
+                                var char = lineText[col];
+                                if (char === " ") continue;
+                                var charX = ((startCol + col + 4) * sizeX + sizeX / 2);
+                                var charY = ((row - 1) * sizeY + sizeY / 2);
+                                
+                                if (isGraphPaper) {
+                                    charX = 9 + (startCol + col) * sizeX + sizeX / 2;
+                                    charY = 38 + (row - 1) * sizeY + sizeY / 2;
+                                }
+
+                                var textEl = dc.createElementNS(svgNS, "text");
+                                textEl.setAttribute("x", charX);
+                                textEl.setAttribute("y", charY);
+                                textEl.setAttribute("fill", textCol);
+                                textEl.setAttribute("font-size", "11pt");
+                                textEl.setAttribute("font-family", "Courier, 'Courier New', monospace");
+                                textEl.setAttribute("font-weight", "bold");
+                                textEl.setAttribute("text-anchor", "middle");
+                                textEl.setAttribute("dominant-baseline", "central");
+                                textEl.textContent = char;
+                                headerG.appendChild(textEl);
+                            }
+                        }
+                        frag.appendChild(headerG);
+                    }
+
+                    // Add grid reference numbers for manual rendering (Always generated, toggled via CSS)
+                    var gridNumsG = dc.createElementNS(svgNS, "g");
+                    gridNumsG.setAttribute("class", "grid-numbers");
+                    for (var i = 1; i <= w; i++) {
+                        var textX = dc.createElementNS(svgNS, "text");
+                        var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
+                        var offX = isGraphPaperSq ? 1 : 0;
+                        var offY = isGraphPaperSq ? 1 : 0;
+                        var tx = isGraphPaper ? 9 + (i - 1 + offX) * sizeX + sizeX / 2 : ((i - 1 + 4) * sizeX + sizeX / 2);
+                        var ty = isGraphPaper ? 38 + (h + offY) * sizeY + sizeY / 2 : ((h + 4) * sizeY + sizeY / 2);
+                        textX.setAttribute("x", tx);
+                        textX.setAttribute("y", ty);
+                        textX.setAttribute("fill", "var(--text)");
+                        textX.setAttribute("font-size", "10px");
+                        textX.setAttribute("font-family", "'JetBrains Mono', monospace");
+                        textX.setAttribute("text-anchor", "middle");
+                        textX.setAttribute("dominant-baseline", "central"); // perfectly center vertically
+                        textX.textContent = i;
+                        gridNumsG.appendChild(textX);
+                    }
+                    var maxNumberRow = traits.motif === 'typewriter' ? h_gen : h;
+                    for (var j = 1; j <= maxNumberRow; j++) {
+                        var textY = dc.createElementNS(svgNS, "text");
+                        var visualRow = j + (traits.motif === 'typewriter' ? 8 : 0);
+                        var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
+                        var offX = isGraphPaperSq ? 1 : 0;
+                        var offY = isGraphPaperSq ? 1 : 0;
+                        var tx2 = isGraphPaper ? 9 - sizeX / 2 : ((4 - 0.5) * sizeX);
+                        var ty2 = isGraphPaper ? 38 + (visualRow - 1 + offY) * sizeY + sizeY / 2 : ((visualRow - 1 + 4) * sizeY + sizeY / 2);
+                        textY.setAttribute("x", tx2);
+                        textY.setAttribute("y", ty2);
+                        textY.setAttribute("fill", "var(--text)");
+                        textY.setAttribute("font-size", "10px");
+                        textY.setAttribute("font-family", "'JetBrains Mono', monospace");
+                        textY.setAttribute("text-anchor", "end");
+                        textY.setAttribute("dominant-baseline", "central"); // perfectly center vertically
+                        textY.textContent = j;
+                        gridNumsG.appendChild(textY);
+                    }
+                    frag.appendChild(gridNumsG);
+
+                    // Once the new elements are fully generated in memory, wipe the old SVG
+                    while (svg.firstChild) svg.removeChild(svg.firstChild);
+                    svg.setAttribute("width", svgW);
+                    svg.setAttribute("height", svgH);
+                    svg.setAttribute("viewBox", "0 0 " + svgW + " " + svgH);
+                    svg.setAttribute("preserveAspectRatio", "none");
+
+                    // Append the new fragment instantly
+                    svg.appendChild(frag);
+
+                    // Return worker to pool instead of terminating
+                    WorkerPool.push(worker);
+
+                    _lastFlowers[id] = flowers; // Store for heightmap/Z-SVG
+                    resolve({ flowers: data.flowerCount, seed: data.seed, attempts: data.attempts });
+                };
+
+                worker.onerror = function (err) {
+                    var awIdx = ActiveWorkers.indexOf(worker);
+                    if (awIdx > -1) ActiveWorkers.splice(awIdx, 1);
+
+                    clearTimeout(loadTimeout);
+                    if (panel) panel.classList.remove('loading');
+                    console.error("Worker error in panel " + id + ":", err.message);
+
+                    // Kill the broken worker and replace it in the pool
+                    worker.terminate();
+                    WorkerPool.push(new Worker('js/platen-worker.js?t=' + Date.now()));
+
+                    reject(err);
+                };
+
+                // Dispatch payload
+                worker.postMessage({
+                    id: id,
+                    traits: traits,
+                    seed: RENDER_SEED,
+                    w: w_gen,
+                    h: h_gen,
+                    size: sizeX,
+                    rSize: rSize
+                });
+            });
+        }
+
+
+        function svgToString(svgEl) {
+            var s = new XMLSerializer();
+            return s.serializeToString(svgEl);
+        }
+
+        function downloadBlob(blob, filename) {
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+        }
+
+        function saveSVG() {
+            var panels = activePanels();
+            panels.forEach(function (id) {
+                var svg = document.getElementById('s' + id);
+                if (!svg) return;
+                var str = svgToString(svg);
+                var blob = new Blob([str], { type: 'image/svg+xml' });
+                var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
+                var name = 'platen-' + RENDER_SEED + '-v' + id + tStr + '.svg';
+                downloadBlob(blob, name);
+            });
+            console.log('[Platen] Saved SVG(s) for panels:', panels);
+        }
+
+        // ΓöÇΓöÇ Plotter SVG Export (Inkscape Ready) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        function savePlotterSVG() {
+            var svgNS = "http://www.w3.org/2000/svg";
+            var panels = activePanels();
+            panels.forEach(function (pid) {
+                var srcSvg = document.getElementById('s' + pid);
+                if (!srcSvg) return;
+
+                // Clone to modify structure
+                var svg = srcSvg.cloneNode(true);
+
+                // Add Inkscape namespace
+                svg.setAttribute('xmlns:inkscape', 'http://www.inkscape.org/namespaces/inkscape');
+
+                // Clear existing content container to rebuild with layers
+                // The structure is: svg > rect(bg) > g > path...
+                // careful not to kill <defs> if any.
+                // We know structure: bg rect, g(flowers), t(text).
+
+                var gEl = svg.querySelector('g'); // flowers
+                var tEl = svg.querySelector('g + g') || svg.querySelector('tspan')?.parentNode; // text is usually in tEl appended after gEl
+                // My code appends gEl then tEl.
+                // Actually tEl is a separate group? No, tEl is a group.
+                // Let's find them by content or just generic iter.
+
+                // Group paths by color
+                var paths = Array.from(svg.querySelectorAll('path'));
+                var text = Array.from(svg.querySelectorAll('text, tspan'));
+
+                // Map colors
+                var groups = {};
+                paths.forEach(function (p) {
+                    var fill = p.getAttribute('fill') || '#000000';
+                    if (!groups[fill]) groups[fill] = [];
+                    groups[fill].push(p);
+                });
+
+                // Clear the main group(s)
+                // Better approach: Create a new SVG content structure.
+                // Keep dimensions/viewbox.
+                var newSvg = srcSvg.cloneNode(false); // shallow clone (attributes only)
+                newSvg.setAttribute('xmlns:inkscape', 'http://www.inkscape.org/namespaces/inkscape');
+
+                // 1. Text Layer (usually plotted first or last? Let's do last "Reference")
+                // Text is tricky on plotters if filled. Converting to outline is hard in JS.
+                // We'll put text in a separate layer "Text".
+                // Note: User's 'text' are <tspan> inside <text> or just <tspan> in <g>?
+                // In my code: t = dc.createElementNS(svgNS, "tspan"); tEl.appendChild(t).
+                // Wait, tEl must be a <text> element or <g>?
+                // In `boot`: var tEl = dc.createElementNS(svgNS, "text");
+                // So all tspans are inside one text element.
+                // If it's a <text> element, it behaves as one object.
+                // We can just clone tEl.
+                var srcTEl = srcSvg.querySelector('text');
+                if (srcTEl) {
+                    var layerT = document.createElementNS(svgNS, 'g');
+                    layerT.setAttribute('inkscape:groupmode', 'layer');
+                    layerT.setAttribute('inkscape:label', 'Text');
+
+                    var tClone = srcTEl.cloneNode(true);
+                    // Simplify text for plotter? Plotters often can't do filled text.
+                    // But standard SVG text is fill. 
+                    // We'll leave it as is, user can Hershey-font it in Inkscape.
+                    // Or change fill to stroke? 
+                    // tClone.setAttribute('fill', 'none'); tClone.setAttribute('stroke', '#000');
+                    // Text without fill might be invisible if stroke is not set.
+                    // Let's keep it filled for readability, Inkscape handles text conversion.
+                    layerT.appendChild(tClone);
+                    newSvg.appendChild(layerT);
+                }
+
+                // 2. Color Layers
+                Object.keys(groups).sort().forEach(function (color) {
+                    var g = document.createElementNS(svgNS, 'g');
+                    g.setAttribute('inkscape:groupmode', 'layer');
+                    g.setAttribute('inkscape:label', color);
+                    g.setAttribute('id', 'layer-' + color.replace('#', ''));
+
+                    groups[color].forEach(function (p) {
+                        // Plotter optimization: Fill=none, Stroke=color
+                        p.setAttribute('fill', 'none');
+                        p.setAttribute('stroke', color);
+                        p.setAttribute('stroke-width', '1'); // 1px stroke (for visibility)
+                        // Adjust stroke width based on scale? 
+                        // SVG units 1440. 1px is fine.
+                        g.appendChild(p);
+                    });
+                    newSvg.appendChild(g);
+                });
+
+                var str = svgToString(newSvg);
+                var blob = new Blob([str], { type: 'image/svg+xml' });
+                var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
+                var name = 'platen-' + RENDER_SEED + '-v' + pid + tStr + '-plot.svg';
+                downloadBlob(blob, name);
+
+                var penText = "Platen Axidraw Pen Mapping\nSeed: " + RENDER_SEED + "\nPanel: " + pid + "\n\n";
+                Object.keys(groups).sort().forEach(function (color) {
+                    var hex = color.toUpperCase();
+                    var penName = PEN_MAP[hex] || "Unknown Pen";
+                    penText += "Layer: " + color + " -> " + penName + "\n";
+                });
+                var txtBlob = new Blob([penText], { type: 'text/plain' });
+                var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
+                var txtName = 'platen-' + RENDER_SEED + '-v' + pid + tStr + '-pens.txt';
+                downloadBlob(txtBlob, txtName);
+            });
+            console.log('[Platen Quine] Saved Plotter SVG(s) and Pen Text map');
+        }
+
+        // ΓöÇΓöÇ Heightmap Export (Grayscale for 3D/CNC) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        function saveHeightmap() {
+            var panels = activePanels();
+            panels.forEach(function (pid) {
+                var flowers = _lastFlowers[pid];
+                if (!flowers) return;
+
+                var sizes = getLayoutSizes(currentLayout);
+                var svgW = (sizes.w + 8) * sizes.sizeX;
+                var svgH = (sizes.h + 8) * sizes.sizeY;
+                var aspect = svgW / svgH;
+
+                // High-res output (match PNG size)
+                var outW = 1440, outH = 2560;
+                if (currentLayout === 'banner' || currentLayout === 'gallery') {
+                    outW = 2560; outH = 1440;
+                } else if (currentLayout === 'square') {
+                    outW = 2560; outH = 2560;
+                } else {
+                    if (aspect < 1.0) {
+                        outH = 2560;
+                        outW = Math.round(outH * aspect);
+                    } else {
+                        outW = 2560;
+                        outH = Math.round(outW / aspect);
+                    }
+                }
+                var scale = outW / svgW;
+                var sizeX = sizes.sizeX;
+                var sizeY = sizes.sizeY;
+                var rSize = sizes.rSize;
+
+                var canvas = document.createElement('canvas');
+                canvas.width = outW; canvas.height = outH;
+                var ctx = canvas.getContext('2d');
+
+                // Black background (Deepest depth)
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, outW, outH);
+
+                var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
+                flowers.forEach(function (f) {
+                    var cellX = (f.x + 4) * sizeX;
+                    var cellY = (f.y + 4 + (TRAITS.motif === 'typewriter' ? 8 : 0)) * sizeY;
+                    if (isGraphPaper) {
+                        var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
+                        var offX = isGraphPaperSq ? 1 : 0;
+                        var offY = isGraphPaperSq ? 1 : 0;
+                        cellX = 9 + (f.x + offX) * sizeX;
+                        cellY = 38 + (f.y + offY) * sizeY;
+                    }
+                    var px = (cellX + (sizeX - rSize) / 2) * scale;
+                    var py = (cellY + (sizeY - rSize) / 2) * scale;
+                    var scX = (rSize / 20) * scale, scY = (rSize / 20) * scale;
+                    if (isGraphPaper && TRAITS.motif === 'stars_and_stripes') {
+                        scX = (sizeX / 20) * scale;
+                        scY = (sizeY / 20) * scale;
+                        px = cellX * scale;
+                        py = cellY * scale;
+                    }
+
+                    // Support Typewriter Halftone (Density Shading)
+                    var motifPathString = MOTIF_PATHS[TRAITS.motif];
+                    if (TRAITS.motif === 'typewriter') {
+                        if (f.wt < 0.2) {
+                            return; // skip low density cells
+                        } else if (f.wt >= 0.2 && f.wt < 0.5) {
+                            motifPathString = MOTIF_PATHS['typewriter_dot'];
+                        } else if (f.wt >= 0.5 && f.wt < 0.8) {
+                            motifPathString = MOTIF_PATHS['typewriter_x'];
+                        } else {
+                            motifPathString = MOTIF_PATHS['typewriter_hash'];
+                        }
+                    } else if (TRAITS.motif === 'stars_and_stripes') {
+                        if (f.c.toUpperCase() === '#002868' || f.c.toUpperCase() === '#FFFFFF') {
+                            motifPathString = MOTIF_PATHS['star'];
+                        } else {
+                            motifPathString = MOTIF_PATHS['stripes'];
+                        }
+                    }
+
+                    var pathObj = new Path2D(motifPathString);
+
+                    // Map weight (0.07..1.0) to brightness (20..255)
+                    var val = Math.floor(f.wt * 255);
+                    ctx.fillStyle = 'rgb(' + val + ',' + val + ',' + val + ')';
+                    ctx.strokeStyle = 'rgb(' + val + ',' + val + ',' + val + ')';
+                    ctx.lineWidth = 1.2 * sc;
+
+                    ctx.save();
+                    ctx.translate(px, py);
+                    ctx.scale(scX, scY);
+                    if (f.flip) {
+                        ctx.translate(10, 10);
+                        ctx.rotate(Math.PI);
+                        ctx.translate(-10, -10);
+                    }
+                    if (TRAITS.motif === 'quatrefoil' || TRAITS.motif === 'tatreez' || TRAITS.motif === 'typewriter' || TRAITS.motif === 'typewriter_hash' || TRAITS.motif === 'stars_and_stripes') {
+                        ctx.fill(pathObj, 'evenodd');
+                    } else {
+                        ctx.fill(pathObj);
+                    }
+                    ctx.restore();
+                });
+
+                canvas.toBlob(function (blob) {
+                    var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
+                    var name = 'platen-' + RENDER_SEED + '-v' + pid + tStr + '-heightmap.png';
+                    downloadBlob(blob, name);
+                }, 'image/png');
+            });
+            console.log('[Platen] Saved Heightmap(s)');
+        }
+
+        // ΓöÇΓöÇ Z-Layered SVG (Multi-pass CNC/Print) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        function saveZSVG() {
+            var svgNS = "http://www.w3.org/2000/svg";
+            var panels = activePanels();
+            panels.forEach(function (pid) {
+                var srcSvg = document.getElementById('s' + pid);
+                if (!srcSvg) return;
+
+                var flowers = _lastFlowers[pid];
+                if (!flowers) return;
+
+                var svg = srcSvg.cloneNode(false);
+                svg.setAttribute('xmlns:inkscape', 'http://www.inkscape.org/namespaces/inkscape');
+
+                var sizes = getLayoutSizes(currentLayout);
+                var sizeX = sizes.sizeX;
+                var sizeY = sizes.sizeY;
+                var rSize = sizes.rSize;
+
+                // Group by weight tiers (simulating Z-depth layers)
+                var zLayers = {
+                    'Z-Deepest': [], // Lower weight
+                    'Z-Mid': [],
+                    'Z-Highest': []  // Higher weight
+                };
+
+                flowers.forEach(function (f, i) {
+                    // Support Typewriter Halftone (Density Shading)
+                    var motifPathString = MOTIF_PATHS[TRAITS.motif];
+                    if (TRAITS.motif === 'typewriter') {
+                        if (f.wt < 0.2) {
+                            return; // skip low density cells
+                        } else if (f.wt >= 0.2 && f.wt < 0.5) {
+                            motifPathString = MOTIF_PATHS['typewriter_dot'];
+                        } else if (f.wt >= 0.5 && f.wt < 0.8) {
+                            motifPathString = MOTIF_PATHS['typewriter_x'];
+                        } else {
+                            motifPathString = MOTIF_PATHS['typewriter_hash'];
+                        }
+                    } else if (TRAITS.motif === 'stars_and_stripes') {
+                        if (f.c.toUpperCase() === '#002868' || f.c.toUpperCase() === '#FFFFFF') {
+                            motifPathString = MOTIF_PATHS['star'];
+                        } else {
+                            motifPathString = MOTIF_PATHS['stripes'];
+                        }
+                    }
+
+                    var path = document.createElementNS(svgNS, "path");
+                    var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
+                    var px = (f.x + 4) * sizeX;
+                    var py = (f.y + 4 + (TRAITS.motif === 'typewriter' ? 8 : 0)) * sizeY;
+                    if (isGraphPaper) {
+                        var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
+                        var offX = isGraphPaperSq ? 1 : 0;
+                        var offY = isGraphPaperSq ? 1 : 0;
+                        px = 9 + (f.x + offX) * sizeX;
+                        py = 38 + (f.y + offY) * sizeY;
+                    }
+                    var scX = rSize / 20, scY = rSize / 20;
+                    var tx = px + (sizeX - rSize) / 2;
+                    var ty = py + (sizeY - rSize) / 2;
+                    if (isGraphPaper && TRAITS.motif === 'stars_and_stripes') {
+                        scX = sizeX / 20;
+                        scY = sizeY / 20;
+                        tx = px;
+                        ty = py;
+                    }
+                    var xform = "translate(" + tx + "," + ty + ") scale(" + scX + "," + scY + ")";
+                    if (f.flip) xform += " rotate(180,10,10)";
+                    if (f.rot) xform += " rotate(" + f.rot + ",10,10)";
+                    path.setAttribute("transform", xform);
+                    path.setAttribute("d", motifPathString);
+                    path.setAttribute("fill", f.c);
+                    if (TRAITS.motif === 'quatrefoil' || TRAITS.motif === 'tatreez' || TRAITS.motif === 'typewriter' || TRAITS.motif === 'typewriter_hash' || TRAITS.motif === 'stars_and_stripes') path.setAttribute("fill-rule", "evenodd");
+
+                    if (f.wt < 0.45) zLayers['Z-Deepest'].push(path);
+                    else if (f.wt < 0.8) zLayers['Z-Mid'].push(path);
+                    else zLayers['Z-Highest'].push(path);
+                });
+
+                Object.keys(zLayers).forEach(function (label) {
+                    var g = document.createElementNS(svgNS, 'g');
+                    g.setAttribute('inkscape:groupmode', 'layer');
+                    g.setAttribute('inkscape:label', label);
+                    zLayers[label].forEach(function (p) { g.appendChild(p); });
+                    svg.appendChild(g);
+                });
+
+                var str = svgToString(svg);
+                var blob = new Blob([str], { type: 'image/svg+xml' });
+                var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
+                var name = 'platen-' + RENDER_SEED + '-v' + pid + tStr + '-Z-Layers.svg';
+                downloadBlob(blob, name);
+            });
+            console.log('[Platen] Saved Z-Layered SVG(s)');
+        }
+
+        // ΓöÇΓöÇ CNC Woodcut/Linocut Export (Mirrored & Separated) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        function saveCNCBlocks() {
+            var svgNS = "http://www.w3.org/2000/svg";
+            var panels = activePanels();
+            panels.forEach(function (pid) {
+                var srcSvg = document.getElementById('s' + pid);
+                if (!srcSvg) return;
+
+                var svgW = parseInt(srcSvg.getAttribute('width'));
+                var svgH = parseInt(srcSvg.getAttribute('height'));
+
+                // Find all paths and group by color
+                var paths = Array.from(srcSvg.querySelectorAll('path'));
+                var groups = {};
+                paths.forEach(function (p) {
+                    var fill = p.getAttribute('fill') || '#000000';
+                    if (!groups[fill]) groups[fill] = [];
+                    groups[fill].push(p);
+                });
+
+                // Export each color group as a separate mirrored block
+                Object.keys(groups).forEach(function (color) {
+                    var newSvg = srcSvg.cloneNode(false);
+                    newSvg.setAttribute('width', svgW);
+                    newSvg.setAttribute('height', svgH);
+                    newSvg.setAttribute('viewBox', '0 0 ' + svgW + ' ' + svgH);
+
+                    // Add a boundary rectangle (outer cut)
+                    var boundary = document.createElementNS(svgNS, 'rect');
+                    boundary.setAttribute('x', '0');
+                    boundary.setAttribute('y', '0');
+                    boundary.setAttribute('width', svgW);
+                    boundary.setAttribute('height', svgH);
+                    boundary.setAttribute('fill', 'none');
+                    boundary.setAttribute('stroke', '#000000');
+                    boundary.setAttribute('stroke-width', '2');
+                    newSvg.appendChild(boundary);
+
+                    // Mirroring Group
+                    var mirrorG = document.createElementNS(svgNS, 'g');
+                    mirrorG.setAttribute('transform', 'scale(-1, 1) translate(-' + svgW + ', 0)');
+                    newSvg.appendChild(mirrorG);
+
+                    // Add registration marks (Corner Crosses) - mirrored with the content
+                    function addCross(x, y) {
+                        var crossSize = 40;
+                        var g = document.createElementNS(svgNS, 'g');
+                        var h = document.createElementNS(svgNS, 'line');
+                        h.setAttribute('x1', x - crossSize / 2); h.setAttribute('y1', y);
+                        h.setAttribute('x2', x + crossSize / 2); h.setAttribute('y2', y);
+                        h.setAttribute('stroke', '#000000'); h.setAttribute('stroke-width', '1');
+                        var v = document.createElementNS(svgNS, 'line');
+                        v.setAttribute('x1', x); v.setAttribute('y1', y - crossSize / 2);
+                        v.setAttribute('x2', x); v.setAttribute('y2', y + crossSize / 2);
+                        v.setAttribute('stroke', '#000000'); v.setAttribute('stroke-width', '1');
+                        g.appendChild(h); g.appendChild(v);
+                        mirrorG.appendChild(g);
+                    }
+                    addCross(40, 40); addCross(svgW - 40, 40);
+                    addCross(40, svgH - 40); addCross(svgW - 40, svgH - 40);
+
+                    // Add paths for this color
+                    groups[color].forEach(function (p) {
+                        var pClone = p.cloneNode(true);
+                        // For CNC/Embossing, we want outlines
+                        pClone.setAttribute('fill', 'none');
+                        pClone.setAttribute('stroke', '#000000');
+                        pClone.setAttribute('stroke-width', '1');
+                        mirrorG.appendChild(pClone);
+                    });
+
+                    var str = svgToString(newSvg);
+                    var blob = new Blob([str], { type: 'image/svg+xml' });
+                    var colorClean = color.replace('#', '').toUpperCase();
+                    var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
+                    var name = 'platen-' + RENDER_SEED + '-v' + pid + tStr + '-block-' + colorClean + '.svg';
+                    downloadBlob(blob, name);
+                });
+            });
+            console.log('[Platen] Saved Mirrored CNC Block SVGs');
+        }
+        function saveDST() {
+            var panels = activePanels();
+            panels.forEach(function (pid) {
+                // Generate stitches for this panel
+                var stitches = generateStitches(pid); // returns { dx, dy, type }
+                var buffer = encodeDST(stitches, 'platen-' + RENDER_SEED);
+                var blob = new Blob([buffer], { type: 'application/octet-stream' });
+                var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
+                var name = 'platen-' + RENDER_SEED + '-v' + pid + tStr + '.dst';
+                downloadBlob(blob, name);
+            });
+            console.log('[Platen Quine] Saved DST(s) for panels:', panels);
+        }
+
+        function generateStitches(pid) {
+            // Re-run the render logic virtually to capture positions
+            // Grid 78x148. Units: 0.1mm. 
+            // 1440px width -> map to ~14.4cm (144mm). Scale ~ 1.0 (1px = 0.1mm)
+            var scale = 1.0;
+
+            // Flower path parsing cache
+            // Decompose current motif path into 2D points (centered at 0,0)
+            // Note: FLOWER_PATH is the normalized (20x20) version of the original Platen
+            var pathData = (TRAITS.motif === 'platen') ? FLOWER_PATH : MOTIF_PATHS[TRAITS.motif];
+            var flowerPoints = parsePathToPoints(pathData, 4); // 4 segments per curve
+
+            var moves = [];
+            var lastX = 0, lastY = 0;
+
+            function addStitch(x, y, flags) {
+                // Coordinates in DST are relative moves.
+                // We calculate absolute position in 0.1mm units, then difference.
+                // Center logic: map top-left (0,0) to center relative? 
+                // Default: start at 0,0 (center of design).
+                // Let's assume start position is center.
+
+                x = Math.round(x);
+                y = Math.round(y);
+                var dx = x - lastX;
+                var dy = y - lastY;
+                moves.push({ dx: dx, dy: dy, flags: flags || 0 }); // 0=normal, JUMP, STOP
+                lastX = x;
+                lastY = y;
+            }
+
+            var JUMP = 0x80;
+            var STOP = 0x40; // Color change
+
+            // Center offset
+            var sizes = getLayoutSizes(currentLayout);
+            var cx = (sizes.w * sizes.sizeX) / 2;
+            var cy = (sizes.h * sizes.sizeY) / 2;
+
+            // Find SVG elements to get transformed positions
+            var svgEl = document.getElementById('s' + pid);
+            if (!svgEl) return [];
+
+            var paths = svgEl.querySelectorAll('path'); // Flowers
+            var pathsArr = Array.prototype.slice.call(paths);
+
+            // Group paths by fill color to minimize thread changes
+            var groups = {};
+            pathsArr.forEach(function (p) {
+                var fill = p.getAttribute('fill');
+                if (!groups[fill]) groups[fill] = [];
+                groups[fill].push(p);
+            });
+
+            var lastColor = null;
+
+            // Iterate colors
+            Object.keys(groups).forEach(function (color) {
+                // Add STOP code if not first group
+                if (lastColor !== null) {
+                    // Force a jump-in-place STOP? Or simple STOP flag on next stitch.
+                    // Usually STOP command is tied to a stitch. We can emit a 0,0 move with STOP.
+                    addStitch(lastX, lastY, STOP);
+                }
+                lastColor = color;
+
+                var gPaths = groups[color];
+                gPaths.forEach(function (path) {
+                    var pathD = path.getAttribute('d');
+                    var flowerPoints = parsePathToPoints(pathD, 4);
+                    // Parse transform
+                    var tr = path.getAttribute('transform');
+                    // transform="translate(px,py) scale(sc) ... rotate..."
+                    // regex parse
+                    var tM = /translate\(([^,]+),([^)]+)\)/.exec(tr);
+                    var px = tM ? parseFloat(tM[1]) : 0;
+                    var py = tM ? parseFloat(tM[2]) : 0;
+
+                    var sM = /scale\(([^)]+)\)/.exec(tr);
+                    var sc = sM ? parseFloat(sM[1]) : 1;
+
+                    var rM = /rotate\(([^,]+)/.exec(tr);
+                    var ang = rM ? parseFloat(rM[1]) : 0;
+                    var isFlip = Math.abs(ang - 180) < 1; // logical flip
+
+                    // Map center-relative for embroidery
+                    // Start 0,0 is center of hoop.
+                    // Screen 0,0 is top-left.
+                    // Target (dx, dy) = (px - cx, py - cy)
+                    var ox = (px - cx) * scale;
+                    var oy = (py - cy) * scale;
+
+                    // Walk the flower points
+                    var first = true;
+                    for (var i = 0; i < flowerPoints.length; i++) {
+                        var fp = flowerPoints[i];
+                        var fpx = fp.x;
+                        var fpy = fp.y;
+
+                        // Apply local transform: scale -> rotate -> translate
+                        // MOTIF_PATHS points are roughly 0..20 box (except original platen which is 0..580)
+                        // Note: parsePathToPoints handles the raw coordinates.
+                        // Platen original is normalized to 20x20 via FLOWER_PATH logic? 
+                        // Wait, MOTIF_PATHS['platen'] in core.js is the LARGE path.
+                        // FLOWER_PATH in index.html is the normalized version.
+                        // We should probably use FLOWER_PATH if motif is platen for consistency.
+                        // Rotate 180 around (10,10) if flipped.
+                        if (isFlip) {
+                            fpx = 20 - fpx;
+                            fpy = 20 - fpy;
+                        }
+
+                        // Scale
+                        var rx = fpx * sc;
+                        var ry = fpy * sc;
+
+                        // Translate
+                        var absX = ox + rx * scale;
+                        var absY = oy + ry * scale;
+
+                        if (first) {
+                            addStitch(absX, absY, JUMP);
+                            first = false;
+                        } else {
+                            addStitch(absX, absY, 0);
+                        }
+                    }
+                });
+            });
+
+            return moves;
+        }
+
+        function parsePathToPoints(d, seg) {
+            var parts = d.match(/[a-zA-Z]|[-0-9.]+/g);
+            var pts = [];
+            var cur = { x: 0, y: 0 };
+
+            for (var i = 0; i < parts.length; i++) {
+                var cmd = parts[i];
+                if (cmd === 'M') {
+                    cur.x = parseFloat(parts[++i]);
+                    cur.y = parseFloat(parts[++i]);
+                    pts.push({ x: cur.x, y: cur.y });
+                } else if (cmd === 'C') {
+                    var cp1 = { x: parseFloat(parts[++i]), y: parseFloat(parts[++i]) };
+                    var cp2 = { x: parseFloat(parts[++i]), y: parseFloat(parts[++i]) };
+                    var end = { x: parseFloat(parts[++i]), y: parseFloat(parts[++i]) };
+                    // Subdivide
+                    for (var t = 1; t <= seg; t++) {
+                        var k = t / seg;
+                        var nk = 1 - k;
+                        var bx = nk * nk * nk * cur.x + 3 * nk * nk * k * cp1.x + 3 * nk * k * k * cp2.x + k * k * k * end.x;
+                        var by = nk * nk * nk * cur.y + 3 * nk * nk * k * cp1.y + 3 * nk * k * k * cp2.y + k * k * k * end.y;
+                        pts.push({ x: bx, y: by });
+                    }
+                    cur = end;
+                } else if (cmd === 'L') {
+                    cur.x = parseFloat(parts[++i]);
+                    cur.y = parseFloat(parts[++i]);
+                    pts.push({ x: cur.x, y: cur.y });
+                }
+            }
+            return pts;
+        }
+
+        function encodeDST(moves, label) {
+            var header = new Uint8Array(512);
+            for (var i = 0; i < 512; i++) header[i] = 32;
+            var la = "LA:" + label.substring(0, 16) + "\r";
+            for (var i = 0; i < la.length; i++) header[i] = la.charCodeAt(i);
+
+            var body = [];
+
+            moves.forEach(function (m) {
+                var dx = m.dx;
+                var dy = m.dy;
+                dy = -dy; // DST Y+ is UP
+
+                var flags = m.flags;
+
+                if (flags === 0x80) { // Jump
+                    encodeStitch(dx, dy, true, false, body);
+                } else if (flags === 0x40) { // Stop
+                    encodeStitch(dx, dy, false, true, body);
+                } else {
+                    // Long jumps
+                    while (Math.abs(dx) > 121 || Math.abs(dy) > 121) {
+                        var sx = dx > 121 ? 121 : (dx < -121 ? -121 : dx);
+                        var sy = dy > 121 ? 121 : (dy < -121 ? -121 : dy);
+                        dx -= sx;
+                        dy -= sy;
+                        encodeStitch(sx, sy, true, false, body);
+                    }
+                    encodeStitch(dx, dy, false, false, body);
+                }
+            });
+
+            // Allow 3 bytes for EOF
+            var file = new Uint8Array(512 + body.length + 3);
+            file.set(header, 0);
+            file.set(body, 512);
+            file[512 + body.length] = 0x00;
+            file[512 + body.length + 1] = 0x00;
+            file[512 + body.length + 2] = 0xF3;
+
+            return file;
+        }
+
+        function encodeStitch(dx, dy, jump, stop, arr) {
+            var b0 = 0, b1 = 0, b2 = 0;
+            if (jump) b2 |= 0x80;
+            if (stop) b2 |= 0x40;
+            // Byte 1
+            if (dy > 0) { if (dy & 1) b0 |= 0x80; if (dy & 9) b0 |= 0x20; }
+            else { if (-dy & 1) b0 |= 0x40; if (-dy & 9) b0 |= 0x10; }
+            if (dx < 0) { if (-dx & 9) b0 |= 0x08; if (-dx & 3) b0 |= 0x02; }
+            else { if (dx & 9) b0 |= 0x04; if (dx & 3) b0 |= 0x01; }
+            // Byte 2
+            if (dy > 0) { if (dy & 3) b1 |= 0x80; if (dy & 27) b1 |= 0x20; }
+            else { if (-dy & 3) b1 |= 0x40; if (-dy & 27) b1 |= 0x10; }
+            if (dx < 0) { if (-dx & 27) b1 |= 0x08; if (-dx & 1) b1 |= 0x02; }
+            else { if (dx & 27) b1 |= 0x04; if (dx & 1) b1 |= 0x01; }
+            // Byte 3
+            if (dy > 0) { if (dy & 81) b2 |= 0x20; } else { if (-dy & 81) b2 |= 0x10; }
+            if (dx < 0) { if (-dx & 81) b2 |= 0x08; } else { if (dx & 81) b2 |= 0x04; }
+
+            b2 |= 0x03; // Standard set bits
+            arr.push(b0, b1, b2);
+        }
+
+        // Canvas textures ΓÇö preload both
+        var CANVAS_BLACK_PATH = 'platen_canvas_black.png';
+        var CANVAS_TAN_PATH = 'platen_canvas_tan.png';
+        var CANVAS_OLIVE_PATH = 'platen_canvas_olive.png';
+        var CANVAS_WHITE_PATH = 'platen_canvas_white.png';
+        var CANVAS_GALLERY_PATH = 'platen_canvas_black_gallery.png';
+        var CANVAS_SQUARE_PATH = 'platen_canvas_black_1x1.png';
+        var CANVAS_32_40_PATH = 'platen_canvas_black_39_51.png'; // Reusing 39x51 asset as missing
+        var CANVAS_39_51_PATH = 'platen_canvas_black_39_51.png';
+        var CANVAS_39_39_PATH = 'platen_canvas_black_39_39.png';
+        var CANVAS_GRAPH_PAPER_PATH = 'platen_canvas_graph_paper.jpg';
+
+        var _canvasBlackImg = null;
+        var _canvasTanImg = null;
+        var _canvasOliveImg = null;
+        var _canvasWhiteImg = null;
+        var _canvasGalleryImg = null;
+        var _canvasSquareImg = null;
+        var _canvas3240Img = null;
+        var _canvas3951Img = null;
+        var _canvas3939Img = null;
+        var _canvasGraphPaperImg = null;
+        var _activeCanvasImg = null;
+
+        var _canvasBlackDataURL = null; // for CSS instant loading
+        var _canvasTanDataURL = null;
+        var _canvasOliveDataURL = null;
+        var _canvasWhiteDataURL = null;
+        var _canvasGalleryDataURL = null;
+        var _canvasSquareDataURL = null;
+        var _canvas3240DataURL = null;
+        var _canvas3951DataURL = null;
+        var _canvas3939DataURL = null;
+        var _canvasGraphPaperDataURL = null;
+        var _canvasGraphPaperInvertedImg = null;
+        var _canvasGraphPaperInvertedDataURL = null;
+
+        function getInvertedGraphPaper() {
+            if (_canvasGraphPaperInvertedDataURL) return; // already done
+            if (!_canvasGraphPaperImg) return;
+            var c = document.createElement('canvas');
+            c.width = _canvasGraphPaperImg.width;
+            c.height = _canvasGraphPaperImg.height;
+            var ctx = c.getContext('2d');
+            ctx.drawImage(_canvasGraphPaperImg, 0, 0);
+            var idata = ctx.getImageData(0, 0, c.width, c.height);
+            var d = idata.data;
+            for(var i=0; i<d.length; i+=4) {
+                var r = 255 - d[i];
+                var g = 255 - d[i+1];
+                var b = 255 - d[i+2];
+                var gray = (r + g + b) / 3;
+                d[i] = gray;
+                d[i+1] = gray;
+                d[i+2] = gray;
+            }
+            ctx.putImageData(idata, 0, 0);
+            _canvasGraphPaperInvertedDataURL = c.toDataURL('image/jpeg', 0.9);
+            _canvasGraphPaperInvertedImg = new Image();
+            _canvasGraphPaperInvertedImg.onload = updateCanvasTexture;
+            _canvasGraphPaperInvertedImg.src = _canvasGraphPaperInvertedDataURL;
+        }
+
+        function preloadTexture(path, callback) {
+            if (window.location.protocol === 'file:') return;
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', path, true);
+            xhr.responseType = 'blob';
+            xhr.onload = function () {
+                var reader = new FileReader();
+                reader.onloadend = function () {
+                    callback(reader.result);
+                };
+                reader.readAsDataURL(xhr.response);
+            };
+            xhr.send();
+        }
+
+        (function preloadTextures() {
+            preloadTexture(CANVAS_BLACK_PATH, function (data) {
+                _canvasBlackDataURL = data;
+                _canvasBlackImg = new Image();
+                _canvasBlackImg.onload = updateCanvasTexture;
+                _canvasBlackImg.src = data;
+            });
+            preloadTexture(CANVAS_TAN_PATH, function (data) {
+                _canvasTanDataURL = data;
+                _canvasTanImg = new Image();
+                _canvasTanImg.onload = updateCanvasTexture;
+                _canvasTanImg.src = data;
+            });
+            preloadTexture(CANVAS_OLIVE_PATH, function (data) {
+                _canvasOliveDataURL = data;
+                _canvasOliveImg = new Image();
+                _canvasOliveImg.onload = updateCanvasTexture;
+                _canvasOliveImg.src = data;
+            });
+            preloadTexture(CANVAS_WHITE_PATH, function (data) {
+                _canvasWhiteDataURL = data;
+                _canvasWhiteImg = new Image();
+                _canvasWhiteImg.onload = updateCanvasTexture;
+                _canvasWhiteImg.src = data;
+            });
+            preloadTexture(CANVAS_GALLERY_PATH, function (data) {
+                _canvasGalleryDataURL = data;
+                _canvasGalleryImg = new Image();
+                _canvasGalleryImg.onload = updateCanvasTexture;
+                _canvasGalleryImg.src = data;
+            });
+            preloadTexture(CANVAS_SQUARE_PATH, function (data) {
+                _canvasSquareDataURL = data;
+                _canvasSquareImg = new Image();
+                _canvasSquareImg.onload = updateCanvasTexture;
+                _canvasSquareImg.src = data;
+            });
+            preloadTexture(CANVAS_32_40_PATH, function (data) {
+                _canvas3240DataURL = data;
+                _canvas3240Img = new Image();
+                _canvas3240Img.onload = updateCanvasTexture;
+                _canvas3240Img.src = data;
+            });
+            preloadTexture(CANVAS_39_51_PATH, function (data) {
+                _canvas3951DataURL = data;
+                _canvas3951Img = new Image();
+                _canvas3951Img.onload = updateCanvasTexture;
+                _canvas3951Img.src = data;
+            });
+            preloadTexture(CANVAS_39_39_PATH, function (data) {
+                _canvas3939DataURL = data;
+                _canvas3939Img = new Image();
+                _canvas3939Img.onload = updateCanvasTexture;
+                _canvas3939Img.src = data;
+            });
+            preloadTexture(CANVAS_GRAPH_PAPER_PATH, function (data) {
+                _canvasGraphPaperDataURL = data;
+                _canvasGraphPaperImg = new Image();
+                _canvasGraphPaperImg.onload = updateCanvasTexture;
+                _canvasGraphPaperImg.src = data;
+            });
+        })();
+
+        function updateCanvasTexture() {
+            var url = CANVAS_BLACK_PATH;
+            var dataUrl = _canvasBlackDataURL;
+            var img = _canvasBlackImg;
+            var canvasClass = 'canvas-black';
+
+            if (TRAITS.canvas === 'tan') {
+                url = CANVAS_TAN_PATH;
+                dataUrl = _canvasTanDataURL;
+                img = _canvasTanImg;
+                canvasClass = 'canvas-tan';
+            } else if (TRAITS.canvas === 'olive') {
+                url = CANVAS_OLIVE_PATH;
+                dataUrl = _canvasOliveDataURL;
+                img = _canvasOliveImg;
+                canvasClass = 'canvas-olive';
+            } else if (TRAITS.canvas === 'white') {
+                url = CANVAS_WHITE_PATH;
+                dataUrl = _canvasWhiteDataURL;
+                img = _canvasWhiteImg;
+                canvasClass = 'canvas-white';
+            } else if (TRAITS.canvas === 'graph_paper') {
+                if (TRAITS.invertGraph) {
+                    if (!_canvasGraphPaperInvertedDataURL) {
+                        getInvertedGraphPaper();
+                        url = CANVAS_GRAPH_PAPER_PATH;
+                        dataUrl = _canvasGraphPaperDataURL;
+                        img = _canvasGraphPaperImg;
+                    } else {
+                        url = _canvasGraphPaperInvertedDataURL;
+                        dataUrl = _canvasGraphPaperInvertedDataURL;
+                        img = _canvasGraphPaperInvertedImg;
+                    }
+                } else {
+                    url = CANVAS_GRAPH_PAPER_PATH;
+                    dataUrl = _canvasGraphPaperDataURL;
+                    img = _canvasGraphPaperImg;
+                }
+                canvasClass = 'canvas-graph-paper';
+            }
+
+            var isTypewriter = (TRAITS.motif === 'typewriter') || (RESOLVED_TRAITS && RESOLVED_TRAITS.motif === 'typewriter');
+
+            // Overrides for layouts and special motifs
+            if (isTypewriter && TRAITS.canvas !== 'graph_paper') {
+                // Typewriter art always uses white canvas (looks like a white sheet of paper on black canvas background)
+                url = CANVAS_WHITE_PATH;
+                dataUrl = _canvasWhiteDataURL;
+                img = _canvasWhiteImg;
+                canvasClass = 'canvas-white';
+            } else if (TRAITS.canvas === 'black') {
+                if (currentLayout === 'gallery') {
+                    url = CANVAS_GALLERY_PATH;
+                    dataUrl = _canvasGalleryDataURL;
+                    img = _canvasGalleryImg;
+                    canvasClass = 'canvas-black'; // Gallery is black-based
+                } else if (currentLayout === 'square' || currentLayout === 'banner_sq') {
+                    url = CANVAS_SQUARE_PATH;
+                    dataUrl = _canvasSquareDataURL;
+                    img = _canvasSquareImg;
+                    canvasClass = 'canvas-black'; // Square is black-based
+                } else if (currentLayout === 'grid_32_40' || currentLayout === 'banner_32_40') {
+                    url = CANVAS_32_40_PATH;
+                    dataUrl = _canvas3240DataURL;
+                    img = _canvas3240Img;
+                    canvasClass = 'canvas-black';
+                } else if (currentLayout === 'grid_39_51' || currentLayout === 'banner_39_51' || currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter') {
+                    url = CANVAS_39_51_PATH;
+                    dataUrl = _canvas3951DataURL;
+                    img = _canvas3951Img;
+                    canvasClass = 'canvas-black';
+                } else if (currentLayout === 'grid_39_39' || currentLayout === 'banner_39_39') {
+                    url = CANVAS_39_39_PATH;
+                    dataUrl = _canvas3939DataURL;
+                    img = _canvas3939Img;
+                    canvasClass = 'canvas-black';
+                }
+            }
+
+            // Use Data URL for truly instant swapping if ready
+            var displayUrl = dataUrl ? dataUrl : url;
+
+            // Update CSS for display
+            document.querySelectorAll('.platen-panel').forEach(function (el) {
+                el.style.backgroundImage = 'url("' + displayUrl + '")';
+                // Reset classes except for base and .loading
+                if (el.classList.contains('loading')) {
+                    el.className = 'platen-panel loading ' + canvasClass;
+                } else {
+                    el.className = 'platen-panel ' + canvasClass;
+                }
+            });
+
+            // Set active img for export
+            _activeCanvasImg = img;
+        }
+
+        function savePNG() {
+            var panels = activePanels();
+            panels.forEach(function (id) {
+                var svg = document.getElementById('s' + id);
+                if (!svg) return;
+                var svgW = parseInt(svg.getAttribute('width'));
+                var svgH = parseInt(svg.getAttribute('height'));
+
+                // Smart Aspect Ratio Logic based on actual SVG content
+                var aspect = svgW / svgH;
+                var outW, outH;
+                if (Math.abs(aspect - (9 / 16)) < 0.01) {
+                    outW = 1440; outH = 2560;
+                } else if (Math.abs(aspect - 1.0) < 0.01) {
+                    outW = 2560; outH = 2560;
+                } else if (Math.abs(aspect - (16 / 9)) < 0.01) {
+                    outW = 2560; outH = 1440;
+                } else {
+                    // Custom aspect ratio (e.g. 39:51)
+                    // Anchor to 2560px on the longest dimension
+                    if (aspect < 1.0) {
+                        outH = 2560;
+                        outW = Math.round(outH * aspect);
+                    } else {
+                        outW = 2560;
+                        outH = Math.round(outW / aspect);
+                    }
+                }
+
+                var scaleX = outW / svgW, scaleY = outH / svgH;
+
+                // Clone the SVG and shift elements down by 16px to prevent top text clipping
+                var svgClone = svg.cloneNode(true);
+                var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                g.setAttribute("transform", "translate(0, 16)");
+                while (svgClone.firstChild) {
+                    g.appendChild(svgClone.firstChild);
+                }
+                svgClone.appendChild(g);
+
+                // Serialize SVG with transparent background
+                var str = svgToString(svgClone);
+                var blob = new Blob([str], { type: 'image/svg+xml' });
+                var svgUrl = URL.createObjectURL(blob);
+
+                var svgImg = new Image();
+                svgImg.onload = function () {
+                    // Load texture from data URL (avoids tainted canvas)
+                    function doComposite(texImg) {
+                        var canvas = document.createElement('canvas');
+                        canvas.width = outW; canvas.height = outH;
+                        var ctx = canvas.getContext('2d');
+
+                        var includeBG = document.getElementById('inc-bg').checked;
+
+                        // Layer 1: canvas texture (full res)
+                        if (includeBG) {
+                            if (texImg) {
+                                ctx.drawImage(texImg, 0, 0, outW, outH);
+                            } else {
+                                ctx.fillStyle = '#1a1724';
+                                ctx.fillRect(0, 0, outW, outH);
+                            }
+                        }
+
+                        // Layer 2: SVG pattern scaled to fill
+                        ctx.save();
+                        ctx.globalAlpha = 1.0;
+                        ctx.drawImage(svgImg, 0, 0, outW, outH);
+                        ctx.restore();
+
+                        canvas.toBlob(function (pngBlob) {
+                            var rt = RESOLVED_TRAITS || TRAITS;
+                            var tStr = "-sym_" + rt.symmetry + "-space_" + rt.space + "-motif_" + rt.motif + "-chrome_" + rt.chromes + "-engine_" + rt.engine;
+                            var name = 'platen-' + RENDER_SEED + '-v' + id + tStr + '.png';
+                            downloadBlob(pngBlob, name);
+                            console.log('[Platen] Saved PNG: ' + name + ' (' + outW + 'x' + outH + ')');
+                        }, 'image/png');
+                    }
+
+                    if (_activeCanvasImg) {
+                        doComposite(_activeCanvasImg);
+                    } else {
+                        doComposite(null);
+                    }
+                };
+                svgImg.src = svgUrl;
+            });
+        }
+
+        function saveTriptych() {
+            var ids = [1, 2, 3];
+            var promises = ids.map(function (id) {
+                return new Promise(function (resolve) {
+                    var svg = document.getElementById('s' + id);
+                    if (!svg) { resolve(null); return; }
+                    var svgClone = svg.cloneNode(true);
+                    var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                    g.setAttribute("transform", "translate(0, 16)");
+                    while (svgClone.firstChild) {
+                        g.appendChild(svgClone.firstChild);
+                    }
+                    svgClone.appendChild(g);
+                    var str = svgToString(svgClone);
+                    var blob = new Blob([str], { type: 'image/svg+xml' });
+                    var url = URL.createObjectURL(blob);
+                    var img = new Image();
+                    img.onload = function () { resolve(img); };
+                    img.src = url;
+                });
+            });
+
+            Promise.all(promises).then(function (images) {
+                var w = 1440, h = 2560; // Original triptych format (Portrait basis)
+                
+                if (currentLayout === 'banner_sq') {
+                    // Wide square triptych
+                    w = 2560; h = 2560;
+                } else if (currentLayout === 'banner_32_40') {
+                    h = 2560;
+                    w = Math.round(h * (32 / 40));
+                } else if (currentLayout === 'banner_39_51') {
+                    h = 2560;
+                    w = Math.round(h * (39 / 51));
+                } else if (currentLayout === 'banner_us_letter') {
+                    h = 2560;
+                    w = Math.round(h * (8.5 / 11));
+                } else if (currentLayout === 'banner_39_39') {
+                    w = 2560; h = 2560;
+                }
+                
+                var gap = 100;
+                var margin = 100;
+                var numPanels = 3; // Always 3 for triptych
+                var totalW = margin * 2 + w * numPanels + gap * (numPanels - 1);
+                var totalH = margin * 2 + h;
+
+                var canvas = document.createElement('canvas');
+                canvas.width = totalW;
+                canvas.height = totalH;
+                var ctx = canvas.getContext('2d');
+
+                // Fill background (matte)
+                ctx.fillStyle = '#151515';
+                ctx.fillRect(0, 0, totalW, totalH);
+
+                function drawComposite(texImg) {
+                    images.forEach(function (img, i) {
+                        if (!img) return;
+                        var x = margin + i * (w + gap);
+                        var y = margin;
+
+                        // Draw deckled canvas texture background per panel 
+                        if (texImg) {
+                            ctx.save();
+                            ctx.drawImage(texImg, x, y, w, h);
+                            ctx.restore();
+                        } else {
+                            ctx.fillStyle = '#1a1724';
+                            ctx.fillRect(x, y, w, h);
+                        }
+
+                        // Draw SVG content with aspect ratio preservation
+                        ctx.save();
+                        var imgW = img.width, imgH = img.height;
+                        var aspect = imgW / imgH;
+                        var targetAspect = w / h;
+                        
+                        var drawW = w, drawH = h;
+                        var dx = x, dy = y;
+                        
+                        if (aspect > targetAspect) {
+                            // Image is wider than slot (e.g. Gallery mode panel 1)
+                            drawH = w / aspect;
+                            dy = y + (h - drawH) / 2;
+                        } else {
+                            // Image is taller or equal (e.g. Portrait)
+                            drawW = h * aspect;
+                            dx = x + (w - drawW) / 2;
+                        }
+
+                        ctx.drawImage(img, dx, dy, drawW, drawH);
+                        ctx.restore();
+                    });
+
+                    canvas.toBlob(function (blob) {
+                        var rt = RESOLVED_TRAITS || TRAITS;
+                        var tStr = "-sym_" + rt.symmetry + "-space_" + rt.space + "-motif_" + rt.motif + "-chrome_" + rt.chromes + "-engine_" + rt.engine;
+                        var name = 'platen-' + RENDER_SEED + '-triptych' + tStr + '.png';
+                        downloadBlob(blob, name);
+                        console.log('[Platen] Saved Triptych: ' + name);
+                    }, 'image/png');
+                }
+
+                if (_activeCanvasImg) {
+                    drawComposite(_activeCanvasImg);
+                } else {
+                    drawComposite(null);
+                }
+            });
+        }
+
+        // ΓöÇΓöÇ Pan & Zoom Logic ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        (function () {
+            var state = {}; // { id: { scale:1, x:0, y:0 } }
+
+            function getOrCreateState(id) {
+                if (!state[id]) state[id] = { scale: 1, x: 0, y: 0 };
+                return state[id];
+            }
+
+            function applyTransform(panel, s) {
+                if (!panel) return;
+                panel.style.transform = 'translate(' + s.x + 'px, ' + s.y + 'px) scale(' + s.scale + ')';
+            }
+
+            var wrap = document.getElementById('canvas-wrap');
+
+            // Zoom (Wheel)
+            wrap.addEventListener('wheel', function (e) {
+                var panel = e.target.closest('.platen-panel');
+                if (!panel) return;
+                e.preventDefault();
+                // Bring to front
+                document.querySelectorAll('.platen-panel').forEach(function (p) { p.style.zIndex = 0; });
+                panel.style.zIndex = 100;
+
+                document.getElementById('st-info').innerHTML = 'zoom active &bull; double-click to reset';
+                var id = panel.id || 'p';
+                var s = getOrCreateState(id);
+                var delta = e.deltaY > 0 ? -0.1 : 0.1;
+                var oldScale = s.scale;
+                s.scale = Math.min(Math.max(s.scale + delta, 1), 8);
+                // Adjust pan to zoom towards center (simplified)
+                applyTransform(panel, s);
+            }, { passive: false });
+
+            // Pan (Drag)
+            var isDragging = false;
+            var startX, startY;
+            var currentPanelId = null;
+
+            wrap.addEventListener('mousedown', function (e) {
+                var panel = e.target.closest('.platen-panel');
+                if (!panel) return;
+                // Only allow drag if zoomed in slightly? Or always. User asked for "when in zoom mode".
+                // But dragging at 1x is harmless if constrained. Let's allow free drag.
+                var svg = panel.querySelector('svg');
+                if (!svg) return;
+
+                // Bring to front
+                document.querySelectorAll('.platen-panel').forEach(function (p) { p.style.zIndex = 0; });
+                panel.style.zIndex = 100;
+
+                isDragging = true;
+                currentPanelId = panel.id || 'p';
+                document.getElementById('st-info').innerHTML = 'pan active &bull; double-click to reset';
+                startX = e.clientX;
+                startY = e.clientY;
+                e.preventDefault(); // prevent text selection
+            });
+
+            window.addEventListener('mousemove', function (e) {
+                if (!isDragging || !currentPanelId) return;
+                var s = getOrCreateState(currentPanelId);
+
+                var dx = e.clientX - startX;
+                var dy = e.clientY - startY;
+
+                s.x += dx;
+                s.y += dy;
+
+                startX = e.clientX;
+                startY = e.clientY;
+
+                var panel = document.getElementById(currentPanelId);
+                applyTransform(panel, s);
+            });
+
+            window.addEventListener('mouseup', function () {
+                isDragging = false;
+                currentPanelId = null;
+            });
+
+            // Double-click reset
+            wrap.addEventListener('dblclick', function (e) {
+                var panel = e.target.closest('.platen-panel');
+                if (!panel) return;
+                var id = panel.id || 'p';
+                state[id] = { scale: 1, x: 0, y: 0 };
+                applyTransform(panel, state[id]);
+                document.getElementById('st-info').innerHTML = 'view reset';
+            });
+        })();
+
+        // ΓöÇΓöÇ Keyboard Controls ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        window.addEventListener('keydown', function (e) {
+            // Check if focus is not in an input or select element to avoid firing while user is typing
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'TEXTAREA') {
+                if (e.code === 'Space') {
+                    e.preventDefault(); // prevent page scroll
+                    randomize();
+                } else if (e.code === 'KeyR') {
+                    regenerate();
+                }
+            }
+        });
+
+        // ΓöÇΓöÇ Animation Controls ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        function toggleAnimate() {
+            var isOn = PlatenAnimate.toggle();
+            var btn = document.getElementById('btn-animate');
+            if (btn) {
+                btn.classList.toggle('anim-on', isOn);
+                btn.innerHTML = isOn ? '&#9724; Stop' : '&#9654; Animate';
+            }
+        }
+
+        function onAnimSpeed(v) {
+            PlatenAnimate.setSpeed(parseInt(v, 10));
+            var el = document.getElementById('anim-speed-val');
+            if (el) el.textContent = v;
+        }
+
+        function onAnimProb(v) {
+            PlatenAnimate.setProbability(parseInt(v, 10));
+            var el = document.getElementById('anim-prob-val');
+            if (el) el.textContent = v;
+        }
+
+        function onAnimThresh(v) {
+            PlatenAnimate.setBrightThresh(parseFloat(v) / 100.0);
+            var el = document.getElementById('anim-thresh-val');
+            if (el) el.textContent = v;
+        }
+
+        function toggleRecord() {
+            var speed = PlatenAnimate.getSpeed();
+            PlatenRecorder.toggle(speed);
+        }
+
+        // ΓöÇΓöÇ Boot ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+        // Initial render: start immediately with random art once DOM and resources are ready
+        window.addEventListener('DOMContentLoaded', function () {
+            // Short timeout to ensure custom fonts or external CSS establish layout bounds
+            setTimeout(function() {
+                setLayout(currentLayout);
+            }, 50);
+        });
+    </script>
+</body>
+
+</html>

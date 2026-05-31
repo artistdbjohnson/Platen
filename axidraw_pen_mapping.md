@@ -1,0 +1,217 @@
+# Axidraw Pen Mapping for Larkspur
+
+This document maps the digital hex codes used in the Larkspur generative palettes to specific archival physical pens suitable for Axidraw plotting.
+
+## Recommended Pen Sets
+- **Faber-Castell Pitt Artist Pens**: Excellent archival India ink, consistent flow, wide color gamut (60+ colors).
+- **Sakura Pigma Micron**: The industry standard for archival ink, but limited color palette. Very precise nibs.
+
+## Master Color Mapping List
+
+| Hex Code | Closest Physical Pen |
+|---|---|
+| `#008080` | 153 Cobalt Turquoise |
+| `#010650` | 247 Indanthrene Blue |
+| `#06FFA5` | 174 Chromium Green Opaque |
+| `#0F1316` | 199 Black |
+| `#101820` | 161 Phthalo Green |
+| `#101840` | 247 Indanthrene Blue |
+| `#111416` | 199 Black |
+| `#121212` | 199 Black |
+| `#121417` | 199 Black |
+| `#171718` | 161 Phthalo Green |
+| `#1B998B` | 153 Cobalt Turquoise |
+| `#1E2126` | 175 Dark Sepia |
+| `#1F2529` | 175 Dark Sepia |
+| `#201810` | 175 Dark Sepia |
+| `#201F25` | 175 Dark Sepia |
+| `#203828` | 161 Phthalo Green |
+| `#20B2AA` | 153 Cobalt Turquoise |
+| `#264653` | Micron Hunter Green |
+| `#2A1C17` | 175 Dark Sepia |
+| `#2A1F1A` | 175 Dark Sepia |
+| `#2A2A2A` | 175 Dark Sepia |
+| `#2A2D34` | 175 Dark Sepia |
+| `#2A9D8F` | 174 Chromium Green Opaque |
+| `#2D3047` | 175 Dark Sepia |
+| `#2E2E2E` | 175 Dark Sepia |
+| `#2E363B` | 175 Dark Sepia |
+| `#2F363D` | 175 Dark Sepia |
+| `#2F4F4F` | Micron Hunter Green |
+| `#303028` | 175 Dark Sepia |
+| `#306038` | Micron Hunter Green |
+| `#353B41` | 175 Dark Sepia |
+| `#387050` | Micron Hunter Green |
+| `#3A2F2C` | 175 Dark Sepia |
+| `#3A3A3C` | 175 Dark Sepia |
+| `#3A5F3B` | Micron Hunter Green |
+| `#3E2F23` | 175 Dark Sepia |
+| `#3E3E3E` | 177 Walnut Brown |
+| `#3F5C57` | Micron Hunter Green |
+| `#45B698` | 174 Chromium Green Opaque |
+| `#480810` | 157 Dark Indigo |
+| `#49545B` | Micron Hunter Green |
+| `#4A2F23` | 175 Dark Sepia |
+| `#4A7C6B` | 235 Cold Grey VI |
+| `#4B555F` | 235 Cold Grey VI |
+| `#4B6C70` | 235 Cold Grey VI |
+| `#4C516D` | 235 Cold Grey VI |
+| `#4ECDC4` | 146 Sky Blue |
+| `#4FC3F7` | 146 Sky Blue |
+| `#505878` | 235 Cold Grey VI |
+| `#5386A6` | 233 Cold Grey IV |
+| `#53B36A` | 174 Chromium Green Opaque |
+| `#556270` | 235 Cold Grey VI |
+| `#584020` | 177 Walnut Brown |
+| `#585048` | 177 Walnut Brown |
+| `#5B85AA` | 233 Cold Grey IV |
+| `#5C3A2E` | 177 Walnut Brown |
+| `#5C8D62` | 170 May Green |
+| `#603F3A` | 177 Walnut Brown |
+| `#60C890` | 174 Chromium Green Opaque |
+| `#681818` | Micron Burgundy |
+| `#686858` | 235 Cold Grey VI |
+| `#6A0572` | Micron Purple |
+| `#6A7177` | 235 Cold Grey VI |
+| `#6A8D73` | 233 Cold Grey IV |
+| `#6B8E7A` | 233 Cold Grey IV |
+| `#6C4E3C` | 177 Walnut Brown |
+| `#6C584C` | 235 Cold Grey VI |
+| `#6C8A7A` | 233 Cold Grey IV |
+| `#6D7880` | 233 Cold Grey IV |
+| `#6E6E71` | 235 Cold Grey VI |
+| `#6E7882` | 233 Cold Grey IV |
+| `#6E7C8F` | 233 Cold Grey IV |
+| `#707088` | 233 Cold Grey IV |
+| `#708238` | 167 Permanent Green Olive |
+| `#7A4A33` | 177 Walnut Brown |
+| `#7DA5B3` | 232 Cold Grey III |
+| `#7E4A5E` | 235 Cold Grey VI |
+| `#7E5A9B` | 233 Cold Grey IV |
+| `#848582` | 233 Cold Grey IV |
+| `#86AB2E` | 268 Green Gold |
+| `#87CEEB` | 146 Sky Blue |
+| `#883028` | Micron Brown |
+| `#886830` | 180 Raw Umber |
+| `#8890A0` | 233 Cold Grey IV |
+| `#8A3324` | Micron Brown |
+| `#8B5A47` | 180 Raw Umber |
+| `#8C7A66` | 180 Raw Umber |
+| `#908878` | 233 Cold Grey IV |
+| `#90D8B0` | 171 Light Green |
+| `#98A1A8` | 232 Cold Grey III |
+| `#98D8C8` | 146 Sky Blue |
+| `#9AA2AA` | 232 Cold Grey III |
+| `#A0A088` | 232 Cold Grey III |
+| `#A3C4BC` | 232 Cold Grey III |
+| `#A46F38` | 180 Raw Umber |
+| `#A57C58` | 180 Raw Umber |
+| `#A58F6F` | 180 Raw Umber |
+| `#A65D7B` | 180 Raw Umber |
+| `#A7ADB2` | 232 Cold Grey III |
+| `#A7C4A0` | 232 Cold Grey III |
+| `#A7C6ED` | 146 Sky Blue |
+| `#A8613F` | 180 Raw Umber |
+| `#A86B3D` | 180 Raw Umber |
+| `#B02040` | 134 Crimson |
+| `#B07060` | 180 Raw Umber |
+| `#B3595C` | 192 Indian Red |
+| `#B84848` | 192 Indian Red |
+| `#B87A65` | 192 Indian Red |
+| `#B8B8B9` | 232 Cold Grey III |
+| `#B8E8C8` | 272 Warm Grey III |
+| `#BB8FCE` | 125 Middle Purple Pink |
+| `#C0B890` | 232 Cold Grey III |
+| `#C1D37F` | 171 Light Green |
+| `#C36B4C` | 192 Indian Red |
+| `#C58B5B` | 186 Terracotta |
+| `#C6543F` | 192 Indian Red |
+| `#C6CCD1` | 272 Warm Grey III |
+| `#C6E2FF` | 154 Light Cobalt Turquoise |
+| `#C7F464` | 171 Light Green |
+| `#C82828` | 121 Pale Geranium Lake |
+| `#C84C7A` | 192 Indian Red |
+| `#C8A060` | 268 Green Gold |
+| `#C8B779` | 232 Cold Grey III |
+| `#C8E0A0` | 272 Warm Grey III |
+| `#CE3E3E` | 121 Pale Geranium Lake |
+| `#CF7B4A` | 186 Terracotta |
+| `#D07870` | 186 Terracotta |
+| `#D3B99A` | 232 Cold Grey III |
+| `#D4A58F` | 232 Cold Grey III |
+| `#D4D8DC` | 272 Warm Grey III |
+| `#D6F0BA` | 272 Warm Grey III |
+| `#D86C82` | 186 Terracotta |
+| `#D89890` | 232 Cold Grey III |
+| `#D8DCDF` | 272 Warm Grey III |
+| `#D94F3D` | 192 Indian Red |
+| `#D96B5F` | 186 Terracotta |
+| `#D9B382` | 232 Cold Grey III |
+| `#D9E4DD` | 272 Warm Grey III |
+| `#DCC48E` | 232 Cold Grey III |
+| `#E0F5E0` | 104 Light Yellow Glaze |
+| `#E56459` | 186 Terracotta |
+| `#E63946` | 121 Pale Geranium Lake |
+| `#E69FAF` | Micron Rose |
+| `#E7F5BE` | 104 Light Yellow Glaze |
+| `#E89A5C` | 186 Terracotta |
+| `#E8C4B0` | Micron Rose |
+| `#E8E2CF` | 272 Warm Grey III |
+| `#E9967A` | 186 Terracotta |
+| `#E9F1E9` | 103 Ivory |
+| `#EAEDEF` | 103 Ivory |
+| `#ED6BA7` | 127 Pink Carmine |
+| `#F05858` | 186 Terracotta |
+| `#F05A28` | 121 Pale Geranium Lake |
+| `#F0B898` | Micron Rose |
+| `#F0CA00` | 109 Dark Chrome Yellow |
+| `#F0E880` | 104 Light Yellow Glaze |
+| `#F0EAD6` | 104 Light Yellow Glaze |
+| `#F1FAEE` | 103 Ivory |
+| `#F27649` | 186 Terracotta |
+| `#F28F3B` | 186 Terracotta |
+| `#F2C14E` | 268 Green Gold |
+| `#F2C28A` | Micron Rose |
+| `#F2E394` | Micron Rose |
+| `#F2E8C6` | 104 Light Yellow Glaze |
+| `#F2EFEA` | 103 Ivory |
+| `#F38E82` | 186 Terracotta |
+| `#F3E9D2` | 104 Light Yellow Glaze |
+| `#F3F5F6` | 103 Ivory |
+| `#F4836A` | 186 Terracotta |
+| `#F4A261` | 186 Terracotta |
+| `#F4E1D2` | 104 Light Yellow Glaze |
+| `#F5E6D3` | 104 Light Yellow Glaze |
+| `#F6F3E8` | 103 Ivory |
+| `#F7DC6F` | 268 Green Gold |
+| `#F83038` | 121 Pale Geranium Lake |
+| `#F8BBD0` | Micron Rose |
+| `#F8E0A0` | Micron Rose |
+| `#F8E3C4` | 104 Light Yellow Glaze |
+| `#F8E8D0` | 104 Light Yellow Glaze |
+| `#F8F4E3` | 104 Light Yellow Glaze |
+| `#F8F4ED` | 103 Ivory |
+| `#F9B1C8` | Micron Rose |
+| `#F9BCB8` | Micron Rose |
+| `#F9C6C9` | Micron Rose |
+| `#F9D949` | 107 Cadmium Yellow |
+| `#FA9A86` | 186 Terracotta |
+| `#FAF8F3` | 103 Ivory |
+| `#FEDBDD` | Micron Rose |
+| `#FF69B4` | 127 Pink Carmine |
+| `#FF6B57` | 186 Terracotta |
+| `#FF6B6B` | 186 Terracotta |
+| `#FF7F51` | 186 Terracotta |
+| `#FF9F1C` | 113 Orange Glaze |
+| `#FFB400` | 109 Dark Chrome Yellow |
+| `#FFB692` | Micron Rose |
+| `#FFB857` | 186 Terracotta |
+| `#FFD166` | 268 Green Gold |
+| `#FFD6A8` | Micron Rose |
+| `#FFE4B5` | 104 Light Yellow Glaze |
+| `#FFE5D4` | 104 Light Yellow Glaze |
+| `#FFE6A7` | 104 Light Yellow Glaze |
+| `#FFE7E0` | 104 Light Yellow Glaze |
+| `#FFF0B6` | 104 Light Yellow Glaze |
+| `#FFF0F5` | 103 Ivory |
+| `#FFFCF2` | 103 Ivory |

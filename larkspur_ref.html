@@ -1,0 +1,3195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Platen</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0d0b12;
+            --panel: #1a1724;
+            --border: #2a2535;
+            --purple: #6839aa;
+            --text: #DEE4D7;
+            --dim: rgba(222, 228, 215, 0.35);
+            --canvas-bg: #151515;
+            --body-bg: #100e13;
+            --shadow: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+        }
+
+        [data-theme="light"] {
+            --bg: #ffffff;
+            --panel: #ffffff;
+            --border: #000000;
+            --purple: #000000;
+            --text: #000000;
+            --dim: rgba(0, 0, 0, 0.5);
+            --canvas-bg: #ffffff;
+            --body-bg: #ffffff;
+            --shadow: none;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            overflow: hidden;
+        }
+
+        /* ── Top bar ── */
+        #topbar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--panel);
+            z-index: 10;
+        }
+
+        .title {
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--dim);
+        }
+
+        .title span {
+            color: var(--purple);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--dim);
+            font-family: inherit;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            padding: 5px 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.15s;
+        }
+
+        button:hover,
+        button.active {
+            border-color: var(--purple);
+            color: var(--text);
+            background: rgba(104, 57, 170, 0.15);
+        }
+
+        button.active {
+            background: rgba(104, 57, 170, 0.25);
+        }
+
+        #btn-randomize {
+            border-color: var(--purple);
+            color: var(--purple);
+        }
+
+        #btn-randomize:hover {
+            background: var(--purple);
+            color: var(--text);
+        }
+
+        /* ── Trait bar ── */
+        #traitbar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 7px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--panel);
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            color: var(--dim);
+            flex-wrap: wrap;
+        }
+
+        .trait {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .trait-label {
+            opacity: 0.5;
+        }
+
+        .trait-val {
+            color: var(--text);
+        }
+
+        .trait-select {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            padding: 2px 6px;
+            cursor: pointer;
+            text-transform: lowercase;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            outline: none;
+        }
+
+        .trait-select:hover,
+        .trait-select:focus {
+            border-color: var(--purple);
+            background: rgba(104, 57, 170, 0.15);
+        }
+
+        .trait-select option {
+            background: var(--panel);
+            color: var(--text);
+        }
+
+        /* Hide scrollbar on select dropdowns */
+        .trait-select::-webkit-scrollbar {
+            display: none;
+        }
+
+        .trait-select {
+            scrollbar-width: none;
+        }
+
+        .platen-panel {
+            background-color: #0d0d0d;
+            /* instant placeholder until texture loads */
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: var(--shadow);
+            position: relative;
+            cursor: grab;
+            transform-origin: center center;
+            transition: transform 0.1s ease-out;
+        }
+
+        /* Blending modes for ink-on-canvas effect */
+        .canvas-tan svg,
+        .canvas-olive svg,
+        .canvas-white svg {
+            mix-blend-mode: multiply;
+            opacity: 1.0;
+            filter: saturate(3.0) contrast(1.3) brightness(1.5);
+        }
+
+        .canvas-black svg {
+            mix-blend-mode: normal;
+            opacity: 0.95;
+            filter: saturate(1.2) contrast(1.05);
+        }
+
+        .platen-panel:active {
+            cursor: grabbing;
+            transition: none;
+            /* instant follow while dragging */
+        }
+
+        /* ── Canvas area — fills remaining viewport, no scroll ── */
+        #canvas-wrap {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            width: 100%;
+            overflow: auto;
+            gap: 20px;
+            min-height: 0;
+            background: var(--canvas-bg);
+        }
+
+        /* Banner (16:9): 3 panels side by side, landscape */
+        #canvas-wrap.banner {
+            flex-direction: row;
+            align-items: stretch;
+            aspect-ratio: 16 / 9;
+            max-height: 100%;
+            max-width: 100%;
+        }
+
+        #canvas-wrap.banner .platen-panel {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #canvas-wrap.banner .platen-panel svg {
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+        }
+
+        /* Panel (9:16): single panel, portrait */
+        #canvas-wrap.panel {
+            flex-direction: row;
+        }
+
+        #canvas-wrap.panel #panel2,
+        #canvas-wrap.panel #panel3 {
+            display: none;
+        }
+
+        #canvas-wrap.panel .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            aspect-ratio: 9 / 16;
+            min-height: 80vh;
+            /* Ensure size while loading */
+        }
+
+        #canvas-wrap.panel .platen-panel svg {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: 100%;
+        }
+
+        /* Gallery (16:9): Single large horizontal panel */
+        #canvas-wrap.gallery {
+            flex-direction: row;
+        }
+
+        #canvas-wrap.gallery #panel2,
+        #canvas-wrap.gallery #panel3 {
+            display: none;
+        }
+
+        #canvas-wrap.gallery .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            min-height: 0;
+        }
+
+        #canvas-wrap.gallery .platen-panel svg {
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+        }
+
+        .platen-panel svg {
+            transform-origin: center center;
+        }
+
+        /* Single: 1 centered panel, full height, panels 2+3 hidden */
+        #canvas-wrap.single {
+            flex-direction: row;
+        }
+
+        #canvas-wrap.single #panel2,
+        #canvas-wrap.single #panel3 {
+            display: none;
+        }
+
+        #canvas-wrap.single .platen-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        #canvas-wrap.single .platen-panel svg {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: 100%;
+        }
+
+        .c {
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            font-size: 9px;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--body-bg);
+            color: var(--text);
+            font-family: 'IBM Plex Mono', monospace;
+            overflow: hidden;
+            /* Prevent scrolling on body */
+        }
+
+        /* ── Status bar ── */
+        #statusbar {
+            width: 100%;
+            padding: 6px 20px;
+            border-top: 1px solid var(--border);
+            background: var(--panel);
+            font-size: 9px;
+            color: var(--dim);
+            letter-spacing: 0.08em;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        /* ── Auto-randomizer toggle ── */
+        #btn-auto {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: transparent;
+            padding: 0;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
+        }
+
+        #btn-auto.auto-on {
+            background: var(--purple);
+            border-color: var(--purple);
+            box-shadow: 0 0 6px rgba(125, 133, 140, 0.6);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="topbar">
+        <div id="title">PLATEN</div>
+        <div class="btn-group">
+            <button id="btn-theme" onclick="toggleTheme()" title="Toggle Light/Dark Mode">☀︎</button>
+            <button id="btn-randomize" onclick="randomize()">&#9632; Randomize</button>
+            <button id="btn-regen" onclick="regenerate()">&#8635; Regenerate</button>
+            <button id="btn-panel" class="active" onclick="setLayout('panel')" disabled>Panel 9:16</button>
+            <button id="btn-banner" onclick="setLayout('banner')">Banner 16:9</button>
+            <!-- <button id="btn-gallery" onclick="setLayout('gallery')">Gallery 16:9</button> -->
+            <button id="btn-out-svg" onclick="saveSVG()" title="Download SVG" disabled>&#8595; SVG</button>
+            <button id="btn-out-png" onclick="savePNG()" title="Download PNG" disabled>&#8595; PNG</button>
+            <div
+                style="display: flex; align-items: center; gap: 4px; border: 1px solid var(--border); padding: 5px 8px; border-radius: 0; background: var(--panel);">
+                <input type="checkbox" id="inc-bg" checked
+                    style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple);">
+                <label for="inc-bg"
+                    style="font-size: 8px; color: var(--text); cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">Inc.
+                    BG</label>
+            </div>
+            <button id="btn-out-triptych" onclick="saveTriptych()" title="Download Triptych (3 Panels)" disabled>&#8595;
+                TRIPTYCH</button>
+            <button id="btn-out-dst" onclick="saveDST()" title="Download DST (Embroidery)" disabled>&#8595; DST</button>
+            <button id="btn-out-plot" onclick="savePlotterSVG()" title="Download SVG for Plotter (Inkscape Layers)"
+                disabled>&#8595; PLOT</button>
+        </div>
+    </div>
+
+    <div id="traitbar">
+        <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym"
+                onchange="TRAITS.symmetry=this.value" disabled></select></div>
+
+        <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space"
+                onchange="TRAITS.space=this.value" disabled></select></div>
+        <div class="trait"><span class="trait-label">Chromes</span><select class="trait-select" id="t-chrome"
+                onchange="TRAITS.chromes=this.value" disabled></select></div>
+        <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine"
+                onchange="TRAITS.engine=this.value" disabled></select></div>
+        <div class="trait"><span class="trait-label">Canvas</span><select class="trait-select" id="t-canvas"
+                onchange="TRAITS.canvas=this.value; updateCanvasTexture()" disabled></select></div>
+    </div>
+
+    <!-- Always 3 panels — quantity is always 3 -->
+    <div id="canvas-wrap" class="panel">
+        <div class="platen-panel" id="panel1"><svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg"></svg></div>
+        <div class="platen-panel" id="panel2"><svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg"></svg></div>
+        <div class="platen-panel" id="panel3"><svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    </div>
+
+    <div id="statusbar">
+        <span id="st-info">rendering...</span>
+        <button id="btn-auto" onclick="toggleAuto()" title="Auto-randomize every 15s"></button>
+    </div>
+
+    <script>
+        // ─────────────────────────────────────────────────────────────────────────────
+        // PLATEN — always a triptych
+        // Platen flowers replace pixels. Code lives in the blooms.
+        // by Douglxss
+        // ─────────────────────────────────────────────────────────────────────────────
+
+        function toggleTheme() {
+            var el = document.documentElement;
+            var btn = document.getElementById('btn-theme');
+            if (el.getAttribute('data-theme') === 'light') {
+                el.removeAttribute('data-theme');
+                btn.textContent = '☀︎';
+            } else {
+                el.setAttribute('data-theme', 'light');
+                btn.textContent = '☾';
+            }
+        }
+
+        // ── Auto-randomizer ─────────────────────────────────────────────────
+        var _autoInterval = null;
+        var _autoMode = 'randomize'; // 'randomize' or 'regenerate'
+
+        function toggleAuto() {
+            var btn = document.getElementById('btn-auto');
+            if (_autoInterval) {
+                stopAuto();
+            } else {
+                startAuto(_autoMode);
+            }
+        }
+
+        function startAuto(mode) {
+            stopAuto();
+            _autoMode = mode;
+            var btnAuto = document.getElementById('btn-auto');
+            if (btnAuto) btnAuto.classList.add('auto-on');
+
+            var fn = (_autoMode === 'regenerate') ? regenerate : randomize;
+            _autoInterval = setInterval(fn, 15000);
+            updateAutoUI();
+        }
+
+        function stopAuto() {
+            if (_autoInterval) {
+                clearInterval(_autoInterval);
+                _autoInterval = null;
+            }
+            var btnAuto = document.getElementById('btn-auto');
+            if (btnAuto) btnAuto.classList.remove('auto-on');
+            updateAutoUI();
+        }
+
+        function updateAutoUI() {
+            var btnRand = document.getElementById('btn-randomize');
+            var btnRegen = document.getElementById('btn-regen');
+            if (btnRand) btnRand.classList.toggle('active', !!_autoInterval && _autoMode === 'randomize');
+            if (btnRegen) btnRegen.classList.toggle('active', !!_autoInterval && _autoMode === 'regenerate');
+        }
+
+        // ── Platen flower path (normalized to 20×20 viewBox) ───────────────────────
+        // Original SVG coords: x[245.567–265.878], y[7639–7659]
+        // Normalized: translate(-245.567,-7639) then scale(0.9847)
+        var FLOWER_PATH = (function () {
+            var s = 0.9847, ox = 245.567, oy = 7639.0;
+            function p(x, y) {
+                return ((x - ox) * s).toFixed(3) + "," + ((y - oy) * s).toFixed(3);
+            }
+            return [
+                "M", p(259.133, 7656.050),
+                "C", p(259.660, 7655.155), p(259.967, 7654.115), p(259.967, 7653.000),
+                "C", p(259.967, 7651.327), p(259.287, 7647.777), p(258.191, 7644.670),
+                "C", p(259.337, 7643.563), p(260.430, 7642.688), p(261.207, 7642.350),
+                "C", p(261.473, 7642.234), p(261.788, 7642.380), p(261.866, 7642.661),
+                "C", p(262.514, 7644.964), p(261.414, 7654.113), p(259.133, 7656.050),
+                "M", p(256.773, 7655.862),
+                "C", p(255.277, 7657.329), p(252.940, 7657.341), p(251.414, 7656.005),
+                "C", p(250.577, 7655.271), p(250.036, 7654.203), p(250.036, 7653.000),
+                "C", p(250.036, 7650.015), p(252.092, 7643.144), p(253.646, 7641.366),
+                "C", p(253.835, 7641.150), p(254.178, 7641.147), p(254.368, 7641.363),
+                "C", p(255.920, 7643.132), p(257.981, 7649.957), p(257.981, 7653.000),
+                "C", p(257.981, 7654.122), p(257.516, 7655.135), p(256.773, 7655.862),
+                "M", p(248.559, 7655.385),
+                "C", p(247.006, 7653.703), p(245.623, 7645.135), p(246.307, 7642.664),
+                "C", p(246.385, 7642.382), p(246.702, 7642.234), p(246.968, 7642.352),
+                "C", p(247.721, 7642.684), p(248.763, 7643.528), p(249.882, 7644.600),
+                "C", p(248.902, 7647.350), p(247.366, 7652.612), p(248.559, 7655.385),
+                "M", p(261.801, 7640.198),
+                "C", p(260.588, 7640.198), p(258.989, 7641.233), p(257.392, 7642.672),
+                "C", p(256.431, 7640.561), p(255.265, 7639.000), p(254.008, 7639.000),
+                "C", p(252.763, 7639.000), p(251.607, 7640.530), p(250.651, 7642.612),
+                "C", p(249.414, 7641.506), p(247.062, 7639.641), p(245.567, 7640.358),
+                "C", p(242.596, 7641.782), p(244.510, 7652.585), p(245.924, 7655.577),
+                "C", p(246.944, 7657.735), p(249.077, 7658.998), p(251.064, 7659.000),
+                "L", p(255.918, 7659.000), "L", p(255.918, 7658.992),
+                "C", p(258.784, 7659.054), p(260.883, 7657.563), p(261.823, 7655.577),
+                "C", p(263.317, 7652.416), p(265.878, 7640.198), p(261.801, 7640.198)
+            ].join(" ");
+        })();
+
+        // ── Chromes (cohesive families from catalog color plates + Near Eastern dyes) ──
+        // All hex values extracted from gallery color plates via pixel sampling.
+        // r = relative weight (higher = more frequent), v = variant accent flag.
+        var PALETTES = {
+            panar: [  // hemp canvas — warm parchment family
+                { c: "#f8e8d0", r: 2 },       // lightest parchment
+                { c: "#f8e0a0", r: 2 },       // golden parchment
+                { c: "#c8a060", r: 3 },       // warm gold
+                { c: "#886830", r: 2 },       // golden brown
+                { c: "#584020", r: 2 },       // dark umber
+                { c: "#883028", r: 1, v: 1 }, // sienna accent
+                { c: "#201810", r: 3 }        // near-black
+            ],
+            rutsya: [  // red thread — the dominant embroidery reds
+                { c: "#c82828", r: 3 },       // vermillion
+                { c: "#883028", r: 2 },       // dark sienna
+                { c: "#b84848", r: 2 },       // brick red
+                { c: "#f05858", r: 1 },       // coral highlight
+                { c: "#f8e0a0", r: 1, v: 1 }, // parchment accent
+                { c: "#681818", r: 2 },       // blood dark
+                { c: "#480810", r: 2 },       // near-black crimson
+                { c: "#201810", r: 2 }        // deep dark
+            ],
+            tekhelet: [  // indigo — Judean desert blue dye family
+                { c: "#505878", r: 3 },       // slate blue
+                { c: "#101840", r: 3 },       // midnight blue
+                { c: "#707088", r: 2 },       // blue-gray
+                { c: "#8890a0", r: 2 },       // cool steel
+                { c: "#c8a060", r: 1, v: 1 }, // warm gold accent
+                { c: "#303028", r: 2 },       // dark olive
+                { c: "#201810", r: 2 }        // deep dark
+            ],
+            argaman: [  // Tyrian purple — murex shell dye, the most precious
+                { c: "#b02040", r: 3 },       // wine/crimson
+                { c: "#505878", r: 2 },       // slate blue
+                { c: "#883028", r: 2 },       // dark sienna
+                { c: "#f05858", r: 1, v: 1 }, // coral accent
+                { c: "#d89890", r: 1 },       // dusty rose
+                { c: "#101840", r: 3 },       // midnight
+                { c: "#480810", r: 2 }        // near-black
+            ],
+            karkom: [  // saffron gold — crocus dye, warm ceremonial
+                { c: "#c8a060", r: 3 },       // warm gold
+                { c: "#886830", r: 3 },       // golden brown
+                { c: "#f8e0a0", r: 2 },       // parchment light
+                { c: "#b07060", r: 2 },       // terracotta
+                { c: "#f83038", r: 1, v: 1 }, // scarlet accent
+                { c: "#584020", r: 2 },       // umber
+                { c: "#303028", r: 2 }        // dark
+            ],
+            madder: [  // rubia root — Samarian red earth dye
+                { c: "#b84848", r: 3 },       // brick red
+                { c: "#d07870", r: 2 },       // dusty rose
+                { c: "#b07060", r: 2 },       // terracotta
+                { c: "#f0b898", r: 1 },       // peach
+                { c: "#f8e0a0", r: 1, v: 1 }, // parchment accent
+                { c: "#584020", r: 2 },       // dark umber
+                { c: "#681818", r: 2 },       // dark blood
+                { c: "#201810", r: 2 }        // near-black
+            ],
+            murex: [  // royal sea snail — crimson + midnight deep
+                { c: "#b02040", r: 3 },       // wine
+                { c: "#c82828", r: 2 },       // vermillion
+                { c: "#101840", r: 3 },       // midnight blue
+                { c: "#505878", r: 2 },       // slate
+                { c: "#c8a060", r: 1, v: 1 }, // gold accent
+                { c: "#480810", r: 3 },       // near-black crimson
+                { c: "#201810", r: 2 }        // deep dark
+            ],
+            kelme: [  // ink + parchment — the catalog page itself
+                { c: "#303028", r: 3 },       // dark ink
+                { c: "#585048", r: 2 },       // warm gray
+                { c: "#f8e8d0", r: 3 },       // light parchment
+                { c: "#c0b890", r: 2 },       // warm sage
+                { c: "#c82828", r: 1, v: 1 }, // red accent
+                { c: "#908878", r: 2 },       // mid gray
+                { c: "#201810", r: 2 }        // near-black
+            ],
+            viride: [  // green earth — forest dye from the color plates
+                { c: "#306038", r: 3 },       // forest green
+                { c: "#686858", r: 2 },       // olive gray
+                { c: "#886830", r: 2 },       // golden brown
+                { c: "#a0a088", r: 2 },       // sage
+                { c: "#f05858", r: 1, v: 1 }, // coral accent
+                { c: "#584020", r: 2 },       // umber
+                { c: "#201810", r: 3 }        // deep dark
+            ],
+            kokkos: [  // scarlet worm — kermes insect dye (Greek: kokkos)
+                { c: "#f83038", r: 3 },       // bright scarlet
+                { c: "#f05858", r: 2 },       // coral
+                { c: "#b02040", r: 2 },       // wine
+                { c: "#d89890", r: 1 },       // dusty rose
+                { c: "#c8a060", r: 1, v: 1 }, // gold accent
+                { c: "#883028", r: 2 },       // dark sienna
+                { c: "#303028", r: 3 }        // dark
+            ],
+            shahar: [  // dawn (Hebrew) — Salmon dominant
+                { c: "#f38e82", r: 3 },       // salmon
+                { c: "#e9967a", r: 2 },       // dark salmon
+                { c: "#f5e6d3", r: 2 },       // cream
+                { c: "#d89890", r: 2 },       // dusty rose
+                { c: "#45b698", r: 1, v: 1 }, // teal accent
+                { c: "#883028", r: 2 },       // sienna
+                { c: "#303028", r: 3 }        // dark
+            ],
+            gehelet: [  // ember (Hebrew) — Burnt Umber dominant
+                { c: "#8a3324", r: 3 },       // burnt umber
+                { c: "#5c3a2e", r: 2 },       // dark brown
+                { c: "#c58b5b", r: 2 },       // golden brown
+                { c: "#a8613f", r: 2 },       // rust
+                { c: "#f2c28a", r: 1, v: 1 }, // gold accent
+                { c: "#4a2f23", r: 2 },       // deep brown
+                { c: "#201810", r: 3 }        // near-black
+            ],
+            tarshish: [  // beryl/sea-stone (Hebrew) — Aqua dominant
+                { c: "#45b698", r: 3 },       // aqua / teal
+                { c: "#20b2aa", r: 2 },       // light sea green
+                { c: "#008080", r: 2 },       // teal
+                { c: "#6c8a7a", r: 2 },       // sage
+                { c: "#f05858", r: 1, v: 1 }, // coral accent
+                { c: "#2f4f4f", r: 2 },       // dark slate
+                { c: "#101820", r: 3 }        // dark
+            ],
+
+            // ── HyperLoom Origins palettes ──────────────────────────────────────────
+
+            pepel: [  // ash (Erzya) — White Mono
+                { c: "#F3F5F6", r: 2 },       // off-white
+                { c: "#D8DCDF", r: 2 },       // very light gray
+                { c: "#A7ADB2", r: 3 },       // light gray
+                { c: "#6A7177", r: 2 },       // medium gray
+                { c: "#353B41", r: 2 },       // dark gray
+                { c: "#0F1316", r: 3 }        // near-black
+            ],
+            katan: [  // fine linen (Hebrew) — White on Cream
+                { c: "#FAF8F3", r: 2 },       // pure cream
+                { c: "#F3F5F6", r: 2 },       // off-white
+                { c: "#D8DCDF", r: 2 },       // light gray
+                { c: "#A7ADB2", r: 2 },       // medium gray
+                { c: "#6A7177", r: 2 },       // steel
+                { c: "#C6543F", r: 1, v: 1 }, // coral accent
+                { c: "#0F1316", r: 3 }        // near-black
+            ],
+            wari: [  // Andean patchwork (Peru)
+                { c: "#102848", r: 3 },       // indigo/navy background
+                { c: "#883028", r: 3 },       // rust/terracotta red
+                { c: "#606838", r: 2 },       // olive/moss green
+                { c: "#D8B048", r: 2 },       // golden/ochre yellow
+                { c: "#E8D8B8", r: 1 },       // off-white/cream
+                { c: "#B84830", r: 1, v: 1 }, // brighter brick red
+                { c: "#201818", r: 2 }        // near black
+            ],
+            navajo: [  // Southwestern rug bands
+                { c: "#101838", r: 3 },       // deep midnight navy
+                { c: "#A01820", r: 3 },       // madder red / cardinal
+                { c: "#C8A880", r: 2 },       // sand/tan
+                { c: "#F0E8D8", r: 1 },       // pale gray/white
+                { c: "#B03038", r: 1, v: 1 }, // brick accent
+                { c: "#282828", r: 3 }        // charcoal/black
+            ],
+            tsemer: [  // soft wool (Hebrew) — Sorbet Grid
+                { c: "#FFE7E0", r: 2 },       // peach
+                { c: "#FFD6A8", r: 2 },       // apricot
+                { c: "#FFF0B6", r: 2 },       // light yellow
+                { c: "#D6F0BA", r: 2 },       // light green
+                { c: "#E7F5BE", r: 2 },       // mint cream
+                { c: "#F2E8C6", r: 2 },       // cream
+                { c: "#F9B1C8", r: 1 },       // pink
+                { c: "#F4836A", r: 1, v: 1 }, // coral accent
+                { c: "#6E7C8F", r: 2 },       // slate
+                { c: "#201F25", r: 3 }        // dark
+            ],
+            porphyra: [  // purple-shell (Greek) — Shell and Coral
+                { c: "#F8F4ED", r: 2 },       // very light shell
+                { c: "#F2EFEA", r: 2 },       // shell
+                { c: "#B8B8B9", r: 2 },       // light gray
+                { c: "#FA9A86", r: 1 },       // coral pink
+                { c: "#E56459", r: 1, v: 1 }, // coral red accent
+                { c: "#C84C7A", r: 1 },       // pink
+                { c: "#C8B779", r: 1 },       // tan
+                { c: "#6E6E71", r: 2 },       // medium gray
+                { c: "#3A3A3C", r: 2 },       // dark gray
+                { c: "#171718", r: 3 }        // near-black
+            ],
+            kaspi: [  // silver (Erzya) — Slate Fog
+                { c: "#EAEDEF", r: 2 },       // off-white
+                { c: "#C6CCD1", r: 2 },       // light gray
+                { c: "#98A1A8", r: 2 },       // cool gray
+                { c: "#6D7880", r: 2 },       // medium
+                { c: "#49545B", r: 2 },       // dark medium
+                { c: "#F2C14E", r: 1, v: 1 }, // yellow accent
+                { c: "#D96B5F", r: 1 },       // coral
+                { c: "#2E363B", r: 2 },       // charcoal
+                { c: "#1F2529", r: 2 },       // dark
+                { c: "#111416", r: 3 }        // near-black
+            ],
+            tukmo: [  // brick/earthen (Erzya) — Baked
+                { c: "#F8E3C4", r: 1 },       // cream
+                { c: "#F2C28A", r: 2 },       // sand
+                { c: "#E89A5C", r: 2 },       // light terracotta
+                { c: "#CF7B4A", r: 3 },       // terracotta
+                { c: "#A8613F", r: 2 },       // rust
+                { c: "#7A4A33", r: 2 },       // brown
+                { c: "#6C8A7A", r: 1, v: 1 }, // sage accent
+                { c: "#3F5C57", r: 1 },       // dark teal
+                { c: "#4A2F23", r: 2 },       // dark brown
+                { c: "#2A1C17", r: 3 }        // near-black
+            ],
+            barzel: [  // iron (Hebrew) — Politique
+                { c: "#F3F5F6", r: 1 },       // off-white
+                { c: "#D4D8DC", r: 2 },       // light gray
+                { c: "#9AA2AA", r: 2 },       // cool gray
+                { c: "#6E7882", r: 2 },       // medium
+                { c: "#4B555F", r: 2 },       // dark medium
+                { c: "#CE3E3E", r: 1, v: 1 }, // red accent
+                { c: "#A46F38", r: 1 },       // ochre
+                { c: "#2F363D", r: 2 },       // charcoal
+                { c: "#1E2126", r: 2 },       // dark
+                { c: "#121417", r: 3 }        // near-black
+            ],
+            adama: [  // earth/ground (Hebrew) — Southwest
+                { c: "#F5E6D3", r: 1 },       // cream
+                { c: "#E8C4B0", r: 2 },       // sand
+                { c: "#D4A58F", r: 2 },       // dusty rose
+                { c: "#B87A65", r: 2 },       // terra
+                { c: "#8B5A47", r: 3 },       // brown
+                { c: "#C58B5B", r: 1 },       // golden brown
+                { c: "#A86B3D", r: 1 },       // rust
+                { c: "#6B8E7A", r: 1, v: 1 }, // sage accent
+                { c: "#4A7C6B", r: 1 },       // teal
+                { c: "#5C3A2E", r: 2 },       // dark
+                { c: "#2A1F1A", r: 3 }        // near-black
+            ],
+            shemen: [  // olive oil (Hebrew) — Alentejo
+                { c: "#F0EAD6", r: 2 },       // warm cream
+                { c: "#F2E394", r: 2 },       // golden yellow
+                { c: "#D3B99A", r: 2 },       // sand
+                { c: "#C1D37F", r: 2 },       // spring green
+                { c: "#A57C58", r: 2 },       // earth
+                { c: "#708238", r: 2, v: 1 }, // olive accent
+                { c: "#6C4E3C", r: 2 },       // dark brown
+                { c: "#3E2F23", r: 3 }        // near-black
+            ],
+            yam: [  // sea (Hebrew) — St. Croix
+                { c: "#FEDBDD", r: 2 },       // light pink
+                { c: "#F9BCB8", r: 3 },       // salmon
+                { c: "#45B698", r: 2, v: 1 }, // teal accent
+                { c: "#848582", r: 2 },       // gray
+                { c: "#010650", r: 3 }        // deep navy
+            ],
+            erev: [  // evening (Hebrew) — Monterey Drive
+                { c: "#F4E1D2", r: 1 },       // cream
+                { c: "#D9B382", r: 2 },       // sand
+                { c: "#A7C6ED", r: 2 },       // sky blue
+                { c: "#5386A6", r: 2 },       // ocean
+                { c: "#7E5A9B", r: 2 },       // purple
+                { c: "#E63946", r: 1, v: 1 }, // red accent
+                { c: "#F28F3B", r: 1 },       // orange
+                { c: "#2A2D34", r: 3 }        // dark
+            ],
+            alon: [  // oak (Hebrew) — Monticello
+                { c: "#F8F4E3", r: 1 },       // cream
+                { c: "#DCC48E", r: 2 },       // golden
+                { c: "#A58F6F", r: 3 },       // warm brown
+                { c: "#7DA5B3", r: 2 },       // blue-gray
+                { c: "#4B6C70", r: 2 },       // teal
+                { c: "#B3595C", r: 1, v: 1 }, // brick red accent
+                { c: "#6C584C", r: 2 },       // dark brown
+                { c: "#3A2F2C", r: 3 }        // near-black
+            ],
+            afarsek: [  // peach (Hebrew) — Peachtree
+                { c: "#FFE5D4", r: 1 },       // lightest peach
+                { c: "#FFB692", r: 2 },       // peach
+                { c: "#A3C4BC", r: 2 },       // sage
+                { c: "#F9D949", r: 1 },       // yellow
+                { c: "#FF7F51", r: 2 },       // orange
+                { c: "#6A8D73", r: 2 },       // forest
+                { c: "#E63946", r: 1, v: 1 }, // red accent
+                { c: "#3E3E3E", r: 3 }        // dark
+            ],
+            shoshan: [  // lily/rose (Hebrew) — Dogwood Bloom
+                { c: "#FFF0F5", r: 1 },       // lavender blush
+                { c: "#F9C6C9", r: 2 },       // light pink
+                { c: "#C6E2FF", r: 2 },       // light blue
+                { c: "#E69FAF", r: 2 },       // pink
+                { c: "#D86C82", r: 2 },       // rose
+                { c: "#A65D7B", r: 2 },       // mauve
+                { c: "#7E4A5E", r: 2, v: 1 }, // dark mauve accent
+                { c: "#4C516D", r: 3 }        // slate
+            ],
+            neshef: [  // twilight (Hebrew) — Baja Sur
+                { c: "#FFFCF2", r: 1 },       // near-white
+                { c: "#FFE6A7", r: 2 },       // light gold
+                { c: "#FFB857", r: 2 },       // amber
+                { c: "#F27649", r: 2 },       // orange
+                { c: "#D94F3D", r: 2 },       // red
+                { c: "#1B998B", r: 1, v: 1 }, // teal accent
+                { c: "#6A0572", r: 2 },       // deep purple
+                { c: "#2D3047", r: 3 }        // dark
+            ],
+            bahir: [  // luminous (Hebrew) — Miracle Mile
+                { c: "#F3E9D2", r: 1 },       // cream
+                { c: "#FFB400", r: 1 },       // gold
+                { c: "#FF9F1C", r: 1 },       // amber
+                { c: "#C7F464", r: 1 },       // lime
+                { c: "#4ECDC4", r: 2 },       // teal
+                { c: "#FF6B6B", r: 1, v: 1 }, // coral accent
+                { c: "#556270", r: 2 },       // slate
+                { c: "#2A2A2A", r: 3 }        // dark
+            ],
+            gan: [  // garden (Hebrew) — Belvedere Park
+                { c: "#E9F1E9", r: 1 },       // pale green
+                { c: "#F4E1D2", r: 1 },       // cream
+                { c: "#D9E4DD", r: 2 },       // soft sage
+                { c: "#A7C4A0", r: 2 },       // green
+                { c: "#8C7A66", r: 2 },       // warm gray
+                { c: "#5C8D62", r: 2, v: 1 }, // forest accent
+                { c: "#3A5F3B", r: 2 },       // dark green
+                { c: "#2E2E2E", r: 3 }        // dark
+            ],
+            zahav: [  // gold (Hebrew) — Luxe
+                { c: "#F1FAEE", r: 1 },       // near-white
+                { c: "#FFD166", r: 2 },       // gold
+                { c: "#F4A261", r: 2 },       // apricot
+                { c: "#4ECDC4", r: 2 },       // teal
+                { c: "#06FFA5", r: 1, v: 1 }, // neon green accent
+                { c: "#2A9D8F", r: 2 },       // dark teal
+                { c: "#FF6B57", r: 1 },       // coral
+                { c: "#5B85AA", r: 2 },       // steel blue
+                { c: "#E63946", r: 1 },       // red
+                { c: "#264653", r: 3 }        // dark teal
+            ],
+            simcha: [  // joy/festival (Hebrew) — Happy Socks
+                { c: "#F6F3E8", r: 1 },       // warm white
+                { c: "#E8E2CF", r: 2 },       // cream
+                { c: "#86AB2E", r: 2 },       // lime green
+                { c: "#F05A28", r: 2 },       // orange
+                { c: "#F0CA00", r: 2, v: 1 }, // yellow accent
+                { c: "#53B36A", r: 2 },       // green
+                { c: "#ED6BA7", r: 1 },       // pink
+                { c: "#C36B4C", r: 2 },       // brown
+                { c: "#603F3A", r: 2 },       // dark brown
+                { c: "#121212", r: 3 }        // near-black
+            ],
+            ruach: [  // wind/spirit (Hebrew) — Bay City Breeze
+                { c: "#87CEEB", r: 3 },       // sky blue
+                { c: "#FFE4B5", r: 2 },       // moccasin
+                { c: "#98D8C8", r: 2 },       // mint
+                { c: "#F7DC6F", r: 2 },       // yellow
+                { c: "#4FC3F7", r: 2 },       // light blue
+                { c: "#FF69B4", r: 1, v: 1 }, // hot pink accent
+                { c: "#BB8FCE", r: 2 },       // lavender
+                { c: "#F8BBD0", r: 2 }        // light pink
+            ],
+            nana: [  // mint (Hebrew/Arabic) — Mint (Genesis)
+                { c: "#E0F5E0", r: 2 },       // lightest mint
+                { c: "#B8E8C8", r: 3 },       // mint green
+                { c: "#90D8B0", r: 2 },       // medium mint
+                { c: "#60C890", r: 2 },       // green
+                { c: "#F0E880", r: 1, v: 1 }, // yellow accent
+                { c: "#C8E0A0", r: 2 },       // lime
+                { c: "#387050", r: 2 },       // dark green
+                { c: "#203828", r: 3 }        // near-black
+            ],
+
+            // ── Japanese Traditional Palettes ─────────────────────────────────────────
+
+            kinjiki: [  // Imperial Reds & Purples (Forbidden Colors)
+                { c: "#FF4E20", r: 1 },       // Otan / Orange
+                { c: "#C91F37", r: 2 },       // Karakurenai / Crimson
+                { c: "#7E2639", r: 1 },       // Su'o / Sappanwood
+                { c: "#2B2028", r: 3 },       // Shikon / Blue-violet
+                { c: "#5D3F6A", r: 4 },       // Kikyo / Bellflower (Boosted)
+                { c: "#DB5A6B", r: 1, v: 1 }, // Kobai / Red plum accent
+                { c: "#F5E6D3", r: 1 }        // Cream contrast
+            ],
+            shibui: [  // Earthy & Astringent (Permissible Colors)
+                { c: "#264348", r: 3 },       // Ai-iro / Indigo
+                { c: "#656255", r: 2 },       // Rikyu-nezumi / Greyish dark green
+                { c: "#A13D2D", r: 2 },       // Edocha / Red-brown
+                { c: "#593A27", r: 2 },       // Susutake / Weathered bamboo
+                { c: "#8B7D3A", r: 1 },       // Koke / Moss accent
+                { c: "#B9A193", r: 2 },       // Shironezumi / White mouse
+                { c: "#F8F8F8", r: 1, v: 1 }  // Bright White (Platen accent)
+            ],
+            seigaiha: [  // The Sea & Waves
+                { c: "#003171", r: 3 },       // Konjo / Prussian blue
+                { c: "#1B294B", r: 3 },       // Rurikon / Lapis dark blue
+                { c: "#48929B", r: 2 },       // Asagi / Light blue
+                { c: "#5D8CAE", r: 2 },       // Gunjo / Ultramarine
+                { c: "#A5BA93", r: 1 },       // Byakuroku / Whitish green accent
+                { c: "#FFDDCA", r: 1 },       // Shironeri / Unbleached silk
+                { c: "#FFFFFF", r: 1, v: 1 }  // Pure White (Platen foam accent)
+            ]
+        };
+
+        var PEN_MAP = {
+            "#008080": "153 Cobalt Turquoise", "#010650": "247 Indanthrene Blue", "#06FFA5": "174 Chromium Green Opaque",
+            "#0F1316": "199 Black", "#101820": "161 Phthalo Green", "#101840": "247 Indanthrene Blue", "#111416": "199 Black",
+            "#121212": "199 Black", "#121417": "199 Black", "#171718": "161 Phthalo Green", "#1B998B": "153 Cobalt Turquoise",
+            "#1E2126": "175 Dark Sepia", "#1F2529": "175 Dark Sepia", "#201810": "175 Dark Sepia", "#201F25": "175 Dark Sepia",
+            "#203828": "161 Phthalo Green", "#20B2AA": "153 Cobalt Turquoise", "#264653": "Micron Hunter Green",
+            "#2A1C17": "175 Dark Sepia", "#2A1F1A": "175 Dark Sepia", "#2A2A2A": "175 Dark Sepia", "#2A2D34": "175 Dark Sepia",
+            "#2A9D8F": "174 Chromium Green Opaque", "#2D3047": "175 Dark Sepia", "#2E2E2E": "175 Dark Sepia",
+            "#2E363B": "175 Dark Sepia", "#2F363D": "175 Dark Sepia", "#2F4F4F": "Micron Hunter Green", "#303028": "175 Dark Sepia",
+            "#306038": "Micron Hunter Green", "#353B41": "175 Dark Sepia", "#387050": "Micron Hunter Green",
+            "#3A2F2C": "175 Dark Sepia", "#3A3A3C": "175 Dark Sepia", "#3A5F3B": "Micron Hunter Green", "#3E2F23": "175 Dark Sepia",
+            "#3E3E3E": "177 Walnut Brown", "#3F5C57": "Micron Hunter Green", "#45B698": "174 Chromium Green Opaque",
+            "#480810": "157 Dark Indigo", "#49545B": "Micron Hunter Green", "#4A2F23": "175 Dark Sepia",
+            "#4A7C6B": "235 Cold Grey VI", "#4B555F": "235 Cold Grey VI", "#4B6C70": "235 Cold Grey VI",
+            "#4C516D": "235 Cold Grey VI", "#4ECDC4": "146 Sky Blue", "#4FC3F7": "146 Sky Blue", "#505878": "235 Cold Grey VI",
+            "#5386A6": "233 Cold Grey IV", "#53B36A": "174 Chromium Green Opaque", "#556270": "235 Cold Grey VI",
+            "#584020": "177 Walnut Brown", "#585048": "177 Walnut Brown", "#5B85AA": "233 Cold Grey IV",
+            "#5C3A2E": "177 Walnut Brown", "#5C8D62": "170 May Green", "#603F3A": "177 Walnut Brown",
+            "#60C890": "174 Chromium Green Opaque", "#681818": "Micron Burgundy", "#686858": "235 Cold Grey VI",
+            "#6A0572": "Micron Purple", "#6A7177": "235 Cold Grey VI", "#6A8D73": "233 Cold Grey IV", "#6B8E7A": "233 Cold Grey IV",
+            "#6C4E3C": "177 Walnut Brown", "#6C584C": "235 Cold Grey VI", "#6C8A7A": "233 Cold Grey IV",
+            "#6D7880": "233 Cold Grey IV", "#6E6E71": "235 Cold Grey VI", "#6E7882": "233 Cold Grey IV",
+            "#6E7C8F": "233 Cold Grey IV", "#707088": "233 Cold Grey IV", "#708238": "167 Permanent Green Olive",
+            "#7A4A33": "177 Walnut Brown", "#7DA5B3": "232 Cold Grey III", "#7E4A5E": "235 Cold Grey VI",
+            "#7E5A9B": "233 Cold Grey IV", "#848582": "233 Cold Grey IV", "#86AB2E": "268 Green Gold",
+            "#87CEEB": "146 Sky Blue", "#883028": "Micron Brown", "#886830": "180 Raw Umber", "#8890A0": "233 Cold Grey IV",
+            "#8A3324": "Micron Brown", "#8B5A47": "180 Raw Umber", "#8C7A66": "180 Raw Umber", "#908878": "233 Cold Grey IV",
+            "#90D8B0": "171 Light Green", "#98A1A8": "232 Cold Grey III", "#98D8C8": "146 Sky Blue", "#9AA2AA": "232 Cold Grey III",
+            "#A0A088": "232 Cold Grey III", "#A3C4BC": "232 Cold Grey III", "#A46F38": "180 Raw Umber",
+            "#A57C58": "180 Raw Umber", "#A58F6F": "180 Raw Umber", "#A65D7B": "180 Raw Umber", "#A7ADB2": "232 Cold Grey III",
+            "#A7C4A0": "232 Cold Grey III", "#A7C6ED": "146 Sky Blue", "#A8613F": "180 Raw Umber", "#A86B3D": "180 Raw Umber",
+            "#B02040": "134 Crimson", "#B07060": "180 Raw Umber", "#B3595C": "192 Indian Red", "#B84848": "192 Indian Red",
+            "#B87A65": "192 Indian Red", "#B8B8B9": "232 Cold Grey III", "#B8E8C8": "272 Warm Grey III",
+            "#BB8FCE": "125 Middle Purple Pink", "#C0B890": "232 Cold Grey III", "#C1D37F": "171 Light Green",
+            "#C36B4C": "192 Indian Red", "#C58B5B": "186 Terracotta", "#C6543F": "192 Indian Red", "#C6CCD1": "272 Warm Grey III",
+            "#C6E2FF": "154 Light Cobalt Turquoise", "#C7F464": "171 Light Green", "#C82828": "121 Pale Geranium Lake",
+            "#C84C7A": "192 Indian Red", "#C8A060": "268 Green Gold", "#C8B779": "232 Cold Grey III",
+            "#C8E0A0": "272 Warm Grey III", "#CE3E3E": "121 Pale Geranium Lake", "#CF7B4A": "186 Terracotta",
+            "#D07870": "186 Terracotta", "#D3B99A": "232 Cold Grey III", "#D4A58F": "232 Cold Grey III",
+            "#D4D8DC": "272 Warm Grey III", "#D6F0BA": "272 Warm Grey III", "#D86C82": "186 Terracotta",
+            "#D89890": "232 Cold Grey III", "#D8DCDF": "272 Warm Grey III", "#D94F3D": "192 Indian Red",
+            "#D96B5F": "186 Terracotta", "#D9B382": "232 Cold Grey III", "#D9E4DD": "272 Warm Grey III",
+            "#DCC48E": "232 Cold Grey III", "#E0F5E0": "104 Light Yellow Glaze", "#E56459": "186 Terracotta",
+            "#E63946": "121 Pale Geranium Lake", "#E69FAF": "Micron Rose", "#E7F5BE": "104 Light Yellow Glaze",
+            "#E89A5C": "186 Terracotta", "#E8C4B0": "Micron Rose", "#E8E2CF": "272 Warm Grey III", "#E9967A": "186 Terracotta",
+            "#E9F1E9": "103 Ivory", "#EAEDEF": "103 Ivory", "#ED6BA7": "127 Pink Carmine", "#F05858": "186 Terracotta",
+            "#F05A28": "121 Pale Geranium Lake", "#F0B898": "Micron Rose", "#F0CA00": "109 Dark Chrome Yellow",
+            "#F0E880": "104 Light Yellow Glaze", "#F0EAD6": "104 Light Yellow Glaze", "#F1FAEE": "103 Ivory",
+            "#F27649": "186 Terracotta", "#F28F3B": "186 Terracotta", "#F2C14E": "268 Green Gold", "#F2C28A": "Micron Rose",
+            "#F2E394": "Micron Rose", "#F2E8C6": "104 Light Yellow Glaze", "#F2EFEA": "103 Ivory", "#F38E82": "186 Terracotta",
+            "#F3E9D2": "104 Light Yellow Glaze", "#F3F5F6": "103 Ivory", "#F4836A": "186 Terracotta", "#F4A261": "186 Terracotta",
+            "#F4E1D2": "104 Light Yellow Glaze", "#F5E6D3": "104 Light Yellow Glaze", "#F6F3E8": "103 Ivory",
+            "#F7DC6F": "268 Green Gold", "#F83038": "121 Pale Geranium Lake", "#F8BBD0": "Micron Rose", "#F8E0A0": "Micron Rose",
+            "#F8E3C4": "104 Light Yellow Glaze", "#F8E8D0": "104 Light Yellow Glaze", "#F8F4E3": "104 Light Yellow Glaze",
+            "#F8F4ED": "103 Ivory", "#F9B1C8": "Micron Rose", "#F9BCB8": "Micron Rose", "#F9C6C9": "Micron Rose",
+            "#F9D949": "107 Cadmium Yellow", "#FA9A86": "186 Terracotta", "#FAF8F3": "103 Ivory", "#FEDBDD": "Micron Rose",
+            "#FF69B4": "127 Pink Carmine", "#FF6B57": "186 Terracotta", "#FF6B6B": "186 Terracotta", "#FF7F51": "186 Terracotta",
+            "#FF9F1C": "113 Orange Glaze", "#FFB400": "109 Dark Chrome Yellow", "#FFB692": "Micron Rose",
+            "#FFB857": "186 Terracotta", "#FFD166": "268 Green Gold", "#FFD6A8": "Micron Rose",
+            "#FFE4B5": "104 Light Yellow Glaze", "#FFE5D4": "104 Light Yellow Glaze", "#FFE6A7": "104 Light Yellow Glaze",
+            "#FFE7E0": "104 Light Yellow Glaze", "#FFF0B6": "104 Light Yellow Glaze", "#FFF0F5": "103 Ivory",
+            "#FFFCF2": "103 Ivory"
+        };
+
+        // ── Traits ────────────────────────────────────────────────────────────────────
+        var TRAITS = {
+            symmetry: 'horizontal',
+            space: 'planar',
+            chromes: 'panar',
+            engine: 'mastor',
+            canvas: 'black'
+        };
+        var SYMMETRY_OPTS = ['random', 'none', 'vertical', 'horizontal', 'both', 'diagonal', 'rotational', 'quad', 'kaleidoscope', 'glide', 'radial'];
+
+        var SPACE_OPTS = ['planar', 'hyperbolic'];
+        var CHROME_OPTS = ['random', 'kokkos', 'murex', 'tukmo', 'rutsya', 'zahav', 'karkom', 'viride', 'gan', 'tarshish', 'tekhelet', 'yam', 'porphyra', 'shoshan', 'pepel', 'panar', 'katan', 'kaspi', 'barzel', 'wari', 'navajo', 'kinjiki', 'shibui', 'seigaiha'];
+        var ENGINE_OPTS = ['random', 'argyle', 'chipaz', 'interlace', 'kepe', 'kishtima', 'kolya', 'kshtir', 'kudo', 'mastor', 'narmuny', 'navajo', 'pakshats', 'panks', 'pulay', 'seigaiha', 'sermat', 'sermat-kudo', 'tol', 'ved', 'virma', 'wari'];
+        var CANVAS_OPTS = ['black', 'tan', 'olive', 'white'];
+
+        var currentLayout = 'panel';
+
+        // Global render seed — drives lns pattern generation.
+        // Changes on every Randomize so patterns are genuinely different each time.
+        var RENDER_SEED = Math.floor(Math.random() * 999983) + 1;
+
+        function setLayout(mode) {
+            currentLayout = mode;
+            document.getElementById('canvas-wrap').className = mode;
+
+            // Toggle active state for layout buttons
+            var btnPanel = document.getElementById('btn-panel');
+            var btnBanner = document.getElementById('btn-banner');
+            var btnGallery = document.getElementById('btn-gallery');
+
+            if (btnPanel) btnPanel.classList.remove('active');
+            if (btnBanner) btnBanner.classList.remove('active');
+            if (btnGallery) btnGallery.classList.remove('active');
+
+            if (mode === 'panel' && btnPanel) btnPanel.classList.add('active');
+            else if (mode === 'banner' && btnBanner) btnBanner.classList.add('active');
+            else if (mode === 'gallery' && btnGallery) btnGallery.classList.add('active');
+            // Auto-render disabled: only render on randomize/regenerate
+            // renderAll();
+        }
+
+        function randomize() {
+            if (_autoInterval) _autoMode = 'randomize';
+
+            RENDER_SEED = Math.floor(Math.random() * 999983) + 1;
+            // Skip 'random' (index 0) for concrete random selection
+            TRAITS.symmetry = SYMMETRY_OPTS[Math.floor(Math.random() * (SYMMETRY_OPTS.length - 1)) + 1];
+            TRAITS.space = SPACE_OPTS[Math.floor(Math.random() * SPACE_OPTS.length)];
+            TRAITS.chromes = CHROME_OPTS[Math.floor(Math.random() * (CHROME_OPTS.length - 1)) + 1];
+            TRAITS.engine = ENGINE_OPTS[Math.floor(Math.random() * (ENGINE_OPTS.length - 1)) + 1];
+
+            console.log('[Platen] Randomized:', RENDER_SEED,
+                '| sym:', TRAITS.symmetry,
+                '| space:', TRAITS.space, '| chrome:', TRAITS.chromes,
+                '| engine:', TRAITS.engine);
+            renderAll();
+
+            if (_autoInterval) {
+                startAuto('randomize');
+            }
+        }
+
+        function regenerate() {
+            if (_autoInterval) _autoMode = 'regenerate';
+            RENDER_SEED = Math.floor(Math.random() * 999983) + 1;
+            renderAll();
+            if (_autoInterval) {
+                startAuto('regenerate');
+            }
+        }
+
+        var CHROME_DESCS = {
+            'random': 'Random', 'adama': 'Earth / Southwest', 'afarsek': 'Peach', 'alon': 'Oak',
+            'argaman': 'Crimson', 'bahir': 'Luminous', 'barzel': 'Iron', 'erev': 'Evening',
+            'gan': 'Garden / Green', 'gehelet': 'Ember / Umber', 'karkom': 'Saffron / Amber',
+            'kaspi': 'Silver / Slate', 'katan': 'Linen / Cream', 'kelme': 'Ink & Parchment',
+            'kokkos': 'Scarlet', 'madder': 'Madder Root', 'murex': 'Midnight', 'nana': 'Mint',
+            'navajo': 'Southwest Rug', 'neshef': 'Twilight', 'panar': 'Hemp / Parchment',
+            'pepel': 'Ash / White Mono', 'porphyra': 'Purple Shell / Coral', 'ruach': 'Wind / Breeze',
+            'rutsya': 'Rust', 'shahar': 'Dawn / Salmon', 'shemen': 'Olive Oil', 'shoshan': 'Lily / Rose',
+            'simcha': 'Joy / Festival', 'tarshish': 'Aqua / Beryl', 'tekhelet': 'Azure Blue',
+            'tsemer': 'Soft Wool', 'tukmo': 'Brick / Earthen', 'viride': 'Green Earth / Forest',
+            'wari': 'Andean Patchwork', 'yam': 'Sea / Navy', 'zahav': 'Gold / Luxe',
+            'kinjiki': 'Imperial Reds & Purples', 'shibui': 'Astringent / Earthy', 'seigaiha': 'The Sea & Waves'
+        };
+
+        var ENGINE_DESCS = {
+            'random': 'Random', 'argyle': 'Lace & Lattice', 'chipaz': 'Sunburst',
+            'interlace': 'Islamic Strapwork', 'kepe': 'Crown Peaks', 'kishtima': 'Tessellation',
+            'kolya': 'Corner Meander', 'kshtir': 'Rotational Pinwheel', 'kudo': 'Brick Masonry',
+            'mastor': 'Diamonds & Diagonals', 'narmuny': 'Decorative Strips', 'navajo': 'Stepped Bands',
+            'pakshats': 'Interlocking Meander', 'panks': 'Floral Rosettes', 'pulay': 'Varied Grid Bands',
+            'seigaiha': 'Japanese Waves', 'sermat': 'Tiled Crosses', 'sermat-kudo': 'Blended Patterns',
+            'tol': 'Chevron Flames', 'ved': 'Interlocking S-Curves', 'virma': 'Stepped Forest Frame',
+            'wari': 'Patchwork Checks'
+        };
+
+        function populateSelect(id, opts, val) {
+            var sel = document.getElementById(id);
+            if (sel.options.length === 0) {
+                for (var i = 0; i < opts.length; i++) {
+                    var o = document.createElement('option');
+                    var key = opts[i];
+                    var desc = "";
+                    if (id === 't-chrome' && CHROME_DESCS[key] && key !== 'random') {
+                        desc = " [" + CHROME_DESCS[key] + "]";
+                    } else if (id === 't-engine' && ENGINE_DESCS[key] && key !== 'random') {
+                        desc = " [" + ENGINE_DESCS[key] + "]";
+                    }
+                    o.value = key;
+                    o.textContent = key + desc;
+                    sel.appendChild(o);
+                }
+            }
+            sel.value = val;
+        }
+
+        function updateTraitBar() {
+            populateSelect('t-sym', SYMMETRY_OPTS, TRAITS.symmetry);
+            populateSelect('t-space', SPACE_OPTS, TRAITS.space);
+            populateSelect('t-chrome', CHROME_OPTS, TRAITS.chromes);
+            populateSelect('t-engine', ENGINE_OPTS, TRAITS.engine);
+            populateSelect('t-canvas', CANVAS_OPTS, TRAITS.canvas);
+        }
+
+        function activePanels() {
+            if (currentLayout === 'banner') return [1, 2, 3];
+            return [1];
+        }
+
+        function renderAll() {
+            updateTraitBar();
+            // updateCanvasTexture(); // Wait for trait resolution for WYSIWYG
+            document.getElementById('st-info').textContent = 'rendering...';
+            setTimeout(function () {
+                var t0 = performance.now();
+                console.group('[Platen] renderAll — seed ' + RENDER_SEED);
+                var infos = [];
+                var panels = activePanels();
+                var pi = 0;
+
+                function renderNext() {
+                    if (pi >= panels.length) {
+                        var totalTime = (performance.now() - t0).toFixed(0);
+                        console.log('Total render time: ' + totalTime + 'ms');
+                        console.groupEnd();
+                        document.getElementById('st-info').textContent = 'ready (' + totalTime + 'ms)  ·  #' + RENDER_SEED;
+                        if (infos.length > 0) document.getElementById('st-info').textContent = infos.join('  ·  ') + '  ·  #' + RENDER_SEED;
+                        return;
+                    }
+
+                    var id = panels[pi];
+                    // Render one panel
+                    try {
+                        var t1 = performance.now();
+                        var r = renderPlaten('s' + id, id, runTraits);
+                        var dt = (performance.now() - t1).toFixed(0);
+                        console.log('  v' + id + ': ' + r.flowers + ' flowers, ' + r.attempts + ' att, ' + dt + 'ms');
+                        infos.push('v' + id + ': ' + r.flowers + ' flowers');
+                    } catch (e) {
+                        console.error('Error rendering panel ' + id, e);
+                    }
+
+                    pi++;
+                    // Yield to main thread
+                    setTimeout(renderNext, 20);
+                }
+
+                // Resolve 'random' traits to concrete values for this render pass
+                var runTraits = Object.assign({}, TRAITS);
+                if (runTraits.symmetry === 'random') runTraits.symmetry = SYMMETRY_OPTS[Math.floor(Math.random() * (SYMMETRY_OPTS.length - 1)) + 1];
+                if (runTraits.chromes === 'random') runTraits.chromes = CHROME_OPTS[Math.floor(Math.random() * (CHROME_OPTS.length - 1)) + 1];
+                if (runTraits.engine === 'random') runTraits.engine = ENGINE_OPTS[Math.floor(Math.random() * (ENGINE_OPTS.length - 1)) + 1];
+
+                // Ensure background matches resolved traits immediately
+                updateCanvasTexture();
+
+                console.log('[Platen] Render traits resolved:', runTraits);
+
+                // Start chain
+                renderNext();
+
+                // Enable UI elements now that we have rendered
+                document.getElementById('btn-panel').disabled = false;
+                document.getElementById('btn-banner').disabled = false;
+                document.getElementById('btn-gallery').disabled = false;
+                document.getElementById('btn-out-svg').disabled = false;
+                document.getElementById('btn-out-png').disabled = false;
+                document.getElementById('btn-out-triptych').disabled = false;
+                document.getElementById('btn-out-dst').disabled = false;
+                document.getElementById('btn-out-plot').disabled = false;
+
+                document.getElementById('t-sym').disabled = false;
+                document.getElementById('t-space').disabled = false;
+                document.getElementById('t-chrome').disabled = false;
+                document.getElementById('t-engine').disabled = false;
+                document.getElementById('t-canvas').disabled = false;
+            }, 10);
+        }
+
+        // ── PRNG (Park-Miller LCG) ────────────────────────────────────────────────────
+        function makePRNG(s) {
+            var P = 2147483647;
+            s = ((s + 1590398727) % P);
+            if (s <= 0) s += P - 1;
+            var t = s;
+            function x() { t = (t * 16807) % P; return t; }
+            x(); // warm up
+            return {
+                rfl: function (a, b) { return (x() - 1) / (P - 1) * (b - a) + a; },
+                rin: function (a, b) { return ((x() - 1) % (b - a + 1)) + a; }
+            };
+        }
+
+        // ── MOTIF PRIMITIVES ─────────────────────────────────────────────────────────
+        // Each returns a weight contribution for cell (x,y) on grid (w,h).
+        // Inspired by Mordvinian embroidery stitch patterns.
+
+        // 1. Diagonal band: weight when (x+y) mod period < thickness → creates / lines
+        function motifDiagonal(x, y, period, thickness) {
+            return ((x + y) % period) < thickness ? 1 : 0;
+        }
+
+        // 2. Anti-diagonal band: weight when (x-y) mod period < thickness → creates \ lines
+        function motifAntiDiag(x, y, period, thickness) {
+            return (((x - y) % period + period) % period) < thickness ? 1 : 0;
+        }
+
+        // 3. Chevron: diagonal + anti-diagonal with fold at midpoint
+        function motifChevron(x, y, w, period, amplitude) {
+            var fold = Math.abs(x - w / 2);
+            return ((fold + y) % period) < amplitude ? 1 : 0;
+        }
+
+        // 4. Diamond: Manhattan distance from center < radius
+        function motifDiamond(x, y, cx, cy, radius, ringWidth) {
+            var dist = Math.abs(x - cx) + Math.abs(y - cy);
+            if (ringWidth > 0) {
+                return (dist % radius) < ringWidth ? 1 : 0;
+            }
+            return dist < radius ? 1 : 0;
+        }
+
+        // 5. Stepped edge: creates castellated/meander border patterns
+        function motifStepped(x, y, step, thickness, axis) {
+            var offset = (Math.floor(y / step) % 2) * Math.floor(step / 2);
+            if (axis === 1) offset = (Math.floor(x / step) % 2) * Math.floor(step / 2);
+            var coord = axis === 0 ? x : y;
+            return ((coord + offset) % step) < thickness ? 1 : 0;
+        }
+
+        // 6. S-curve / scroll: sinusoidal offset creates interlocking S shapes
+        function motifScroll(x, y, w, amplitude, freq) {
+            var center = w / 2;
+            var wave = center + amplitude * Math.sin(y * freq * Math.PI / 40);
+            var dist = Math.abs(x - wave);
+            return dist < amplitude * 0.4 ? 1 : 0;
+        }
+
+        // 7. Cross / rosette: radial cross from center point
+        function motifCross(x, y, cx, cy, armW, armL) {
+            var dx = Math.abs(x - cx), dy = Math.abs(y - cy);
+            var onH = dx < armL && dy < armW;
+            var onV = dy < armL && dx < armW;
+            return (onH || onV) ? 1 : 0;
+        }
+
+        // 8. Duckfoot: splayed triplet from a point (Mordvin protective mark)
+        function motifDuckfoot(x, y, cx, cy, spread, len) {
+            var dx = x - cx, dy = y - cy;
+            if (dy < 0 || dy > len) return 0;
+            var t = dy / len;
+            // Three splayed toes
+            var toe1 = Math.abs(dx - t * spread) < 1.5;
+            var toe2 = Math.abs(dx) < 1.5;
+            var toe3 = Math.abs(dx + t * spread) < 1.5;
+            return (toe1 || toe2 || toe3) ? 1 : 0;
+        }
+
+        // 9. Brick: offset rectangular grid like masonry
+        function motifBrick(x, y, brickW, brickH) {
+            var row = Math.floor(y / brickH);
+            var offset = (row % 2) * Math.floor(brickW / 2);
+            var inMortarX = ((x + offset) % brickW) < 1;
+            var inMortarY = (y % brickH) < 1;
+            return (inMortarX || inMortarY) ? 0 : 1;
+        }
+
+        // 10. Lattice: intersecting diagonals creating X-crossing grid
+        function motifLattice(x, y, period, thickness) {
+            var d1 = ((x + y) % period) < thickness;
+            var d2 = (((x - y) % period + period) % period) < thickness;
+            return (d1 || d2) ? 1 : 0;
+        }
+
+        // 11. Polyline: horizontal zigzag stroke
+        function motifPolyline(x, y, period, amplitude, thickness) {
+            var phase = x % period;
+            var peak = (phase < period / 2) ? (phase * 2 * amplitude / period) : (amplitude * 2 - phase * 2 * amplitude / period);
+            return Math.abs(y % (amplitude * 2) - peak) < thickness ? 1 : 0;
+        }
+
+        // 12. Rosette: radial petal/flower form — concentric lobes around center (catalog p103, p107)
+        function motifRosette(x, y, cx, cy, radius, petals, thickness) {
+            var dx = x - cx, dy = y - cy;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > radius * 1.3) return 0;
+            var angle = Math.atan2(dy, dx);
+            var petalPhase = Math.cos(angle * petals);
+            var petalR = radius * (0.5 + 0.5 * petalPhase);
+            return Math.abs(dist - petalR) < thickness ? 1 : 0;
+        }
+
+        // 13. Meander: Greek key / fret — stepped square spiral (catalog p132, p135)
+        function motifMeander(x, y, period, width, depth) {
+            var px = ((x % period) + period) % period;
+            var py = ((y % period) + period) % period;
+            var half = Math.floor(period / 2);
+            // Outer frame
+            if (px < width || py < width) return 1;
+            if (px >= period - width || py >= period - width) return 1;
+            // Inner spiral arm
+            if (px >= half - width && px < half + width && py >= width && py < half + width) return 1;
+            if (py >= half - width && py < half + width && px >= half && px < period - width) return 1;
+            // Depth modulation for nested feel
+            if (depth > 1) {
+                var qp = Math.floor(period / 3);
+                var qx = ((x % qp) + qp) % qp;
+                var qy = ((y % qp) + qp) % qp;
+                if (qx < width || qy < width) return 0.5;
+            }
+            return 0;
+        }
+
+        // 14. HexLattice: hexagonal honeycomb tiling for field tessellations (catalog p172)
+        function motifHexLattice(x, y, cellSize, wallThick) {
+            var row = Math.floor(y / (cellSize * 0.866));
+            var offset = (row % 2) * (cellSize / 2);
+            var cx = ((x + offset) % cellSize) - cellSize / 2;
+            var cy = (y % (cellSize * 0.866)) - cellSize * 0.433;
+            // Hex distance approximation
+            var hx = Math.abs(cx);
+            var hy = Math.abs(cy);
+            var hexDist = Math.max(hx, (hx / 2 + hy * 0.866));
+            var edgeDist = Math.abs(hexDist - cellSize * 0.4);
+            return edgeDist < wallThick ? 1 : 0;
+        }
+
+        // 15. Tie-Dye Ring: irregular fuzzy concentric rings (Wari shibori)
+        function motifTieDyeRing(x, y, cx, cy, radius, thickness, fuzz) {
+            var dx = x - cx, dy = y - cy;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            // add some jaggedness based on angle
+            var angle = Math.atan2(dy, dx);
+            dist += Math.cos(angle * fuzz) * (radius * 0.15);
+            return Math.abs(dist - radius) < thickness ? 1 : 0;
+        }
+
+        // 16. Stepped Diamond: Navajo-style stepped center motif
+        function motifSteppedDiamond(x, y, cx, cy, radius, stepSize) {
+            var dx = Math.abs(x - cx);
+            var dy = Math.abs(y - cy);
+            // Quantize the coordinates to create steps
+            var sx = Math.floor(dx / stepSize) * stepSize;
+            var sy = Math.floor(dy / stepSize) * stepSize;
+            return (sx + sy) <= radius ? 1 : 0;
+        }
+
+        // 17. Serrated Band: Zig-zag horizontal division (Navajo)
+        function motifSerratedBand(x, y, cy, amplitude, period) {
+            var phase = x % period;
+            var peak = (phase < period / 2) ? (phase * 2 * amplitude / period) : (amplitude * 2 - phase * 2 * amplitude / period);
+            var expectedY = cy - amplitude + peak;
+            return Math.abs(y - expectedY) <= 1 ? 1 : 0;
+        }
+
+        // 18. Multi-Lattice: Thick, multi-line argyle lattice (French lace)
+        function motifMultiLattice(x, y, period, thickness, lines, spacing) {
+            var wt = 0;
+            var d1 = (x + y) % period;
+            var d2 = (((x - y) % period) + period) % period;
+
+            for (var i = 0; i < lines; i++) {
+                var offset = (i - Math.floor(lines / 2)) * spacing;
+                if (Math.abs(d1 - (thickness / 2) - offset) < thickness / 2) wt = 1;
+                if (Math.abs(d2 - (thickness / 2) - offset) < thickness / 2) wt = 1;
+                // wrapping logic for offsets
+                if (Math.abs(d1 - period - (thickness / 2) - offset) < thickness / 2) wt = 1;
+                if (Math.abs(d2 - period - (thickness / 2) - offset) < thickness / 2) wt = 1;
+            }
+            return wt;
+        }
+
+        // 19. Scallop Edge: vertical lacy border (French lace)
+        function motifScallopEdge(x, y, cx, radius, period) {
+            var dy = (y % period) - period / 2;
+            var dx = x - cx;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            return dx > 0 && dist < radius ? 1 : 0;
+        }
+
+        // 20. Star Grid: Islamic 8-point star and cross interlace
+        function motifStarGrid(x, y, period, ringR, thickness) {
+            var cx = ((x + period / 2) % period) - period / 2;
+            var cy = ((y + period / 2) % period) - period / 2;
+
+            // Cross
+            var onCross = (Math.abs(cx) < thickness && Math.abs(cy) < ringR) ||
+                (Math.abs(cy) < thickness && Math.abs(cx) < ringR);
+            // X (diagonals)
+            var onX = (Math.abs(cx - cy) < thickness && Math.abs(cx) < ringR * 0.7) ||
+                (Math.abs(cx + cy) < thickness && Math.abs(cx) < ringR * 0.7);
+
+            // Diamond frame
+            var dDia = Math.abs(cx) + Math.abs(cy);
+            var onDia = Math.abs(dDia - ringR) < thickness;
+
+            // Square frame
+            var onSq = Math.abs(Math.max(Math.abs(cx), Math.abs(cy)) - ringR * 0.8) < thickness;
+
+            return (onCross || onX || onDia || onSq) ? 1 : 0;
+        }
+
+        // 21. Seigaiha: Japanese continuous overlapping concentric ocean waves
+        function motifSeigaiha(x, y, radius, spacing, thickness, dotR) {
+            var R = radius;
+            var approxRow = Math.floor(y / (R / 2));
+            var foundDist = -1;
+
+            // Search rows from highest y (drawn on top) backwards
+            for (var rOff = +2; rOff >= -3; rOff--) {
+                var row = approxRow + rOff;
+                if (row < 0) continue;
+                var cy = row * (R / 2);
+
+                var isEven = row % 2 === 0;
+                var xOff = isEven ? R : 0;
+
+                var approxCol = Math.floor((x - xOff) / (2 * R));
+                for (var cOff = 0; cOff <= 1; cOff++) {
+                    var col = approxCol + cOff;
+                    var cx = xOff + col * (2 * R);
+
+                    var dx = x - cx;
+                    var dy = y - cy;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    // Match upper semicircle only
+                    if (dist <= R && dy <= 0) {
+                        foundDist = dist;
+                        break;
+                    }
+                }
+                if (foundDist >= 0) break;
+            }
+
+            if (foundDist < 0) return 0;
+            if (dotR > 0 && foundDist < dotR) return 1;
+
+            var phase = foundDist % spacing;
+            return Math.abs(phase) < thickness ? 1 : 0;
+        }
+
+
+        // ── ENGINE WEIGHT CALCULATOR ─────────────────────────────────────────────────
+        // Returns total motif weight for cell (x,y) based on engine type + params.
+        function calcMotifWeight(x, y, w, h, engine, params) {
+            var wt = 0;
+            switch (engine) {
+                case 'wari':
+                    // Patchwork checks + tie-dye rings
+                    var px = Math.floor(x / params.patchW);
+                    var py = Math.floor(y / params.patchH);
+                    var patchType = (px * 3 + py * 7) % 3; // pseudo-random deterministic
+
+                    if (patchType === 0) {
+                        // Tie-dye center ring
+                        var cx = (px + 0.5) * params.patchW;
+                        var cy = (py + 0.5) * params.patchH;
+                        wt += motifTieDyeRing(x, y, cx, cy, params.ringR, params.ringT, params.fuzz) * params.ringWt;
+                    } else if (patchType === 1) {
+                        // Diagonal steps
+                        wt += motifStepped(x, y, params.step, params.stepT, 0) * params.stepWt;
+                    } else {
+                        // Checkerboard / grid
+                        wt += motifLattice(x, y, params.gridP, params.gridT) * params.gridWt;
+                    }
+
+                    // Seams
+                    if (x % params.patchW < params.seamT || y % params.patchH < params.seamT) {
+                        wt += params.seamWt;
+                    }
+                    break;
+
+                case 'navajo':
+                    // Horizontal bands with stepped diamonds
+                    var bandY = y % params.bandH;
+                    var bIdx = Math.floor(y / params.bandH) % params.bands.length;
+                    var band = params.bands[bIdx];
+
+                    if (band.type === 0 && Math.abs(bandY - params.bandH / 2) < band.diaR) {
+                        // Central Stepped Diamond
+                        wt += motifSteppedDiamond(x, y, w / 2, y, band.diaR, band.stepSz) * band.wt;
+                        // Flanking side diamonds
+                        wt += motifSteppedDiamond(x, y, w * 0.15, y, band.diaR * 0.5, band.stepSz) * band.wt * 0.8;
+                        wt += motifSteppedDiamond(x, y, w * 0.85, y, band.diaR * 0.5, band.stepSz) * band.wt * 0.8;
+                    } else if (band.type === 1) {
+                        // Serrated line
+                        wt += motifSerratedBand(x, y, y, band.amp, band.period) * band.wt;
+                    } else {
+                        // Chevrons (water)
+                        wt += motifChevron(x, y, w, band.period, band.amp) * band.wt;
+                    }
+
+                    // Demarcation stripes
+                    if (bandY < params.stripeT) wt += params.stripeWt;
+                    break;
+
+                case 'argyle':
+                    // French lace borders and thick multi-lattice center
+                    var isBorder = x < params.borderW || x > (w - params.borderW);
+
+                    if (isBorder) {
+                        // Scalloped edging + inner diamond dots
+                        if (x < params.borderW) {
+                            wt += motifScallopEdge(x, y, params.borderW, params.scallopR, params.scallopP) * params.laceWt;
+                        } else {
+                            wt += motifScallopEdge(w - x, y, params.borderW, params.scallopR, params.scallopP) * params.laceWt;
+                        }
+                    } else {
+                        // Central Argyle field
+                        wt += motifMultiLattice(x, y, params.latP, params.latT, params.latL, params.latSpc) * params.argyleWt;
+                        // Accent dots inside argyle diamonds
+                        var dCx = (x % params.latP) - params.latP / 2;
+                        var dCy = (y % params.latP) - params.latP / 2;
+                        if (Math.abs(dCx) < params.latP / 4 && Math.abs(dCy) < params.latP / 4) {
+                            wt += motifDiamond(x, y, x - dCx, y - dCy, params.dotR, 0) * params.dotWt;
+                        }
+                    }
+                    break;
+
+                case 'interlace':
+                    // Islamic overlapping strapwork stars
+                    wt += motifStarGrid(x, y, params.starP, params.starR, params.starT) * params.starWt;
+                    break;
+
+                case 'seigaiha':
+                    // Japanese concentric overlapping waves
+                    wt += motifSeigaiha(x, y, params.R, params.spacing, params.thickness, params.dotR) * params.waveWt;
+                    break;
+
+                case 'sermat':
+                    // Tiled crosses — family identity marks
+                    for (var ci = 0; ci < params.centers.length; ci++) {
+                        var ctr = params.centers[ci];
+                        wt += motifCross(x, y, ctr[0], ctr[1], params.armW, params.armL) * params.weights[ci % params.weights.length];
+                    }
+                    wt += motifDiamond(x, y, w / 2, h / 2, params.ringR, params.ringW) * params.ringWt;
+                    break;
+
+                case 'tol':
+                    // Fire — chevron flames climbing upward
+                    for (var chi = 0; chi < params.layers.length; chi++) {
+                        var ly = params.layers[chi];
+                        wt += motifChevron(x, y, w, ly[0], ly[1]) * ly[2];
+                    }
+                    break;
+
+                case 'mastor':
+                    // Land — concentric diamond rings + diagonal fill
+                    for (var di = 0; di < params.diamonds.length; di++) {
+                        var dm = params.diamonds[di];
+                        wt += motifDiamond(x, y, dm[0], dm[1], dm[2], dm[3]) * dm[4];
+                    }
+                    wt += motifDiagonal(x, y, params.diagP, params.diagT) * params.diagWt;
+                    wt += motifAntiDiag(x, y, params.adiagP, params.adiagT) * params.adiagWt;
+                    break;
+
+                case 'virma':
+                    // Forest frame — stepped border with interior growth
+                    var bx = Math.min(x, w - 1 - x);
+                    var by = Math.min(y, h - 1 - y);
+                    var borderDist = Math.min(bx, by);
+                    if (borderDist < params.borderW) {
+                        wt += motifStepped(x, y, params.step, params.stepT, 0) * params.stepWt;
+                        wt += motifStepped(x, y, params.step2, params.stepT2, 1) * params.stepWt2;
+                    }
+                    if (borderDist >= params.borderW && borderDist < params.borderW + params.innerW) {
+                        wt += motifChevron(x, y, w, params.innerP, params.innerA) * params.innerWt;
+                    }
+                    if (borderDist >= params.borderW + params.innerW) {
+                        wt += motifDiamond(x, y, w / 2, h / 2, params.centralR, params.centralRing) * params.centralWt;
+                    }
+                    break;
+
+                case 'ved':
+                    // Water — interlocking S-curves
+                    for (var si = 0; si < params.scrolls.length; si++) {
+                        var sc = params.scrolls[si];
+                        wt += motifScroll(x, y, w, sc[0], sc[1]) * sc[2];
+                    }
+                    wt += motifStepped(x, y, params.bandStep, params.bandT, 0) * params.bandWt;
+                    break;
+
+                case 'chipaz':
+                    // Sun god — radial sunburst + concentric rings + lattice glow
+                    for (var chi2 = 0; chi2 < params.rays.length; chi2++) {
+                        var ray = params.rays[chi2];
+                        wt += motifCross(x, y, ray[0], ray[1], ray[2], ray[3]) * ray[4];
+                    }
+                    wt += motifDiamond(x, y, w / 2, h / 2, params.sunR, params.sunRing) * params.sunWt;
+                    wt += motifLattice(x, y, params.glowP, params.glowT) * params.glowWt;
+                    break;
+
+                case 'kudo':
+                    // House — brick masonry + rectangular partitions
+                    wt += motifBrick(x, y, params.brickW, params.brickH) * params.brickWt;
+                    for (var ki = 0; ki < params.rooms.length; ki++) {
+                        var rm = params.rooms[ki];
+                        if (x >= rm[0] && x < rm[0] + rm[2] && y >= rm[1] && y < rm[1] + rm[3]) {
+                            wt += rm[4];
+                        }
+                    }
+                    wt += motifStepped(x, y, params.frameStep, params.frameT, 0) * params.frameWt;
+                    break;
+
+                case 'pulay':
+                    // Waist belt — horizontal bands with different motifs per band
+                    var bandIdx = Math.floor(y / params.bandH) % params.bands.length;
+                    var band = params.bands[bandIdx];
+                    if (band.type === 0) wt += motifDiagonal(x, y, band.p1, band.p2) * band.wt;
+                    else if (band.type === 1) wt += motifChevron(x, y, w, band.p1, band.p2) * band.wt;
+                    else if (band.type === 2) wt += motifPolyline(x, y, band.p1, band.p2, band.p3) * band.wt;
+                    else if (band.type === 3) wt += motifLattice(x, y, band.p1, band.p2) * band.wt;
+                    else wt += motifStepped(x, y, band.p1, band.p2, 0) * band.wt;
+                    // Duckfoot accents between bands
+                    for (var pi2 = 0; pi2 < params.feet.length; pi2++) {
+                        var ft = params.feet[pi2];
+                        wt += motifDuckfoot(x, y, ft[0], ft[1], ft[2], ft[3]) * ft[4];
+                    }
+                    break;
+
+                case 'sermat-kudo':
+                    // Pattern-house — blend 2-3 engines
+                    for (var mi = 0; mi < params.mix.length; mi++) {
+                        var sub = params.mix[mi];
+                        wt += calcMotifWeight(x, y, w, h, sub.engine, sub.params) * sub.weight;
+                    }
+                    break;
+
+                case 'kepe':
+                    // Crown/headdress — sawtooth peaks + stepped fill (catalog p122, p158-162)
+                    var peakY = (y % params.peakH);
+                    var peakX = (x % params.peakW);
+                    var peakSlope = peakY < params.peakH / 2 ? peakX < peakY * params.peakW / params.peakH : peakX < (params.peakH - peakY) * params.peakW / params.peakH;
+                    if (peakSlope) wt += params.peakWt;
+                    wt += motifStepped(x, y, params.fillStep, params.fillT, 0) * params.fillWt;
+                    wt += motifDiamond(x, y, w / 2, h / 2, params.crownR, params.crownRing) * params.crownWt;
+                    break;
+
+                case 'panks':
+                    // Petal/blossom — floral rosettes (catalog p107)
+                    for (var pki = 0; pki < params.flowers.length; pki++) {
+                        var fl = params.flowers[pki];
+                        wt += motifRosette(x, y, fl[0], fl[1], fl[2], fl[3], fl[4]) * fl[5];
+                    }
+                    wt += motifDiamond(x, y, w / 2, h / 2, params.stemR, params.stemRing) * params.stemWt;
+                    break;
+
+                case 'kishtima':
+                    // Pattern/ornament — all-over field tessellation (catalog p168, p172)
+                    if (params.tileType === 0) {
+                        wt += motifLattice(x, y, params.tileP, params.tileT) * params.tileWt;
+                    } else {
+                        wt += motifHexLattice(x, y, params.tileP, params.tileT) * params.tileWt;
+                    }
+                    // Node accents at intersections
+                    var nodeX = ((x + params.nodeOff) % params.nodeP) < params.nodeSz;
+                    var nodeY = ((y + params.nodeOff) % params.nodeP) < params.nodeSz;
+                    if (nodeX && nodeY) wt += params.nodeWt;
+                    wt += motifDiamond(x, y, w / 2, h / 2, params.fieldR, params.fieldRing) * params.fieldWt;
+                    break;
+
+                case 'kshtir':
+                    // Spindle/whorl — rotational pinwheel (catalog p132)
+                    var kdx = x - w / 2, kdy = y - h / 2;
+                    var kAngle = Math.atan2(kdy, kdx);
+                    var kDist = Math.sqrt(kdx * kdx + kdy * kdy);
+                    // Spiral arms
+                    for (var kai = 0; kai < params.armCount; kai++) {
+                        var armAngle = kAngle - kai * Math.PI * 2 / params.armCount;
+                        var spiralPhase = ((armAngle + kDist * params.spiralTwist) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+                        if (spiralPhase < params.armWidth && kDist < params.armLen) {
+                            wt += params.armWt;
+                        }
+                    }
+                    wt += motifMeander(x, y, params.bgP, params.bgW, params.bgD) * params.bgWt;
+                    break;
+
+                case 'narmuny':
+                    // Border/edge — decorative horizontal band strips (catalog p152-155)
+                    var zoneY = y % params.zoneH;
+                    var zoneIdx = Math.floor(y / params.zoneH) % params.zones.length;
+                    var zone = params.zones[zoneIdx];
+                    if (zone.motif === 0) wt += motifChevron(x, y, w, zone.p1, zone.p2) * zone.wt;
+                    else if (zone.motif === 1) wt += motifDiagonal(x, y, zone.p1, zone.p2) * zone.wt;
+                    else if (zone.motif === 2) wt += motifLattice(x, y, zone.p1, zone.p2) * zone.wt;
+                    else if (zone.motif === 3) wt += motifDiamond(x, y, w / 2, y, zone.p1, zone.p2) * zone.wt;
+                    else wt += motifStepped(x, y, zone.p1, zone.p2, 0) * zone.wt;
+                    // Separator lines between zones
+                    if (zoneY < params.sepT) wt += params.sepWt;
+                    break;
+
+                case 'pakshats':
+                    // Interlocking — Greek key meander at multiple scales (catalog p115, p135)
+                    for (var psi = 0; psi < params.layers.length; psi++) {
+                        var ml = params.layers[psi];
+                        wt += motifMeander(x, y, ml[0], ml[1], ml[2]) * ml[3];
+                    }
+                    wt += motifStepped(x, y, params.accentStep, params.accentT, 1) * params.accentWt;
+                    break;
+
+                case 'kolya':
+                    // Corner/angle — triangular meander-filled V-shapes (catalog p162)
+                    var cornerDist = Math.min(x, y, w - 1 - x, h - 1 - y);
+                    var diag1 = Math.abs(x - y);
+                    var diag2 = Math.abs(x - (h - 1 - y));
+                    var inCorner = cornerDist < params.cornerSize;
+                    if (inCorner) {
+                        wt += motifMeander(x, y, params.fillP, params.fillW, params.fillD) * params.cornerWt;
+                        wt += motifChevron(x, y, w, params.chevP, params.chevA) * params.chevWt;
+                    }
+                    // Edge frame
+                    if (cornerDist < params.edgeW) wt += params.edgeWt;
+                    break;
+            }
+            return wt;
+        }
+
+        // ── ENGINE PARAMETER GENERATOR ───────────────────────────────────────────────
+        // Uses PRNG to create parameters for each Mordvinian engine.
+        function generatePatternParams(engine, prng, w, h) {
+            var rfl = prng.rfl, rin = prng.rin;
+            var params = {};
+
+            switch (engine) {
+                case 'wari':
+                    params.patchW = Math.floor(w / rin(3, 6)); // 3 to 6 columns
+                    params.patchH = Math.floor(h / rin(4, 8)); // 4 to 8 rows
+                    params.ringR = rin(10, Math.floor(params.patchW * 0.4));
+                    params.ringT = rin(2, 6);
+                    params.fuzz = rin(6, 16); // frequency of tie-dye bleeding
+                    params.ringWt = rfl(4, 9);
+                    params.step = rin(4, 12);
+                    params.stepT = rin(1, 4);
+                    params.stepWt = rfl(2, 5);
+                    params.gridP = rin(6, 14);
+                    params.gridT = rin(1, 3);
+                    params.gridWt = rfl(2, 5);
+                    params.seamT = rin(1, 4);
+                    params.seamWt = rfl(3, 7);
+                    break;
+
+                case 'navajo':
+                    params.bandH = Math.floor(h / rin(3, 7)); // 3 to 7 big bands
+                    var nbands = rin(3, 7);
+                    params.bands = [];
+                    for (var nbi = 0; nbi < nbands; nbi++) {
+                        params.bands.push({
+                            type: rin(0, 2),
+                            diaR: Math.floor(params.bandH * rfl(0.3, 0.45)),
+                            stepSz: rin(2, 6),
+                            amp: rin(4, 15),
+                            period: rin(20, 50),
+                            wt: rfl(4, 9)
+                        });
+                    }
+                    // At least one diamond band
+                    params.bands[Math.floor(nbands / 2)].type = 0;
+
+                    params.stripeT = rin(2, 8);
+                    params.stripeWt = rfl(3, 8);
+                    break;
+
+                case 'argyle':
+                    params.borderW = Math.floor(w * rfl(0.1, 0.25));
+                    params.scallopR = rin(15, 40);
+                    params.scallopP = rin(30, 80);
+                    params.laceWt = rfl(3, 7);
+
+                    params.latP = rin(30, 80); // large lattice
+                    params.latT = rin(2, 5);
+                    params.latL = rin(2, 4); // 2-4 lines
+                    params.latSpc = params.latT * rin(2, 4);
+                    params.argyleWt = rfl(4, 8);
+
+                    params.dotR = rin(3, 8);
+                    params.dotWt = rfl(2, 6);
+                    break;
+
+                case 'interlace':
+                    params.starP = rin(30, 100); // grid period
+                    params.starR = Math.floor(params.starP * rfl(0.35, 0.45)); // radius of shapes
+                    params.starT = rin(2, 8); // thickness of strapwork
+                    params.starWt = rfl(4, 9);
+                    break;
+
+                case 'seigaiha':
+                    params.R = Math.floor(w * rfl(0.08, 0.25));
+                    params.thickness = rin(1, 4);
+                    params.spacing = params.thickness * rin(2, 5);
+                    params.dotR = rfl(0, params.spacing); // sometimes solid center dot
+                    params.waveWt = rfl(3, 8);
+                    break;
+
+                case 'sermat':
+                    var nc = rin(3, 8);
+                    params.centers = [];
+                    params.weights = [];
+                    var spacingX = w / (Math.ceil(Math.sqrt(nc)) + 1);
+                    var spacingY = h / (Math.ceil(nc / Math.ceil(Math.sqrt(nc))) + 1);
+                    for (var i = 0; i < nc; i++) {
+                        var col = i % Math.ceil(Math.sqrt(nc));
+                        var row = Math.floor(i / Math.ceil(Math.sqrt(nc)));
+                        params.centers.push([
+                            Math.floor(spacingX * (col + 1) + rfl(-spacingX * 0.2, spacingX * 0.2)),
+                            Math.floor(spacingY * (row + 1) + rfl(-spacingY * 0.2, spacingY * 0.2))
+                        ]);
+                        params.weights.push(rfl(3, 8));
+                    }
+                    params.armW = rin(2, 5);
+                    params.armL = rin(4, 12);
+                    params.ringR = rin(8, 25);
+                    params.ringW = rin(1, 4);
+                    params.ringWt = rfl(2, 6);
+                    break;
+
+                case 'tol':
+                    var nl = rin(2, 5);
+                    params.layers = [];
+                    for (var j = 0; j < nl; j++) {
+                        params.layers.push([
+                            rin(6, 30),       // period
+                            rin(2, 8),        // amplitude
+                            rfl(2, 8)         // weight
+                        ]);
+                    }
+                    break;
+
+                case 'mastor':
+                    var nd = rin(2, 5);
+                    params.diamonds = [];
+                    for (var k = 0; k < nd; k++) {
+                        params.diamonds.push([
+                            Math.floor(w / 2 + rfl(-w * 0.2, w * 0.2)),
+                            Math.floor(h / 2 + rfl(-h * 0.2, h * 0.2)),
+                            rin(10, 40),
+                            rin(1, 5),
+                            rfl(3, 8)
+                        ]);
+                    }
+                    params.diagP = rin(4, 16);
+                    params.diagT = rin(1, Math.floor(params.diagP / 2));
+                    params.diagWt = rfl(1, 4);
+                    params.adiagP = rin(4, 16);
+                    params.adiagT = rin(1, Math.floor(params.adiagP / 2));
+                    params.adiagWt = rfl(1, 4);
+                    break;
+
+                case 'virma':
+                    params.borderW = rin(5, 15);
+                    params.step = rin(3, 10);
+                    params.stepT = rin(1, Math.max(2, Math.floor(params.step / 2)));
+                    params.stepWt = rfl(3, 8);
+                    params.step2 = rin(3, 10);
+                    params.stepT2 = rin(1, Math.max(2, Math.floor(params.step2 / 2)));
+                    params.stepWt2 = rfl(2, 6);
+                    params.innerW = rin(5, 15);
+                    params.innerP = rin(8, 20);
+                    params.innerA = rin(2, 6);
+                    params.innerWt = rfl(3, 7);
+                    params.centralR = rin(15, 35);
+                    params.centralRing = rin(2, 6);
+                    params.centralWt = rfl(3, 8);
+                    break;
+
+                case 'ved':
+                    var ns = rin(2, 5);
+                    params.scrolls = [];
+                    for (var m = 0; m < ns; m++) {
+                        params.scrolls.push([
+                            rfl(5, 20),
+                            rfl(0.5, 3),
+                            rfl(3, 8)
+                        ]);
+                    }
+                    params.bandStep = rin(4, 12);
+                    params.bandT = rin(1, Math.max(2, Math.floor(params.bandStep / 2)));
+                    params.bandWt = rfl(1, 4);
+                    break;
+
+                case 'chipaz':
+                    // Sun god — radiating crosses + concentric diamond + lattice glow
+                    var nr = rin(4, 8);
+                    params.rays = [];
+                    for (var ri = 0; ri < nr; ri++) {
+                        var angle = ri * Math.PI * 2 / nr;
+                        var dist = rfl(10, 35);
+                        params.rays.push([
+                            Math.floor(w / 2 + Math.cos(angle) * dist),
+                            Math.floor(h / 2 + Math.sin(angle) * dist * (h / w)),
+                            rin(1, 3),   // armW
+                            rin(3, 10),  // armL
+                            rfl(3, 8)    // weight
+                        ]);
+                    }
+                    params.sunR = rin(12, 30);
+                    params.sunRing = rin(2, 5);
+                    params.sunWt = rfl(3, 8);
+                    params.glowP = rin(6, 16);
+                    params.glowT = rin(1, 3);
+                    params.glowWt = rfl(1, 3);
+                    break;
+
+                case 'kudo':
+                    // House — brick masonry + room partitions
+                    params.brickW = rin(4, 12);
+                    params.brickH = rin(3, 8);
+                    params.brickWt = rfl(2, 5);
+                    var nRooms = rin(3, 8);
+                    params.rooms = [];
+                    for (var ri2 = 0; ri2 < nRooms; ri2++) {
+                        params.rooms.push([
+                            rin(0, w - 10),      // x
+                            rin(0, h - 10),      // y
+                            rin(8, 25),           // width
+                            rin(8, 30),           // height
+                            rfl(2, 7)             // weight
+                        ]);
+                    }
+                    params.frameStep = rin(4, 10);
+                    params.frameT = rin(1, Math.max(2, Math.floor(params.frameStep / 2)));
+                    params.frameWt = rfl(1, 4);
+                    break;
+
+                case 'pulay':
+                    // Waist belt — horizontal bands with varied motifs
+                    params.bandH = rin(8, 25);
+                    var nBands = rin(3, 7);
+                    params.bands = [];
+                    for (var bi = 0; bi < nBands; bi++) {
+                        var btype = rin(0, 4);
+                        params.bands.push({
+                            type: btype,
+                            p1: rin(4, 16),
+                            p2: rin(1, 6),
+                            p3: rin(1, 3),
+                            wt: rfl(3, 8)
+                        });
+                    }
+                    // Duckfoot accents
+                    var nFeet = rin(2, 6);
+                    params.feet = [];
+                    for (var fi = 0; fi < nFeet; fi++) {
+                        params.feet.push([
+                            rin(5, w - 5),   // cx
+                            rin(5, h - 10),  // cy
+                            rfl(3, 10),      // spread
+                            rin(4, 12),      // length
+                            rfl(3, 7)        // weight
+                        ]);
+                    }
+                    break;
+
+                case 'sermat-kudo':
+                    // Pattern-house — blend 2-3 engines
+                    var bases = ['wari', 'navajo', 'argyle', 'interlace', 'seigaiha', 'sermat', 'tol', 'mastor', 'virma', 'ved', 'chipaz', 'kudo', 'pulay', 'kepe', 'panks', 'kishtima', 'kshtir', 'narmuny', 'pakshats', 'kolya'];
+                    var nmix = rin(2, 3);
+                    params.mix = [];
+                    var used = {};
+                    for (var q = 0; q < nmix; q++) {
+                        var pick;
+                        do { pick = bases[rin(0, bases.length - 1)]; } while (used[pick]);
+                        used[pick] = true;
+                        var subPrng = makePRNG(prng.rin(1, 999999));
+                        params.mix.push({
+                            engine: pick,
+                            params: generatePatternParams(pick, subPrng, w, h),
+                            weight: rfl(0.3, 1.0)
+                        });
+                    }
+                    break;
+
+                case 'kepe':
+                    // Crown/headdress — sawtooth peaks
+                    params.peakH = rin(8, 20);
+                    params.peakW = rin(6, 16);
+                    params.peakWt = rfl(3, 8);
+                    params.fillStep = rin(3, 8);
+                    params.fillT = rin(1, Math.max(2, Math.floor(params.fillStep / 2)));
+                    params.fillWt = rfl(2, 5);
+                    params.crownR = rin(15, 35);
+                    params.crownRing = rin(2, 5);
+                    params.crownWt = rfl(2, 6);
+                    break;
+
+                case 'panks':
+                    // Petal/blossom — floral rosettes
+                    var nFlowers = rin(3, 7);
+                    params.flowers = [];
+                    for (var pfi = 0; pfi < nFlowers; pfi++) {
+                        params.flowers.push([
+                            rin(10, w - 10),     // cx
+                            rin(10, h - 10),     // cy
+                            rin(8, 25),           // radius
+                            rin(3, 8) * 2,        // petals (even number)
+                            rin(1, 4),            // thickness
+                            rfl(3, 8)             // weight
+                        ]);
+                    }
+                    params.stemR = rin(20, 40);
+                    params.stemRing = rin(2, 5);
+                    params.stemWt = rfl(1, 4);
+                    break;
+
+                case 'kishtima':
+                    // Pattern/ornament — all-over field tessellation
+                    params.tileType = rin(0, 1);
+                    params.tileP = rin(8, 24);
+                    params.tileT = rin(1, 3);
+                    params.tileWt = rfl(3, 7);
+                    params.nodeP = rin(6, 18);
+                    params.nodeSz = rin(1, 3);
+                    params.nodeOff = rin(0, params.nodeP);
+                    params.nodeWt = rfl(2, 6);
+                    params.fieldR = rin(20, 45);
+                    params.fieldRing = rin(2, 5);
+                    params.fieldWt = rfl(1, 3);
+                    break;
+
+                case 'kshtir':
+                    // Spindle/whorl — rotational pinwheel
+                    params.armCount = rin(3, 6);
+                    params.armWidth = rfl(0.3, 1.2);
+                    params.armLen = rfl(w * 0.3, w * 0.6);
+                    params.spiralTwist = rfl(0.02, 0.1);
+                    params.armWt = rfl(4, 9);
+                    params.bgP = rin(10, 24);
+                    params.bgW = rin(1, 3);
+                    params.bgD = rin(1, 2);
+                    params.bgWt = rfl(0.5, 2);
+                    break;
+
+                case 'narmuny':
+                    // Border/edge — decorative horizontal band strips
+                    params.zoneH = rin(6, 18);
+                    var nZones = rin(3, 7);
+                    params.zones = [];
+                    for (var nzi = 0; nzi < nZones; nzi++) {
+                        params.zones.push({
+                            motif: rin(0, 4),
+                            p1: rin(4, 16),
+                            p2: rin(1, 6),
+                            wt: rfl(3, 8)
+                        });
+                    }
+                    params.sepT = rin(1, 3);
+                    params.sepWt = rfl(2, 6);
+                    break;
+
+                case 'pakshats':
+                    // Interlocking — Greek key meander layers
+                    var nLayers = rin(2, 4);
+                    params.layers = [];
+                    for (var pli = 0; pli < nLayers; pli++) {
+                        params.layers.push([
+                            rin(10, 30),   // period
+                            rin(1, 3),     // width
+                            rin(1, 2),     // depth
+                            rfl(3, 8)      // weight
+                        ]);
+                    }
+                    params.accentStep = rin(4, 12);
+                    params.accentT = rin(1, Math.max(2, Math.floor(params.accentStep / 2)));
+                    params.accentWt = rfl(1, 3);
+                    break;
+
+                case 'kolya':
+                    // Corner/angle — triangular fills
+                    params.cornerSize = rin(15, Math.floor(Math.min(w, h) * 0.4));
+                    params.fillP = rin(8, 20);
+                    params.fillW = rin(1, 3);
+                    params.fillD = rin(1, 2);
+                    params.cornerWt = rfl(3, 8);
+                    params.chevP = rin(6, 16);
+                    params.chevA = rin(2, 6);
+                    params.chevWt = rfl(2, 5);
+                    params.edgeW = rin(2, 6);
+                    params.edgeWt = rfl(2, 5);
+                    break;
+            }
+            return params;
+        }
+
+        // ── PLATEN ENGINE ──────────────────────────────────────────────────────────────
+        // Grid is ALWAYS 78 wide × 148 tall (portrait).
+        // Banner mode = same grid, SVG scaled to fit width via CSS.
+        // This keeps the lns/pls/rts data valid and the seed search tractable.
+        function renderPlaten(svgId, id, traits) {
+            var svgNS = "http://www.w3.org/2000/svg";
+            var dc = document;
+            var svg = dc.getElementById(svgId);
+            if (!svg) return { flowers: 0 };
+
+            id = Math.min(Math.max(id | 0, 1), 3);
+
+
+
+            // Clear
+            while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+            // Grid is always portrait 78×148
+            var w = 78, h = 148, size = 16, rSize = 14;
+
+            if (currentLayout === 'gallery') {
+                // 16:9 vertical grid for single large panel
+                w = 148; h = 83;
+            }
+
+            // Palette
+            var cls = PALETTES[traits.chromes] || PALETTES.panar;
+            function rc(t) {
+                for (var i = 0; i < cls.length; i++) {
+                    if (t < cls[i].r) return cls[i];
+                    t -= cls[i].r;
+                }
+            }
+
+
+
+            // Drawing groups
+            var gEl = dc.createElementNS(svgNS, "g");
+
+            // ── Hybrid flower inversion ───────────────────────────────────────────────
+            // Symmetry-aware base: flowers in mirrored zones face opposite directions
+            // 12% deterministic scatter: position-hash deviation for organic variation
+            function shouldFlipFlower(fx, fy) {
+                var cx = w / 2, cy = h / 2;
+                var baseFlip = false;
+                switch (traits.symmetry) {
+                    case 'none':
+                        baseFlip = false;
+                        break;
+                    case 'vertical':
+                        baseFlip = fx >= cx;
+                        break;
+                    case 'horizontal':
+                        baseFlip = fy >= cy;
+                        break;
+                    case 'both':
+                        baseFlip = (fx >= cx) !== (fy >= cy);
+                        break;
+                    case 'diagonal':
+                        baseFlip = (fx / w) > (fy / h);
+                        break;
+                    case 'rotational':
+                        baseFlip = (fx >= cx) !== (fy >= cy);
+                        break;
+                    case 'quad':
+                        baseFlip = (fx >= cx) !== (fy >= cy);
+                        break;
+                    case 'kaleidoscope':
+                        var angle = Math.atan2(fy - cy, fx - cx);
+                        var sector = Math.floor(((angle + Math.PI) / (2 * Math.PI)) * 8);
+                        baseFlip = sector % 2 === 1;
+                        break;
+                    case 'glide':
+                        baseFlip = Math.floor(fy / (h / 8)) % 2 === 1;
+                        break;
+                    case 'radial':
+                        var rdx = fx - cx, rdy = fy - cy;
+                        var dist = Math.sqrt(rdx * rdx + rdy * rdy);
+                        var ring = Math.floor(dist / (Math.max(w, h) / 8));
+                        baseFlip = ring % 2 === 1;
+                        break;
+                }
+                // 12% deterministic scatter — position hash, no PRNG consumption
+                var scatter = ((fx * 7919 + fy * 6271) % 100);
+                if (scatter < 12) baseFlip = !baseFlip;
+                return baseFlip;
+            }
+
+            // Draw a filled platen flower — inline path, direct fill, no symbol needed
+            function adr(x, y, col, flip) {
+                var px = (x + 4) * size + 1;
+                var py = (y + 4) * size + 1;
+                var sc = rSize / 20;
+                var path = dc.createElementNS(svgNS, "path");
+                var xform = "translate(" + px + "," + py + ") scale(" + sc + ")";
+                if (flip) xform += " rotate(180,10,10)";
+                path.setAttribute("transform", xform);
+                path.setAttribute("d", FLOWER_PATH);
+                path.setAttribute("fill", col);
+                gEl.appendChild(path);
+            }
+
+
+
+            // Hyperbolic warp
+            function warp(px, py) {
+                if (traits.space !== 'hyperbolic') return [px, py];
+                var cx = w / 2, cy = h / 2;
+                var dx = (px - cx) / cx, dy = (py - cy) / cy;
+                var r = Math.sqrt(dx * dx + dy * dy);
+                var sc = r < 0.95 ? 1 / (1 - r * 0.35) : 4;
+                return [cx + dx * sc * cx * 0.68, cy + dy * sc * cy * 0.68];
+            }
+
+            function irl(c) { c.run++; if (c.prev) irl(c.prev); }
+
+            // ── Seed search — max 2000 attempts to prevent hang ──────────────────────
+            var cells = [], grid = [], cell, a;
+            // Base seed: RENDER_SEED drives the pattern shape, id offsets each variant
+            var seed = RENDER_SEED + (id - 1) * 37;
+            var prng = makePRNG(seed);
+            var rfl = prng.rfl, rin = prng.rin;
+            var attempts = 0, MAX_ATTEMPTS = 2000;
+
+            // ── Generate motif-based pattern parameters ──────────────────────────────
+            var patPRNG = makePRNG(RENDER_SEED + id * 1009);
+            var patternType = traits.engine || 'mastor';
+            var motifParams = generatePatternParams(patternType, patPRNG, w, h);
+
+            while (attempts++ < MAX_ATTEMPTS) {
+                cells = [];
+                grid = [];
+                for (var xi = 0; xi < w; xi++) {
+                    grid[xi] = [];
+                    for (var yi = 0; yi < h; yi++)
+                        grid[xi][yi] = { x: xi, y: yi, col: null, c: null, run: 0, prev: null };
+                }
+
+                // Secondary pole attractors (subtle warp influence)
+                var pls = [];
+                for (var pi = 0; pi < 3; pi++) {
+                    var o = rin(0, 1);
+                    pls.push([rfl(0, o ? h : w), o, rfl(8, 25)]);
+                }
+
+                // ── Two-pass weight normalization ──────────────────────────
+                // Pass 1: compute raw weights + find range
+                var rawWt = [];
+                var wMin = Infinity, wMax = -Infinity;
+                for (var cy = 0; cy < h; cy++) {
+                    for (var cx = 0; cx < w; cx++) {
+                        var wp = warp(cx, cy);
+                        var p = [wp[0], wp[1]], d;
+                        var qq = [cx + 16, cy + 16];
+                        for (var pli = 0; pli < pls.length; pli++) {
+                            var pl = pls[pli];
+                            d = (Math.abs(p[pl[1]] - pl[0]) + 1) / pl[2];
+                            if (d < 1) { p[0] = d * p[0] + (1 - d) * qq[0]; p[1] = d * p[1] + (1 - d) * qq[1]; }
+                        }
+                        var cw = calcMotifWeight(Math.round(p[0]), Math.round(p[1]), w, h, patternType, motifParams);
+                        rawWt.push(cw);
+                        if (cw < wMin) wMin = cw;
+                        if (cw > wMax) wMax = cw;
+                    }
+                }
+
+                // Pass 2: normalize to 0-12 buckets using actual range
+                var wRange = wMax - wMin;
+                if (wRange < 0.001) wRange = 1; // flat field fallback
+                var ri2 = 0;
+                for (var cy2 = 0; cy2 < h; cy2++) {
+                    for (var cx2 = 0; cx2 < w; cx2++) {
+                        var norm = (rawWt[ri2++] - wMin) / wRange; // 0..1
+                        var c = Math.floor(norm * 12.99);          // 0..12
+                        if (c < 10) grid[cx2][cy2].col = rc(c);
+                    }
+                }
+
+
+                // Symmetry
+                var sym = traits.symmetry;
+                if (sym === 'horizontal' || sym === 'both') {
+                    for (var sy = 0; sy < h; sy++)
+                        for (var sx = 0; sx < Math.floor(w / 2); sx++) {
+                            var sxx = w - 1 - sx;
+                            grid[sxx][sy] = { x: sxx, y: sy, col: grid[sx][sy].col, c: null, run: 0, prev: null };
+                        }
+                }
+                if (sym === 'vertical' || sym === 'both') {
+                    for (var sy2 = 0; sy2 < Math.floor(h / 2); sy2++)
+                        for (var sx2 = 0; sx2 < w; sx2++) {
+                            var syy = h - 1 - sy2;
+                            grid[sx2][syy] = { x: sx2, y: syy, col: grid[sx2][sy2].col, c: null, run: 0, prev: null };
+                        }
+                }
+                if (sym === 'diagonal') {
+                    for (var dy2 = 0; dy2 < h; dy2++)
+                        for (var dx2 = 0; dx2 < w; dx2++) {
+                            var mx = Math.min(Math.floor(dx2 * h / w), h - 1);
+                            var my = Math.min(Math.floor(dy2 * w / h), w - 1);
+                            grid[dx2][dy2].col = grid[my][mx].col;
+                        }
+                }
+                // Rotational: 180° point symmetry around center
+                if (sym === 'rotational') {
+                    for (var ry2 = 0; ry2 < h; ry2++)
+                        for (var rx2 = 0; rx2 < w; rx2++) {
+                            var rrx = w - 1 - rx2, rry = h - 1 - ry2;
+                            if (ry2 * w + rx2 > rry * w + rrx)
+                                grid[rx2][ry2] = { x: rx2, y: ry2, col: grid[rrx][rry].col, c: null, run: 0, prev: null };
+                        }
+                }
+                // Quad: 4-fold rotation (both axes + 180°)
+                if (sym === 'quad') {
+                    var hw2 = Math.floor(w / 2), hh2 = Math.floor(h / 2);
+                    for (var qy = 0; qy < hh2; qy++)
+                        for (var qx = 0; qx < hw2; qx++) {
+                            var col_q = grid[qx][qy].col;
+                            grid[w - 1 - qx][qy] = { x: w - 1 - qx, y: qy, col: col_q, c: null, run: 0, prev: null };
+                            grid[qx][h - 1 - qy] = { x: qx, y: h - 1 - qy, col: col_q, c: null, run: 0, prev: null };
+                            grid[w - 1 - qx][h - 1 - qy] = { x: w - 1 - qx, y: h - 1 - qy, col: col_q, c: null, run: 0, prev: null };
+                        }
+                }
+                // Kaleidoscope: 8-fold (quad + diagonal reflection)
+                if (sym === 'kaleidoscope') {
+                    var hw3 = Math.floor(w / 2), hh3 = Math.floor(h / 2);
+                    // First: quad symmetry
+                    for (var ky = 0; ky < hh3; ky++)
+                        for (var kx = 0; kx < hw3; kx++) {
+                            var col_k = grid[kx][ky].col;
+                            grid[w - 1 - kx][ky] = { x: w - 1 - kx, y: ky, col: col_k, c: null, run: 0, prev: null };
+                            grid[kx][h - 1 - ky] = { x: kx, y: h - 1 - ky, col: col_k, c: null, run: 0, prev: null };
+                            grid[w - 1 - kx][h - 1 - ky] = { x: w - 1 - kx, y: h - 1 - ky, col: col_k, c: null, run: 0, prev: null };
+                        }
+                    // Then: diagonal reflection within each quadrant
+                    for (var ky2 = 0; ky2 < hh3; ky2++)
+                        for (var kx2 = 0; kx2 < hw3; kx2++) {
+                            var dkx = Math.min(Math.floor(kx2 * hh3 / hw3), hh3 - 1);
+                            var dky = Math.min(Math.floor(ky2 * hw3 / hh3), hw3 - 1);
+                            if (kx2 > dky) grid[kx2][ky2].col = grid[dky][dkx].col;
+                        }
+                }
+                // Glide: horizontal mirror + half-period vertical shift (classic band pattern)
+                if (sym === 'glide') {
+                    var halfH = Math.floor(h / 2);
+                    for (var gy = 0; gy < h; gy++)
+                        for (var gx = 0; gx < Math.floor(w / 2); gx++) {
+                            var gShiftY = (gy + halfH) % h;
+                            grid[w - 1 - gx][gShiftY] = { x: w - 1 - gx, y: gShiftY, col: grid[gx][gy].col, c: null, run: 0, prev: null };
+                        }
+                }
+                // Radial: concentric ring mirroring from center
+                if (sym === 'radial') {
+                    var rcx = w / 2, rcy = h / 2;
+                    for (var ray = 0; ray < h; ray++)
+                        for (var rax = 0; rax < w; rax++) {
+                            var raDist = Math.sqrt((rax - rcx) * (rax - rcx) + (ray - rcy) * (ray - rcy));
+                            var raAngle = Math.atan2(ray - rcy, rax - rcx);
+                            // Mirror to first quadrant
+                            var mAngle = Math.abs(raAngle);
+                            if (mAngle > Math.PI / 2) mAngle = Math.PI - mAngle;
+                            var srcX = Math.min(Math.max(Math.round(rcx + Math.cos(mAngle) * raDist), 0), w - 1);
+                            var srcY = Math.min(Math.max(Math.round(rcy + Math.sin(mAngle) * raDist), 0), h - 1);
+                            if (srcX !== rax || srcY !== ray)
+                                grid[rax][ray] = { x: rax, y: ray, col: grid[srcX][srcY].col, c: null, run: 0, prev: null };
+                        }
+                }
+
+                // Collect cells
+                a = 0;
+                var b = 1;
+                for (var ry = 0; ry < h; ry++) {
+                    var prev = null;
+                    for (var rx = 0; rx < w; rx++) {
+                        cell = grid[rx][ry];
+                        if (cell.col && !cell.col.v) {
+                            a++;
+                            cells.push(cell);
+                            if (prev !== null && prev.col === cell.col) {
+                                cell.prev = prev; cell.run = prev.run;
+                            }
+                            irl(cell);
+                            prev = cell;
+                        } else { b++; prev = null; }
+                    }
+                }
+
+                cells.sort(function (a, b) {
+                    return (b.run - a.run) || (Math.abs(h / 2 - a.y) - Math.abs(h / 2 - b.y));
+                });
+
+
+
+                seed++;
+                prng = makePRNG(seed); rfl = prng.rfl; rin = prng.rin;
+                cells = [];
+            }
+
+
+
+            // SVG dimensions — always portrait
+            var svgW = (w + 8) * size;
+            var svgH = (h + 8) * size;
+            svg.setAttribute("width", svgW);
+            svg.setAttribute("height", svgH);
+            svg.setAttribute("viewBox", "0 0 " + svgW + " " + svgH);
+
+            // Background
+            var bg = dc.createElementNS(svgNS, "rect");
+            bg.setAttribute("width", svgW); bg.setAttribute("height", svgH);
+            bg.setAttribute("fill", "transparent");
+            svg.appendChild(bg);
+            svg.appendChild(gEl);
+
+            // Render
+            for (var fy = 0; fy < h; fy++) {
+                for (var fx = 0; fx < w; fx++) {
+                    cell = grid[fx][fy];
+
+                    var dx = cell.x, dy = cell.y;
+                    if (traits.space === 'hyperbolic') {
+                        var p = warp(cell.x, cell.y);
+                        dx = p[0];
+                        dy = p[1];
+                    }
+
+                    if (cell.col) {
+                        var flip = shouldFlipFlower(fx, fy);
+                        adr(dx, dy, cell.col.c, flip);
+                    }
+
+                }
+            }
+
+            return { flowers: cells.length, seed: seed, attempts: attempts };
+        }
+
+
+        function svgToString(svgEl) {
+            var s = new XMLSerializer();
+            return s.serializeToString(svgEl);
+        }
+
+        function downloadBlob(blob, filename) {
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+        }
+
+        function saveSVG() {
+            var panels = activePanels();
+            panels.forEach(function (id) {
+                var svg = document.getElementById('s' + id);
+                if (!svg) return;
+                var str = svgToString(svg);
+                var blob = new Blob([str], { type: 'image/svg+xml' });
+                var name = 'platen-' + RENDER_SEED + '-v' + id + '.svg';
+                downloadBlob(blob, name);
+            });
+            console.log('[Platen] Saved SVG(s) for panels:', panels);
+        }
+
+        // ── Plotter SVG Export (Inkscape Ready) ─────────────────────────────────────
+        function savePlotterSVG() {
+            var svgNS = "http://www.w3.org/2000/svg";
+            var panels = activePanels();
+            panels.forEach(function (pid) {
+                var srcSvg = document.getElementById('s' + pid);
+                if (!srcSvg) return;
+
+                // Clone to modify structure
+                var svg = srcSvg.cloneNode(true);
+
+                // Add Inkscape namespace
+                svg.setAttribute('xmlns:inkscape', 'http://www.inkscape.org/namespaces/inkscape');
+
+                // Clear existing content container to rebuild with layers
+                // The structure is: svg > rect(bg) > g > path...
+                // careful not to kill <defs> if any.
+                // We know structure: bg rect, g(flowers), t(text).
+
+                var gEl = svg.querySelector('g'); // flowers
+                var tEl = svg.querySelector('g + g') || svg.querySelector('tspan')?.parentNode; // text is usually in tEl appended after gEl
+                // My code appends gEl then tEl.
+                // Actually tEl is a separate group? No, tEl is a group.
+                // Let's find them by content or just generic iter.
+
+                // Group paths by color
+                var paths = Array.from(svg.querySelectorAll('path'));
+                var text = Array.from(svg.querySelectorAll('text, tspan'));
+
+                // Map colors
+                var groups = {};
+                paths.forEach(function (p) {
+                    var fill = p.getAttribute('fill') || '#000000';
+                    if (!groups[fill]) groups[fill] = [];
+                    groups[fill].push(p);
+                });
+
+                // Clear the main group(s)
+                // Better approach: Create a new SVG content structure.
+                // Keep dimensions/viewbox.
+                var newSvg = srcSvg.cloneNode(false); // shallow clone (attributes only)
+                newSvg.setAttribute('xmlns:inkscape', 'http://www.inkscape.org/namespaces/inkscape');
+
+                // 1. Text Layer (usually plotted first or last? Let's do last "Reference")
+                // Text is tricky on plotters if filled. Converting to outline is hard in JS.
+                // We'll put text in a separate layer "Text".
+                // Note: User's 'text' are <tspan> inside <text> or just <tspan> in <g>?
+                // In my code: t = dc.createElementNS(svgNS, "tspan"); tEl.appendChild(t).
+                // Wait, tEl must be a <text> element or <g>?
+                // In `boot`: var tEl = dc.createElementNS(svgNS, "text");
+                // So all tspans are inside one text element.
+                // If it's a <text> element, it behaves as one object.
+                // We can just clone tEl.
+                var srcTEl = srcSvg.querySelector('text');
+                if (srcTEl) {
+                    var layerT = document.createElementNS(svgNS, 'g');
+                    layerT.setAttribute('inkscape:groupmode', 'layer');
+                    layerT.setAttribute('inkscape:label', 'Text');
+
+                    var tClone = srcTEl.cloneNode(true);
+                    // Simplify text for plotter? Plotters often can't do filled text.
+                    // But standard SVG text is fill. 
+                    // We'll leave it as is, user can Hershey-font it in Inkscape.
+                    // Or change fill to stroke? 
+                    // tClone.setAttribute('fill', 'none'); tClone.setAttribute('stroke', '#000');
+                    // Text without fill might be invisible if stroke is not set.
+                    // Let's keep it filled for readability, Inkscape handles text conversion.
+                    layerT.appendChild(tClone);
+                    newSvg.appendChild(layerT);
+                }
+
+                // 2. Color Layers
+                Object.keys(groups).sort().forEach(function (color) {
+                    var g = document.createElementNS(svgNS, 'g');
+                    g.setAttribute('inkscape:groupmode', 'layer');
+                    g.setAttribute('inkscape:label', color);
+                    g.setAttribute('id', 'layer-' + color.replace('#', ''));
+
+                    groups[color].forEach(function (p) {
+                        // Plotter optimization: Fill=none, Stroke=color
+                        p.setAttribute('fill', 'none');
+                        p.setAttribute('stroke', color);
+                        p.setAttribute('stroke-width', '1'); // 1px stroke (for visibility)
+                        // Adjust stroke width based on scale? 
+                        // SVG units 1440. 1px is fine.
+                        g.appendChild(p);
+                    });
+                    newSvg.appendChild(g);
+                });
+
+                var str = svgToString(newSvg);
+                var blob = new Blob([str], { type: 'image/svg+xml' });
+                var name = 'platen-' + RENDER_SEED + '-v' + pid + '-plot.svg';
+                downloadBlob(blob, name);
+
+                var penText = "Platen Axidraw Pen Mapping\nSeed: " + RENDER_SEED + "\nPanel: " + pid + "\n\n";
+                Object.keys(groups).sort().forEach(function (color) {
+                    var hex = color.toUpperCase();
+                    var penName = PEN_MAP[hex] || "Unknown Pen";
+                    penText += "Layer: " + color + " -> " + penName + "\n";
+                });
+                var txtBlob = new Blob([penText], { type: 'text/plain' });
+                var txtName = 'platen-' + RENDER_SEED + '-v' + pid + '-pens.txt';
+                downloadBlob(txtBlob, txtName);
+            });
+            console.log('[Platen Quine] Saved Plotter SVG(s) and Pen Text map');
+        }
+        function saveDST() {
+            var panels = activePanels();
+            panels.forEach(function (pid) {
+                // Generate stitches for this panel
+                var stitches = generateStitches(pid); // returns { dx, dy, type }
+                var buffer = encodeDST(stitches, 'platen-' + RENDER_SEED);
+                var blob = new Blob([buffer], { type: 'application/octet-stream' });
+                var name = 'platen-' + RENDER_SEED + '-v' + pid + '.dst';
+                downloadBlob(blob, name);
+            });
+            console.log('[Platen Quine] Saved DST(s) for panels:', panels);
+        }
+
+        function generateStitches(pid) {
+            // Re-run the render logic virtually to capture positions
+            // Grid 78x148. Units: 0.1mm. 
+            // 1440px width -> map to ~14.4cm (144mm). Scale ~ 1.0 (1px = 0.1mm)
+            var scale = 1.0;
+
+            // Flower path parsing cache
+            // Decompose FLOWER_PATH into 2D points (centered at 0,0)
+            var flowerPoints = parsePathToPoints(FLOWER_PATH, 4); // 4 segments per curve
+
+            var moves = [];
+            var lastX = 0, lastY = 0;
+
+            function addStitch(x, y, flags) {
+                // Coordinates in DST are relative moves.
+                // We calculate absolute position in 0.1mm units, then difference.
+                // Center logic: map top-left (0,0) to center relative? 
+                // Default: start at 0,0 (center of design).
+                // Let's assume start position is center.
+
+                x = Math.round(x);
+                y = Math.round(y);
+                var dx = x - lastX;
+                var dy = y - lastY;
+                moves.push({ dx: dx, dy: dy, flags: flags || 0 }); // 0=normal, JUMP, STOP
+                lastX = x;
+                lastY = y;
+            }
+
+            var JUMP = 0x80;
+            var STOP = 0x40; // Color change
+
+            // Center offset
+            var w = 78, h = 148, size = 16;
+            var cx = (w * size) / 2;
+            var cy = (h * size) / 2;
+
+            // Find SVG elements to get transformed positions
+            var svgEl = document.getElementById('s' + pid);
+            if (!svgEl) return [];
+
+            var paths = svgEl.querySelectorAll('path'); // Flowers
+            var pathsArr = Array.prototype.slice.call(paths);
+
+            // Group paths by fill color to minimize thread changes
+            var groups = {};
+            pathsArr.forEach(function (p) {
+                var fill = p.getAttribute('fill');
+                if (!groups[fill]) groups[fill] = [];
+                groups[fill].push(p);
+            });
+
+            var lastColor = null;
+
+            // Iterate colors
+            Object.keys(groups).forEach(function (color) {
+                // Add STOP code if not first group
+                if (lastColor !== null) {
+                    // Force a jump-in-place STOP? Or simple STOP flag on next stitch.
+                    // Usually STOP command is tied to a stitch. We can emit a 0,0 move with STOP.
+                    addStitch(lastX, lastY, STOP);
+                }
+                lastColor = color;
+
+                var gPaths = groups[color];
+                gPaths.forEach(function (path) {
+                    // Parse transform
+                    var tr = path.getAttribute('transform');
+                    // transform="translate(px,py) scale(sc) ... rotate..."
+                    // regex parse
+                    var tM = /translate\(([^,]+),([^)]+)\)/.exec(tr);
+                    var px = tM ? parseFloat(tM[1]) : 0;
+                    var py = tM ? parseFloat(tM[2]) : 0;
+
+                    var sM = /scale\(([^)]+)\)/.exec(tr);
+                    var sc = sM ? parseFloat(sM[1]) : 1;
+
+                    var rM = /rotate\(([^,]+)/.exec(tr);
+                    var ang = rM ? parseFloat(rM[1]) : 0;
+                    var isFlip = Math.abs(ang - 180) < 1; // logical flip
+
+                    // Map center-relative for embroidery
+                    // Start 0,0 is center of hoop.
+                    // Screen 0,0 is top-left.
+                    // Target (dx, dy) = (px - cx, py - cy)
+                    var ox = (px - cx) * scale;
+                    var oy = (py - cy) * scale;
+
+                    // Walk the flower points
+                    var first = true;
+                    for (var i = 0; i < flowerPoints.length; i++) {
+                        var fp = flowerPoints[i];
+                        var fpx = fp.x;
+                        var fpy = fp.y;
+
+                        // Apply local transform: scale -> rotate -> translate
+                        // FLOWER_PATH points are roughly 0..20 box.
+                        // Rotate 180 around (10,10) if flipped.
+                        if (isFlip) {
+                            fpx = 20 - fpx;
+                            fpy = 20 - fpy;
+                        }
+
+                        // Scale
+                        var rx = fpx * sc;
+                        var ry = fpy * sc;
+
+                        // Translate
+                        var absX = ox + rx * scale;
+                        var absY = oy + ry * scale;
+
+                        if (first) {
+                            addStitch(absX, absY, JUMP);
+                            first = false;
+                        } else {
+                            addStitch(absX, absY, 0);
+                        }
+                    }
+                });
+            });
+
+            return moves;
+        }
+
+        function parsePathToPoints(d, seg) {
+            var parts = d.match(/[a-zA-Z]|[-0-9.]+/g);
+            var pts = [];
+            var cur = { x: 0, y: 0 };
+
+            for (var i = 0; i < parts.length; i++) {
+                var cmd = parts[i];
+                if (cmd === 'M') {
+                    cur.x = parseFloat(parts[++i]);
+                    cur.y = parseFloat(parts[++i]);
+                    pts.push({ x: cur.x, y: cur.y });
+                } else if (cmd === 'C') {
+                    var cp1 = { x: parseFloat(parts[++i]), y: parseFloat(parts[++i]) };
+                    var cp2 = { x: parseFloat(parts[++i]), y: parseFloat(parts[++i]) };
+                    var end = { x: parseFloat(parts[++i]), y: parseFloat(parts[++i]) };
+                    // Subdivide
+                    for (var t = 1; t <= seg; t++) {
+                        var k = t / seg;
+                        var nk = 1 - k;
+                        var bx = nk * nk * nk * cur.x + 3 * nk * nk * k * cp1.x + 3 * nk * k * k * cp2.x + k * k * k * end.x;
+                        var by = nk * nk * nk * cur.y + 3 * nk * nk * k * cp1.y + 3 * nk * k * k * cp2.y + k * k * k * end.y;
+                        pts.push({ x: bx, y: by });
+                    }
+                    cur = end;
+                } else if (cmd === 'L') {
+                    cur.x = parseFloat(parts[++i]);
+                    cur.y = parseFloat(parts[++i]);
+                    pts.push({ x: cur.x, y: cur.y });
+                }
+            }
+            return pts;
+        }
+
+        function encodeDST(moves, label) {
+            var header = new Uint8Array(512);
+            for (var i = 0; i < 512; i++) header[i] = 32;
+            var la = "LA:" + label.substring(0, 16) + "\r";
+            for (var i = 0; i < la.length; i++) header[i] = la.charCodeAt(i);
+
+            var body = [];
+
+            moves.forEach(function (m) {
+                var dx = m.dx;
+                var dy = m.dy;
+                dy = -dy; // DST Y+ is UP
+
+                var flags = m.flags;
+
+                if (flags === 0x80) { // Jump
+                    encodeStitch(dx, dy, true, false, body);
+                } else if (flags === 0x40) { // Stop
+                    encodeStitch(dx, dy, false, true, body);
+                } else {
+                    // Long jumps
+                    while (Math.abs(dx) > 121 || Math.abs(dy) > 121) {
+                        var sx = dx > 121 ? 121 : (dx < -121 ? -121 : dx);
+                        var sy = dy > 121 ? 121 : (dy < -121 ? -121 : dy);
+                        dx -= sx;
+                        dy -= sy;
+                        encodeStitch(sx, sy, true, false, body);
+                    }
+                    encodeStitch(dx, dy, false, false, body);
+                }
+            });
+
+            // Allow 3 bytes for EOF
+            var file = new Uint8Array(512 + body.length + 3);
+            file.set(header, 0);
+            file.set(body, 512);
+            file[512 + body.length] = 0x00;
+            file[512 + body.length + 1] = 0x00;
+            file[512 + body.length + 2] = 0xF3;
+
+            return file;
+        }
+
+        function encodeStitch(dx, dy, jump, stop, arr) {
+            var b0 = 0, b1 = 0, b2 = 0;
+            if (jump) b2 |= 0x80;
+            if (stop) b2 |= 0x40;
+            // Byte 1
+            if (dy > 0) { if (dy & 1) b0 |= 0x80; if (dy & 9) b0 |= 0x20; }
+            else { if (-dy & 1) b0 |= 0x40; if (-dy & 9) b0 |= 0x10; }
+            if (dx < 0) { if (-dx & 9) b0 |= 0x08; if (-dx & 3) b0 |= 0x02; }
+            else { if (dx & 9) b0 |= 0x04; if (dx & 3) b0 |= 0x01; }
+            // Byte 2
+            if (dy > 0) { if (dy & 3) b1 |= 0x80; if (dy & 27) b1 |= 0x20; }
+            else { if (-dy & 3) b1 |= 0x40; if (-dy & 27) b1 |= 0x10; }
+            if (dx < 0) { if (-dx & 27) b1 |= 0x08; if (-dx & 1) b1 |= 0x02; }
+            else { if (dx & 27) b1 |= 0x04; if (dx & 1) b1 |= 0x01; }
+            // Byte 3
+            if (dy > 0) { if (dy & 81) b2 |= 0x20; } else { if (-dy & 81) b2 |= 0x10; }
+            if (dx < 0) { if (-dx & 81) b2 |= 0x08; } else { if (dx & 81) b2 |= 0x04; }
+
+            b2 |= 0x03; // Standard set bits
+            arr.push(b0, b1, b2);
+        }
+
+
+        var _activeCanvasImg = null;
+
+        function savePNG() {
+            var panels = activePanels();
+            panels.forEach(function (id) {
+                var svg = document.getElementById('s' + id);
+                if (!svg) return;
+                var svgW = parseInt(svg.getAttribute('width'));
+                var svgH = parseInt(svg.getAttribute('height'));
+
+                // Target: full resolution 1440x2560
+                var outW = 1440, outH = 2560;
+                var scaleX = outW / svgW, scaleY = outH / svgH;
+
+                // Serialize SVG with transparent background
+                var str = svgToString(svg);
+                var blob = new Blob([str], { type: 'image/svg+xml' });
+                var svgUrl = URL.createObjectURL(blob);
+
+                var svgImg = new Image();
+                svgImg.onload = function () {
+                    // Load texture from data URL (avoids tainted canvas)
+                    function doComposite(texImg) {
+                        var canvas = document.createElement('canvas');
+                        canvas.width = outW; canvas.height = outH;
+                        var ctx = canvas.getContext('2d');
+
+                        var includeBG = document.getElementById('inc-bg').checked;
+
+                        // Layer 1: canvas texture (full res)
+                        if (includeBG) {
+                            if (texImg) {
+                                ctx.drawImage(texImg, 0, 0, outW, outH);
+                            } else {
+                                ctx.fillStyle = '#1a1724';
+                                ctx.fillRect(0, 0, outW, outH);
+                            }
+                        }
+
+                        // Layer 2: SVG pattern scaled to fill with ink blending
+                        ctx.save();
+                        if (includeBG && (TRAITS.canvas === 'tan' || TRAITS.canvas === 'olive' || TRAITS.canvas === 'white')) {
+                            ctx.globalCompositeOperation = 'multiply';
+                            ctx.globalAlpha = 1.0;
+                            ctx.filter = 'saturate(3.0) contrast(1.3) brightness(1.5)';
+                        } else if (includeBG) {
+                            ctx.globalAlpha = 0.95;
+                            ctx.filter = 'saturate(1.2) contrast(1.05)';
+                        } else {
+                            // No background: standard transparency
+                            ctx.globalAlpha = 1.0;
+                            ctx.filter = 'saturate(1.1) contrast(1.1)';
+                        }
+                        ctx.drawImage(svgImg, 0, 0, outW, outH);
+                        ctx.restore();
+
+                        canvas.toBlob(function (pngBlob) {
+                            var name = 'platen-' + RENDER_SEED + '-v' + id + '.png';
+                            downloadBlob(pngBlob, name);
+                            console.log('[Platen] Saved PNG: ' + name + ' (' + outW + 'x' + outH + ')');
+                        }, 'image/png');
+                    }
+
+                    if (_activeCanvasImg) {
+                        doComposite(_activeCanvasImg);
+                    } else {
+                        doComposite(null);
+                    }
+                };
+                svgImg.src = svgUrl;
+            });
+        }
+
+        function saveTriptych() {
+            var ids = [1, 2, 3];
+            var promises = ids.map(function (id) {
+                return new Promise(function (resolve) {
+                    var svg = document.getElementById('s' + id);
+                    if (!svg) { resolve(null); return; }
+                    var str = svgToString(svg);
+                    var blob = new Blob([str], { type: 'image/svg+xml' });
+                    var url = URL.createObjectURL(blob);
+                    var img = new Image();
+                    img.onload = function () { resolve(img); };
+                    img.src = url;
+                });
+            });
+
+            Promise.all(promises).then(function (images) {
+                var w = 1440, h = 2560;
+                var gap = 100;
+                var margin = 100;
+                var totalW = margin * 2 + w * 3 + gap * 2;
+                var totalH = margin * 2 + h;
+
+                var canvas = document.createElement('canvas');
+                canvas.width = totalW;
+                canvas.height = totalH;
+                var ctx = canvas.getContext('2d');
+
+                // Fill background (matte)
+                ctx.fillStyle = '#151515';
+                ctx.fillRect(0, 0, totalW, totalH);
+
+                function drawComposite(texImg) {
+                    images.forEach(function (img, i) {
+                        if (!img) return;
+                        var x = margin + i * (w + gap);
+                        var y = margin;
+
+                        // Draw deckled canvas texture background per panel 
+                        if (texImg) {
+                            ctx.save();
+                            ctx.drawImage(texImg, x, y, w, h);
+                            ctx.restore();
+                        } else {
+                            ctx.fillStyle = '#1a1724';
+                            ctx.fillRect(x, y, w, h);
+                        }
+
+                        // Draw SVG content with ink blending
+                        ctx.save();
+                        var includeBG = document.getElementById('inc-bg').checked;
+                        if (includeBG && (TRAITS.canvas === 'tan' || TRAITS.canvas === 'olive' || TRAITS.canvas === 'white')) {
+                            ctx.globalCompositeOperation = 'multiply';
+                            ctx.globalAlpha = 1.0;
+                            ctx.filter = 'saturate(3.0) contrast(1.3) brightness(1.5)';
+                        } else if (includeBG) {
+                            ctx.globalAlpha = 0.95;
+                            ctx.filter = 'saturate(1.2) contrast(1.05)';
+                        } else {
+                            // No background: standard transparency
+                            ctx.globalAlpha = 1.0;
+                            ctx.filter = 'saturate(1.1) contrast(1.1)';
+                        }
+                        ctx.drawImage(img, x, y, w, h);
+                        ctx.restore();
+                    });
+
+                    canvas.toBlob(function (blob) {
+                        var name = 'platen-' + RENDER_SEED + '-triptych.png';
+                        downloadBlob(blob, name);
+                        console.log('[Platen] Saved Triptych: ' + name);
+                    }, 'image/png');
+                }
+
+                if (_activeCanvasImg) {
+                    drawComposite(_activeCanvasImg);
+                } else {
+                    drawComposite(null);
+                }
+            });
+        }
+
+        // ── Pan & Zoom Logic ──────────────────────────────────────────────────────────
+        (function () {
+            var state = {}; // { id: { scale:1, x:0, y:0 } }
+
+            function getOrCreateState(id) {
+                if (!state[id]) state[id] = { scale: 1, x: 0, y: 0 };
+                return state[id];
+            }
+
+            function applyTransform(panel, s) {
+                if (!panel) return;
+                panel.style.transform = 'translate(' + s.x + 'px, ' + s.y + 'px) scale(' + s.scale + ')';
+            }
+
+            var wrap = document.getElementById('canvas-wrap');
+
+            // Zoom (Wheel)
+            wrap.addEventListener('wheel', function (e) {
+                var panel = e.target.closest('.platen-panel');
+                if (!panel) return;
+                e.preventDefault();
+                // Bring to front
+                document.querySelectorAll('.platen-panel').forEach(function (p) { p.style.zIndex = 0; });
+                panel.style.zIndex = 100;
+
+                document.getElementById('st-info').innerHTML = 'zoom active &bull; double-click to reset';
+                var id = panel.id || 'p';
+                var s = getOrCreateState(id);
+                var delta = e.deltaY > 0 ? -0.1 : 0.1;
+                var oldScale = s.scale;
+                s.scale = Math.min(Math.max(s.scale + delta, 1), 8);
+                // Adjust pan to zoom towards center (simplified)
+                applyTransform(panel, s);
+            }, { passive: false });
+
+            // Pan (Drag)
+            var isDragging = false;
+            var startX, startY;
+            var currentPanelId = null;
+
+            wrap.addEventListener('mousedown', function (e) {
+                var panel = e.target.closest('.platen-panel');
+                if (!panel) return;
+                // Only allow drag if zoomed in slightly? Or always. User asked for "when in zoom mode".
+                // But dragging at 1x is harmless if constrained. Let's allow free drag.
+                var svg = panel.querySelector('svg');
+                if (!svg) return;
+
+                // Bring to front
+                document.querySelectorAll('.platen-panel').forEach(function (p) { p.style.zIndex = 0; });
+                panel.style.zIndex = 100;
+
+                isDragging = true;
+                currentPanelId = panel.id || 'p';
+                document.getElementById('st-info').innerHTML = 'pan active &bull; double-click to reset';
+                startX = e.clientX;
+                startY = e.clientY;
+                e.preventDefault(); // prevent text selection
+            });
+
+            window.addEventListener('mousemove', function (e) {
+                if (!isDragging || !currentPanelId) return;
+                var s = getOrCreateState(currentPanelId);
+
+                var dx = e.clientX - startX;
+                var dy = e.clientY - startY;
+
+                s.x += dx;
+                s.y += dy;
+
+                startX = e.clientX;
+                startY = e.clientY;
+
+                var panel = document.getElementById(currentPanelId);
+                applyTransform(panel, s);
+            });
+
+            window.addEventListener('mouseup', function () {
+                isDragging = false;
+                currentPanelId = null;
+            });
+
+            // Double-click reset
+            wrap.addEventListener('dblclick', function (e) {
+                var panel = e.target.closest('.platen-panel');
+                if (!panel) return;
+                var id = panel.id || 'p';
+                state[id] = { scale: 1, x: 0, y: 0 };
+                applyTransform(panel, state[id]);
+                document.getElementById('st-info').innerHTML = 'view reset';
+            });
+        })();
+
+        // ── Keyboard Controls ─────────────────────────────────────────────────────────
+        window.addEventListener('keydown', function (e) {
+            // Check if focus is not in an input or select element to avoid firing while user is typing
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'TEXTAREA') {
+                if (e.code === 'Space') {
+                    e.preventDefault(); // prevent page scroll
+                    randomize();
+                } else if (e.code === 'KeyR') {
+                    regenerate();
+                }
+            }
+        });
+
+        var CANVAS_BLACK_PATH = 'platen_canvas_black.png';
+        var CANVAS_TAN_PATH = 'platen_canvas_tan.png';
+        var CANVAS_OLIVE_PATH = 'platen_canvas_olive.png';
+        var CANVAS_WHITE_PATH = 'platen_canvas_white.png';
+        var CANVAS_GALLERY_PATH = 'platen_canvas_black_gallery.png';
+
+        var _canvasBlackImg = null;
+        var _canvasTanImg = null;
+        var _canvasOliveImg = null;
+        var _canvasWhiteImg = null;
+        var _canvasGalleryImg = null;
+        var _activeCanvasImg = null;
+
+        var _canvasBlackDataURL = null; // for CSS instant loading
+        var _canvasTanDataURL = null;
+        var _canvasOliveDataURL = null;
+        var _canvasWhiteDataURL = null;
+        var _canvasGalleryDataURL = null;
+
+        function preloadTexture(path, callback) {
+            if (window.location.protocol === 'file:') return;
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', path, true);
+            xhr.responseType = 'blob';
+            xhr.onload = function () {
+                var reader = new FileReader();
+                reader.onloadend = function () {
+                    callback(reader.result);
+                };
+                reader.readAsDataURL(xhr.response);
+            };
+            xhr.send();
+        }
+
+        (function preloadTextures() {
+            preloadTexture(CANVAS_BLACK_PATH, function (data) {
+                _canvasBlackDataURL = data;
+                _canvasBlackImg = new Image();
+                _canvasBlackImg.onload = updateCanvasTexture;
+                _canvasBlackImg.src = data;
+            });
+            preloadTexture(CANVAS_TAN_PATH, function (data) {
+                _canvasTanDataURL = data;
+                _canvasTanImg = new Image();
+                _canvasTanImg.onload = updateCanvasTexture;
+                _canvasTanImg.src = data;
+            });
+            preloadTexture(CANVAS_OLIVE_PATH, function (data) {
+                _canvasOliveDataURL = data;
+                _canvasOliveImg = new Image();
+                _canvasOliveImg.onload = updateCanvasTexture;
+                _canvasOliveImg.src = data;
+            });
+            preloadTexture(CANVAS_WHITE_PATH, function (data) {
+                _canvasWhiteDataURL = data;
+                _canvasWhiteImg = new Image();
+                _canvasWhiteImg.onload = updateCanvasTexture;
+                _canvasWhiteImg.src = data;
+            });
+            preloadTexture(CANVAS_GALLERY_PATH, function (data) {
+                _canvasGalleryDataURL = data;
+                _canvasGalleryImg = new Image();
+                _canvasGalleryImg.onload = updateCanvasTexture;
+                _canvasGalleryImg.src = data;
+            });
+        })();
+
+        function updateCanvasTexture() {
+            var url = CANVAS_BLACK_PATH;
+            var dataUrl = _canvasBlackDataURL;
+            var img = _canvasBlackImg;
+            var canvasClass = 'canvas-black';
+
+            if (TRAITS.canvas === 'tan') {
+                url = CANVAS_TAN_PATH;
+                dataUrl = _canvasTanDataURL;
+                img = _canvasTanImg;
+                canvasClass = 'canvas-tan';
+            } else if (TRAITS.canvas === 'olive') {
+                url = CANVAS_OLIVE_PATH;
+                dataUrl = _canvasOliveDataURL;
+                img = _canvasOliveImg;
+                canvasClass = 'canvas-olive';
+            } else if (TRAITS.canvas === 'white') {
+                url = CANVAS_WHITE_PATH;
+                dataUrl = _canvasWhiteDataURL;
+                img = _canvasWhiteImg;
+                canvasClass = 'canvas-white';
+            }
+
+            // Gallery mode overrides canvas texture if in gallery layout
+            if (currentLayout === 'gallery') {
+                url = CANVAS_GALLERY_PATH;
+                dataUrl = _canvasGalleryDataURL;
+                img = _canvasGalleryImg;
+                canvasClass = 'canvas-black'; // Gallery is black-based
+            }
+
+            // Use Data URL for truly instant swapping if ready
+            var displayUrl = dataUrl ? dataUrl : url;
+
+            // Update CSS for display
+            document.querySelectorAll('.platen-panel').forEach(function (el) {
+                el.style.backgroundImage = 'url("' + displayUrl + '")';
+                // Reset classes except for base
+                el.className = 'platen-panel ' + canvasClass;
+            });
+
+            _activeCanvasImg = img;
+        }
+
+        // ── Boot ──────────────────────────────────────────────────────────────────────
+        // Initial render: start immediately once DOM is ready
+        window.addEventListener('DOMContentLoaded', function () {
+            setTimeout(randomize, 50);
+        });
+    </script>
+</body>
+
+</html>
