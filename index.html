@@ -4535,7 +4535,46 @@ else                glyph = '*';        // asterisk</code></pre>
                     return x - Math.floor(x);
                 }
 
-                var baseSvg = art.svgs[0];
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(art.svgs[0], 'image/svg+xml');
+                var paths = Array.from(doc.querySelectorAll('path[fill]'));
+                
+                var colorCounts = {};
+                paths.forEach(function(p) {
+                    var c = p.getAttribute('fill') || '#000000';
+                    if (c === 'none') c = p.getAttribute('stroke') || '#000000';
+                    if (!colorCounts[c]) colorCounts[c] = { count: 0 };
+                    colorCounts[c].count++;
+                });
+                
+                var colorKeys = Object.keys(colorCounts);
+                colorKeys.sort(function(a, b) { return colorCounts[b].count - colorCounts[a].count; });
+                
+                var targetPaths = [];
+                if (colorKeys.length >= 2) {
+                    var targetColor = colorKeys[1];
+                    paths.forEach(function(p) {
+                        var c = p.getAttribute('fill') || '#000000';
+                        if (c === 'none') c = p.getAttribute('stroke') || '#000000';
+                        if (c === targetColor) targetPaths.push(p);
+                    });
+                } else {
+                    var rndCap = Math.floor(paths.length * 0.33);
+                    var pool = paths.slice();
+                    // Deterministic shuffle using a basic hash of index + seed
+                    pool.sort(function(a, b) { return hash(art.seed + pool.indexOf(a)) - hash(art.seed + pool.indexOf(b)); });
+                    targetPaths = pool.slice(0, Math.min(rndCap, pool.length));
+                }
+                
+                targetPaths.forEach(function(p, i) {
+                    // Assign deterministic group
+                    var g = Math.floor(hash(art.seed + i * 13) * 32);
+                    var originalClass = p.getAttribute('class') || '';
+                    var cleanClass = originalClass.replace(/keyanim-path/g, '').replace(/keyanim-g\d+/g, '').trim();
+                    p.setAttribute('class', (cleanClass + ' keyanim-path keyanim-g' + g).trim());
+                });
+                
+                var baseSvg = new XMLSerializer().serializeToString(doc.documentElement);
                 var frames = [];
                 var numLoaded = 0;
                 var totalFrames = 32;
