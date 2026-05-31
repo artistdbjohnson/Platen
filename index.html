@@ -1271,10 +1271,7 @@
             <input type="checkbox" id="t-solid" checked onchange="TRAITS.solid=this.checked; renderAll()" style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple);">
             <label for="t-solid" style="font-size: 8px; color: var(--text); cursor: pointer; text-transform: uppercase;">Solid</label>
         </div>
-        <div class="trait" style="border: 1px solid var(--border); padding: 1px 6px; display: flex; align-items: center; gap: 4px; cursor: help;" data-info="show row and column numbers on the grid">
-            <input type="checkbox" id="t-grid-nums" onchange="toggleGridNums(this.checked)" style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple);">
-            <label for="t-grid-nums" style="font-size: 8px; color: var(--text); cursor: pointer; text-transform: uppercase;">Grid Nums</label>
-        </div>
+
         <div class="trait" style="border: 1px solid var(--border); padding: 1px 6px; display: flex; align-items: center; gap: 4px; cursor: help;" data-info="invert graph paper colors">
             <input type="checkbox" id="t-invert-graph" onchange="toggleInvertGraph(this.checked)" style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple);">
             <label for="t-invert-graph" style="font-size: 8px; color: var(--text); cursor: pointer; text-transform: uppercase;">Invert Paper</label>
@@ -1990,9 +1987,9 @@
             
             // 1. Title Line
             var title = "";
-            var fullTitle = titleWord + "  ·  BY DLGXSS  ·  SEED #" + seed;
-            var medTitle = titleWord + "  ·  DLGXSS  ·  SEED #" + seed;
-            var compTitle = titleWord + "  ·  DLGXSS  ·  #" + seed;
+            var fullTitle = titleWord + "  -  BY DLGXSS  -  SEED #" + seed;
+            var medTitle = titleWord + "  -  DLGXSS  -  SEED #" + seed;
+            var compTitle = titleWord + "  -  DLGXSS  -  #" + seed;
 
             if (w >= fullTitle.length) {
                 // Dynamically pad the title to span exactly from column 1 to column w
@@ -2000,7 +1997,7 @@
                 if (neededSpaces >= 4) {
                     var space1 = Math.floor(neededSpaces / 2);
                     var space2 = neededSpaces - space1;
-                    title = titleWord + " ".repeat(space1) + "·  BY DLGXSS  ·" + " ".repeat(space2) + "SEED #" + seed;
+                    title = titleWord + " ".repeat(space1) + "-  BY DLGXSS  -" + " ".repeat(space2) + "SEED #" + seed;
                 } else {
                     title = fullTitle;
                 }
@@ -2063,7 +2060,7 @@
             var p3 = "SYMMETRY: " + symName;
             var p4 = "INK: " + chromeName;
 
-            var fullLen = p1.length + p2.length + p3.length + p4.length + 9; // with 3 spacers "  ·  "
+            var fullLen = p1.length + p2.length + p3.length + p4.length + 9; // with 3 spacers "  -  "
             if (w < fullLen) {
                 p1 = "DATE: " + dateHourStamp;
                 p2 = "ENG: " + engineName;
@@ -2072,13 +2069,13 @@
             }
 
             var totalPartsLen = p1.length + p2.length + p3.length + p4.length;
-            var minSpacersLen = 9; // three spacers " · " is 9 chars
+            var minSpacersLen = 9; // three spacers " - " is 9 chars
             var neededSpacesInfo = w - totalPartsLen;
 
             var infoLine = "";
             if (neededSpacesInfo >= minSpacersLen) {
-                var remainingSpaces = neededSpacesInfo - 3; // Subtract the three "·" characters
-                var space1 = Math.floor(remainingSpaces / 6); // 6 space sections: [p1] s1 · s2 [p2] s3 · s4 [p3] s5 · s6 [p4]
+                var remainingSpaces = neededSpacesInfo - 3; // Subtract the three "-" characters
+                var space1 = Math.floor(remainingSpaces / 6); // 6 space sections: [p1] s1 - s2 [p2] s3 - s4 [p3] s5 - s6 [p4]
                 var spaceSum = space1 * 6;
                 var extra = remainingSpaces - spaceSum;
                 
@@ -2089,9 +2086,9 @@
                 var padL3 = " ".repeat(space1 + (extra > 4 ? 1 : 0));
                 var padR3 = " ".repeat(space1);
                 
-                infoLine = p1 + padL1 + "·" + padR1 + p2 + padL2 + "·" + padR2 + p3 + padL3 + "·" + padR3 + p4;
+                infoLine = p1 + padL1 + "-" + padR1 + p2 + padL2 + "-" + padR2 + p3 + padL3 + "-" + padR3 + p4;
             } else {
-                infoLine = (p1 + " · " + p2 + " · " + p3 + " · " + p4).substring(0, w);
+                infoLine = (p1 + " - " + p2 + " - " + p3 + " - " + p4).substring(0, w);
             }
 
             return [
@@ -2336,46 +2333,7 @@
                     // Determine grid numbers text color explicitly so it exports correctly
                     var gridTextColor = (traits.canvas === 'white' || traits.canvas === 'tan' || traits.canvas.indexOf('graph_paper') === 0) ? '#1D1D1D' : '#f8f8f2';
                     
-                    // Add grid reference numbers for manual rendering (Always generated, toggled via CSS)
-                    var gridNumsG = dc.createElementNS(svgNS, "g");
-                    gridNumsG.setAttribute("class", "grid-numbers");
-                    for (var i = 1; i <= w; i++) {
-                        var textX = dc.createElementNS(svgNS, "text");
-                        var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
-                        var offX = isGraphPaperSq ? 1 : 0;
-                        var offY = isGraphPaperSq ? 1 : 0;
-                        var tx = isGraphPaper ? 9 + (i - 1 + offX) * sizeX + sizeX / 2 : ((i - 1 + 4) * sizeX + sizeX / 2);
-                        var ty = isGraphPaper ? 38 + (h + offY) * sizeY + sizeY / 2 : ((h + 4) * sizeY + sizeY / 2);
-                        textX.setAttribute("x", tx);
-                        textX.setAttribute("y", ty);
-                        textX.setAttribute("fill", gridTextColor);
-                        textX.setAttribute("font-size", "13px");
-                        textX.setAttribute("font-family", "'JetBrains Mono', monospace");
-                        textX.setAttribute("text-anchor", "middle");
-                        textX.setAttribute("dominant-baseline", "central"); // perfectly center vertically
-                        textX.textContent = i;
-                        gridNumsG.appendChild(textX);
-                    }
-                    var maxNumberRow = traits.motif === 'typewriter' ? h_gen : h;
-                    for (var j = 1; j <= maxNumberRow; j++) {
-                        var textY = dc.createElementNS(svgNS, "text");
-                        var visualRow = j + (traits.motif === 'typewriter' ? 10 : 0);
-                        var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
-                        var offX = isGraphPaperSq ? 1 : 0;
-                        var offY = isGraphPaperSq ? 1 : 0;
-                        var tx2 = isGraphPaper ? 9 - sizeX / 2 : ((4 - 0.5) * sizeX);
-                        var ty2 = isGraphPaper ? 38 + (visualRow - 1 + offY) * sizeY + sizeY / 2 : ((visualRow - 1 + 4) * sizeY + sizeY / 2);
-                        textY.setAttribute("x", tx2);
-                        textY.setAttribute("y", ty2);
-                        textY.setAttribute("fill", gridTextColor);
-                        textY.setAttribute("font-size", "13px");
-                        textY.setAttribute("font-family", "'JetBrains Mono', monospace");
-                        textY.setAttribute("text-anchor", "end");
-                        textY.setAttribute("dominant-baseline", "central"); // perfectly center vertically
-                        textY.textContent = j;
-                        gridNumsG.appendChild(textY);
-                    }
-                    frag.appendChild(gridNumsG);
+
 
                     // Once the new elements are fully generated in memory, wipe the old SVG
                     while (svg.firstChild) svg.removeChild(svg.firstChild);
@@ -3878,7 +3836,7 @@
                 var style = document.createElement('style');
                 style.id = 'keyanim-css';
                 var css = '';
-                var duration = 0.95; // 0.95 second loop (5% faster)
+                var duration = 1.0; // 1.0 second loop (32fps)
                 var frames = 32;
                 var probability = 47;
                 var pctPerFrame = 100 / frames;
@@ -4560,11 +4518,13 @@
                     else if (aSplit.length === 2 && aSplit[1] === 'landscape') { aspect = 16 / 9; }
                     else if (art.layout === 'panel') { aspect = 9 / 16; }
                     else if (art.layout === 'landscape') { aspect = 16 / 9; }
+                    else if (art.layout === 'grid_us_letter' || art.layout === 'banner_us_letter') { aspect = 8.5 / 11.0; }
 
                     var cvsW = 2560; var cvsH = 1440;
                     var artW, artH;
                     if (Math.abs(aspect - (9/16)) < 0.01) { artW = cvsH * (9/16); artH = cvsH; }
                     else if (Math.abs(aspect - 1.0) < 0.01) { artW = cvsH; artH = cvsH; }
+                    else if (Math.abs(aspect - (8.5/11.0)) < 0.01) { artW = cvsH * (8.5/11.0); artH = cvsH; }
                     else { artW = cvsW; artH = cvsH; }
                     
                     var dx = (cvsW - artW) / 2;
@@ -4575,6 +4535,14 @@
                     var ctx = canvas.getContext('2d');
                     
                     var bgStyle = getCanvasBackgroundStyle(art);
+                    var texImg = null;
+                    if (bgStyle.backgroundImage && bgStyle.backgroundImage !== 'none') {
+                        var urlMatch = bgStyle.backgroundImage.match(/^url\(['"]?(.*?)['"]?\)$/);
+                        if (urlMatch && urlMatch[1]) {
+                            texImg = new Image();
+                            texImg.src = urlMatch[1];
+                        }
+                    }
 
                     var stream = canvas.captureStream(60);
                     var options = { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 25000000 };
@@ -4597,7 +4565,7 @@
                         
                         downloadBlob(blob, filename);
                         
-                        btn.innerHTML = '&#9679; Record 3.8s Loop';
+                        btn.innerHTML = '&#9679; Record 4.0s Loop';
                         btn.style.color = '';
                         btn.disabled = false;
                     };
@@ -4607,18 +4575,28 @@
                     btn.style.color = 'red';
 
                     var startTime = Date.now();
-                    var durationMs = 950;
+                    var durationMs = 1000;
                     
                     function drawFrame() {
                         var elapsed = Date.now() - startTime;
-                        if (elapsed > 3800) {
+                        if (elapsed > 4000) {
                             _mediaRecorder.stop();
                             return;
                         }
                         var f = Math.floor((elapsed / durationMs) * 32) % 32;
                         
-                        ctx.fillStyle = bgStyle.backgroundColor || '#1a1724';
+                        // Gallery 16:9 Black Background
+                        ctx.fillStyle = '#0f0f11';
                         ctx.fillRect(0, 0, cvsW, cvsH);
+                        
+                        // Paper Background
+                        ctx.fillStyle = bgStyle.backgroundColor || '#fcfcfc';
+                        ctx.fillRect(dx, dy, artW, artH);
+                        if (texImg && texImg.complete && texImg.naturalWidth > 0) {
+                            ctx.drawImage(texImg, dx, dy, artW, artH);
+                        }
+                        
+                        // Draw Art Frame
                         ctx.drawImage(loadedFrames[f], dx, dy, artW, artH);
                         
                         requestAnimationFrame(drawFrame);
@@ -4628,7 +4606,7 @@
 
             } catch (err) {
                 console.error("[Platen] Error recording video", err);
-                btn.innerHTML = '&#9679; Record 3.8s Loop';
+                btn.innerHTML = '&#9679; Record 4.0s Loop';
                 btn.disabled = false;
             }
         }
@@ -4737,7 +4715,7 @@
                 <button onclick="downloadGallerySVG()">&#8595; SVG</button>
                 <button onclick="downloadGalleryPNG()">&#8595; PNG</button>
                 <button onclick="downloadGalleryDST()">&#8595; DST</button>
-                <button id="btn-gallery-rec" onclick="startGalleryRecording()">&#9679; Record 3.8s Loop</button>
+                <button id="btn-gallery-rec" onclick="startGalleryRecording()">&#9679; Record 4.0s Loop</button>
                 <button id="btn-gallery-anim" onclick="toggleGalleryAnimation()">&#9654; Animate</button>
                 <button onclick="loadCuratedIntoMain()" style="border-color: var(--purple); color: var(--purple);">Load to Main Editor</button>
             </div>
