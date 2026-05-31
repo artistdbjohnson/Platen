@@ -90,6 +90,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
+            align-items: center;
         }
 
         button {
@@ -1206,10 +1207,10 @@
             </div>
             <button id="btn-out-png" onclick="savePNG()" title="Download PNG"
                 data-info="download high-resolution raster image">&#8595; PNG</button>
-            <div style="display: flex; align-items: center; gap: 4px; border: 1px solid var(--border); padding: 5px 8px; border-radius: 0; cursor: help;"
+            <div style="display: flex; align-items: center; gap: 4px; border: 1px solid var(--border); padding: 5px 8px; border-radius: 0; cursor: help; box-sizing: border-box;"
                 data-info="include canvas texture and background color in export">
                 <input type="checkbox" id="inc-bg" checked
-                    style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple);">
+                    style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple); margin: 0;">
                 <label for="inc-bg"
                     style="font-size: 8px; color: var(--text); cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">Inc.
                     BG</label>
@@ -1244,17 +1245,6 @@
                 onchange="TRAITS.chromes=this.value; renderAll()"></select></div>
         <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine"
                 onchange="TRAITS.engine=this.value; renderAll()"></select></div>
-        <div class="trait"><span class="trait-label">Canvas</span><select class="trait-select" id="t-canvas"
-                onchange="TRAITS.canvas=this.value; updateCanvasTexture()"></select></div>
-        <div class="trait" style="border: 1px solid var(--border); padding: 1px 6px; display: flex; align-items: center; gap: 4px; cursor: help;" data-info="fill motifs with solid color instead of outlines">
-            <input type="checkbox" id="t-solid" checked onchange="TRAITS.solid=this.checked; renderAll()" style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple);">
-            <label for="t-solid" style="font-size: 8px; color: var(--text); cursor: pointer; text-transform: uppercase;">Solid</label>
-        </div>
-
-        <div class="trait" style="border: 1px solid var(--border); padding: 1px 6px; display: flex; align-items: center; gap: 4px; cursor: help;" data-info="invert graph paper colors">
-            <input type="checkbox" id="t-invert-graph" onchange="toggleInvertGraph(this.checked)" style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple);">
-            <label for="t-invert-graph" style="font-size: 8px; color: var(--text); cursor: pointer; text-transform: uppercase;">Invert Paper</label>
-        </div>
     </div>
 
     <!-- Always 3 panels — quantity is always 3 -->
@@ -1532,11 +1522,11 @@ else                glyph = '*';        // asterisk</code></pre>
         // ── Traits ────────────────────────────────────────────────────────────────────
         var TRAITS = {
             symmetry: 'random',
-            space: 'planar',
-            motif: 'tatreez',
-            chromes: 'micron_plotter',
+            space: 'random',
+            motif: 'typewriter',
+            chromes: 'random',
             engine: 'random',
-            canvas: 'black',
+            canvas: 'white',
             solid: true,
             showGridNums: false,
             invertGraph: false
@@ -1690,7 +1680,6 @@ else                glyph = '*';        // asterisk</code></pre>
             populateSelect('t-motif', MOTIF_OPTS, TRAITS.motif);
             populateSelect('t-chrome', CHROME_OPTS, TRAITS.chromes);
             populateSelect('t-engine', ENGINE_OPTS, TRAITS.engine);
-            populateSelect('t-canvas', CANVAS_OPTS, TRAITS.canvas);
             
             var motifSelect = document.getElementById('t-motif');
             if (motifSelect) {
@@ -1709,44 +1698,13 @@ else                glyph = '*';        // asterisk</code></pre>
                     }
                 }
             }
-            
-            var canvasSelect = document.getElementById('t-canvas');
-            if (canvasSelect) {
-                var disableGraphPaper = ['panel', 'banner', 'square', 'banner_sq', 'grid_32_40', 'banner_32_40'].includes(currentLayout);
-                var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
-                
-                for (var i = 0; i < canvasSelect.options.length; i++) {
-                    var optValue = canvasSelect.options[i].value;
-                    if (isUsLetter) {
-                        canvasSelect.options[i].disabled = (optValue !== 'white');
-                        if (optValue !== 'white' && TRAITS.canvas === optValue) {
-                            TRAITS.canvas = 'white';
-                            canvasSelect.value = 'white';
-                        }
-                    } else {
-                        if (optValue === 'graph_paper') {
-                            canvasSelect.options[i].disabled = disableGraphPaper;
-                            if (disableGraphPaper && TRAITS.canvas === 'graph_paper') {
-                                TRAITS.canvas = 'white';
-                                canvasSelect.value = 'white';
-                            }
-                        } else {
-                            canvasSelect.options[i].disabled = false;
-                        }
-                    }
-                }
-            }
 
-            var cbSolid = document.getElementById('t-solid');
-            if (cbSolid) cbSolid.checked = !!TRAITS.solid;
             var cbGridNums = document.getElementById('t-grid-nums');
             if (cbGridNums) {
                 cbGridNums.checked = !!TRAITS.showGridNums;
                 // Sync CSS state
                 toggleGridNums(TRAITS.showGridNums, true);
             }
-            var cbInvertGraph = document.getElementById('t-invert-graph');
-            if (cbInvertGraph) cbInvertGraph.checked = !!TRAITS.invertGraph;
         }
 
         function toggleInvertGraph(invert) {
@@ -1892,7 +1850,6 @@ else                glyph = '*';        // asterisk</code></pre>
                 document.getElementById('t-motif').disabled = false;
                 document.getElementById('t-chrome').disabled = false;
                 document.getElementById('t-engine').disabled = false;
-                document.getElementById('t-canvas').disabled = false;
             }, 10);
         }
 
