@@ -1286,6 +1286,79 @@
         </div>
     </div>
 
+    <div id="modal-overlay" onclick="toggleAbout()">
+        <div id="about-modal" onclick="event.stopPropagation()">
+            <div id="close-modal" onclick="toggleAbout()">×</div>
+            <h2>PLATEN by DLGXSS</h2>
+            <p>A typewriter shop in West Los Angeles. My son was four, running the shop floor between dead ribbons and open cases while I paid for an Olympia SM3 with one intention. Write a novel no one would ever read. Private. Something to pass down to him one day.<br>
+            The novel stayed unfinished. The SM3 never did.</p>
+
+            <p>Then #plottertwitter. Artists feeding algorithms into machines, ink finding paper one mechanical decision at a time. Paul Prudence holding a pen against a platen roller, discovering he had a hand-operated plotter in his studio the whole time. Henri Chopin in 1985 mapping density through a split ribbon, blue and red, building form from the weight of repeated strikes. Ruth Wolf-Rehfeldt typing one word across an entire page until the word became a shape and the shape carried the meaning.</p>
+
+            <p>The SM3 in the corner looked different after that. A constraint system that had known how to translate a mathematical instruction into a physical mark since 1952.</p>
+
+            <p>PLATEN starts in mathematics. A closed-form calculation runs across every cell on a mechanical grid, geometric tests, sine-wave phase comparisons, lattice arithmetic. Each cell returns one number measuring how strongly that coordinate activates under the current pattern. No pixels, no image lookup, no rasterization anywhere in the chain. The number normalizes to a scalar between zero and one.</p>
+
+            <p>That scalar becomes a glyph. The glyph becomes a strike.</p>
+
+            <p>The full algorithm is open. The engine at the center is a switch across forty named patterns, each one computing weight analytically from pure geometry. Here is what that looks like in the code:</p>
+
+            <pre style="background: var(--surface); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 10px; overflow-x: auto; color: var(--text); margin-bottom: 20px;"><code>function calcMotifWeight(x, y, w, h, engine, params) {
+    switch(engine) {
+        case 'VERNA':
+            // Perlin noise field sampled at rotated coordinates
+            var nx = (x / w) * params.scale;
+            var ny = (y / h) * params.scale;
+            return Math.abs(noise(nx, ny, params.seed));
+
+        case 'TNGNT':
+            // Tangent wave interference pattern
+            var fx = Math.tan(x * params.freq) * params.amp;
+            var fy = Math.tan(y * params.freq) * params.amp;
+            return Math.abs(Math.sin(fx + fy));
+
+        case 'TOLM':
+            // Distance field from lattice centers
+            var gx = (x % params.cell) / params.cell;
+            var gy = (y % params.cell) / params.cell;
+            return 1.0 - Math.sqrt(gx * gx + gy * gy);
+
+        // ... 37 further engines
+    }
+}</code></pre>
+
+            <p>Every engine returns a raw float. That float gets normalized across the full grid, jittered deterministically by cell coordinate to prevent hard threshold edges, then mapped to a glyph:</p>
+
+            <pre style="background: var(--surface); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 10px; overflow-x: auto; color: var(--text); margin-bottom: 20px;"><code>if      (wt < 0.20) continue;          // blank
+else if (wt < 0.36) glyph = ',';       // comma
+else if (wt < 0.51) glyph = '.';       // dot
+else if (wt < 0.66) glyph = '+';       // plus
+else if (wt < 0.81) glyph = 'X';       // x
+else                glyph = '*';        // asterisk</code></pre>
+
+            <p>Dot. Comma. Plus. X. Asterisk. Slash. Hash. Dash. Eight possible outcomes per cell, each one natively typeable on a standard QWERTY SM3. The shift-key symbols, the punctuation, the letters, every mark in every output existed in the machine's mechanical vocabulary in 1952. The simulation never asks the SM3 to do something it could not physically do.</p>
+
+            <p>Forty engines, forty distinct mathematical patterns, all passing through the same bottleneck: the physical width of a type slug. 0.082 inches inside a 0.100-inch cell. 10 characters per inch, 6 lines per inch. The machine's actual specifications, inherited exactly.</p>
+
+            <p>Symmetry works the same way. Rotational, glide, translational operations don't mirror pixels after the fact. The coordinate space rotates before the noise samples, so the mathematics generates the symmetry natively. The typewriter destroys most of it. Eight glyphs hold what survives.</p>
+
+            <p>Print it, plot it, strike it into paper on a CNC. The output is raw SVG against real-world inches, laid over a scanned paper canvas at 600dpi, the texture of an actual sheet beneath every vector path. Screen is preview. The work only fully exists when pressed into a surface you can touch. Chopin made this argument with a ribbon. Prudence makes it with a platen roller. Wolf-Rehfeldt made it with one repeated word. The machine is not incidental. The machine is the point.</p>
+
+            <p>My son is thirteen now.</p>
+
+            <p>The novel is still unfinished. So is everything worth keeping.</p>
+
+            <div class="tech-specs">
+                <h3 style="font-size: 12px; margin-bottom: 10px; color: var(--text);">Release Notes <span style="font-weight: normal; opacity: 0.6;">&mdash; PLATEN — 2026.05.31</span></h3>
+                <div class="spec-item" style="flex-direction: column; gap: 4px; margin-bottom: 15px;"><span class="spec-label">Vocabulary</span> <span style="line-height: 1.5;">Eight natively typeable glyphs mapped across five density levels: comma, dot, plus, X, asterisk, slash, hash, dash. Each character exists in the Olympia SM3's standard QWERTY vocabulary. The simulation inherits the machine's exact mechanical specifications — 10 CPI, 6 LPI, 0.082" type slug width — without approximation.</span></div>
+                <div class="spec-item" style="flex-direction: column; gap: 4px; margin-bottom: 15px;"><span class="spec-label">Symmetry</span> <span style="line-height: 1.5;">Glyph vocabulary is symmetry-aware. ROTAT outputs resolve through radially neutral characters. GLIDE outputs bias toward diagonal strikes. TRANS outputs carry horizontal weight. The character set reflects the underlying mathematical operation, not just the density it represents.</span></div>
+                <div class="spec-item" style="flex-direction: column; gap: 4px; margin-bottom: 15px;"><span class="spec-label">Engines</span> <span style="line-height: 1.5;">Forty generative engines. Deterministic ink variance per seed. Scanned paper canvas at 600dpi. Archival SVG output at real-world print dimensions.</span></div>
+                <div class="spec-item" style="flex-direction: column; gap: 4px; margin-bottom: 15px;"><span class="spec-label">Edition</span> <span style="line-height: 1.5;">88 editions. 0.088 ETH.</span></div>
+                <div class="spec-item" style="flex-direction: column; gap: 4px; margin-bottom: 15px;"><span class="spec-label">Philosophy</span> <span style="line-height: 1.5;">One piece for every character an Olympia SM3 can strike.</span></div>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-seed" onclick="toggleSeed()">
         <div id="seed-modal-content" onclick="event.stopPropagation()">
             <div id="close-seed-modal" onclick="toggleSeed()">×</div>
