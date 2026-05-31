@@ -303,32 +303,7 @@
             fill: #4E3629 !important;
         }
 
-        /* ── Screen-Only Visual Typewriter Sizing Locks ── */
-        .typewriter-header text {
-            font-size: 11pt !important;
-        }
-        /* Scale US Letter up on screen to counteract its large SVG canvas height (1760px) */
-        #canvas-wrap.grid_us_letter .typewriter-header text,
-        #canvas-wrap.banner_us_letter .typewriter-header text {
-            font-size: 20.5pt !important;
-        }
-        /* Scale Gallery mode up to counteract its 1456px SVG canvas height */
-        #canvas-wrap.gallery .typewriter-header text {
-            font-size: 17pt !important;
-        }
-        /* Scale Square mode up to counteract its 1056px SVG canvas height */
-        #canvas-wrap.square .typewriter-header text {
-            font-size: 12.3pt !important;
-        }
-        /* Scale Compact grids down slightly to keep them crisp on screen */
-        #canvas-wrap.grid_32_40 .typewriter-header text,
-        #canvas-wrap.banner_32_40 .typewriter-header text {
-            font-size: 9pt !important;
-        }
-        #canvas-wrap.grid_39_39 .typewriter-header text,
-        #canvas-wrap.banner_39_39 .typewriter-header text {
-            font-size: 8.8pt !important;
-        }
+
         .canvas-olive .grid-numbers text {
             fill: #1B4D3E !important;
         }
@@ -2291,7 +2266,18 @@
 
                     // Add typewriter printout header metadata at the top of the grid
                     if (traits.motif === 'typewriter') {
-                        var headerLines = getTypewriterHeaderLines(traits, RENDER_SEED, w);
+                        var hW = w;
+                        var hSizeX = sizeX;
+                        var hSizeY = sizeY;
+
+                        // Force the gallery header to use banner-like dense formatting (matches Image 2 perfectly)
+                        if (currentLayout === 'gallery') {
+                            hW = 78;
+                            hSizeX = sizeX * (w / 78); // scale up exactly to fill
+                            hSizeY = sizeY * (w / 78);
+                        }
+
+                        var headerLines = getTypewriterHeaderLines(traits, RENDER_SEED, hW);
                         var textCol = traits.chromes === 'typewriter_black_red' ? '#cc0000' : 'var(--text)'; // Use red ink for headers on red/black chrome!
                         if (traits.chromes === 'typewriter_black') textCol = '#000000'; // Pure black ink for black chrome
                         else if (traits.chromes === 'typewriter_ribbon') textCol = '#1a1724'; // Dark typewriter ink
@@ -2306,19 +2292,19 @@
                             for (var col = 0; col < lineText.length; col++) {
                                 var char = lineText[col];
                                 if (char === " ") continue;
-                                var charX = ((startCol + col + 4) * sizeX + sizeX / 2);
-                                var charY = (row * sizeY + sizeY / 2); // Nudged down one row
+                                var charX = ((startCol + col + 4) * hSizeX + hSizeX / 2);
+                                var charY = (row * hSizeY + hSizeY / 2); // Nudged down one row
                                 
                                 if (isGraphPaper) {
-                                    charX = 9 + (startCol + col) * sizeX + sizeX / 2;
-                                    charY = 38 + (row - 1) * sizeY + sizeY / 2;
+                                    charX = 9 + (startCol + col) * hSizeX + hSizeX / 2;
+                                    charY = 38 + (row - 1) * hSizeY + hSizeY / 2;
                                 }
 
                                 var textEl = dc.createElementNS(svgNS, "text");
                                 textEl.setAttribute("x", charX);
                                 textEl.setAttribute("y", charY);
                                 textEl.setAttribute("fill", textCol);
-                                textEl.setAttribute("font-size", "11pt");
+                                textEl.setAttribute("font-size", (hSizeY * 0.92) + "px");
                                 textEl.setAttribute("font-family", "Courier, 'Courier New', monospace");
                                 textEl.setAttribute("font-weight", "bold");
                                 textEl.setAttribute("text-anchor", "middle");
