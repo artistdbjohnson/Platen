@@ -1806,7 +1806,8 @@ else                glyph = '*';        // asterisk</code></pre>
                         if (runTraits.chromes !== 'typewriter_ribbon' && 
                             runTraits.chromes !== 'typewriter_black' && 
                             runTraits.chromes !== 'typewriter_black_red') {
-                            runTraits.chromes = 'typewriter_ribbon'; // default to typewriter_ribbon
+                            var typeOpts = ['typewriter_ribbon', 'typewriter_black', 'typewriter_black_red'];
+                            runTraits.chromes = typeOpts[Math.floor(Math.random() * typeOpts.length)];
                         }
                     } else if (runTraits.motif === 'stars_and_stripes') {
                         if (runTraits.chromes === 'random') {
