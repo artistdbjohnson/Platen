@@ -85,7 +85,7 @@
         /* ── 3-Column Index Layout ── */
         .index-grid {
             display: grid;
-            grid-template-columns: 320px 480px 1fr;
+            grid-template-columns: 280px 380px 1fr;
             height: 100vh;
             width: 100vw;
             overflow: hidden;
@@ -120,12 +120,12 @@
 
         /* ── Left Column: About ── */
         .col-about {
-            padding: 0 25px 30px 25px;
+            padding: 0 20px 20px 20px;
             border-right: 1px solid var(--border);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
 
         .col-about h2 {
@@ -133,19 +133,19 @@
             font-weight: 500;
             letter-spacing: 0.1em;
             text-transform: lowercase;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             position: sticky;
             top: 0;
             background: var(--bg);
-            padding-top: 30px;
-            padding-bottom: 10px;
+            padding-top: 20px;
+            padding-bottom: 8px;
             margin-top: 0;
             z-index: 10;
         }
 
         .col-about p {
-            font-size: 10px;
-            line-height: 1.5;
+            font-size: 9.5px;
+            line-height: 1.4;
             color: var(--text);
             opacity: 0.85;
             max-width: 45ch;
@@ -153,7 +153,7 @@
 
         /* ── Middle Column: Controls ── */
         .col-controls {
-            padding: 30px 20px;
+            padding: 20px 20px;
             border-right: 1px solid var(--border);
             overflow-y: auto;
             display: flex;
@@ -162,11 +162,11 @@
 
         .control-section {
             border-bottom: 1px solid var(--border);
-            padding-bottom: 20px;
-            margin-bottom: 20px;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .control-section h3 {
@@ -175,7 +175,7 @@
             letter-spacing: 0.15em;
             text-transform: lowercase;
             opacity: 0.5;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .control-section button {
@@ -202,8 +202,8 @@
         .trait {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            margin-bottom: 6px;
+            gap: 2px;
+            margin-bottom: 4px;
         }
 
         .trait-label {
@@ -3264,7 +3264,7 @@
                 canvasClass = 'canvas-graph-paper';
             }
 
-            var isTypewriter = ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) || (RESOLVED_TRAITS && RESOLVED_(TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin'));
+            var isTypewriter = (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') || (RESOLVED_TRAITS && (RESOLVED_TRAITS.motif === 'typewriter' || RESOLVED_TRAITS.motif === 'chopin'));
 
             // Overrides for layouts and special motifs
             if (isTypewriter && TRAITS.canvas !== 'graph_paper') {
@@ -3991,7 +3991,7 @@
             var canvas = art.traits.canvas;
             var layout = art.layout;
             var invertGraph = art.traits.invertGraph;
-            var isTypewriter = art.(traits.motif === 'typewriter' || traits.motif === 'chopin');
+            var isTypewriter = (art.traits.motif === 'typewriter' || art.traits.motif === 'chopin');
             
             var url = typeof _canvasBlackDataURL !== 'undefined' && _canvasBlackDataURL ? _canvasBlackDataURL : CANVAS_BLACK_PATH;
             var color = '#1a1724';
