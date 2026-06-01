@@ -724,13 +724,17 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #000000;
+            color: #ffffff;
             font-size: 11px;
             letter-spacing: 0.15em;
             text-transform: uppercase;
             pointer-events: none;
             z-index: 100;
             display: none;
+        }
+
+        .canvas-black .platen-loader {
+            color: #ffffff !important;
         }
 
         .platen-panel.loading .platen-loader {
@@ -2276,9 +2280,6 @@ else                glyph = '*';        // asterisk</pre>
                 var margin = 0;
                 var w_gen = w - 2 * margin;
                 var h_gen = h - 2 * margin - ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') ? 10 : 0);
-
-                // Clear the old SVG immediately to show the blank canvas during generation
-                while (svg.firstChild) svg.removeChild(svg.firstChild);
 
                 // We will build a new DocumentFragment to hold the new elements,
                 // and swap it out once the worker completes.
