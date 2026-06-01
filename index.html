@@ -3473,22 +3473,8 @@ else                glyph = '*';        // asterisk</pre>
                 url = CANVAS_WHITE_PATH;
                 canvasClass = 'canvas-white';
             } else if (TRAITS.canvas === 'black') {
-                if (currentLayout === 'gallery') {
-                    url = CANVAS_GALLERY_PATH;
-                    canvasClass = 'canvas-black';
-                } else if (currentLayout === 'square' || currentLayout === 'banner_sq') {
-                    url = CANVAS_SQUARE_PATH;
-                    canvasClass = 'canvas-black';
-                } else if (currentLayout === 'grid_32_40' || currentLayout === 'banner_32_40') {
-                    url = CANVAS_32_40_PATH;
-                    canvasClass = 'canvas-black';
-                } else if (currentLayout === 'grid_39_51' || currentLayout === 'banner_39_51' || currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter') {
-                    url = CANVAS_39_51_PATH;
-                    canvasClass = 'canvas-black';
-                } else if (currentLayout === 'grid_39_39' || currentLayout === 'banner_39_39') {
-                    url = CANVAS_39_39_PATH;
-                    canvasClass = 'canvas-black';
-                }
+                url = CANVAS_BLACK_PATH;
+                canvasClass = 'canvas-black';
             }
 
 
@@ -4294,11 +4280,7 @@ else                glyph = '*';        // asterisk</pre>
                 url = typeof _canvasWhiteDataURL !== 'undefined' && _canvasWhiteDataURL ? _canvasWhiteDataURL : CANVAS_WHITE_PATH;
                 color = '#fcfcfc';
             } else if (canvas === 'black') {
-                if (layout === 'gallery') url = typeof _canvasGalleryDataURL !== 'undefined' && _canvasGalleryDataURL ? _canvasGalleryDataURL : CANVAS_GALLERY_PATH;
-                else if (layout === 'square' || layout === 'banner_sq') url = typeof _canvasSquareDataURL !== 'undefined' && _canvasSquareDataURL ? _canvasSquareDataURL : CANVAS_SQUARE_PATH;
-                else if (layout === 'grid_32_40' || layout === 'banner_32_40') url = typeof _canvas3240DataURL !== 'undefined' && _canvas3240DataURL ? _canvas3240DataURL : CANVAS_32_40_PATH;
-                else if (layout === 'grid_39_51' || layout === 'banner_39_51' || layout === 'grid_us_letter' || layout === 'banner_us_letter') url = typeof _canvas3951DataURL !== 'undefined' && _canvas3951DataURL ? _canvas3951DataURL : CANVAS_39_51_PATH;
-                else if (layout === 'grid_39_39' || layout === 'banner_39_39') url = typeof _canvas3939DataURL !== 'undefined' && _canvas3939DataURL ? _canvas3939DataURL : CANVAS_39_39_PATH;
+                url = typeof _canvasBlackDataURL !== 'undefined' && _canvasBlackDataURL ? _canvasBlackDataURL : CANVAS_BLACK_PATH;
             }
             
             if ((layout === 'grid_us_letter' || layout === 'banner_us_letter') && canvas !== 'white') {
