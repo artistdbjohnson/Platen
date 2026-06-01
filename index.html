@@ -1579,7 +1579,7 @@
             var restrictTypewriter = ['panel', 'banner', 'square', 'banner_sq', 'graph_paper', 'graph_paper_banner', 'graph_paper_sq', 'graph_paper_sq_banner'].includes(currentLayout);
             
             if (restrictTypewriter) {
-                if (TRAITS.motif === 'typewriter') TRAITS.motif = 'platen';
+                if ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) TRAITS.motif = 'platen';
                 if (TRAITS.chromes && TRAITS.chromes.indexOf('typewriter') !== -1) TRAITS.chromes = 'random';
             }
 
@@ -1709,7 +1709,7 @@
                     if (runTraits.motif === 'random') runTraits.motif = MOTIF_OPTS[Math.floor(Math.random() * (MOTIF_OPTS.length - 1)) + 1];
                     
                     // Force a typewriter chrome for typewriter motif if none is selected
-                    if (runTraits.motif === 'typewriter') {
+                    if ((runTraits.motif === 'typewriter' || runTraits.motif === 'chopin')) {
                         if (runTraits.chromes !== 'typewriter_ribbon' && 
                             runTraits.chromes !== 'typewriter_black' && 
                             runTraits.chromes !== 'typewriter_black_red') {
@@ -1901,7 +1901,7 @@
                 chromeName = String(chromeRaw).toUpperCase().substring(0, 10);
             }
 
-            var titleWord = (traits.motif === 'typewriter' && currentLayout === 'grid_us_letter') ? "PLATEN" : "PLATEN";
+            var titleWord = ((traits.motif === 'typewriter' || traits.motif === 'chopin') && currentLayout === 'grid_us_letter') ? "PLATEN" : "PLATEN";
             
             // 1. Title Line
             var title = "";
@@ -2038,7 +2038,7 @@
 
                 var margin = 0;
                 var w_gen = w - 2 * margin;
-                var h_gen = h - 2 * margin - (traits.motif === 'typewriter' ? 10 : 0);
+                var h_gen = h - 2 * margin - ((traits.motif === 'typewriter' || traits.motif === 'chopin') ? 10 : 0);
 
                 // Clear the old SVG immediately to show the blank canvas during generation
                 while (svg.firstChild) svg.removeChild(svg.firstChild);
@@ -2082,19 +2082,37 @@
                     for (var i = 0; i < flowers.length; i++) {
                         var f = flowers[i];
                         var px = (f.x + 4 + margin) * sizeX;
-                        var py = (f.y + 4 + margin + (traits.motif === 'typewriter' ? 10 : 0)) * sizeY;
+                        var py = (f.y + 4 + margin + ((traits.motif === 'typewriter' || traits.motif === 'chopin') ? 10 : 0)) * sizeY;
                         
                         var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
                         if (isGraphPaper) {
                             var offX = isGraphPaperSq ? 1 : 0;
                             var offY = isGraphPaperSq ? 1 : 0;
                             px = 9 + (f.x + offX) * sizeX;
-                            py = 38 + (f.y + offY + (traits.motif === 'typewriter' ? 10 : 0)) * sizeY;
+                            py = 38 + (f.y + offY + ((traits.motif === 'typewriter' || traits.motif === 'chopin') ? 10 : 0)) * sizeY;
+                        }
+
+                        // Apply new spaces
+                        var cx_px = svgW / 2;
+                        var cy_px = svgH / 2;
+                        if (traits.space === 'isometric') {
+                            var _px = px;
+                            var _py = py;
+                            var cos30 = 0.86602540378; // Math.cos(30 deg)
+                            var sin30 = 0.5;           // Math.sin(30 deg)
+                            px = cx_px + (_px - cx_px - (_py - cy_px)) * cos30;
+                            py = cy_px + (_px - cx_px + (_py - cy_px)) * sin30;
+                        } else if (traits.space === 'polar') {
+                            var _r = (f.y / h) * (Math.min(svgW, svgH) / 2 * 0.95);
+                            var _theta = (f.x / w) * Math.PI * 2 - Math.PI / 2;
+                            px = cx_px + Math.cos(_theta) * _r;
+                            py = cy_px + Math.sin(_theta) * _r;
+                            f.rot = (f.rot || 0) + (_theta * 180 / Math.PI) + 90;
                         }
 
                         var scX = rSize / 20;
                         var scY = rSize / 20;
-                        if (traits.motif === 'typewriter') {
+                        if ((traits.motif === 'typewriter' || traits.motif === 'chopin')) {
                             if (isGraphPaper) {
                                 scX = (sizeX * 0.7) / 14; // Fit squarely inside graph paper cells
                                 scY = (sizeY * 0.7) / 14; 
@@ -2110,7 +2128,7 @@
 
                         // Support Typewriter Halftone (Density Shading)
                         var motifPath = MOTIF_PATHS[traits.motif];
-                        if (traits.motif === 'typewriter') {
+                        if ((traits.motif === 'typewriter' || traits.motif === 'chopin')) {
                             if (f.wt < 0.20) {
                                 // Skip low density cells entirely
                                 continue;
@@ -2144,7 +2162,7 @@
                         }
 
                         var path;
-                        if (traits.motif === 'typewriter') {
+                        if ((traits.motif === 'typewriter' || traits.motif === 'chopin')) {
                             var charMap = {
                                 'typewriter_slash': '/',
                                 'typewriter_dot': '.',
@@ -2203,7 +2221,7 @@
                     }
 
                     // Add typewriter printout header metadata at the top of the grid
-                    if (traits.motif === 'typewriter') {
+                    if ((traits.motif === 'typewriter' || traits.motif === 'chopin')) {
                         var hW = w;
                         var hSizeX = sizeX;
                         var hSizeY = sizeY;
@@ -2503,18 +2521,18 @@
                 var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
                 flowers.forEach(function (f) {
                     var cellX = (f.x + 4) * sizeX;
-                    var cellY = (f.y + 4 + (TRAITS.motif === 'typewriter' ? 10 : 0)) * sizeY;
+                    var cellY = (f.y + 4 + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') ? 10 : 0)) * sizeY;
                     if (isGraphPaper) {
                         var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
                         var offX = isGraphPaperSq ? 1 : 0;
                         var offY = isGraphPaperSq ? 1 : 0;
                         cellX = 9 + (f.x + offX) * sizeX;
-                        cellY = 38 + (f.y + offY + (TRAITS.motif === 'typewriter' ? 10 : 0)) * sizeY;
+                        cellY = 38 + (f.y + offY + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') ? 10 : 0)) * sizeY;
                     }
                     var scX = (rSize / 20) * scale, scY = (rSize / 20) * scale;
                     var charW = rSize * scale, charH = rSize * scale;
                     
-                    if (TRAITS.motif === 'typewriter') {
+                    if ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) {
                         if (isGraphPaper) {
                             scX = ((sizeX * 0.7) / 14) * scale;
                             scY = ((sizeY * 0.7) / 14) * scale;
@@ -2541,14 +2559,14 @@
                     if (isGraphPaper && TRAITS.motif === 'stars_and_stripes') {
                         px = cellX * scale;
                         py = cellY * scale;
-                    } else if (TRAITS.motif === 'typewriter') {
+                    } else if ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) {
                         px = cellX * scale + (sizeX * scale - charW) / 2;
                         py = cellY * scale + (sizeY * scale - charH) / 2;
                     }
 
                     // Support Typewriter Halftone (Density Shading)
                     var motifPathString = MOTIF_PATHS[TRAITS.motif];
-                    if (TRAITS.motif === 'typewriter') {
+                    if ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) {
                         if (f.wt < 0.20) {
                             return; // skip low density cells
                         }
@@ -2596,7 +2614,7 @@
                         ctx.rotate(Math.PI);
                         ctx.translate(-10, -10);
                     }
-                    if (TRAITS.motif === 'quatrefoil' || TRAITS.motif === 'tatreez' || TRAITS.motif === 'typewriter' || TRAITS.motif === 'typewriter_hash' || TRAITS.motif === 'stars_and_stripes') {
+                    if (TRAITS.motif === 'quatrefoil' || TRAITS.motif === 'tatreez' || (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') || TRAITS.motif === 'typewriter_hash' || TRAITS.motif === 'stars_and_stripes') {
                         ctx.fill(pathObj, 'evenodd');
                     } else {
                         ctx.fill(pathObj);
@@ -2642,7 +2660,7 @@
                 flowers.forEach(function (f, i) {
                     // Support Typewriter Halftone (Density Shading)
                     var motifPathString = MOTIF_PATHS[TRAITS.motif];
-                    if (TRAITS.motif === 'typewriter') {
+                    if ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) {
                         if (f.wt < 0.20) {
                             return; // skip low density cells
                         }
@@ -2677,16 +2695,16 @@
                     var path = document.createElementNS(svgNS, "path");
                     var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
                     var px = (f.x + 4) * sizeX;
-                    var py = (f.y + 4 + (TRAITS.motif === 'typewriter' ? 10 : 0)) * sizeY;
+                    var py = (f.y + 4 + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') ? 10 : 0)) * sizeY;
                     if (isGraphPaper) {
                         var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
                         var offX = isGraphPaperSq ? 1 : 0;
                         var offY = isGraphPaperSq ? 1 : 0;
                         px = 9 + (f.x + offX) * sizeX;
-                        py = 38 + (f.y + offY + (TRAITS.motif === 'typewriter' ? 10 : 0)) * sizeY;
+                        py = 38 + (f.y + offY + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') ? 10 : 0)) * sizeY;
                     }
                     var scX = rSize / 20, scY = rSize / 20;
-                    if (TRAITS.motif === 'typewriter') {
+                    if ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) {
                         if (isGraphPaper) {
                             scX = (sizeX * 0.7) / 14;
                             scY = (sizeY * 0.7) / 14;
@@ -2706,7 +2724,7 @@
                         scY = sizeY / 20;
                         tx = px;
                         ty = py;
-                    } else if (TRAITS.motif === 'typewriter') {
+                    } else if ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) {
                         tx = px + (sizeX - (14 * scX)) / 2;
                         ty = py + (sizeY - (14 * scY)) / 2;
                     }
@@ -2716,7 +2734,7 @@
                     path.setAttribute("transform", xform);
                     path.setAttribute("d", motifPathString);
                     path.setAttribute("fill", f.c);
-                    if (TRAITS.motif === 'quatrefoil' || TRAITS.motif === 'tatreez' || TRAITS.motif === 'typewriter' || TRAITS.motif === 'typewriter_hash' || TRAITS.motif === 'stars_and_stripes') path.setAttribute("fill-rule", "evenodd");
+                    if (TRAITS.motif === 'quatrefoil' || TRAITS.motif === 'tatreez' || (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') || TRAITS.motif === 'typewriter_hash' || TRAITS.motif === 'stars_and_stripes') path.setAttribute("fill-rule", "evenodd");
 
                     if (f.wt < 0.45) zLayers['Z-Deepest'].push(path);
                     else if (f.wt < 0.8) zLayers['Z-Mid'].push(path);
@@ -3248,7 +3266,7 @@
                 canvasClass = 'canvas-graph-paper';
             }
 
-            var isTypewriter = (TRAITS.motif === 'typewriter') || (RESOLVED_TRAITS && RESOLVED_TRAITS.motif === 'typewriter');
+            var isTypewriter = ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) || (RESOLVED_TRAITS && RESOLVED_(TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin'));
 
             // Overrides for layouts and special motifs
             if (isTypewriter && TRAITS.canvas !== 'graph_paper') {
@@ -3975,7 +3993,7 @@
             var canvas = art.traits.canvas;
             var layout = art.layout;
             var invertGraph = art.traits.invertGraph;
-            var isTypewriter = art.traits.motif === 'typewriter';
+            var isTypewriter = art.(traits.motif === 'typewriter' || traits.motif === 'chopin');
             
             var url = typeof _canvasBlackDataURL !== 'undefined' && _canvasBlackDataURL ? _canvasBlackDataURL : CANVAS_BLACK_PATH;
             var color = '#1a1724';

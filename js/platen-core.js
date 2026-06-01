@@ -998,30 +998,31 @@ var PEN_MAP = {
 };
 
 var SYMMETRY_OPTS = ['random', 'both', 'diagonal', 'glide', 'horizontal', 'kaleidoscope', 'none', 'quad', 'radial', 'rotational', 'vertical'];
-var SPACE_OPTS = ['random', 'hyperbolic', 'planar'];
-var MOTIF_OPTS = ['random', 'typewriter'];
+var SPACE_OPTS = ['random', 'isometric', 'polar', 'hyperbolic', 'planar'];
+var MOTIF_OPTS = ['random', 'chopin', 'typewriter', 'typewriter_hash', 'stars_and_stripes', 'tatreez', 'quatrefoil', 'ichthus'];
 var CHROME_OPTS = ['random', 'typewriter_ribbon', 'typewriter_black', 'typewriter_black_red'];
 var ENGINE_OPTS = ['random', 'railyard', 'adama', 'adire', 'argyle', 'arraiolos', 'art_deco', 'asanoha', 'axonometric', 'azulejo', 'blueprint', 'blueprint_cyan', 'bogolan', 'bricolage', 'brutalist', 'castelo_branco', 'cherokee', 'chiefs', 'chipaz', 'circuit', 'collage', 'concrete', 'cubist', 'current', 'cyber_mesh', 'cypress_hills', 'dazzler', 'flow', 'framed_vista', 'fret_bands', 'glitch', 'interlace', 'kagome', 'kanzemizu', 'kente', 'kepe', 'kikkou', 'kishtima', 'kolya', 'kshtir', 'kuba', 'kudo', 'malevich', 'mastor', 'matsukawa', 'maximalism', 'mondrian', 'narmuny', 'navajo', 'optical_box', 'orak', 'pakshats', 'panks', 'panoramic_dunes', 'pre_columbian', 'pulay', 'river_flow', 'rolling_hills', 'seigaiha', 'serape_net', 'sermat', 'sermat-kudo', 'shippo', 'shiprock', 'sierra_sunset', 'spider_cross', 'stolz', 'structural', 'tangents', 'tol', 'ved', 'verena', 'viana', 'virma', 'wari', 'woodcut', 'yagasuri', 'yoshiwara'];
 
 var CANVAS_OPTS = ['white'];
 
 var MOTIF_DESCS = {
-    'ichthus': 'Christian Ichthus (\u2638)',
+    'typewriter': 'Courier Typewriter (Density)',
+    'typewriter_hash': 'Classic Density Matrix (/ * #)',
+    'chopin': 'Chopin Dactylopoème (Woven Typewriter)',
+    'stars_and_stripes': 'Nautical Star & Striped Banding',
+    'tatreez': 'Palestinian Tatreez Stitch',
+    'quatrefoil': 'Gothic Quatrefoil Lace',
+    'ichthus': 'Early Christian Ichthus Fish',
     'platen': 'Classic 3-Petal Platen',
-    'quatrefoil': '4-Petal Quatrefoil (\uA564)',
-    'tatreez': 'Tatreez Cross-Stitch (\u271A)',
     'square': 'Filled Square (\u25A0)',
     'viana_heart': 'Viana Heart (❤)',
-    'typewriter': 'Typewriter (Density Halftone)',
     'typewriter_comma': 'Typewriter Comma (,)',
     'typewriter_dot': 'Typewriter Period (.)',
     'typewriter_plus': 'Typewriter Plus (+)',
     'typewriter_x': 'Typewriter Cross (X)',
-    'typewriter_hash': 'Typewriter Hash (#)',
     'typewriter_asterisk': 'Typewriter Asterisk (*)',
     'typewriter_slash': 'Typewriter Slash (/)',
-    'typewriter_dash': 'Typewriter Dash (-)',
-    'stars_and_stripes': 'Stars and Stripes'
+    'typewriter_dash': 'Typewriter Dash (-)'
 };
 
 var MOTIF_PATHS = {

@@ -240,13 +240,7 @@ onmessage = function (e) {
                             _sc = 1.0; 
                         }
                         
-                        iterationResults.push({
-                            x: wp3[0], y: wp3[1],
-                            c: cell.col.c,
-                            wt: cell.wt, // Normalized weight (0..1) from grid
-                            sc: _sc,     // local cell scale factor for hyperbolic fitting
-                            flip: shouldFlipFlower(fx3, fy3),
-                            rot: (function () {
+                        var rot = (function () {
                                 if (traits.engine === 'river_flow') {
                                     // Calculate tangent of the flow at this point
                                     var dxSum = 0;
@@ -285,8 +279,37 @@ onmessage = function (e) {
                                     return Math.atan2(dzdx, -dzdy) * (180 / Math.PI);
                                 }
                                 return (traits.motif === 'ichthus' && ((fx3 * 17 + fy3 * 7) % 100 < 40)) ? 90 : 0;
-                            })()
+                            })();
+
+                        iterationResults.push({
+                            x: wp3[0], y: wp3[1],
+                            c: cell.col.c,
+                            wt: cell.wt, // Normalized weight (0..1) from grid
+                            sc: _sc,     // local cell scale factor for hyperbolic fitting
+                            flip: shouldFlipFlower(fx3, fy3),
+                            rot: rot
                         });
+                        
+                        if (traits.motif === 'chopin') {
+                            // Find a contrasting color from the palette array `cls`
+                            var contrastColor = cell.col.c;
+                            for (var cidx = 0; cidx < cls.length; cidx++) {
+                                if (cls[cidx].c !== cell.col.c) {
+                                    contrastColor = cls[cidx].c;
+                                    break;
+                                }
+                            }
+                            // Calculate a secondary warp with an offset (half a character width)
+                            var wp3_offset = warp(cell.x + 0.5, cell.y + 0.5);
+                            iterationResults.push({
+                                x: wp3_offset[0], y: wp3_offset[1],
+                                c: contrastColor,
+                                wt: 1.0 - cell.wt, // Invert the weight for different text character selection
+                                sc: _sc,
+                                flip: !shouldFlipFlower(fx3, fy3),
+                                rot: rot
+                            });
+                        }
                     }
                 }
             }
