@@ -2154,7 +2154,7 @@ else                glyph = '*';        // asterisk</pre>
                             var _r = (f.y / h) * (Math.min(svgW, svgH) / 2 * polarScale);
                             var _theta = (f.x / w) * Math.PI * 2 - Math.PI / 2;
                             px = cx_px + Math.cos(_theta) * _r;
-                            py = cy_px + Math.sin(_theta) * _r + 50; // Shift down slightly
+                            py = cy_px + Math.sin(_theta) * _r + 130; // Shift down to center perfectly on the page
                             f.rot = (f.rot || 0) + (_theta * 180 / Math.PI) + 90;
                         }
 
