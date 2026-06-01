@@ -1468,7 +1468,7 @@ else                glyph = '*';        // asterisk</pre>
             // Skip 'random' (index 0) for concrete random selection
             TRAITS.symmetry = SYMMETRY_OPTS[Math.floor(Math.random() * (SYMMETRY_OPTS.length - 1)) + 1];
             TRAITS.space = SPACE_OPTS[Math.floor(Math.random() * (SPACE_OPTS.length - 1)) + 1];
-            TRAITS.motif = MOTIF_OPTS[Math.floor(Math.random() * (MOTIF_OPTS.length - 1)) + 1];
+            TRAITS.motif = MOTIF_OPTS[0];
             TRAITS.chromes = CHROME_OPTS[Math.floor(Math.random() * (CHROME_OPTS.length - 1)) + 1];
             TRAITS.engine = ENGINE_OPTS[Math.floor(Math.random() * (ENGINE_OPTS.length - 1)) + 1];
             TRAITS.solid = Math.random() < 0.3; // 30% chance of solid motifs on random
@@ -1745,7 +1745,7 @@ else                glyph = '*';        // asterisk</pre>
                     runTraits = Object.assign({}, TRAITS);
                     if (runTraits.symmetry === 'random') runTraits.symmetry = SYMMETRY_OPTS[Math.floor(Math.random() * (SYMMETRY_OPTS.length - 1)) + 1];
                     if (runTraits.space === 'random') runTraits.space = SPACE_OPTS[Math.floor(Math.random() * (SPACE_OPTS.length - 1)) + 1];
-                    if (runTraits.motif === 'random') runTraits.motif = MOTIF_OPTS[Math.floor(Math.random() * (MOTIF_OPTS.length - 1)) + 1];
+                    if (runTraits.motif === 'random') runTraits.motif = MOTIF_OPTS[0];
                     
                     // Force a typewriter chrome for typewriter motif if none is selected
                     if (runTraits.motif === 'typewriter' || runTraits.motif === 'chopin' || runTraits.motif === 'typewriter_classic') {
