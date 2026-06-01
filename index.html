@@ -2120,6 +2120,12 @@ else                glyph = '*';        // asterisk</pre>
                     // Draw flowers using returned data into the DocumentFragment first
                     for (var i = 0; i < flowers.length; i++) {
                         var f = flowers[i];
+                        
+                        // Sparse downsampling for isometric space to reveal 3D depth, create elegant columns, and prevent DOM lag
+                        if (traits.space === 'isometric' && (f.x % 2 !== 0 || f.y % 2 !== 0)) {
+                            continue;
+                        }
+
                         var px = (f.x + 4 + margin) * sizeX;
                         var py = (f.y + 4 + margin + ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') ? 10 : 0)) * sizeY;
                         
@@ -2157,7 +2163,7 @@ else                glyph = '*';        // asterisk</pre>
                             
                             // Generate 3D columns by repeating strikes with beautiful distinct spacing
                             f.py_steps = [];
-                            var stepVal = 28 * isoScale; // Spaced distinct typewriter ribbon glyphs
+                            var stepVal = 64 * isoScale; // Spaced distinct typewriter ribbon glyphs
                             for (var yVal = py_base; yVal >= py_top; yVal -= stepVal) {
                                 f.py_steps.push(yVal);
                             }
