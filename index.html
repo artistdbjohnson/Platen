@@ -2143,13 +2143,21 @@ else                glyph = '*';        // asterisk</pre>
                             var dx = (_px - cx_px) * isoScale;
                             var dy = (_py - cy_px) * isoScale;
                             
-                            px = cx_px + (dx - dy) * cos30 + 60;
-                            var py_base = cy_px + (dx + dy) * sin30 + 120; // Nudge down to center on page
-                            var py_top = py_base - (f.wt || 0) * (sizeY * 7.0 * isoScale); // Extrude 2x more
+                            // Dynamically pull the isometric base down to the bottom of the canvas
+                            var bottom_margin = 120;
+                            var max_base_y = cy_px + (cx_px + cy_px) * isoScale * sin30;
+                            var base_nudge = Math.max(120, svgH - bottom_margin - max_base_y);
                             
-                            // Generate dense 3D columns by repeating strikes from the bottom base up to the top
+                            px = cx_px + (dx - dy) * cos30 + 60;
+                            var py_base = cy_px + (dx + dy) * sin30 + base_nudge;
+                            
+                            // Extrude all the way up to the top constraint before the header
+                            var py_header = 220; // Top constraint to leave space before header
+                            var py_top = py_base - (f.wt || 0) * (py_base - py_header);
+                            
+                            // Generate 3D columns by repeating strikes with beautiful distinct spacing
                             f.py_steps = [];
-                            var stepVal = 10 * isoScale; // Added spacing between glyphs
+                            var stepVal = 28 * isoScale; // Spaced distinct typewriter ribbon glyphs
                             for (var yVal = py_base; yVal >= py_top; yVal -= stepVal) {
                                 f.py_steps.push(yVal);
                             }
