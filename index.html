@@ -1205,8 +1205,7 @@ else                glyph = '*';        // asterisk</pre>
             </div>
             
             <div class="control-section" style="border-bottom: none;">
-                <button id="btn-theme" onclick="toggleTheme()" title="Toggle Light/Dark Mode">☀︎ Toggle Theme</button>
-                <button id="btn-key-anim" onclick="toggleKeyAnim()">⌘ Platen Anim</button>
+                <button id="btn-theme" onclick="toggleTheme()" title="Toggle Light/Dark Mode" style="width: 100%;">☀︎ Toggle Theme</button>
             </div>
         </section>
 
@@ -1215,15 +1214,18 @@ else                glyph = '*';        // asterisk</pre>
             <div id="canvas-wrap" class="panel">
                 <div class="platen-panel" id="panel1">
                     <div class="platen-loader">rendering...</div>
-                    <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
+                    <canvas id="c1" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                    <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
                 </div>
                 <div class="platen-panel" id="panel2">
                     <div class="platen-loader">rendering...</div>
-                    <svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
+                    <canvas id="c2" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                    <svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
                 </div>
                 <div class="platen-panel" id="panel3">
                     <div class="platen-loader">rendering...</div>
-                    <svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
+                    <canvas id="c3" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                    <svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
                 </div>
             </div>
         </section>
@@ -1717,13 +1719,7 @@ else                glyph = '*';        // asterisk</pre>
                             scheduleAutoTimer();
                         }
 
-                        // Refresh animation textures if animation is active
-                        if (typeof PlatenKeyAnim !== 'undefined') {
-                            PlatenKeyAnim.onRenderComplete();
-                        }
-                        if (typeof PlatenKeyAnim !== 'undefined') {
-                            PlatenKeyAnim.refresh();
-                        }
+
 
                         return;
                     }
@@ -2088,6 +2084,139 @@ else                glyph = '*';        // asterisk</pre>
             ];
         }
 
+        var _glContexts = {};
+        function drawToWebGL(canvas, foregroundImg, backgroundImg) {
+            var canvasId = canvas.id;
+            var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            
+            var w = foregroundImg.naturalWidth || foregroundImg.width || 800;
+            var h = foregroundImg.naturalHeight || foregroundImg.height || 1200;
+            
+            canvas.width = w;
+            canvas.height = h;
+            
+            if (!gl) {
+                // High-performance hardware-accelerated 2D fallback
+                var ctx2d = canvas.getContext('2d');
+                if (ctx2d) {
+                    if (backgroundImg) {
+                        ctx2d.drawImage(backgroundImg, 0, 0, w, h);
+                    } else {
+                        ctx2d.fillStyle = '#fcfcfc';
+                        ctx2d.fillRect(0, 0, w, h);
+                    }
+                    ctx2d.drawImage(foregroundImg, 0, 0);
+                }
+                return;
+            }
+
+            gl.viewport(0, 0, w, h);
+
+            var cached = _glContexts[canvasId];
+            if (!cached) {
+                var vsSource = 
+                    'attribute vec2 position;\n' +
+                    'varying vec2 vTexCoord;\n' +
+                    'void main() {\n' +
+                    '    vTexCoord = position * 0.5 + 0.5;\n' +
+                    '    vTexCoord.y = 1.0 - vTexCoord.y;\n' +
+                    '    gl_Position = vec4(position, 0.0, 1.0);\n' +
+                    '}\n';
+                var fsSource = 
+                    'precision mediump float;\n' +
+                    'varying vec2 vTexCoord;\n' +
+                    'uniform sampler2D uBackground;\n' +
+                    'uniform sampler2D uForeground;\n' +
+                    'uniform bool uHasBackground;\n' +
+                    'void main() {\n' +
+                    '    vec4 fg = texture2D(uForeground, vTexCoord);\n' +
+                    '    if (uHasBackground) {\n' +
+                    '        vec4 bg = texture2D(uBackground, vTexCoord);\n' +
+                    '        gl_FragColor = vec4(mix(bg.rgb, fg.rgb, fg.a), 1.0);\n' +
+                    '    } else {\n' +
+                    '        gl_FragColor = fg;\n' +
+                    '    }\n' +
+                    '}\n';
+
+                var vs = gl.createShader(gl.VERTEX_SHADER);
+                gl.shaderSource(vs, vsSource);
+                gl.compileShader(vs);
+                if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+                    console.error("VS compile error:", gl.getShaderInfoLog(vs));
+                }
+
+                var fs = gl.createShader(gl.FRAGMENT_SHADER);
+                gl.shaderSource(fs, fsSource);
+                gl.compileShader(fs);
+                if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+                    console.error("FS compile error:", gl.getShaderInfoLog(fs));
+                }
+
+                var program = gl.createProgram();
+                gl.attachShader(program, vs);
+                gl.attachShader(program, fs);
+                gl.linkProgram(program);
+                if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                    console.error("Link error:", gl.getProgramInfoLog(program));
+                }
+
+                var vertices = new Float32Array([
+                    -1.0, -1.0,
+                     1.0, -1.0,
+                    -1.0,  1.0,
+                    -1.0,  1.0,
+                     1.0, -1.0,
+                     1.0,  1.0
+                ]);
+                var buffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+                cached = {
+                    program: program,
+                    buffer: buffer,
+                    positionLoc: gl.getAttribLocation(program, 'position'),
+                    uBackgroundLoc: gl.getUniformLocation(program, 'uBackground'),
+                    uForegroundLoc: gl.getUniformLocation(program, 'uForeground'),
+                    uHasBackgroundLoc: gl.getUniformLocation(program, 'uHasBackground'),
+                    bgTexture: gl.createTexture(),
+                    fgTexture: gl.createTexture()
+                };
+                _glContexts[canvasId] = cached;
+            }
+
+            gl.useProgram(cached.program);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, cached.buffer);
+            gl.enableVertexAttribArray(cached.positionLoc);
+            gl.vertexAttribPointer(cached.positionLoc, 2, gl.FLOAT, false, 0, 0);
+
+            if (backgroundImg && backgroundImg.complete && backgroundImg.naturalWidth > 0) {
+                gl.activeTexture(gl.TEXTURE0);
+                gl.bindTexture(gl.TEXTURE_2D, cached.bgTexture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, backgroundImg);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                gl.uniform1i(cached.uBackgroundLoc, 0);
+                gl.uniform1i(cached.uHasBackgroundLoc, 1);
+            } else {
+                gl.uniform1i(cached.uHasBackgroundLoc, 0);
+            }
+
+            gl.activeTexture(gl.TEXTURE1);
+            gl.bindTexture(gl.TEXTURE_2D, cached.fgTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, foregroundImg);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.uniform1i(cached.uForegroundLoc, 1);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
+
         // ── PLATEN ENGINE (Worker Version) ──────────────────────────────────────────
         function renderPlaten(svgId, id, traits, expectedGen) {
             return new Promise(function (resolve, reject) {
@@ -2414,6 +2543,21 @@ else                glyph = '*';        // asterisk</pre>
 
                     // Append the new fragment instantly
                     svg.appendChild(frag);
+
+                    // Render SVG to WebGL Canvas for pure hardware-acceleration
+                    var canvas = document.getElementById('c' + id);
+                    if (canvas) {
+                        var svgString = new XMLSerializer().serializeToString(svg);
+                        var svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+                        var url = URL.createObjectURL(svgBlob);
+                        var svgImg = new Image();
+                        svgImg.onload = function() {
+                            var activeBgImg = typeof _activeCanvasImg !== 'undefined' ? _activeCanvasImg : null;
+                            drawToWebGL(canvas, svgImg, activeBgImg);
+                            URL.revokeObjectURL(url);
+                        };
+                        svgImg.src = url;
+                    }
 
                     // Return worker to pool instead of terminating
                     WorkerPool.push(worker);
@@ -3363,6 +3507,24 @@ else                glyph = '*';        // asterisk</pre>
             });
 
             _activeCanvasImg = img;
+
+            // Re-render WebGL canvases with the new background texture
+            var panels = activePanels();
+            panels.forEach(function (id) {
+                var canvas = document.getElementById('c' + id);
+                var svg = document.getElementById('s' + id);
+                if (canvas && svg) {
+                    var svgString = new XMLSerializer().serializeToString(svg);
+                    var svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+                    var url = URL.createObjectURL(svgBlob);
+                    var svgImg = new Image();
+                    svgImg.onload = function() {
+                        drawToWebGL(canvas, svgImg, img);
+                        URL.revokeObjectURL(url);
+                    };
+                    svgImg.src = url;
+                }
+            });
         }
 
         function savePNG() {
