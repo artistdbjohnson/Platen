@@ -1021,8 +1021,8 @@ var ENGINE_OPTS = ['random', 'railyard', 'adama', 'adire', 'argyle', 'arraiolos'
 
 var CANVAS_OPTS = ['white', 'black'];
 var CANVAS_DESCS = {
-    'white': 'White Paper Canvas',
-    'black': 'Black Graphite Canvas'
+    'white': 'white',
+    'black': 'black'
 };
 
 var MOTIF_DESCS = {

@@ -3467,11 +3467,7 @@ else                glyph = '*';        // asterisk</pre>
                                    (RESOLVED_TRAITS.chromes && RESOLVED_TRAITS.chromes.indexOf('typewriter') === 0)
                                ));
 
-            // Overrides for layouts and special motifs
-            if ((isTypewriter || TRAITS.chromes === 'typewriter_black') && TRAITS.canvas !== 'graph_paper') {
-                url = CANVAS_WHITE_PATH;
-                canvasClass = 'canvas-white';
-            } else if (TRAITS.canvas === 'black') {
+            if (TRAITS.canvas === 'black') {
                 url = CANVAS_BLACK_PATH;
                 canvasClass = 'canvas-black';
             }
@@ -3539,9 +3535,6 @@ else                glyph = '*';        // asterisk</pre>
 
         function applyTexture(displayUrl, img, canvasClass) {
             var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
-            if (TRAITS.chromes === 'typewriter_black' && TRAITS.canvas !== 'white') {
-                canvasClass = 'canvas-white';
-            }
 
             document.querySelectorAll('.platen-panel').forEach(function (el) {
                 el.style.backgroundImage = 'url("' + displayUrl + '")';
@@ -4267,20 +4260,11 @@ else                glyph = '*';        // asterisk</pre>
             } else if (canvas === 'white') {
                 url = typeof _canvasWhiteDataURL !== 'undefined' && _canvasWhiteDataURL ? _canvasWhiteDataURL : CANVAS_WHITE_PATH;
                 color = '#fcfcfc';
-            } else if (canvas === 'graph_paper') {
-                url = (invertGraph && typeof _canvasGraphPaperInvertedDataURL !== 'undefined' && _canvasGraphPaperInvertedDataURL) ? _canvasGraphPaperInvertedDataURL : ((typeof _canvasGraphPaperDataURL !== 'undefined' && _canvasGraphPaperDataURL) ? _canvasGraphPaperDataURL : CANVAS_GRAPH_PAPER_PATH);
-            }
-            
-            if (isTypewriter && canvas !== 'graph_paper') {
-                url = typeof _canvasWhiteDataURL !== 'undefined' && _canvasWhiteDataURL ? _canvasWhiteDataURL : CANVAS_WHITE_PATH;
-                color = '#fcfcfc';
             } else if (canvas === 'black') {
                 url = typeof _canvasBlackDataURL !== 'undefined' && _canvasBlackDataURL ? _canvasBlackDataURL : CANVAS_BLACK_PATH;
-            }
-            
-            if ((layout === 'grid_us_letter' || layout === 'banner_us_letter') && canvas !== 'white') {
-                url = typeof _canvasWhiteDataURL !== 'undefined' && _canvasWhiteDataURL ? _canvasWhiteDataURL : CANVAS_WHITE_PATH;
-                color = '#fcfcfc';
+                color = 'transparent';
+            } else if (canvas === 'graph_paper') {
+                url = (invertGraph && typeof _canvasGraphPaperInvertedDataURL !== 'undefined' && _canvasGraphPaperInvertedDataURL) ? _canvasGraphPaperInvertedDataURL : ((typeof _canvasGraphPaperDataURL !== 'undefined' && _canvasGraphPaperDataURL) ? _canvasGraphPaperDataURL : CANVAS_GRAPH_PAPER_PATH);
             }
             
             return {
