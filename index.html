@@ -713,14 +713,13 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #ffffff;
+            color: #000000;
             font-size: 11px;
             letter-spacing: 0.15em;
             text-transform: uppercase;
             pointer-events: none;
             z-index: 100;
             display: none;
-            text-shadow: 0 0 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.8);
         }
 
         .platen-panel.loading .platen-loader {
@@ -1849,20 +1848,7 @@
                 'typewriter_x': 'X', 'typewriter_hash': '#',
                 'typewriter_asterisk': '*', 'typewriter_slash': '/', 'typewriter_dash': '-'
             };
-            var _gs;
-            switch (traits.symmetry) {
-                case 'rotational': case 'radial': case 'kaleidoscope': case 'quad':
-                    _gs = ['typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
-                    break;
-                case 'diagonal': case 'glide':
-                    _gs = ['typewriter_comma', 'typewriter_dot', 'typewriter_slash', 'typewriter_x', 'typewriter_hash'];
-                    break;
-                case 'horizontal':
-                    _gs = ['typewriter_comma', 'typewriter_dash', 'typewriter_plus', 'typewriter_x', 'typewriter_hash'];
-                    break;
-                default:
-                    _gs = ['typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_hash'];
-            }
+            var _gs = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
             var g1 = _glyphChars[_gs[0]], g2 = _glyphChars[_gs[1]], g3 = _glyphChars[_gs[2]],
                 g4 = _glyphChars[_gs[3]], g5 = _glyphChars[_gs[4]];
 
@@ -2045,20 +2031,7 @@
                                 // Skip low density cells entirely
                                 continue;
                             }
-                            var _glyphSet;
-                            switch (traits.symmetry) {
-                                case 'rotational': case 'radial': case 'kaleidoscope': case 'quad':
-                                    _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
-                                    break;
-                                case 'diagonal': case 'glide':
-                                    _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_slash', 'typewriter_x', 'typewriter_hash'];
-                                    break;
-                                case 'horizontal':
-                                    _glyphSet = ['typewriter_comma', 'typewriter_dash', 'typewriter_plus', 'typewriter_x', 'typewriter_hash'];
-                                    break;
-                                default:
-                                    _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_hash'];
-                            }
+                            var _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
                             // FIVE-TIER DENSITY MAP
                             var _levelIdx;
                             if (f.wt < 0.36) {
@@ -2485,20 +2458,7 @@
                         if (f.wt < 0.20) {
                             return; // skip low density cells
                         }
-                        var _glyphSet;
-                        switch (TRAITS.symmetry) {
-                            case 'rotational': case 'radial': case 'kaleidoscope': case 'quad':
-                                _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
-                                break;
-                            case 'diagonal': case 'glide':
-                                _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_slash', 'typewriter_x', 'typewriter_hash'];
-                                break;
-                            case 'horizontal':
-                                _glyphSet = ['typewriter_comma', 'typewriter_dash', 'typewriter_plus', 'typewriter_x', 'typewriter_hash'];
-                                break;
-                            default:
-                                _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_hash'];
-                        }
+                        var _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
                         // FIVE-TIER DENSITY MAP
                         var _levelIdx;
                         if (f.wt < 0.36) {
@@ -2592,20 +2552,7 @@
                         if (f.wt < 0.20) {
                             return; // skip low density cells
                         }
-                        var _glyphSet;
-                        switch (TRAITS.symmetry) {
-                            case 'rotational': case 'radial': case 'kaleidoscope': case 'quad':
-                                _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
-                                break;
-                            case 'diagonal': case 'glide':
-                                _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_slash', 'typewriter_x', 'typewriter_hash'];
-                                break;
-                            case 'horizontal':
-                                _glyphSet = ['typewriter_comma', 'typewriter_dash', 'typewriter_plus', 'typewriter_x', 'typewriter_hash'];
-                                break;
-                            default:
-                                _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_hash'];
-                        }
+                        var _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
                         // FIVE-TIER DENSITY MAP
                         var _levelIdx;
                         if (f.wt < 0.36) {
