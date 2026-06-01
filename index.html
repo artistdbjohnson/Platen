@@ -1181,7 +1181,7 @@ else                glyph = '*';        // asterisk</pre>
                 <div class="trait"><span class="trait-label">Motif</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value; renderAll()"></select></div>
                 <div class="trait"><span class="trait-label">Ink</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value; renderAll()"></select></div>
                 <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value; renderAll()"></select></div>
-                <div class="trait"><span class="trait-label">Canvas</span><select class="trait-select" id="t-canvas" onchange="TRAITS.canvas=this.value; updateCanvasTexture(); renderAll()"></select></div>
+                <div class="trait"><span class="trait-label">Canvas</span><select class="trait-select" id="t-canvas" onchange="TRAITS.canvas=this.value; renderAll()"></select></div>
             </div>
 
             <div class="control-section">
@@ -2125,7 +2125,18 @@ else                glyph = '*';        // asterisk</pre>
                     ctx2d.drawImage(foregroundImg, 0, 0);
                 }
                 if (canvas.parentElement) {
-                    canvas.parentElement.style.backgroundImage = 'none';
+                    var el = canvas.parentElement;
+                    el.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
+                    var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
+                    if (isUsLetter) {
+                        el.style.backgroundSize = '106%';
+                        el.style.backgroundColor = 'transparent';
+                    } else {
+                        el.style.backgroundSize = 'cover';
+                        el.style.backgroundColor = 'transparent';
+                    }
+                    var baseClass = el.classList.contains('loading') ? 'platen-panel loading' : 'platen-panel';
+                    el.className = baseClass + ' ' + _activeCanvasClass;
                 }
             }
 
@@ -2243,7 +2254,18 @@ else                glyph = '*';        // asterisk</pre>
 
                 gl.drawArrays(gl.TRIANGLES, 0, 6);
                 if (canvas.parentElement) {
-                    canvas.parentElement.style.backgroundImage = 'none';
+                    var el = canvas.parentElement;
+                    el.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
+                    var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
+                    if (isUsLetter) {
+                        el.style.backgroundSize = '106%';
+                        el.style.backgroundColor = 'transparent';
+                    } else {
+                        el.style.backgroundSize = 'cover';
+                        el.style.backgroundColor = 'transparent';
+                    }
+                    var baseClass = el.classList.contains('loading') ? 'platen-panel loading' : 'platen-panel';
+                    el.className = baseClass + ' ' + _activeCanvasClass;
                 }
             } catch (e) {
                 console.warn("WebGL draw failed, falling back to 2D context:", e);
@@ -3401,6 +3423,8 @@ else                glyph = '*';        // asterisk</pre>
         var CANVAS_GRAPH_PAPER_PATH = 'platen_canvas_graph_paper.jpg';
 
         var _activeCanvasImg = null;
+        var _activeCanvasClass = 'canvas-white';
+        var _activeDisplayUrl = 'platen_white.png';
         var _canvasGraphPaperInvertedDataURL = null;
         var _canvasGraphPaperInvertedImg = null;
         var _loadedTextures = {};
@@ -3535,29 +3559,28 @@ else                glyph = '*';        // asterisk</pre>
         }
 
         function applyTexture(displayUrl, img, canvasClass) {
-            var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
+            _activeCanvasImg = img;
+            _activeCanvasClass = canvasClass;
+            _activeDisplayUrl = displayUrl;
 
+            // Only apply styling to parent element immediately if the panel is currently NOT loading
+            // (this avoids any mid-render mismatches!)
             document.querySelectorAll('.platen-panel').forEach(function (el) {
-                el.style.backgroundImage = 'url("' + displayUrl + '")';
-                
-                if (isUsLetter) {
-                    el.style.backgroundSize = '106%';
-                    el.style.backgroundColor = 'transparent';
-                    el.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)';
-                } else {
-                    el.style.backgroundSize = 'cover';
-                    el.style.backgroundColor = 'transparent';
-                    el.style.boxShadow = 'none';
-                }
-
-                if (el.classList.contains('loading')) {
-                    el.className = 'platen-panel loading ' + canvasClass;
-                } else {
+                if (!el.classList.contains('loading')) {
+                    el.style.backgroundImage = 'url("' + displayUrl + '")';
+                    var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
+                    if (isUsLetter) {
+                        el.style.backgroundSize = '106%';
+                        el.style.backgroundColor = 'transparent';
+                        el.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)';
+                    } else {
+                        el.style.backgroundSize = 'cover';
+                        el.style.backgroundColor = 'transparent';
+                        el.style.boxShadow = 'none';
+                    }
                     el.className = 'platen-panel ' + canvasClass;
                 }
             });
-
-            _activeCanvasImg = img;
 
             // Re-render WebGL canvases with the new background texture
             var panels = activePanels();
