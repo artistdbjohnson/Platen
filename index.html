@@ -1453,7 +1453,6 @@ else                glyph = '*';        // asterisk</pre>
             engine: 'random',
             canvas: 'white',
             solid: false,
-            showGridNums: false,
             invertGraph: false
         };
 
@@ -1699,28 +1698,11 @@ else                glyph = '*';        // asterisk</pre>
                 }
             }
 
-            var cbGridNums = document.getElementById('t-grid-nums');
-            if (cbGridNums) {
-                cbGridNums.checked = !!TRAITS.showGridNums;
-                // Sync CSS state
-                toggleGridNums(TRAITS.showGridNums, true);
-            }
         }
 
         function toggleInvertGraph(invert) {
             TRAITS.invertGraph = invert;
             updateCanvasTexture();
-        }
-
-        function toggleGridNums(show, skipRender) {
-            TRAITS.showGridNums = show;
-            var wrap = document.getElementById('canvas-wrap');
-            if (!wrap) return;
-            if (show) {
-                wrap.classList.remove('hide-grid-nums');
-            } else {
-                wrap.classList.add('hide-grid-nums');
-            }
         }
 
         function activePanels() {
@@ -1800,7 +1782,9 @@ else                glyph = '*';        // asterisk</pre>
                     runTraits = Object.assign({}, TRAITS);
                     if (runTraits.symmetry === 'random') runTraits.symmetry = SYMMETRY_OPTS[Math.floor(Math.random() * (SYMMETRY_OPTS.length - 1)) + 1];
                     if (runTraits.space === 'random') runTraits.space = SPACE_OPTS[Math.floor(Math.random() * (SPACE_OPTS.length - 1)) + 1];
-                    if (runTraits.motif === 'random') runTraits.motif = MOTIF_OPTS[0];
+                    if (runTraits.motif === 'random') {
+                        runTraits.motif = MOTIF_OPTS[Math.floor(Math.random() * (MOTIF_OPTS.length - 1)) + 1];
+                    }
                     
                     if (runTraits.chromes === 'random') {
                         runTraits.chromes = CHROME_OPTS[Math.floor(Math.random() * (CHROME_OPTS.length - 1)) + 1];
