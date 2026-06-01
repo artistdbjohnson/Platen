@@ -1,0 +1,15 @@
+*.pdf
+*.mp4
+*.webm
+*.dst
+*.svg
+*.reb
+*.zip
+extra patterns/
+African Textiles/
+Japanese Waves/
+Symmetry/
+References/
+.git/
+.vercel/
+node_modules/

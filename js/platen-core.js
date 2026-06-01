@@ -999,7 +999,7 @@ var PEN_MAP = {
 
 var SYMMETRY_OPTS = ['random', 'both', 'diagonal', 'glide', 'horizontal', 'kaleidoscope', 'none', 'quad', 'radial', 'rotational', 'vertical'];
 var SPACE_OPTS = ['random', 'hyperbolic', 'planar'];
-var MOTIF_OPTS = ['typewriter'];
+var MOTIF_OPTS = ['random', 'typewriter'];
 var CHROME_OPTS = ['random', 'typewriter_ribbon', 'typewriter_black', 'typewriter_black_red'];
 var ENGINE_OPTS = ['random', 'railyard', 'adama', 'adire', 'argyle', 'arraiolos', 'art_deco', 'asanoha', 'axonometric', 'azulejo', 'blueprint', 'blueprint_cyan', 'bogolan', 'bricolage', 'brutalist', 'castelo_branco', 'cherokee', 'chiefs', 'chipaz', 'circuit', 'collage', 'concrete', 'cubist', 'current', 'cyber_mesh', 'cypress_hills', 'dazzler', 'flow', 'framed_vista', 'fret_bands', 'glitch', 'interlace', 'kagome', 'kanzemizu', 'kente', 'kepe', 'kikkou', 'kishtima', 'kolya', 'kshtir', 'kuba', 'kudo', 'malevich', 'mastor', 'matsukawa', 'maximalism', 'mondrian', 'narmuny', 'navajo', 'optical_box', 'orak', 'pakshats', 'panks', 'panoramic_dunes', 'pre_columbian', 'pulay', 'river_flow', 'rolling_hills', 'seigaiha', 'serape_net', 'sermat', 'sermat-kudo', 'shippo', 'shiprock', 'sierra_sunset', 'spider_cross', 'stolz', 'structural', 'tangents', 'tol', 'ved', 'verena', 'viana', 'virma', 'wari', 'woodcut', 'yagasuri', 'yoshiwara'];
 
@@ -1040,6 +1040,9 @@ var MOTIF_PATHS = {
     'typewriter_asterisk': 'M 10,3 L 11.5,7.4 L 16.1,6.5 L 13,10 L 16.1,13.5 L 11.5,12.6 L 10,17 L 8.5,12.6 L 3.9,13.5 L 7,10 L 3.9,6.5 L 8.5,7.4 Z',
     'typewriter_slash': 'M 5,17 L 17,5 L 15,3 L 3,15 Z',
     'typewriter_dash': 'M 4,9 L 16,9 L 16,11 L 4,11 Z',
+    'typewriter_square': 'M 3,3 L 17,3 L 17,17 L 3,17 Z',
+    'typewriter_triangle': 'M 10,3 L 17,17 L 3,17 Z',
+    'typewriter_circle': 'M 10,3 A 7 7 0 1 1 9.9,3 Z',
     'star': 'M 10,1 L 12.7,6.8 L 19,7.5 L 14.3,11.8 L 15.6,18 L 10,15 L 4.4,18 L 5.7,11.8 L 1,7.5 L 7.3,6.8 Z',
     'stripes': 'M 2,4 L 18,4 L 18,6 L 2,6 Z M 2,9 L 18,9 L 18,11 L 2,11 Z M 2,14 L 18,14 L 18,16 L 2,16 Z',
     'stars_and_stripes': 'M 10,1 L 12.7,6.8 L 19,7.5 L 14.3,11.8 L 15.6,18 L 10,15 L 4.4,18 L 5.7,11.8 L 1,7.5 L 7.3,6.8 Z'

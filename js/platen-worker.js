@@ -234,6 +234,12 @@ onmessage = function (e) {
                         var _wp3dx = warp(cell.x + 1, cell.y);
                         var maxSc = traits.space === 'hyperbolic' ? 1.2 : 3.5;
                         var _sc = Math.min(Math.hypot(_wp3dx[0] - wp3[0], _wp3dx[1] - wp3[1]), maxSc);
+                        
+                        // Prevent typewriter glyphs from stretching in hyperbolic space
+                        if (traits.space === 'hyperbolic' && traits.motif === 'typewriter') {
+                            _sc = 1.0; 
+                        }
+                        
                         iterationResults.push({
                             x: wp3[0], y: wp3[1],
                             c: cell.col.c,

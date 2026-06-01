@@ -6,6 +6,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Platen</title>
+    <!-- Preload canvas textures for instant loading -->
+    <link rel="preload" href="platen_canvas_black.png" as="image">
+    <link rel="preload" href="platen_canvas_tan.png" as="image">
+    <link rel="preload" href="platen_canvas_olive.png" as="image">
+    <link rel="preload" href="platen_canvas_white.png" as="image">
+    <link rel="preload" href="platen_canvas_black_gallery.png" as="image">
+    <link rel="preload" href="platen_canvas_black_1x1.png" as="image">
+    <link rel="preload" href="platen_canvas_black_39_51.png" as="image">
+    <link rel="preload" href="platen_canvas_black_39_39.png" as="image">
+    <link rel="preload" href="platen_canvas_graph_paper.jpg" as="image">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -62,204 +72,151 @@
             animation-play-state: paused !important;
         }
 
-        /* ── Top bar ── */
-        #topbar {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 20px;
-            border-bottom: 1px solid var(--border);
+        /* ── 3-Column Index Layout ── */
+        .index-grid {
+            display: grid;
+            grid-template-columns: minmax(300px, 1.5fr) minmax(200px, 1fr) 3fr;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
             background: var(--bg);
-            z-index: 10;
         }
 
-        #title {
-            font-size: 11px;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: var(--dim);
-            margin-right: 40px; /* Space between title and About button */
+        /* Responsive stack for mobile */
+        @media (max-width: 900px) {
+            .index-grid {
+                display: flex;
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .col-canvas {
+                order: 1;
+                min-height: 70vh;
+                border-bottom: 1px solid var(--border);
+                overflow: visible !important;
+            }
+            .col-controls {
+                order: 2;
+                border-right: none !important;
+                border-bottom: 1px solid var(--border);
+                overflow: visible !important;
+            }
+            .col-about {
+                order: 3;
+                border-right: none !important;
+                overflow: visible !important;
+            }
         }
 
-        #title span {
-            color: var(--purple);
-        }
-
-        .btn-group {
+        /* ── Left Column: About ── */
+        .col-about {
+            padding: 40px;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
             display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            align-items: center;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        button {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--dim);
-            font-family: inherit;
-            font-size: 10px;
-            letter-spacing: 0.12em;
-            padding: 5px 12px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: all 0.15s;
-        }
-
-        button:hover,
-        button.active {
-            border-color: var(--purple);
-            color: var(--text);
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        button.active {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        #btn-randomize:hover,
-        #btn-randomize.active {
-            border-color: var(--purple);
-            color: var(--purple);
-        }
-
-        #btn-randomize:hover {
-            background: var(--purple);
-            color: var(--text);
-        }
-
-        /* ── Info Popups (Tooltips) ── */
-        .btn-group {
-            position: relative;
-        }
-
-        [data-info] {
-            position: relative;
-        }
-
-        [data-info]::after {
-            content: attr(data-info);
-            position: absolute;
-            bottom: calc(100% + 10px);
-            left: 50%;
-            transform: translateX(-50%);
-            background: #000;
-            color: var(--text);
-            font-size: 8px;
-            padding: 4px 8px;
-            border: 1px solid var(--border);
-            white-space: nowrap;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.1s ease-out;
-            z-index: 1000;
-            letter-spacing: 0.05em;
-            text-transform: none;
-        }
-
-        #topbar [data-info]::after {
-            bottom: auto;
-            top: calc(100% + 10px);
-        }
-
-        [data-info]:hover::after {
-            opacity: 1;
-        }
-
-        /* ── Dropdown Button ── */
-        .svg-dropdown {
-            position: relative;
-            display: flex;
-            align-items: stretch;
-        }
-        .svg-dropdown button {
-            height: 100%;
-            box-sizing: border-box;
-        }
-        .svg-dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: var(--bg);
-            min-width: 140px;
-            box-shadow: 0px 4px 8px rgba(0,0,0,0.5);
-            z-index: 1000;
-            border: 1px solid var(--border);
-            top: calc(100% + 2px);
-            left: 0;
-        }
-        [data-theme="light"] .svg-dropdown-content {
-            box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
-        }
-        .svg-dropdown:hover .svg-dropdown-content {
-            display: block;
-        }
-        .svg-dropdown-content a {
-            color: var(--text);
-            padding: 8px 12px;
-            text-decoration: none;
-            display: block;
-            font-family: inherit;
-            font-size: 9px;
+        .col-about h2 {
+            font-size: 14px;
+            font-weight: 500;
             letter-spacing: 0.1em;
-            text-transform: uppercase;
-            transition: all 0.15s;
-        }
-        .svg-dropdown-content a:hover {
-            background-color: var(--text);
-            color: var(--bg);
+            text-transform: lowercase;
+            margin-bottom: 20px;
         }
 
-        /* ── Trait bar ── */
-        #traitbar {
-            width: 100%;
+        .col-about p {
+            font-size: 11px;
+            line-height: 1.6;
+            color: var(--text);
+            opacity: 0.85;
+            max-width: 45ch;
+        }
+
+        /* ── Middle Column: Controls ── */
+        .col-controls {
+            padding: 40px 30px;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
             display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 7px 20px;
+            flex-direction: column;
+        }
+
+        .control-section {
             border-bottom: 1px solid var(--border);
-            background: var(--bg);
-            font-size: 8px;
-            letter-spacing: 0.08em;
-            color: var(--dim);
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            white-space: nowrap;
+            padding-bottom: 30px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .control-section h3 {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: lowercase;
+            opacity: 0.5;
+            margin-bottom: 10px;
+        }
+
+        .control-section button {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            padding: 4px 0;
+            cursor: pointer;
+            text-transform: lowercase;
+            text-align: left;
+            transition: opacity 0.2s;
+            opacity: 0.8;
+            width: fit-content;
+        }
+
+        .control-section button:hover {
+            opacity: 1;
+            text-decoration: underline;
         }
 
         .trait {
             display: flex;
-            gap: 6px;
-            align-items: center;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 6px;
         }
 
         .trait-label {
-            opacity: var(--label-opacity, 0.5);
-        }
-
-        .trait-val {
-            color: var(--text);
+            font-size: 10px;
+            opacity: 0.5;
+            text-transform: lowercase;
         }
 
         .trait-select {
             background: transparent;
-            border: 1px solid var(--border);
+            border: none;
+            border-bottom: 1px solid var(--border);
             color: var(--text);
             font-family: inherit;
-            font-size: 8px;
-            letter-spacing: 0.08em;
-            padding: 1px 4px;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            padding: 4px 0px;
             cursor: pointer;
             text-transform: lowercase;
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
             outline: none;
+            border-radius: 0;
+            width: 100%;
         }
 
         .trait-select:hover,
         .trait-select:focus {
-            border-color: var(--purple);
-            background: rgba(104, 57, 170, 0.15);
+            border-bottom-color: var(--text);
         }
 
         .trait-select option {
@@ -271,9 +228,22 @@
         .trait-select::-webkit-scrollbar {
             display: none;
         }
-
         .trait-select {
             scrollbar-width: none;
+        }
+
+        .status-section #st-info {
+            font-size: 10px;
+            opacity: 0.7;
+            font-family: monospace;
+        }
+
+        /* ── Right Column: Canvas ── */
+        .col-canvas {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
         }
 
         .platen-panel {
@@ -747,88 +717,7 @@
             display: block;
         }
 
-        /* ── About Modal ── */
-        #modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            z-index: 100;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-        }
-
-        #modal-overlay.active {
-            display: flex;
-        }
-
-        #about-modal {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            max-width: 700px;
-            width: 100%;
-            max-height: 85vh;
-            overflow-y: auto;
-            padding: 50px;
-            position: relative;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
-        }
-
-        #about-modal h2 {
-            font-size: 14px;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            color: var(--purple);
-            margin-bottom: 30px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 15px;
-        }
-
-        #about-modal p {
-            font-size: 12px;
-            line-height: 1.8;
-            margin-bottom: 20px;
-            color: var(--text);
-            opacity: 0.9;
-        }
-
-        #about-modal .tech-specs {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-        }
-
-        #about-modal .spec-item {
-            display: flex;
-            justify-content: space-between;
-            font-size: 10px;
-            margin-bottom: 10px;
-            letter-spacing: 0.05em;
-        }
-
-        #about-modal .spec-label {
-            color: var(--dim);
-            text-transform: uppercase;
-        }
-
-        #close-modal {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 18px;
-            opacity: 0.5;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        #close-modal:hover {
-            opacity: 1;
-        }
+        /* Old about modal removed */
 
         /* ── Seed Modal ── */
         #modal-seed {
@@ -1186,103 +1075,9 @@
 </head>
 
 <body>
-
-    <div id="topbar">
-        <div id="title">PLATEN</div>
-        <div class="btn-group">
-            <button id="btn-about" onclick="toggleAbout()">About</button>
-            <button id="btn-theme" onclick="toggleTheme()" title="Toggle Light/Dark Mode">☀︎</button>
-            <button id="btn-key-anim" onclick="toggleKeyAnim()" title="Platen Key Animation — idle wave on dominant color">⌘ ANIM</button>
-            <button id="btn-randomize" onclick="randomize()">&#9632; Randomize</button>
-            <button id="btn-regen" onclick="regenerate()">&#8635; Regenerate</button>
-            <button id="btn-curate" onclick="curateArtwork()">&#9733; Curate</button>
-            <button id="btn-gallery-modal" onclick="toggleGalleryModal()">★ Gallery</button>
-            <button id="btn-grid-us-letter" onclick="setLayout('grid_us_letter')" style="display:none;">Platen 8.5x11</button>
-            <div class="svg-dropdown">
-                <button id="btn-out-svg" title="Download SVG" data-info="download resolution-independent vector paths" style="pointer-events: none;">&#8595; SVG &#9662;</button>
-                <div class="svg-dropdown-content">
-                    <a href="#" onclick="saveSVG('full'); return false;">Full File</a>
-                    <a href="#" onclick="saveSVG('separate'); return false;">Separate Colors</a>
-                </div>
-            </div>
-            <button id="btn-out-png" onclick="savePNG()" title="Download PNG"
-                data-info="download high-resolution raster image">&#8595; PNG</button>
-            <div style="display: flex; align-items: center; gap: 4px; border: 1px solid var(--border); padding: 5px 8px; border-radius: 0; cursor: help; box-sizing: border-box;"
-                data-info="include canvas texture and background color in export">
-                <input type="checkbox" id="inc-bg" checked
-                    style="cursor: pointer; width: 10px; height: 10px; accent-color: var(--purple); margin: 0;">
-                <label for="inc-bg"
-                    style="font-size: 8px; color: var(--text); cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">Inc.
-                    BG</label>
-            </div>
-            <button id="btn-out-triptych" onclick="saveTriptych()" title="Download Triptych (3 Panels)"
-                data-info="download all 3 panels in a single layout">&#8595;
-                TRIPTYCH</button>
-            <button id="btn-out-dst" onclick="saveDST()" title="Download DST (Embroidery)"
-                data-info="download tajima industrial embroidery file">&#8595; DST</button>
-            <button id="btn-out-plot" onclick="savePlotterSVG()" title="Download SVG for Plotter (Inkscape Layers)"
-                data-info="download svg with plotter-optimized layers">&#8595; PLOT</button>
-            <button id="btn-out-cnc" onclick="saveCNCBlocks()" title="Download SVG for CNC/Woodcut (Mirrored Blocks)"
-                data-info="download mirrored blocks for woodcut/cnc">&#8595; CNC</button>
-            <button id="btn-out-height" onclick="saveHeightmap()" title="Download Grayscale Heightmap"
-                data-info="download grayscale depth map for height modeling">&#8595;
-                HEIGHT</button>
-            <button id="btn-out-zsvg" onclick="saveZSVG()" title="Download Z-Layered SVG"
-                data-info="download svg with depth-layered objects">&#8595;
-                Z-SVG</button>
-        </div>
-    </div>
-
-    <div id="traitbar">
-        <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym"
-                onchange="TRAITS.symmetry=this.value; renderAll()"></select></div>
-
-        <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space"
-                onchange="TRAITS.space=this.value; renderAll()"></select></div>
-        <div class="trait"><span class="trait-label">Pattern</span><select class="trait-select" id="t-motif"
-                onchange="TRAITS.motif=this.value; renderAll()"></select></div>
-        <div class="trait"><span class="trait-label">Chromes</span><select class="trait-select" id="t-chrome"
-                onchange="TRAITS.chromes=this.value; renderAll()"></select></div>
-        <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine"
-                onchange="TRAITS.engine=this.value; renderAll()"></select></div>
-    </div>
-
-    <!-- Always 3 panels — quantity is always 3 -->
-    <div id="canvas-wrap" class="panel">
-        <div class="platen-panel" id="panel1">
-            <div class="platen-loader">rendering...</div>
-            <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
-        </div>
-        <div class="platen-panel" id="panel2">
-            <div class="platen-loader">rendering...</div>
-            <svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
-        </div>
-        <div class="platen-panel" id="panel3">
-            <div class="platen-loader">rendering...</div>
-            <svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
-        </div>
-    </div>
-
-    <div id="statusbar">
-        <span id="st-info">rendering...</span>
-        <div style="display: flex; align-items: center; gap: 8px; cursor: help;"
-            data-info="toggle automatic pattern rendering cycle">
-            <button id="btn-auto" onclick="toggleAuto()" title="Toggle automatic cycle"></button>
-            <span
-                style="font-size: 8px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; user-select: none;"
-                onclick="toggleAuto()">Auto Cycle</span>
-            <span id="auto-guide" style="font-size: 8px; color: var(--purple); text-transform: uppercase; letter-spacing: 0.05em; display: none; margin-left: 4px;">
-                (Select Randomize or Regenerate to start)
-            </span>
-        </div>
-        <button id="btn-set-seed" onclick="setSeed()" title="Enter a specific seed"
-            style="margin-left: auto; padding: 2px 8px; font-size: 9px;"># Set Seed</button>
-        </div>
-    </div>
-
-    <div id="modal-overlay" onclick="toggleAbout()">
-        <div id="about-modal" onclick="event.stopPropagation()">
-            <div id="close-modal" onclick="toggleAbout()">×</div>
+    <main class="index-grid">
+        <!-- LEFT COLUMN: ABOUT -->
+        <section class="col-about">
             <h2>PLATEN by DLGXSS</h2>
             <p>A typewriter shop in West Los Angeles. My son was four, running the shop floor between dead ribbons and open cases while I paid for an Olympia SM3 with one intention. Write a novel no one would ever read. Private. Something to pass down to him one day.</p>
             <p>The novel stayed unfinished. The SM3 never did.<br>
@@ -1294,65 +1089,84 @@
 
             <p>That scalar becomes a glyph. The glyph becomes a strike.</p>
 
-            <p>The full algorithm is open. The engine at the center is a switch across forty named patterns, each one computing weight analytically from pure geometry. Here is what that looks like in the code:</p>
+            <p>The full algorithm is open. The engine at the center is a switch across forty named patterns, each one computing weight analytically from pure geometry.</p>
 
-            <pre style="background: var(--surface); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 10px; overflow-x: auto; color: var(--text); margin-bottom: 20px;"><code>function calcMotifWeight(x, y, w, h, engine, params) {
-    switch(engine) {
-        case 'VERNA':
-            // Perlin noise field sampled at rotated coordinates
-            var nx = (x / w) * params.scale;
-            var ny = (y / h) * params.scale;
-            return Math.abs(noise(nx, ny, params.seed));
+            <p>Every engine returns a raw float. That float gets normalized across the full grid, jittered deterministically by cell coordinate to prevent hard threshold edges, then mapped to a glyph. Dot. Comma. Plus. X. Asterisk. Slash. Hash. Dash. Eight possible outcomes per cell, each one natively typeable on a standard QWERTY SM3. The shift-key symbols, the punctuation, the letters, every mark in every output existed in the machine's mechanical vocabulary in 1952.</p>
+            
+            <p>Forty engines. Each one a closed-form translation of a specific material culture, historical textile, or architectural system into pure scalar mathematics.</p>
+            
+            <p>Print it, plot it, strike it into paper on a CNC. The output is raw SVG against real-world inches, laid over a scanned paper canvas at 600dpi, the texture of an actual sheet beneath every vector path. Screen is preview. The work only fully exists when pressed into a surface you can touch. The machine is not incidental. The machine is the point.</p>
+            <br><br><br>
+        </section>
 
-        case 'TNGNT':
-            // Tangent wave interference pattern
-            var fx = Math.tan(x * params.freq) * params.amp;
-            var fy = Math.tan(y * params.freq) * params.amp;
-            return Math.abs(Math.sin(fx + fy));
-
-        case 'TOLM':
-            // Distance field from lattice centers
-            var gx = (x % params.cell) / params.cell;
-            var gy = (y % params.cell) / params.cell;
-            return 1.0 - Math.sqrt(gx * gx + gy * gy);
-
-        // ... 37 further engines
-    }
-}</code></pre>
-
-            <p>Every engine returns a raw float. That float gets normalized across the full grid, jittered deterministically by cell coordinate to prevent hard threshold edges, then mapped to a glyph:</p>
-
-            <pre style="background: var(--surface); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 10px; overflow-x: auto; color: var(--text); margin-bottom: 20px;"><code>if      (wt < 0.20) continue;          // blank
-else if (wt < 0.36) glyph = ',';       // comma
-else if (wt < 0.51) glyph = '.';       // dot
-else if (wt < 0.66) glyph = '+';       // plus
-else if (wt < 0.81) glyph = 'X';       // x
-else                glyph = '*';        // asterisk</code></pre>
-
-            <p>Dot. Comma. Plus. X. Asterisk. Slash. Hash. Dash. Eight possible outcomes per cell, each one natively typeable on a standard QWERTY SM3. The shift-key symbols, the punctuation, the letters, every mark in every output existed in the machine's mechanical vocabulary in 1952. The simulation never asks the SM3 to do something it could not physically do.</p>
-
-            <p>Forty engines. Each one a closed-form translation of a specific material culture, historical textile, or architectural system into pure scalar mathematics. The loom: kente, bogolan, adire, kuba, the stepped diamonds of Navajo tradition, the structured geometry of chiefs blankets and Serape optical tunneling. The compass: seigaiha concentric waves, asanoha hemp leaf lattices, kagome tri-axial basket weave, shippo overlapping circles, Islamic interlace strapwork built from multi-frequency radial math. The drafting table: tangents connecting nodes like architectural drawings, stolz recreating the Bauhaus grid after Gunta Stölzl, structural simulating blueprint hatching and nested frames. The machine turned against itself: glitch simulating data corruption, scanline tearing, bit-crushing, orak warping the grid into cosmic distortion.</p>
-
-            <p>All forty passing through the same bottleneck: the physical width of a type slug. 0.082 inches inside a 0.100-inch cell. 10 characters per inch, 6 lines per inch. The machine's actual specifications, inherited exactly.</p>
-
-            <p>Symmetry works the same way. Rotational, glide, translational operations don't mirror pixels after the fact. The coordinate space rotates before the noise samples, so the mathematics generates the symmetry natively. The typewriter destroys most of it. Eight glyphs hold what survives.</p>
-
-            <p>Print it, plot it, strike it into paper on a CNC. The output is raw SVG against real-world inches, laid over a scanned paper canvas at 600dpi, the texture of an actual sheet beneath every vector path. Screen is preview. The work only fully exists when pressed into a surface you can touch. Chopin made this argument with a ribbon. Prudence makes it with a platen roller. Wolf-Rehfeldt made it with one repeated word. The machine is not incidental. The machine is the point.</p>
-
-            <p>My son is thirteen now.</p>
-
-            <p>The novel is still unfinished. So is everything worth keeping.</p>
-
-            <div class="tech-specs">
-                <h3 style="font-size: 12px; margin-bottom: 10px; color: var(--text);">Release Notes <span style="font-weight: normal; opacity: 0.6;">&mdash; PLATEN — 2026.05.31</span></h3>
-                <div class="spec-item" style="flex-direction: column; gap: 4px; margin-bottom: 15px;"><span class="spec-label">Vocabulary</span> <span style="line-height: 1.5;">Eight natively typeable glyphs mapped across five density levels: comma, dot, plus, X, asterisk, slash, hash, dash. Each character exists in the Olympia SM3's standard QWERTY vocabulary. The simulation inherits the machine's exact mechanical specifications — 10 CPI, 6 LPI, 0.082" type slug width — without approximation.</span></div>
-                <div class="spec-item" style="flex-direction: column; gap: 4px; margin-bottom: 15px;"><span class="spec-label">Symmetry</span> <span style="line-height: 1.5;">Glyph vocabulary is symmetry-aware. ROTAT outputs resolve through radially neutral characters. GLIDE outputs bias toward diagonal strikes. TRANS outputs carry horizontal weight. The character set reflects the underlying mathematical operation, not just the density it represents.</span></div>
-                <div class="spec-item" style="flex-direction: column; gap: 4px; margin-bottom: 15px;"><span class="spec-label">Engines</span> <span style="line-height: 1.5;">Forty generative engines. Deterministic ink variance per seed. Scanned paper canvas at 600dpi. Archival SVG output at real-world print dimensions.</span></div>
-                <div class="spec-item" style="flex-direction: column; gap: 4px; margin-bottom: 15px;"><span class="spec-label">Edition</span> <span style="line-height: 1.5;">88 editions. 0.088 ETH.</span></div>
-                <div class="spec-item" style="flex-direction: column; gap: 4px; margin-bottom: 15px;"><span class="spec-label">Philosophy</span> <span style="line-height: 1.5;">One piece for every character an Olympia SM3 can strike.</span></div>
+        <!-- MIDDLE COLUMN: CONTROLS -->
+        <section class="col-controls">
+            <div class="control-section">
+                <h3>Parameters</h3>
+                <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym" onchange="TRAITS.symmetry=this.value; renderAll()"></select></div>
+                <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space" onchange="TRAITS.space=this.value; renderAll()"></select></div>
+                <div class="trait"><span class="trait-label">Pattern</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value; renderAll()"></select></div>
+                <div class="trait"><span class="trait-label">Chromes</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value; renderAll()"></select></div>
+                <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value; renderAll()"></select></div>
             </div>
-        </div>
-    </div>
+
+            <div class="control-section">
+                <h3>Actions</h3>
+                <button id="btn-randomize" onclick="randomize()">Randomize</button>
+                <button id="btn-regen" onclick="regenerate()">Regenerate</button>
+                <button id="btn-curate" onclick="curateArtwork()">Curate</button>
+                <button id="btn-gallery-modal" onclick="toggleGalleryModal()">Gallery</button>
+                <button id="btn-set-seed" onclick="setSeed()">Set Seed</button>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+                    <button id="btn-auto" onclick="toggleAuto()">Auto Cycle</button>
+                    <span id="auto-guide" style="font-size: 10px; color: var(--text); display: none;">(Select Randomize to start)</span>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Export</h3>
+                <button id="btn-out-svg" onclick="saveSVG('full')">Download SVG</button>
+                <button id="btn-out-png" onclick="savePNG()">Download PNG</button>
+                <button id="btn-out-plot" onclick="savePlotterSVG()">Download PLOT</button>
+                <button id="btn-out-cnc" onclick="saveCNCBlocks()">Download CNC</button>
+                <button id="btn-out-height" onclick="saveHeightmap()">Download HEIGHTMAP</button>
+                <button id="btn-out-dst" onclick="saveDST()">Download DST</button>
+                
+                <div style="margin-top: 15px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="inc-bg" checked style="cursor: pointer; accent-color: #000;">
+                    <label for="inc-bg" style="font-size: 10px; cursor: pointer;">Include BG Texture</label>
+                </div>
+            </div>
+
+            <div class="control-section status-section">
+                <h3>Status</h3>
+                <span id="st-info">rendering...</span>
+            </div>
+            
+            <div class="control-section" style="border-bottom: none;">
+                <button id="btn-theme" onclick="toggleTheme()" title="Toggle Light/Dark Mode">☀︎ Toggle Theme</button>
+                <button id="btn-key-anim" onclick="toggleKeyAnim()">⌘ Platen Anim</button>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: CANVAS -->
+        <section class="col-canvas">
+            <div id="canvas-wrap" class="panel" style="background-image: url('assets/paper_white.jpg');">
+                <div class="platen-panel" id="panel1">
+                    <div class="platen-loader">rendering...</div>
+                    <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
+                </div>
+                <div class="platen-panel" id="panel2">
+                    <div class="platen-loader">rendering...</div>
+                    <svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
+                </div>
+                <div class="platen-panel" id="panel3">
+                    <div class="platen-loader">rendering...</div>
+                    <svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
+                </div>
+            </div>
+        </section>
+    </main>
 
     <div id="modal-seed" onclick="toggleSeed()">
         <div id="seed-modal-content" onclick="event.stopPropagation()">
@@ -1525,10 +1339,10 @@ else                glyph = '*';        // asterisk</code></pre>
             symmetry: 'random',
             space: 'random',
             motif: 'typewriter',
-            chromes: 'random',
+            chromes: 'typewriter_black',
             engine: 'random',
             canvas: 'white',
-            solid: true,
+            solid: false,
             showGridNums: false,
             invertGraph: false
         };
@@ -2206,7 +2020,7 @@ else                glyph = '*';        // asterisk</code></pre>
                                 scY = (sizeY * 0.7) / 14; 
                             } else {
                                 scX = (sizeX * 0.82) / 14; 
-                                scY = (sizeX * 0.82 * 1.25) / 14; 
+                                scY = (sizeX * 0.82) / 14; 
                             }
                         }
                         // Hyperbolic cell fitting — scale motif to local cell size; sc=1 in planar (no effect)
@@ -2221,17 +2035,12 @@ else                glyph = '*';        // asterisk</code></pre>
                                 // Skip low density cells entirely
                                 continue;
                             }
-                            // DIRECTIONAL GLYPHS — vocabulary resolved from symmetry type
                             var _glyphSet;
                             switch (traits.symmetry) {
-                                case 'rotational':
-                                case 'radial':
-                                case 'kaleidoscope':
-                                case 'quad':
+                                case 'rotational': case 'radial': case 'kaleidoscope': case 'quad':
                                     _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
                                     break;
-                                case 'diagonal':
-                                case 'glide':
+                                case 'diagonal': case 'glide':
                                     _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_slash', 'typewriter_x', 'typewriter_hash'];
                                     break;
                                 case 'horizontal':
@@ -2314,7 +2123,7 @@ else                glyph = '*';        // asterisk</code></pre>
                         }
 
                         var headerLines = getTypewriterHeaderLines(traits, RENDER_SEED, hW);
-                        var textCol = traits.chromes === 'typewriter_black_red' ? '#cc0000' : 'var(--text)'; // Use red ink for headers on red/black chrome!
+                        var textCol = 'var(--text)'; // Always use black/theme text for headers
                         if (traits.chromes === 'typewriter_black') textCol = '#000000'; // Pure black ink for black chrome
                         else if (traits.chromes === 'typewriter_ribbon') textCol = '#1a1724'; // Dark typewriter ink
 
@@ -2634,7 +2443,7 @@ else                glyph = '*';        // asterisk</code></pre>
                             scY = ((sizeY * 0.7) / 14) * scale;
                         } else {
                             scX = ((sizeX * 0.82) / 14) * scale;
-                            scY = ((sizeX * 0.82 * 1.25) / 14) * scale;
+                            scY = ((sizeX * 0.82) / 14) * scale;
                         }
                         charW = 14 * scX;
                         charH = 14 * scY;
@@ -2666,17 +2475,12 @@ else                glyph = '*';        // asterisk</code></pre>
                         if (f.wt < 0.20) {
                             return; // skip low density cells
                         }
-                        // DIRECTIONAL GLYPHS — vocabulary resolved from symmetry type
                         var _glyphSet;
                         switch (TRAITS.symmetry) {
-                            case 'rotational':
-                            case 'radial':
-                            case 'kaleidoscope':
-                            case 'quad':
+                            case 'rotational': case 'radial': case 'kaleidoscope': case 'quad':
                                 _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
                                 break;
-                            case 'diagonal':
-                            case 'glide':
+                            case 'diagonal': case 'glide':
                                 _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_slash', 'typewriter_x', 'typewriter_hash'];
                                 break;
                             case 'horizontal':
@@ -2778,17 +2582,12 @@ else                glyph = '*';        // asterisk</code></pre>
                         if (f.wt < 0.20) {
                             return; // skip low density cells
                         }
-                        // DIRECTIONAL GLYPHS — vocabulary resolved from symmetry type
                         var _glyphSet;
                         switch (TRAITS.symmetry) {
-                            case 'rotational':
-                            case 'radial':
-                            case 'kaleidoscope':
-                            case 'quad':
+                            case 'rotational': case 'radial': case 'kaleidoscope': case 'quad':
                                 _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
                                 break;
-                            case 'diagonal':
-                            case 'glide':
+                            case 'diagonal': case 'glide':
                                 _glyphSet = ['typewriter_comma', 'typewriter_dot', 'typewriter_slash', 'typewriter_x', 'typewriter_hash'];
                                 break;
                             case 'horizontal':
@@ -2842,7 +2641,7 @@ else                glyph = '*';        // asterisk</code></pre>
                             scY = (sizeY * 0.7) / 14;
                         } else {
                             scX = (sizeX * 0.82) / 14;
-                            scY = (sizeX * 0.82 * 1.25) / 14;
+                            scY = (sizeX * 0.82) / 14;
                         }
                     }
                     // Hyperbolic cell fitting — scale motif to local cell size; sc=1 in planar (no effect)
@@ -4550,8 +4349,8 @@ else                glyph = '*';        // asterisk</code></pre>
                     var styleContent = "";
                     for (var g = 0; g < NUM_GROUPS; g++) {
                         var seed = (g * 999) + f;
-                        var vis = (hash(seed) * 100 < 47) ? '1' : '0';
-                        styleContent += ".keyanim-g" + g + " { opacity: " + vis + " !important; }\n";
+                        var vis = (hash(seed) * 100 < 47) ? 'block' : 'none';
+                        styleContent += ".keyanim-g" + g + " { display: " + vis + " !important; }\n";
                     }
                     styleEl.textContent = styleContent;
                     doc.documentElement.appendChild(styleEl);
@@ -4777,29 +4576,29 @@ else                glyph = '*';        // asterisk</code></pre>
 
     </script>
     <div id="gallery-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:var(--bg); z-index:9999; overflow-y:auto; padding: 0 0 40px 0; box-sizing: border-box;">
-        <div id="topbar" style="margin-bottom: 20px;">
-            <div id="title">CURATED GALLERY</div>
-            <div class="btn-group">
-                <button id="btn-grid-anim" onclick="toggleGridAnimation()">&#9724; Stop Animation</button>
-                <button onclick="toggleGalleryModal()">Close</button>
+        <div class="gallery-topbar" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid var(--border); margin-bottom: 40px;">
+            <div id="title" style="font-size: 11px; letter-spacing: 0.2em; text-transform: lowercase;">curated gallery</div>
+            <div class="btn-group" style="display: flex; gap: 10px;">
+                <button id="btn-grid-anim" onclick="toggleGridAnimation()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">stop animation</button>
+                <button onclick="toggleGalleryModal()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">close</button>
             </div>
         </div>
         <div id="gallery-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 30px; padding: 0 40px;">
         </div>
     </div>
     <div id="gallery-detail-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; overflow:hidden; background:var(--bg); z-index:10000; flex-direction:column; align-items:center;">
-        <div id="topbar" style="width:100%; box-sizing:border-box;">
-            <div id="title">GALLERY VIEWER</div>
-            <div class="btn-group" style="flex-grow:1;">
-                <button onclick="closeGalleryDetail()">&larr; Back</button>
+        <div class="gallery-topbar" style="width:100%; box-sizing:border-box; display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid var(--border);">
+            <div id="title" style="font-size: 11px; letter-spacing: 0.2em; text-transform: lowercase;">gallery viewer</div>
+            <div class="btn-group" style="display: flex; gap: 10px; margin-left: 20px;">
+                <button onclick="closeGalleryDetail()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">&larr; back</button>
             </div>
-            <div class="btn-group">
-                <button onclick="downloadGallerySVG()">&#8595; SVG</button>
-                <button onclick="downloadGalleryPNG()">&#8595; PNG</button>
-                <button onclick="downloadGalleryDST()">&#8595; DST</button>
-                <button id="btn-gallery-rec" onclick="startGalleryRecording()">&#9679; Record 4.0s Loop</button>
-                <button id="btn-gallery-anim" onclick="toggleGalleryAnimation()">&#9654; Animate</button>
-                <button onclick="loadCuratedIntoMain()" style="border-color: var(--purple); color: var(--purple);">Load to Main Editor</button>
+            <div class="btn-group" style="display: flex; gap: 10px; margin-left: auto;">
+                <button onclick="downloadGallerySVG()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">download svg</button>
+                <button onclick="downloadGalleryPNG()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">download png</button>
+                <button onclick="downloadGalleryDST()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">download dst</button>
+                <button id="btn-gallery-rec" onclick="startGalleryRecording()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">record loop</button>
+                <button id="btn-gallery-anim" onclick="toggleGalleryAnimation()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">animate</button>
+                <button onclick="loadCuratedIntoMain()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px; text-decoration: underline;">load to main</button>
             </div>
         </div>
         <div id="gallery-detail-content" style="flex-grow:1; display:flex; justify-content:center; align-items:center; width:100%; overflow:hidden; padding: 20px; box-sizing:border-box;">
