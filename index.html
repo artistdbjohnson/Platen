@@ -1748,7 +1748,7 @@ else                glyph = '*';        // asterisk</pre>
                     if (runTraits.motif === 'random') runTraits.motif = MOTIF_OPTS[0];
                     
                     // Force a typewriter chrome for typewriter motif if none is selected
-                    if (runTraits.motif === 'typewriter' || runTraits.motif === 'chopin' || runTraits.motif === 'typewriter_classic') {
+                    if (runTraits.motif === 'typewriter' || runTraits.motif === 'chopin' || runTraits.motif === 'typewriter_classic' || runTraits.motif === 'typewriter_quine') {
                         if (runTraits.chromes !== 'typewriter_ribbon_multicolored' && 
                             runTraits.chromes !== 'typewriter_black' && 
                             runTraits.chromes !== 'typewriter_black_red') {
@@ -2077,7 +2077,7 @@ else                glyph = '*';        // asterisk</pre>
 
                 var margin = 0;
                 var w_gen = w - 2 * margin;
-                var h_gen = h - 2 * margin - ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') ? 10 : 0);
+                var h_gen = h - 2 * margin - ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') ? 10 : 0);
 
                 // Clear the old SVG immediately to show the blank canvas during generation
                 while (svg.firstChild) svg.removeChild(svg.firstChild);
@@ -2117,6 +2117,14 @@ else                glyph = '*';        // asterisk</pre>
                     var data = e.data;
                     var flowers = data.flowers; // Array of {x, y, c, flip}
 
+                    var quineText = "";
+                    var quineIdx = 0;
+                    if (traits.motif === 'typewriter_quine') {
+                        quineText = (renderPlaten.toString() + "\n" + updateCanvasTexture.toString() + "\n" + initWorkers.toString() + "\n" + ensureTextureLoaded.toString())
+                            .replace(/[\r\n\t]/g, ' ')
+                            .replace(/\s+/g, ' ');
+                    }
+
                     // Draw flowers using returned data into the DocumentFragment first
                     for (var i = 0; i < flowers.length; i++) {
                         var f = flowers[i];
@@ -2127,14 +2135,14 @@ else                glyph = '*';        // asterisk</pre>
                         }
 
                         var px = (f.x + 4 + margin) * sizeX;
-                        var py = (f.y + 4 + margin + ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') ? 10 : 0)) * sizeY;
+                        var py = (f.y + 4 + margin + ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') ? 10 : 0)) * sizeY;
                         
                         var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
                         if (isGraphPaper) {
                             var offX = isGraphPaperSq ? 1 : 0;
                             var offY = isGraphPaperSq ? 1 : 0;
                             px = 9 + (f.x + offX) * sizeX;
-                            py = 38 + (f.y + offY + ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') ? 10 : 0)) * sizeY;
+                            py = 38 + (f.y + offY + ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') ? 10 : 0)) * sizeY;
                         }
 
                         // Apply new spaces
@@ -2174,7 +2182,7 @@ else                glyph = '*';        // asterisk</pre>
                             py = py_top;
                             f.sc = (f.sc || 1) * isoScale * 1.15; // Scale the glyphs themselves (enlarged by 15% for isometric)
                         } else if (traits.space === 'polar') {
-                            var polarScale = (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') ? 0.92 : 1.05;
+                            var polarScale = (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') ? 0.92 : 1.05;
                             var _r = (f.y / h) * (Math.min(svgW, svgH) / 2 * polarScale);
                             var _theta = (f.x / w) * Math.PI * 2 - Math.PI / 2;
                             px = cx_px + Math.cos(_theta) * _r;
@@ -2186,7 +2194,7 @@ else                glyph = '*';        // asterisk</pre>
                         var scY = rSize / 20;
                         
                         // Enlarge Courier density glyphs to make them more visible and robust
-                        if (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') {
+                        if (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') {
                             scX *= 1.25;
                             scY *= 1.25;
                         }
@@ -2198,7 +2206,11 @@ else                glyph = '*';        // asterisk</pre>
 
                         // Support Typewriter Halftone (Density Shading)
                         var motifPath = MOTIF_PATHS[traits.motif];
-                        if (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') {
+                        if (traits.motif === 'typewriter_quine') {
+                            if (f.wt < 0.20) {
+                                continue;
+                            }
+                        } else if (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') {
                             if (f.wt < 0.20) {
                                 // Skip low density cells entirely
                                 continue;
@@ -2248,41 +2260,63 @@ else                glyph = '*';        // asterisk</pre>
                         }
 
                         yCoords.forEach(function (yVal) {
-                            var path = dc.createElementNS(svgNS, "path");
-                            var tx = px + (sizeX - rSize) / 2;
-                            var ty = yVal + (sizeY - rSize) / 2;
-                            if (isGraphPaper && traits.motif === 'stars_and_stripes') {
-                                scX = sizeX / 20;
-                                scY = sizeY / 20;
-                                tx = px;
-                                ty = yVal;
-                            }
-                            var xform = "translate(" + tx + "," + ty + ") scale(" + scX + "," + scY + ")";
-                            if (f.flip) xform += " rotate(180,10,10)";
-                            if (f.rot) xform += " rotate(" + f.rot + ",10,10)";
-                            path.setAttribute("transform", xform);
-                            path.setAttribute("d", motifPath);
-                            
-                            if (!colGroup) {
-                                path.setAttribute("fill", f.c);
-                            }
-                            
-                            if (traits.motif === 'ichthus') {
-                                if (traits.solid) {
-                                    path.setAttribute("stroke", "none");
-                                } else {
-                                    path.setAttribute("fill", "none");
-                                    path.setAttribute("stroke", f.c);
-                                    path.setAttribute("stroke-width", "2.4");
+                            if (traits.motif === 'typewriter_quine') {
+                                var char = quineText[quineIdx % quineText.length];
+                                quineIdx++;
+                                
+                                var textEl = dc.createElementNS(svgNS, "text");
+                                var tx = px + (sizeX - rSize) / 2;
+                                var ty = yVal + sizeY * 0.78; // beautiful alignment within cell
+                                
+                                textEl.setAttribute("x", tx);
+                                textEl.setAttribute("y", ty);
+                                textEl.setAttribute("font-family", "Courier, 'Courier New', monospace");
+                                textEl.setAttribute("font-size", (rSize * 1.35) + "px");
+                                textEl.setAttribute("font-weight", "bold");
+                                textEl.textContent = char;
+                                
+                                if (!colGroup) {
+                                    textEl.setAttribute("fill", f.c);
                                 }
+                                
+                                targetContainer.appendChild(textEl);
+                            } else {
+                                var path = dc.createElementNS(svgNS, "path");
+                                var tx = px + (sizeX - rSize) / 2;
+                                var ty = yVal + (sizeY - rSize) / 2;
+                                if (isGraphPaper && traits.motif === 'stars_and_stripes') {
+                                    scX = sizeX / 20;
+                                    scY = sizeY / 20;
+                                    tx = px;
+                                    ty = yVal;
+                                }
+                                var xform = "translate(" + tx + "," + ty + ") scale(" + scX + "," + scY + ")";
+                                if (f.flip) xform += " rotate(180,10,10)";
+                                if (f.rot) xform += " rotate(" + f.rot + ",10,10)";
+                                path.setAttribute("transform", xform);
+                                path.setAttribute("d", motifPath);
+                                
+                                if (!colGroup) {
+                                    path.setAttribute("fill", f.c);
+                                }
+                                
+                                if (traits.motif === 'ichthus') {
+                                    if (traits.solid) {
+                                        path.setAttribute("stroke", "none");
+                                    } else {
+                                        path.setAttribute("fill", "none");
+                                        path.setAttribute("stroke", f.c);
+                                        path.setAttribute("stroke-width", "2.4");
+                                    }
+                                }
+                                if (traits.motif === 'quatrefoil' || traits.motif === 'tatreez' || traits.motif === 'typewriter_classic' || traits.motif === 'stars_and_stripes' || traits.motif === 'typewriter' || traits.motif === 'chopin') path.setAttribute("fill-rule", "evenodd");
+                                targetContainer.appendChild(path);
                             }
-                            if (traits.motif === 'quatrefoil' || traits.motif === 'tatreez' || traits.motif === 'typewriter_classic' || traits.motif === 'stars_and_stripes' || traits.motif === 'typewriter' || traits.motif === 'chopin') path.setAttribute("fill-rule", "evenodd");
-                            targetContainer.appendChild(path);
                         });
                     }
 
                     // Add typewriter printout header metadata at the top of the grid
-                    if ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic')) {
+                    if ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine')) {
                         var hW = w;
                         var hSizeX = sizeX;
                         var hSizeY = sizeY;
@@ -3205,7 +3239,7 @@ else                glyph = '*';        // asterisk</pre>
                 canvasClass = 'canvas-graph-paper';
             }
 
-            var isTypewriter = (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') || (RESOLVED_TRAITS && (RESOLVED_TRAITS.motif === 'typewriter' || RESOLVED_TRAITS.motif === 'chopin' || RESOLVED_TRAITS.motif === 'typewriter_classic'));
+            var isTypewriter = (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic' || TRAITS.motif === 'typewriter_quine') || (RESOLVED_TRAITS && (RESOLVED_TRAITS.motif === 'typewriter' || RESOLVED_TRAITS.motif === 'chopin' || RESOLVED_TRAITS.motif === 'typewriter_classic' || RESOLVED_TRAITS.motif === 'typewriter_quine'));
 
             // Overrides for layouts and special motifs
             if (isTypewriter && TRAITS.canvas !== 'graph_paper') {
@@ -3967,7 +4001,7 @@ else                glyph = '*';        // asterisk</pre>
             var canvas = art.traits.canvas;
             var layout = art.layout;
             var invertGraph = art.traits.invertGraph;
-            var isTypewriter = (art.traits.motif === 'typewriter' || art.traits.motif === 'chopin' || art.traits.motif === 'typewriter_classic');
+            var isTypewriter = (art.traits.motif === 'typewriter' || art.traits.motif === 'chopin' || art.traits.motif === 'typewriter_classic' || art.traits.motif === 'typewriter_quine');
             
             var url = typeof _canvasBlackDataURL !== 'undefined' && _canvasBlackDataURL ? _canvasBlackDataURL : CANVAS_BLACK_PATH;
             var color = '#1a1724';
