@@ -85,7 +85,7 @@
         /* ── 3-Column Index Layout ── */
         .index-grid {
             display: grid;
-            grid-template-columns: 320px 280px 1fr;
+            grid-template-columns: 320px 480px 1fr;
             height: 100vh;
             width: 100vw;
             overflow: hidden;
@@ -1479,7 +1479,36 @@
 
         function populateSelect(id, opts, val) {
             var sel = document.getElementById(id);
+            if (!sel) return;
+
+            // Generate options once
             if (sel.options.length === 0) {
+                sel.style.display = 'none'; // Hide native select
+                
+                var wrapper = document.createElement('div');
+                wrapper.className = 'custom-dropdown';
+                wrapper.style.position = 'relative';
+                wrapper.style.width = '100%';
+                
+                var selectedDiv = document.createElement('div');
+                selectedDiv.className = 'cd-selected trait-select';
+                selectedDiv.style.borderBottom = '1px solid var(--border)';
+                selectedDiv.style.padding = '3px 0px';
+                selectedDiv.style.userSelect = 'none';
+                
+                var optionsContainer = document.createElement('div');
+                optionsContainer.className = 'cd-items';
+                optionsContainer.style.position = 'absolute';
+                optionsContainer.style.top = '100%';
+                optionsContainer.style.left = '0';
+                optionsContainer.style.right = '0';
+                optionsContainer.style.background = 'var(--panel)';
+                optionsContainer.style.border = '1px solid var(--border)';
+                optionsContainer.style.zIndex = '999';
+                optionsContainer.style.maxHeight = '300px';
+                optionsContainer.style.overflowY = 'auto';
+                optionsContainer.style.display = 'none';
+                
                 for (var i = 0; i < opts.length; i++) {
                     var o = document.createElement('option');
                     var key = opts[i];
@@ -1491,13 +1520,62 @@
                     } else if (id === 't-motif' && MOTIF_DESCS[key] && key !== 'random') {
                         desc = " [" + MOTIF_DESCS[key] + "]";
                     }
+                    var fullText = key + desc;
                     o.value = key;
-                    o.textContent = key + desc;
+                    o.textContent = fullText;
                     sel.appendChild(o);
+                    
+                    var optDiv = document.createElement('div');
+                    optDiv.className = 'cd-item';
+                    optDiv.style.padding = '8px 10px';
+                    optDiv.style.color = 'var(--text)';
+                    optDiv.style.fontSize = '10px';
+                    optDiv.style.cursor = 'pointer';
+                    optDiv.textContent = fullText;
+                    optDiv.dataset.value = key;
+                    
+                    optDiv.addEventListener('mouseenter', function() {
+                        this.style.background = 'var(--text)';
+                        this.style.color = 'var(--bg)';
+                    });
+                    optDiv.addEventListener('mouseleave', function() {
+                        this.style.background = 'transparent';
+                        this.style.color = 'var(--text)';
+                    });
+                    
+                    optDiv.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        sel.value = this.dataset.value;
+                        selectedDiv.textContent = this.textContent;
+                        optionsContainer.style.display = 'none';
+                        sel.dispatchEvent(new Event('change'));
+                    });
+                    
+                    optionsContainer.appendChild(optDiv);
                 }
+                
+                selectedDiv.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var isVisible = optionsContainer.style.display === 'block';
+                    document.querySelectorAll('.cd-items').forEach(function(el) { el.style.display = 'none'; });
+                    optionsContainer.style.display = isVisible ? 'none' : 'block';
+                });
+                
+                wrapper.appendChild(selectedDiv);
+                wrapper.appendChild(optionsContainer);
+                sel.parentNode.insertBefore(wrapper, sel.nextSibling);
             }
+            
             sel.value = val;
+            var customSelected = sel.parentNode.querySelector('.cd-selected');
+            if (customSelected && sel.options[sel.selectedIndex]) {
+                customSelected.textContent = sel.options[sel.selectedIndex].textContent;
+            }
         }
+
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.cd-items').forEach(function(el) { el.style.display = 'none'; });
+        });
 
         function updateTraitBar() {
             var restrictTypewriter = ['panel', 'banner', 'square', 'banner_sq', 'graph_paper', 'graph_paper_banner', 'graph_paper_sq', 'graph_paper_sq_banner'].includes(currentLayout);
