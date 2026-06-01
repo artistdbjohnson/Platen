@@ -2354,13 +2354,13 @@ else                glyph = '*';        // asterisk</pre>
                             // Dynamically pull the isometric base down to the bottom of the canvas (nudged down by 10%)
                             var bottom_margin = 50;
                             var max_base_y = cy_px + (cx_px + cy_px) * isoScale * sin30;
-                            var base_nudge = Math.max(120, svgH - bottom_margin - max_base_y);
+                            var base_nudge = Math.max(120, svgH - bottom_margin - max_base_y) + 50;
                             
                             px = cx_px + (dx - dy) * cos30 + 60;
                             var py_base = cy_px + (dx + dy) * sin30 + base_nudge;
                             
                             // Extrude all the way up to the top constraint before the header (nudged down by 10%)
-                            var py_header = 480; // Lower top constraint to Y=480 to leave a beautiful space under header
+                            var py_header = 530; // Lower top constraint to Y=530 to leave a beautiful space under header
                             var py_top = py_base - (f.wt || 0) * (py_base - py_header);
                             
                             // Generate 3D columns by repeating strikes with beautiful distinct spacing
@@ -2522,8 +2522,9 @@ else                glyph = '*';        // asterisk</pre>
 
                         var headerLines = getTypewriterHeaderLines(traits, RENDER_SEED, hW);
                         var textCol = '#1a1724'; // Default to dark typewriter ink for headers
-                        if (traits.chromes === 'typewriter_black') textCol = '#000000'; // Pure black ink for black chrome
-                        if (traits.canvas === 'black') {
+                        if (traits.chromes === 'typewriter_black') {
+                            textCol = '#000000'; // Pure black ink for black chrome
+                        } else if (traits.canvas === 'black') {
                             textCol = '#b8b8b8'; // Soft white header text when inverted (graphite)
                         }
 
@@ -3468,7 +3469,7 @@ else                glyph = '*';        // asterisk</pre>
                                ));
 
             // Overrides for layouts and special motifs
-            if (isTypewriter && TRAITS.canvas !== 'graph_paper') {
+            if ((isTypewriter || TRAITS.chromes === 'typewriter_black') && TRAITS.canvas !== 'graph_paper') {
                 url = CANVAS_WHITE_PATH;
                 canvasClass = 'canvas-white';
             } else if (TRAITS.canvas === 'black') {
@@ -3543,7 +3544,7 @@ else                glyph = '*';        // asterisk</pre>
 
         function applyTexture(displayUrl, img, canvasClass) {
             var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
-            if (isUsLetter && TRAITS.canvas !== 'white') {
+            if ((isUsLetter || TRAITS.chromes === 'typewriter_black') && TRAITS.canvas !== 'white') {
                 canvasClass = 'canvas-white';
             }
 

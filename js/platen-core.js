@@ -1015,7 +1015,7 @@ var PEN_MAP = {
 
 var SYMMETRY_OPTS = ['random', 'both', 'diagonal', 'glide', 'horizontal', 'kaleidoscope', 'none', 'quad', 'radial', 'rotational', 'vertical'];
 var SPACE_OPTS = ['random', 'isometric', 'polar', 'hyperbolic', 'planar'];
-var MOTIF_OPTS = ['random', 'typewriter', 'typewriter_quine', 'typewriter_classic', 'chopin', 'stars_and_stripes', 'tatreez', 'quatrefoil', 'ichthus', 'platen', 'square', 'viana_heart', 'typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk', 'typewriter_slash', 'typewriter_dash'];
+var MOTIF_OPTS = ['random', 'typewriter', 'typewriter_quine'];
 var CHROME_OPTS = ['random', 'typewriter_ribbon_multicolored', 'typewriter_black', 'typewriter_black_red', 'micron_plotter', 'stars_and_stripes', 'railyard', 'adama', 'adire', 'afarsek', 'aizome', 'alentejo', 'alon', 'argaman', 'azulejo_classico', 'bahir', 'barzel', 'bedouin_night', 'bleached', 'blueprint_cyan', 'bogolan', 'bricolage', 'burntwater', 'castelo_branco', 'cherokee', 'chinle', 'collage', 'concrete', 'crystal', 'cyber_mesh', 'erev', 'flow', 'flow_deep', 'gan', 'ganado', 'gaza_dusk', 'gehelet', 'glitch_acid', 'glitch_heat', 'glitch_void', 'kabuki', 'kagetoh', 'kakiishibu', 'karkom', 'kaspi', 'katan', 'kelme', 'kente', 'kinjiki', 'kinpak', 'kokkos', 'kuba', 'lissitzky', 'madder', 'manueline', 'matcha', 'matsuri', 'minho', 'moki', 'memphis', 'miami_basel', 'mondrian', 'murex', 'nana', 'navajo', 'negev_gold', 'neshef', 'oil_pastel', 'olive_grove', 'orak', 'palestine_dawn', 'panar', 'pepel', 'pombalino', 'porphyra', 'primaries', 'rodchenko', 'ruach', 'rutsya', 'sakura', 'savonnerie', 'seigaiha', 'shahar', 'shemen', 'shibui', 'shiprock', 'shoshan', 'simcha', 'sintra', 'spectrum', 'stolz', 'structural', 'sumi', 'suprematism', 'tarshish', 'teec_nos_pos', 'tekhelet', 'tukmo', 'two_grey_hills', 'uguisu', 'verena', 'viana', 'viride', 'wari', 'woodcut', 'yam', 'zahav'];
 var ENGINE_OPTS = ['random', 'railyard', 'adama', 'adire', 'argyle', 'arraiolos', 'art_deco', 'asanoha', 'axonometric', 'azulejo', 'blueprint', 'blueprint_cyan', 'bogolan', 'bricolage', 'brutalist', 'castelo_branco', 'cherokee', 'chiefs', 'chipaz', 'circuit', 'collage', 'concrete', 'cubist', 'current', 'cyber_mesh', 'cypress_hills', 'dazzler', 'flow', 'framed_vista', 'fret_bands', 'glitch', 'interlace', 'kagome', 'kanzemizu', 'kente', 'kepe', 'kikkou', 'kishtima', 'kolya', 'kshtir', 'kuba', 'kudo', 'malevich', 'mastor', 'matsukawa', 'maximalism', 'mondrian', 'narmuny', 'navajo', 'optical_box', 'orak', 'pakshats', 'panks', 'panoramic_dunes', 'pre_columbian', 'pulay', 'river_flow', 'rolling_hills', 'seigaiha', 'serape_net', 'sermat', 'sermat-kudo', 'shippo', 'shiprock', 'sierra_sunset', 'spider_cross', 'stolz', 'structural', 'tangents', 'tol', 'ved', 'verena', 'viana', 'virma', 'wari', 'woodcut', 'yagasuri', 'yoshiwara'];
 
@@ -1028,23 +1028,7 @@ var CANVAS_DESCS = {
 var MOTIF_DESCS = {
     'random': 'Random Motif',
     'typewriter': 'Courier Typewriter (Density)',
-    'typewriter_quine': 'Typewriter Quine (Source Code)',
-    'typewriter_classic': 'Classic Density Matrix (/ * #)',
-    'chopin': 'Chopin Dactylopoème (Woven Typewriter)',
-    'stars_and_stripes': 'Nautical Star & Striped Banding',
-    'tatreez': 'Palestinian Tatreez Stitch',
-    'quatrefoil': 'Gothic Quatrefoil Lace',
-    'ichthus': 'Early Christian Ichthus Fish',
-    'platen': 'Classic 3-Petal Platen',
-    'square': 'Filled Square (\u25A0)',
-    'viana_heart': 'Viana Heart (❤)',
-    'typewriter_comma': 'Typewriter Comma (,)',
-    'typewriter_dot': 'Typewriter Period (.)',
-    'typewriter_plus': 'Typewriter Plus (+)',
-    'typewriter_x': 'Typewriter Cross (X)',
-    'typewriter_asterisk': 'Typewriter Asterisk (*)',
-    'typewriter_slash': 'Typewriter Slash (/)',
-    'typewriter_dash': 'Typewriter Dash (-)'
+    'typewriter_quine': 'Typewriter Quine (Source Code)'
 };
 
 var MOTIF_PATHS = {
