@@ -1092,10 +1092,8 @@
             box-shadow: 0 0 8px var(--purple);
         }
 
-        /* Hardware-acceleration overrides for ultra-high-density 3D rendering and key animations */
-        .extrusion-col, .keyanim-path, .typewriter-header, text, path {
-            will-change: transform, opacity;
-            transform: translate3d(0, 0, 0);
+        /* Speed rendering optimizations for ultra-high-density 3D rendering and key animations */
+        .extrusion-col, .keyanim-path {
             shape-rendering: optimizeSpeed;
         }
     </style>
