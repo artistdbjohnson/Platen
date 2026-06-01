@@ -3264,7 +3264,7 @@
                 canvasClass = 'canvas-graph-paper';
             }
 
-            var isTypewriter = ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) || (RESOLVED_TRAITS && RESOLVED_(TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin'));
+            var isTypewriter = (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') || (RESOLVED_TRAITS && (RESOLVED_TRAITS.motif === 'typewriter' || RESOLVED_TRAITS.motif === 'chopin'));
 
             // Overrides for layouts and special motifs
             if (isTypewriter && TRAITS.canvas !== 'graph_paper') {
@@ -3991,7 +3991,7 @@
             var canvas = art.traits.canvas;
             var layout = art.layout;
             var invertGraph = art.traits.invertGraph;
-            var isTypewriter = art.(traits.motif === 'typewriter' || traits.motif === 'chopin');
+            var isTypewriter = (art.traits.motif === 'typewriter' || art.traits.motif === 'chopin');
             
             var url = typeof _canvasBlackDataURL !== 'undefined' && _canvasBlackDataURL ? _canvasBlackDataURL : CANVAS_BLACK_PATH;
             var color = '#1a1724';
