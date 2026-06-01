@@ -2542,6 +2542,9 @@ else                glyph = '*';        // asterisk</pre>
                         var headerLines = getTypewriterHeaderLines(traits, RENDER_SEED, hW);
                         var textCol = '#1a1724'; // Default to dark typewriter ink for headers
                         if (traits.chromes === 'typewriter_black') textCol = '#000000'; // Pure black ink for black chrome
+                        if (document.getElementById('invert-canvas') && document.getElementById('invert-canvas').checked) {
+                            textCol = '#ffffff'; // White header text when inverted (graphite)
+                        }
 
                         var headerG = dc.createElementNS(svgNS, "g");
                         headerG.setAttribute("class", "typewriter-header");
@@ -2564,7 +2567,7 @@ else                glyph = '*';        // asterisk</pre>
                                  var textEl = dc.createElementNS(svgNS, "text");
                                 textEl.setAttribute("x", charX);
                                 textEl.setAttribute("y", charY);
-                                textEl.setAttribute("fill", getRenderColor(textCol));
+                                 textEl.setAttribute("fill", textCol);
                                 textEl.setAttribute("font-size", (hSizeY * 0.92) + "px");
                                 textEl.setAttribute("font-family", "Courier, 'Courier New', monospace");
                                 textEl.setAttribute("font-weight", "bold");
@@ -2579,6 +2582,9 @@ else                glyph = '*';        // asterisk</pre>
 
                     // Determine grid numbers text color explicitly so it exports correctly
                     var gridTextColor = (traits.canvas === 'white' || traits.canvas === 'tan' || traits.canvas.indexOf('graph_paper') === 0) ? '#1D1D1D' : '#f8f8f2';
+                    if (document.getElementById('invert-canvas') && document.getElementById('invert-canvas').checked) {
+                        gridTextColor = '#ffffff'; // White grid text when inverted (graphite)
+                    }
                     
 
 
