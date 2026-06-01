@@ -2133,10 +2133,10 @@ else                glyph = '*';        // asterisk</pre>
                             // 3D extrusion based on weight
                             py -= (f.wt || 0) * (sizeY * 2.5);
                         } else if (traits.space === 'polar') {
-                            var _r = (f.y / h) * (Math.min(svgW, svgH) / 2 * 0.95);
+                            var _r = (f.y / h) * (Math.min(svgW, svgH) / 2 * 1.05);
                             var _theta = (f.x / w) * Math.PI * 2 - Math.PI / 2;
                             px = cx_px + Math.cos(_theta) * _r;
-                            py = cy_px + Math.sin(_theta) * _r;
+                            py = cy_px + Math.sin(_theta) * _r + 50; // Shift down slightly
                             f.rot = (f.rot || 0) + (_theta * 180 / Math.PI) + 90;
                         }
 

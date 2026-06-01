@@ -24,6 +24,20 @@ var PALETTES = {
         { c: "#7C2A24", r: 4 },       // Red Carbon / Bicolor - Pen 223 Dark Red
         { c: "#4E3629", r: 1, v: 1 }  // Weathered ink bleed accent
     ],
+    chopin: [ // split ribbon red and blue
+        { c: "#1D1D1D", r: 1 },       // Carbon Black
+        { c: "#C02F2C", r: 4 },       // Ribbon Red
+        { c: "#1B477D", r: 4 },       // Ribbon Blue
+        { c: "#543355", r: 1, v: 1 }  // Overlap Purple
+    ],
+    weave_primary: [ // from user weaving image
+        { c: "#C63A27", r: 3 },       // Deep Red/Orange
+        { c: "#D99B35", r: 3 },       // Mustard Yellow
+        { c: "#697A3B", r: 3 },       // Olive Green
+        { c: "#2B658C", r: 3 },       // Mid Blue
+        { c: "#1E5959", r: 3 },       // Teal
+        { c: "#F2EAE4", r: 1, v: 1 }  // Cream/White
+    ],
     railyard: [ // shipping container yard palette
         { c: "#e6007e", r: 3, v: 1 }, // Magenta container
         { c: "#f05a28", r: 3, v: 1 }, // Burnt Orange container
@@ -1000,7 +1014,7 @@ var PEN_MAP = {
 var SYMMETRY_OPTS = ['random', 'both', 'diagonal', 'glide', 'horizontal', 'kaleidoscope', 'none', 'quad', 'radial', 'rotational', 'vertical'];
 var SPACE_OPTS = ['random', 'isometric', 'polar', 'hyperbolic', 'planar'];
 var MOTIF_OPTS = ['random', 'chopin', 'typewriter', 'typewriter_hash', 'stars_and_stripes', 'tatreez', 'quatrefoil', 'ichthus'];
-var CHROME_OPTS = ['random', 'typewriter_ribbon', 'typewriter_black', 'typewriter_black_red'];
+var CHROME_OPTS = ['random', 'typewriter_ribbon', 'typewriter_black', 'typewriter_black_red', 'chopin', 'weave_primary'];
 var ENGINE_OPTS = ['random', 'railyard', 'adama', 'adire', 'argyle', 'arraiolos', 'art_deco', 'asanoha', 'axonometric', 'azulejo', 'blueprint', 'blueprint_cyan', 'bogolan', 'bricolage', 'brutalist', 'castelo_branco', 'cherokee', 'chiefs', 'chipaz', 'circuit', 'collage', 'concrete', 'cubist', 'current', 'cyber_mesh', 'cypress_hills', 'dazzler', 'flow', 'framed_vista', 'fret_bands', 'glitch', 'interlace', 'kagome', 'kanzemizu', 'kente', 'kepe', 'kikkou', 'kishtima', 'kolya', 'kshtir', 'kuba', 'kudo', 'malevich', 'mastor', 'matsukawa', 'maximalism', 'mondrian', 'narmuny', 'navajo', 'optical_box', 'orak', 'pakshats', 'panks', 'panoramic_dunes', 'pre_columbian', 'pulay', 'river_flow', 'rolling_hills', 'seigaiha', 'serape_net', 'sermat', 'sermat-kudo', 'shippo', 'shiprock', 'sierra_sunset', 'spider_cross', 'stolz', 'structural', 'tangents', 'tol', 'ved', 'verena', 'viana', 'virma', 'wari', 'woodcut', 'yagasuri', 'yoshiwara'];
 
 var CANVAS_OPTS = ['white'];
