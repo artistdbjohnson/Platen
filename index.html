@@ -1167,7 +1167,7 @@ else                glyph = '*';        // asterisk</pre>
                 <h3>Parameters</h3>
                 <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym" onchange="TRAITS.symmetry=this.value; renderAll()"></select></div>
                 <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space" onchange="TRAITS.space=this.value; renderAll()"></select></div>
-                <div class="trait"><span class="trait-label">Pattern</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value; renderAll()"></select></div>
+                <div class="trait"><span class="trait-label">Motif</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value; renderAll()"></select></div>
                 <div class="trait"><span class="trait-label">Ink</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value; renderAll()"></select></div>
                 <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value; renderAll()"></select></div>
             </div>
@@ -1626,7 +1626,6 @@ else                glyph = '*';        // asterisk</pre>
             
             if (restrictTypewriter) {
                 if ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) TRAITS.motif = 'platen';
-                if (TRAITS.chromes && TRAITS.chromes.indexOf('typewriter') !== -1) TRAITS.chromes = 'random';
             }
 
             populateSelect('t-sym', SYMMETRY_OPTS, TRAITS.symmetry);
@@ -1756,19 +1755,7 @@ else                glyph = '*';        // asterisk</pre>
                     if (runTraits.space === 'random') runTraits.space = SPACE_OPTS[Math.floor(Math.random() * (SPACE_OPTS.length - 1)) + 1];
                     if (runTraits.motif === 'random') runTraits.motif = MOTIF_OPTS[0];
                     
-                    // Force a typewriter chrome for typewriter motif if none is selected
-                    if (runTraits.motif === 'typewriter' || runTraits.motif === 'chopin' || runTraits.motif === 'typewriter_classic' || runTraits.motif === 'typewriter_quine') {
-                        if (runTraits.chromes !== 'typewriter_ribbon_multicolored' && 
-                            runTraits.chromes !== 'typewriter_black' && 
-                            runTraits.chromes !== 'typewriter_black_red') {
-                            var typeOpts = ['typewriter_ribbon_multicolored', 'typewriter_black', 'typewriter_black_red'];
-                            runTraits.chromes = typeOpts[Math.floor(Math.random() * typeOpts.length)];
-                        }
-                    } else if (runTraits.motif === 'stars_and_stripes') {
-                        if (runTraits.chromes === 'random') {
-                            runTraits.chromes = 'stars_and_stripes';
-                        }
-                    } else if (runTraits.chromes === 'random') {
+                    if (runTraits.chromes === 'random') {
                         runTraits.chromes = CHROME_OPTS[Math.floor(Math.random() * (CHROME_OPTS.length - 1)) + 1];
                     }
                     if (runTraits.engine === 'random') runTraits.engine = ENGINE_OPTS[Math.floor(Math.random() * (ENGINE_OPTS.length - 1)) + 1];
@@ -2095,8 +2082,7 @@ else                glyph = '*';        // asterisk</pre>
             canvas.width = w;
             canvas.height = h;
             
-            if (!gl) {
-                // High-performance hardware-accelerated 2D fallback
+            function fallback2D() {
                 var ctx2d = canvas.getContext('2d');
                 if (ctx2d) {
                     if (backgroundImg) {
@@ -2107,114 +2093,129 @@ else                glyph = '*';        // asterisk</pre>
                     }
                     ctx2d.drawImage(foregroundImg, 0, 0);
                 }
+                if (canvas.parentElement) {
+                    canvas.parentElement.style.backgroundImage = 'none';
+                }
+            }
+
+            if (!gl) {
+                fallback2D();
                 return;
             }
 
-            gl.viewport(0, 0, w, h);
+            try {
+                gl.viewport(0, 0, w, h);
 
-            var cached = _glContexts[canvasId];
-            if (!cached) {
-                var vsSource = 
-                    'attribute vec2 position;\n' +
-                    'varying vec2 vTexCoord;\n' +
-                    'void main() {\n' +
-                    '    vTexCoord = position * 0.5 + 0.5;\n' +
-                    '    vTexCoord.y = 1.0 - vTexCoord.y;\n' +
-                    '    gl_Position = vec4(position, 0.0, 1.0);\n' +
-                    '}\n';
-                var fsSource = 
-                    'precision mediump float;\n' +
-                    'varying vec2 vTexCoord;\n' +
-                    'uniform sampler2D uBackground;\n' +
-                    'uniform sampler2D uForeground;\n' +
-                    'uniform bool uHasBackground;\n' +
-                    'void main() {\n' +
-                    '    vec4 fg = texture2D(uForeground, vTexCoord);\n' +
-                    '    if (uHasBackground) {\n' +
-                    '        vec4 bg = texture2D(uBackground, vTexCoord);\n' +
-                    '        gl_FragColor = vec4(mix(bg.rgb, fg.rgb, fg.a), 1.0);\n' +
-                    '    } else {\n' +
-                    '        gl_FragColor = fg;\n' +
-                    '    }\n' +
-                    '}\n';
+                var cached = _glContexts[canvasId];
+                if (!cached) {
+                    var vsSource = 
+                        'attribute vec2 position;\n' +
+                        'varying vec2 vTexCoord;\n' +
+                        'void main() {\n' +
+                        '    vTexCoord = position * 0.5 + 0.5;\n' +
+                        '    vTexCoord.y = 1.0 - vTexCoord.y;\n' +
+                        '    gl_Position = vec4(position, 0.0, 1.0);\n' +
+                        '}\n';
+                    var fsSource = 
+                        'precision mediump float;\n' +
+                        'varying vec2 vTexCoord;\n' +
+                        'uniform sampler2D uBackground;\n' +
+                        'uniform sampler2D uForeground;\n' +
+                        'uniform bool uHasBackground;\n' +
+                        'void main() {\n' +
+                        '    vec4 fg = texture2D(uForeground, vTexCoord);\n' +
+                        '    if (uHasBackground) {\n' +
+                        '        vec4 bg = texture2D(uBackground, vTexCoord);\n' +
+                        '        gl_FragColor = vec4(mix(bg.rgb, fg.rgb, fg.a), 1.0);\n' +
+                        '    } else {\n' +
+                        '        gl_FragColor = fg;\n' +
+                        '    }\n' +
+                        '}\n';
 
-                var vs = gl.createShader(gl.VERTEX_SHADER);
-                gl.shaderSource(vs, vsSource);
-                gl.compileShader(vs);
-                if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
-                    console.error("VS compile error:", gl.getShaderInfoLog(vs));
+                    var vs = gl.createShader(gl.VERTEX_SHADER);
+                    gl.shaderSource(vs, vsSource);
+                    gl.compileShader(vs);
+                    if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+                        console.error("VS compile error:", gl.getShaderInfoLog(vs));
+                    }
+
+                    var fs = gl.createShader(gl.FRAGMENT_SHADER);
+                    gl.shaderSource(fs, fsSource);
+                    gl.compileShader(fs);
+                    if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+                        console.error("FS compile error:", gl.getShaderInfoLog(fs));
+                    }
+
+                    var program = gl.createProgram();
+                    gl.attachShader(program, vs);
+                    gl.attachShader(program, fs);
+                    gl.linkProgram(program);
+                    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                        console.error("Link error:", gl.getProgramInfoLog(program));
+                    }
+
+                    var vertices = new Float32Array([
+                        -1.0, -1.0,
+                         1.0, -1.0,
+                        -1.0,  1.0,
+                        -1.0,  1.0,
+                         1.0, -1.0,
+                         1.0,  1.0
+                    ]);
+                    var buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+                    cached = {
+                        program: program,
+                        buffer: buffer,
+                        positionLoc: gl.getAttribLocation(program, 'position'),
+                        uBackgroundLoc: gl.getUniformLocation(program, 'uBackground'),
+                        uForegroundLoc: gl.getUniformLocation(program, 'uForeground'),
+                        uHasBackgroundLoc: gl.getUniformLocation(program, 'uHasBackground'),
+                        bgTexture: gl.createTexture(),
+                        fgTexture: gl.createTexture()
+                    };
+                    _glContexts[canvasId] = cached;
                 }
 
-                var fs = gl.createShader(gl.FRAGMENT_SHADER);
-                gl.shaderSource(fs, fsSource);
-                gl.compileShader(fs);
-                if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
-                    console.error("FS compile error:", gl.getShaderInfoLog(fs));
+                gl.useProgram(cached.program);
+
+                gl.bindBuffer(gl.ARRAY_BUFFER, cached.buffer);
+                gl.enableVertexAttribArray(cached.positionLoc);
+                gl.vertexAttribPointer(cached.positionLoc, 2, gl.FLOAT, false, 0, 0);
+
+                if (backgroundImg && backgroundImg.complete && backgroundImg.naturalWidth > 0) {
+                    gl.activeTexture(gl.TEXTURE0);
+                    gl.bindTexture(gl.TEXTURE_2D, cached.bgTexture);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, backgroundImg);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                    gl.uniform1i(cached.uBackgroundLoc, 0);
+                    gl.uniform1i(cached.uHasBackgroundLoc, 1);
+                } else {
+                    gl.uniform1i(cached.uHasBackgroundLoc, 0);
                 }
 
-                var program = gl.createProgram();
-                gl.attachShader(program, vs);
-                gl.attachShader(program, fs);
-                gl.linkProgram(program);
-                if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-                    console.error("Link error:", gl.getProgramInfoLog(program));
-                }
-
-                var vertices = new Float32Array([
-                    -1.0, -1.0,
-                     1.0, -1.0,
-                    -1.0,  1.0,
-                    -1.0,  1.0,
-                     1.0, -1.0,
-                     1.0,  1.0
-                ]);
-                var buffer = gl.createBuffer();
-                gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-                gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-                cached = {
-                    program: program,
-                    buffer: buffer,
-                    positionLoc: gl.getAttribLocation(program, 'position'),
-                    uBackgroundLoc: gl.getUniformLocation(program, 'uBackground'),
-                    uForegroundLoc: gl.getUniformLocation(program, 'uForeground'),
-                    uHasBackgroundLoc: gl.getUniformLocation(program, 'uHasBackground'),
-                    bgTexture: gl.createTexture(),
-                    fgTexture: gl.createTexture()
-                };
-                _glContexts[canvasId] = cached;
-            }
-
-            gl.useProgram(cached.program);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, cached.buffer);
-            gl.enableVertexAttribArray(cached.positionLoc);
-            gl.vertexAttribPointer(cached.positionLoc, 2, gl.FLOAT, false, 0, 0);
-
-            if (backgroundImg && backgroundImg.complete && backgroundImg.naturalWidth > 0) {
-                gl.activeTexture(gl.TEXTURE0);
-                gl.bindTexture(gl.TEXTURE_2D, cached.bgTexture);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, backgroundImg);
+                gl.activeTexture(gl.TEXTURE1);
+                gl.bindTexture(gl.TEXTURE_2D, cached.fgTexture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, foregroundImg);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-                gl.uniform1i(cached.uBackgroundLoc, 0);
-                gl.uniform1i(cached.uHasBackgroundLoc, 1);
-            } else {
-                gl.uniform1i(cached.uHasBackgroundLoc, 0);
+                gl.uniform1i(cached.uForegroundLoc, 1);
+
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+                if (canvas.parentElement) {
+                    canvas.parentElement.style.backgroundImage = 'none';
+                }
+            } catch (e) {
+                console.warn("WebGL draw failed, falling back to 2D context:", e);
+                fallback2D();
             }
-
-            gl.activeTexture(gl.TEXTURE1);
-            gl.bindTexture(gl.TEXTURE_2D, cached.fgTexture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, foregroundImg);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.uniform1i(cached.uForegroundLoc, 1);
-
-            gl.drawArrays(gl.TRIANGLES, 0, 6);
         }
 
         // ── PLATEN ENGINE (Worker Version) ──────────────────────────────────────────
@@ -2438,9 +2439,7 @@ else                glyph = '*';        // asterisk</pre>
                                 textEl.setAttribute("font-weight", "bold");
                                 textEl.textContent = char;
                                 
-                                if (!colGroup) {
-                                    textEl.setAttribute("fill", f.c);
-                                }
+                                textEl.setAttribute("fill", f.c);
                                 
                                 targetContainer.appendChild(textEl);
                             } else {
@@ -2459,9 +2458,7 @@ else                glyph = '*';        // asterisk</pre>
                                 path.setAttribute("transform", xform);
                                 path.setAttribute("d", motifPath);
                                 
-                                if (!colGroup) {
-                                    path.setAttribute("fill", f.c);
-                                }
+                                path.setAttribute("fill", f.c);
                                 
                                 if (traits.motif === 'ichthus') {
                                     if (traits.solid) {

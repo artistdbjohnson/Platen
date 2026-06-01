@@ -164,12 +164,14 @@ onmessage = function (e) {
             for (var sy = 0; sy < h; sy++)
                 for (var sx = 0; sx < Math.floor(w / 2); sx++) {
                     grid[w - 1 - sx][sy].col = grid[sx][sy].col;
+                    grid[w - 1 - sx][sy].wt = grid[sx][sy].wt;
                 }
         }
         if (sym === 'vertical' || sym === 'both') {
             for (var sy2 = 0; sy2 < Math.floor(h / 2); sy2++)
                 for (var sx2 = 0; sx2 < w; sx2++) {
                     grid[sx2][h - 1 - sy2].col = grid[sx2][sy2].col;
+                    grid[sx2][h - 1 - sy2].wt = grid[sx2][sy2].wt;
                 }
         }
         if (sym === 'diagonal') {
@@ -178,14 +180,17 @@ onmessage = function (e) {
                     var mx = Math.min(Math.floor(dx2 * h / w), h - 1);
                     var my = Math.min(Math.floor(dy2 * w / h), w - 1);
                     grid[dx2][dy2].col = grid[my][mx].col;
+                    grid[dx2][dy2].wt = grid[my][mx].wt;
                 }
         }
         if (sym === 'rotational') {
             for (var ry2 = 0; ry2 < h; ry2++)
                 for (var rx2 = 0; rx2 < w; rx2++) {
                     var rrx = w - 1 - rx2, rry = h - 1 - ry2;
-                    if (ry2 * w + rx2 > rry * w + rrx)
+                    if (ry2 * w + rx2 > rry * w + rrx) {
                         grid[rx2][ry2].col = grid[rrx][rry].col;
+                        grid[rx2][ry2].wt = grid[rrx][rry].wt;
+                    }
                 }
         }
         if (sym === 'quad') {
@@ -193,8 +198,11 @@ onmessage = function (e) {
             for (var qy = 0; qy < hh2; qy++)
                 for (var qx = 0; qx < hw2; qx++) {
                     grid[w - 1 - qx][qy].col = grid[qx][qy].col;
+                    grid[w - 1 - qx][qy].wt = grid[qx][qy].wt;
                     grid[qx][h - 1 - qy].col = grid[qx][qy].col;
+                    grid[qx][h - 1 - qy].wt = grid[qx][qy].wt;
                     grid[w - 1 - qx][h - 1 - qy].col = grid[qx][qy].col;
+                    grid[w - 1 - qx][h - 1 - qy].wt = grid[qx][qy].wt;
                 }
         }
 
