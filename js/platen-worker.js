@@ -236,7 +236,7 @@ onmessage = function (e) {
                         var _sc = Math.min(Math.hypot(_wp3dx[0] - wp3[0], _wp3dx[1] - wp3[1]), maxSc);
                         
                         // Prevent typewriter glyphs from stretching in hyperbolic space
-                        if (traits.space === 'hyperbolic' && traits.motif === 'typewriter') {
+                        if (traits.space === 'hyperbolic' && (traits.motif === 'typewriter' || traits.motif === 'typewriter_classic' || traits.motif === 'chopin')) {
                             _sc = 1.0; 
                         }
                         

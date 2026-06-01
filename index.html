@@ -1968,7 +1968,7 @@ else                glyph = '*';        // asterisk</pre>
             // Glyph character display names for each key
             var _glyphChars = {
                 'typewriter_comma': ',', 'typewriter_dot': '.', 'typewriter_plus': '+',
-                'typewriter_x': 'X', 'typewriter_hash': '#',
+                'typewriter_x': 'X', 'typewriter_classic': '#',
                 'typewriter_asterisk': '*', 'typewriter_slash': '/', 'typewriter_dash': '-'
             };
             var _gs = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
@@ -2150,7 +2150,8 @@ else                glyph = '*';        // asterisk</pre>
                             py -= (f.wt || 0) * (sizeY * 3.5 * isoScale); // Slightly increased extrusion relative to scale
                             f.sc = (f.sc || 1) * isoScale; // Scale the glyphs themselves
                         } else if (traits.space === 'polar') {
-                            var _r = (f.y / h) * (Math.min(svgW, svgH) / 2 * 1.05);
+                            var polarScale = (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') ? 0.92 : 1.05;
+                            var _r = (f.y / h) * (Math.min(svgW, svgH) / 2 * polarScale);
                             var _theta = (f.x / w) * Math.PI * 2 - Math.PI / 2;
                             px = cx_px + Math.cos(_theta) * _r;
                             py = cy_px + Math.sin(_theta) * _r + 50; // Shift down slightly
@@ -2159,7 +2160,12 @@ else                glyph = '*';        // asterisk</pre>
 
                         var scX = rSize / 20;
                         var scY = rSize / 20;
-                        // Special down-scaling removed so typewriter and chopin match typewriter_hash sizing
+                        
+                        // Enlarge Courier density glyphs to make them more visible and robust
+                        if (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') {
+                            scX *= 1.25;
+                            scY *= 1.25;
+                        }
 
                         // Hyperbolic cell fitting — scale motif to local cell size; sc=1 in planar (no effect)
                         var _hsc = f.sc || 1;
@@ -2168,12 +2174,16 @@ else                glyph = '*';        // asterisk</pre>
 
                         // Support Typewriter Halftone (Density Shading)
                         var motifPath = MOTIF_PATHS[traits.motif];
-                        if ((traits.motif === 'typewriter' || traits.motif === 'chopin')) {
+                        if (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') {
                             if (f.wt < 0.20) {
                                 // Skip low density cells entirely
                                 continue;
                             }
                             var _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
+                            if (traits.motif === 'typewriter_classic') {
+                                // Classic Density Matrix uses / * # (mapped to classic density scale)
+                                _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_classic'];
+                            }
                             // FIVE-TIER DENSITY MAP
                             var _levelIdx;
                             if (f.wt < 0.36) {
@@ -2225,12 +2235,12 @@ else                glyph = '*';        // asterisk</pre>
                                 path.setAttribute("stroke-width", "2.4");
                             }
                         }
-                        if (traits.motif === 'quatrefoil' || traits.motif === 'tatreez' || traits.motif === 'typewriter_hash' || traits.motif === 'stars_and_stripes' || traits.motif === 'typewriter' || traits.motif === 'chopin') path.setAttribute("fill-rule", "evenodd");
+                        if (traits.motif === 'quatrefoil' || traits.motif === 'tatreez' || traits.motif === 'typewriter_classic' || traits.motif === 'stars_and_stripes' || traits.motif === 'typewriter' || traits.motif === 'chopin') path.setAttribute("fill-rule", "evenodd");
                         gEl.appendChild(path);
                     }
 
                     // Add typewriter printout header metadata at the top of the grid
-                    if ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_hash')) {
+                    if ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic')) {
                         var hW = w;
                         var hSizeX = sizeX;
                         var hSizeY = sizeY;
@@ -2622,7 +2632,7 @@ else                glyph = '*';        // asterisk</pre>
                         ctx.rotate(Math.PI);
                         ctx.translate(-10, -10);
                     }
-                    if (TRAITS.motif === 'quatrefoil' || TRAITS.motif === 'tatreez' || (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') || TRAITS.motif === 'typewriter_hash' || TRAITS.motif === 'stars_and_stripes') {
+                    if (TRAITS.motif === 'quatrefoil' || TRAITS.motif === 'tatreez' || (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') || TRAITS.motif === 'typewriter_classic' || TRAITS.motif === 'stars_and_stripes') {
                         ctx.fill(pathObj, 'evenodd');
                     } else {
                         ctx.fill(pathObj);
@@ -2668,11 +2678,14 @@ else                glyph = '*';        // asterisk</pre>
                 flowers.forEach(function (f, i) {
                     // Support Typewriter Halftone (Density Shading)
                     var motifPathString = MOTIF_PATHS[TRAITS.motif];
-                    if ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) {
+                    if (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') {
                         if (f.wt < 0.20) {
                             return; // skip low density cells
                         }
                         var _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
+                        if (TRAITS.motif === 'typewriter_classic') {
+                            _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_classic'];
+                        }
                         // FIVE-TIER DENSITY MAP
                         var _levelIdx;
                         if (f.wt < 0.36) {
@@ -2703,23 +2716,18 @@ else                glyph = '*';        // asterisk</pre>
                     var path = document.createElementNS(svgNS, "path");
                     var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
                     var px = (f.x + 4) * sizeX;
-                    var py = (f.y + 4 + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') ? 10 : 0)) * sizeY;
+                    var py = (f.y + 4 + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') ? 10 : 0)) * sizeY;
                     if (isGraphPaper) {
                         var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
                         var offX = isGraphPaperSq ? 1 : 0;
                         var offY = isGraphPaperSq ? 1 : 0;
                         px = 9 + (f.x + offX) * sizeX;
-                        py = 38 + (f.y + offY + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') ? 10 : 0)) * sizeY;
+                        py = 38 + (f.y + offY + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') ? 10 : 0)) * sizeY;
                     }
                     var scX = rSize / 20, scY = rSize / 20;
-                    if ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) {
-                        if (isGraphPaper) {
-                            scX = (sizeX * 0.7) / 14;
-                            scY = (sizeY * 0.7) / 14;
-                        } else {
-                            scX = (sizeX * 0.82) / 14;
-                            scY = (sizeX * 0.82) / 14;
-                        }
+                    if (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') {
+                        scX *= 1.25;
+                        scY *= 1.25;
                     }
                     // Hyperbolic cell fitting — scale motif to local cell size; sc=1 in planar (no effect)
                     var _hsc = f.sc || 1;
@@ -2732,7 +2740,7 @@ else                glyph = '*';        // asterisk</pre>
                         scY = sizeY / 20;
                         tx = px;
                         ty = py;
-                    } else if ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) {
+                    } else if (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') {
                         tx = px + (sizeX - (14 * scX)) / 2;
                         ty = py + (sizeY - (14 * scY)) / 2;
                     }
@@ -2742,7 +2750,7 @@ else                glyph = '*';        // asterisk</pre>
                     path.setAttribute("transform", xform);
                     path.setAttribute("d", motifPathString);
                     path.setAttribute("fill", f.c);
-                    if (TRAITS.motif === 'quatrefoil' || TRAITS.motif === 'tatreez' || (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') || TRAITS.motif === 'typewriter_hash' || TRAITS.motif === 'stars_and_stripes') path.setAttribute("fill-rule", "evenodd");
+                    if (TRAITS.motif === 'quatrefoil' || TRAITS.motif === 'tatreez' || (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') || TRAITS.motif === 'typewriter_classic' || TRAITS.motif === 'stars_and_stripes') path.setAttribute("fill-rule", "evenodd");
 
                     if (f.wt < 0.45) zLayers['Z-Deepest'].push(path);
                     else if (f.wt < 0.8) zLayers['Z-Mid'].push(path);

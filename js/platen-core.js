@@ -1013,7 +1013,7 @@ var PEN_MAP = {
 
 var SYMMETRY_OPTS = ['random', 'both', 'diagonal', 'glide', 'horizontal', 'kaleidoscope', 'none', 'quad', 'radial', 'rotational', 'vertical'];
 var SPACE_OPTS = ['random', 'isometric', 'polar', 'hyperbolic', 'planar'];
-var MOTIF_OPTS = ['random', 'typewriter', 'typewriter_hash'];
+var MOTIF_OPTS = ['random', 'typewriter', 'typewriter_classic'];
 var CHROME_OPTS = ['random', 'typewriter_ribbon', 'typewriter_black', 'typewriter_black_red'];
 var ENGINE_OPTS = ['random', 'railyard', 'adama', 'adire', 'argyle', 'arraiolos', 'art_deco', 'asanoha', 'axonometric', 'azulejo', 'blueprint', 'blueprint_cyan', 'bogolan', 'bricolage', 'brutalist', 'castelo_branco', 'cherokee', 'chiefs', 'chipaz', 'circuit', 'collage', 'concrete', 'cubist', 'current', 'cyber_mesh', 'cypress_hills', 'dazzler', 'flow', 'framed_vista', 'fret_bands', 'glitch', 'interlace', 'kagome', 'kanzemizu', 'kente', 'kepe', 'kikkou', 'kishtima', 'kolya', 'kshtir', 'kuba', 'kudo', 'malevich', 'mastor', 'matsukawa', 'maximalism', 'mondrian', 'narmuny', 'navajo', 'optical_box', 'orak', 'pakshats', 'panks', 'panoramic_dunes', 'pre_columbian', 'pulay', 'river_flow', 'rolling_hills', 'seigaiha', 'serape_net', 'sermat', 'sermat-kudo', 'shippo', 'shiprock', 'sierra_sunset', 'spider_cross', 'stolz', 'structural', 'tangents', 'tol', 'ved', 'verena', 'viana', 'virma', 'wari', 'woodcut', 'yagasuri', 'yoshiwara'];
 
@@ -1021,7 +1021,7 @@ var CANVAS_OPTS = ['white'];
 
 var MOTIF_DESCS = {
     'typewriter': 'Courier Typewriter (Density)',
-    'typewriter_hash': 'Classic Density Matrix (/ * #)',
+    'typewriter_classic': 'Classic Density Matrix (/ * #)',
     'chopin': 'Chopin Dactylopoème (Woven Typewriter)',
     'stars_and_stripes': 'Nautical Star & Striped Banding',
     'tatreez': 'Palestinian Tatreez Stitch',
@@ -1051,7 +1051,7 @@ var MOTIF_PATHS = {
     'typewriter_dot': 'M 9.5,14 L 10.5,14 L 11,14.5 L 11,15.5 L 10.5,16 L 9.5,16 L 9,15.5 L 9,14.5 Z',
     'typewriter_plus': 'M 8,4 L 12,4 L 12,8 L 16,8 L 16,12 L 12,12 L 12,16 L 8,16 L 8,12 L 4,12 L 4,8 L 8,8 Z',
     'typewriter_x': 'M 2.5,3 L 8.5,3 L 8.5,4.5 L 7,4.5 L 10.38,9 L 13,4.5 L 10.5,4.5 L 10.5,3 L 16.5,3 L 16.5,4.5 L 14,4.5 L 10.94,9.75 L 16,16.5 L 17.5,16.5 L 17.5,18 L 11.5,18 L 11.5,16.5 L 13,16.5 L 9.63,12 L 7,16.5 L 9.5,16.5 L 9.5,18 L 3.5,18 L 3.5,16.5 L 6,16.5 L 9.06,11.25 L 4,4.5 L 2.5,4.5 Z',
-    'typewriter_hash': 'M 7,3 L 9,3 L 9,7 L 11,7 L 11,3 L 13,3 L 13,7 L 17,7 L 17,9 L 13,9 L 13,11 L 17,11 L 17,13 L 13,13 L 13,17 L 11,17 L 11,13 L 9,13 L 9,17 L 7,17 L 7,13 L 3,13 L 3,11 L 7,11 L 7,9 L 3,9 L 3,7 L 7,7 Z',
+    'typewriter_classic': 'M 7,3 L 9,3 L 9,7 L 11,7 L 11,3 L 13,3 L 13,7 L 17,7 L 17,9 L 13,9 L 13,11 L 17,11 L 17,13 L 13,13 L 13,17 L 11,17 L 11,13 L 9,13 L 9,17 L 7,17 L 7,13 L 3,13 L 3,11 L 7,11 L 7,9 L 3,9 L 3,7 L 7,7 Z',
     'typewriter_asterisk': 'M 8.8,3 L 11.2,3 L 11.2,8.2 L 15.9,5.5 L 17.1,7.6 L 12.5,10.5 L 17.1,13.4 L 15.9,15.5 L 11.2,12.8 L 11.2,18 L 8.8,18 L 8.8,12.8 L 4.1,15.5 L 2.9,13.4 L 7.5,10.5 L 2.9,7.6 L 4.1,5.5 L 8.8,8.2 Z',
     'typewriter_slash': 'M 5,17 L 17,5 L 15,3 L 3,15 Z',
     'typewriter_dash': 'M 4,9 L 16,9 L 16,11 L 4,11 Z',
