@@ -1194,7 +1194,7 @@ else                glyph = '*';        // asterisk</pre>
                 <button id="btn-out-dst" onclick="saveDST()">Download DST</button>
                 
                 <div style="margin-top: 15px; display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="inc-bg" checked style="cursor: pointer; accent-color: #000;">
+                    <input type="checkbox" id="inc-bg" checked onchange="renderAll()" style="cursor: pointer; accent-color: #000;">
                     <label for="inc-bg" style="font-size: 10px; cursor: pointer;">Include BG Texture</label>
                 </div>
             </div>
@@ -2082,14 +2082,14 @@ else                glyph = '*';        // asterisk</pre>
             canvas.width = w;
             canvas.height = h;
             
+            var includeBG = document.getElementById('inc-bg') ? document.getElementById('inc-bg').checked : true;
+            
             function fallback2D() {
                 var ctx2d = canvas.getContext('2d');
                 if (ctx2d) {
-                    if (backgroundImg) {
+                    ctx2d.clearRect(0, 0, w, h);
+                    if (backgroundImg && includeBG) {
                         ctx2d.drawImage(backgroundImg, 0, 0, w, h);
-                    } else {
-                        ctx2d.fillStyle = '#fcfcfc';
-                        ctx2d.fillRect(0, 0, w, h);
                     }
                     ctx2d.drawImage(foregroundImg, 0, 0);
                 }
@@ -2105,6 +2105,8 @@ else                glyph = '*';        // asterisk</pre>
 
             try {
                 gl.viewport(0, 0, w, h);
+                gl.clearColor(0.0, 0.0, 0.0, 0.0);
+                gl.clear(gl.COLOR_BUFFER_BIT);
 
                 var cached = _glContexts[canvasId];
                 if (!cached) {
@@ -2185,7 +2187,7 @@ else                glyph = '*';        // asterisk</pre>
                 gl.enableVertexAttribArray(cached.positionLoc);
                 gl.vertexAttribPointer(cached.positionLoc, 2, gl.FLOAT, false, 0, 0);
 
-                if (backgroundImg && backgroundImg.complete && backgroundImg.naturalWidth > 0) {
+                if (backgroundImg && backgroundImg.complete && backgroundImg.naturalWidth > 0 && includeBG) {
                     gl.activeTexture(gl.TEXTURE0);
                     gl.bindTexture(gl.TEXTURE_2D, cached.bgTexture);
                     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, backgroundImg);
