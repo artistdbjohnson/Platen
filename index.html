@@ -2139,11 +2139,16 @@ else                glyph = '*';        // asterisk</pre>
                             var _py = py;
                             var cos30 = 0.86602540378; // Math.cos(30 deg)
                             var sin30 = 0.5;           // Math.sin(30 deg)
-                            px = cx_px + (_px - cx_px - (_py - cy_px)) * cos30;
-                            py = cy_px + (_px - cx_px + (_py - cy_px)) * sin30;
+                            var isoScale = 0.58; // Zoom out to fit edge-to-edge
+                            var dx = (_px - cx_px) * isoScale;
+                            var dy = (_py - cy_px) * isoScale;
+                            
+                            px = cx_px + (dx - dy) * cos30;
+                            py = cy_px + (dx + dy) * sin30 + 120; // Nudge down to center on page
                             
                             // 3D extrusion based on weight
-                            py -= (f.wt || 0) * (sizeY * 2.5);
+                            py -= (f.wt || 0) * (sizeY * 3.5 * isoScale); // Slightly increased extrusion relative to scale
+                            f.sc = (f.sc || 1) * isoScale; // Scale the glyphs themselves
                         } else if (traits.space === 'polar') {
                             var _r = (f.y / h) * (Math.min(svgW, svgH) / 2 * 1.05);
                             var _theta = (f.x / w) * Math.PI * 2 - Math.PI / 2;
