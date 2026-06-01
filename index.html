@@ -2143,12 +2143,12 @@ else                glyph = '*';        // asterisk</pre>
                             var dx = (_px - cx_px) * isoScale;
                             var dy = (_py - cy_px) * isoScale;
                             
-                            px = cx_px + (dx - dy) * cos30;
+                            px = cx_px + (dx - dy) * cos30 + 60;
                             py = cy_px + (dx + dy) * sin30 + 120; // Nudge down to center on page
                             
                             // 3D extrusion based on weight
                             py -= (f.wt || 0) * (sizeY * 3.5 * isoScale); // Slightly increased extrusion relative to scale
-                            f.sc = (f.sc || 1) * isoScale; // Scale the glyphs themselves
+                            f.sc = (f.sc || 1) * isoScale * 1.15; // Scale the glyphs themselves (enlarged by 15% for isometric)
                         } else if (traits.space === 'polar') {
                             var polarScale = (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') ? 0.92 : 1.05;
                             var _r = (f.y / h) * (Math.min(svgW, svgH) / 2 * polarScale);
