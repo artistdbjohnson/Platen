@@ -737,6 +737,14 @@
             display: block;
         }
 
+        .platen-panel.loading canvas {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .platen-panel canvas {
+            transition: opacity 0.25s ease-in-out;
+        }
+
         /* Old about modal removed */
 
         /* ── Seed Modal ── */
@@ -1197,6 +1205,10 @@ else                glyph = '*';        // asterisk</pre>
                     <input type="checkbox" id="inc-bg" checked onchange="renderAll()" style="cursor: pointer; accent-color: #000;">
                     <label for="inc-bg" style="font-size: 10px; cursor: pointer;">Include BG Texture</label>
                 </div>
+                <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="invert-canvas" onchange="toggleInvertCanvas()" style="cursor: pointer; accent-color: #000;">
+                    <label for="invert-canvas" style="font-size: 10px; cursor: pointer;">Invert Canvas (Graphite)</label>
+                </div>
             </div>
 
             <div class="control-section status-section">
@@ -1254,6 +1266,41 @@ else                glyph = '*';        // asterisk</pre>
         // Platen flowers replace pixels. Code lives in the blooms.
         // by Douglxss
         // ─────────────────────────────────────────────────────────────────────────────
+
+        function getRenderColor(c) {
+            if (document.getElementById('invert-canvas') && document.getElementById('invert-canvas').checked) {
+                if (c && c.startsWith('#')) {
+                    var hex = c.substring(1);
+                    if (hex.length === 3) {
+                        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+                    }
+                    var r = parseInt(hex.substring(0, 2), 16);
+                    var g = parseInt(hex.substring(2, 4), 16);
+                    var b = parseInt(hex.substring(4, 6), 16);
+                    
+                    // Invert RGB channels
+                    var ir = 255 - r;
+                    var ig = 255 - g;
+                    var ib = 255 - b;
+                    
+                    // Clean cap
+                    ir = Math.min(255, Math.max(0, ir));
+                    ig = Math.min(255, Math.max(0, ig));
+                    ib = Math.min(255, Math.max(0, ib));
+                    
+                    var irHex = ir.toString(16).padStart(2, '0');
+                    var igHex = ig.toString(16).padStart(2, '0');
+                    var ibHex = ib.toString(16).padStart(2, '0');
+                    return '#' + irHex + igHex + ibHex;
+                }
+            }
+            return c;
+        }
+
+        function toggleInvertCanvas() {
+            updateCanvasTexture();
+            renderAll();
+        }
 
         function toggleTheme() {
             var el = document.documentElement;
@@ -2356,6 +2403,8 @@ else                glyph = '*';        // asterisk</pre>
                             f.rot = (f.rot || 0) + (_theta * 180 / Math.PI) + 90;
                         }
 
+                        var activeColor = getRenderColor(f.c);
+
                         var scX = rSize / 20;
                         var scY = rSize / 20;
                         
@@ -2420,7 +2469,7 @@ else                glyph = '*';        // asterisk</pre>
                         if (f.py_steps && f.py_steps.length > 1) {
                             colGroup = dc.createElementNS(svgNS, "g");
                             colGroup.setAttribute("class", "extrusion-col");
-                            colGroup.setAttribute("fill", f.c);
+                            colGroup.setAttribute("fill", activeColor);
                             gEl.appendChild(colGroup);
                             targetContainer = colGroup;
                         }
@@ -2441,7 +2490,7 @@ else                glyph = '*';        // asterisk</pre>
                                 textEl.setAttribute("font-weight", "bold");
                                 textEl.textContent = char;
                                 
-                                textEl.setAttribute("fill", f.c);
+                                textEl.setAttribute("fill", activeColor);
                                 
                                 targetContainer.appendChild(textEl);
                             } else {
@@ -2460,14 +2509,14 @@ else                glyph = '*';        // asterisk</pre>
                                 path.setAttribute("transform", xform);
                                 path.setAttribute("d", motifPath);
                                 
-                                path.setAttribute("fill", f.c);
+                                path.setAttribute("fill", activeColor);
                                 
                                 if (traits.motif === 'ichthus') {
                                     if (traits.solid) {
                                         path.setAttribute("stroke", "none");
                                     } else {
                                         path.setAttribute("fill", "none");
-                                        path.setAttribute("stroke", f.c);
+                                        path.setAttribute("stroke", activeColor);
                                         path.setAttribute("stroke-width", "2.4");
                                     }
                                 }
@@ -2512,10 +2561,10 @@ else                glyph = '*';        // asterisk</pre>
                                     charY = 38 + (row - 1) * hSizeY + hSizeY / 2;
                                 }
 
-                                var textEl = dc.createElementNS(svgNS, "text");
+                                 var textEl = dc.createElementNS(svgNS, "text");
                                 textEl.setAttribute("x", charX);
                                 textEl.setAttribute("y", charY);
-                                textEl.setAttribute("fill", textCol);
+                                textEl.setAttribute("fill", getRenderColor(textCol));
                                 textEl.setAttribute("font-size", (hSizeY * 0.92) + "px");
                                 textEl.setAttribute("font-family", "Courier, 'Courier New', monospace");
                                 textEl.setAttribute("font-weight", "bold");
@@ -3000,7 +3049,7 @@ else                glyph = '*';        // asterisk</pre>
                     if (f.rot) xform += " rotate(" + f.rot + ",10,10)";
                     path.setAttribute("transform", xform);
                     path.setAttribute("d", motifPathString);
-                    path.setAttribute("fill", f.c);
+                    path.setAttribute("fill", getRenderColor(f.c));
                     if (TRAITS.motif === 'quatrefoil' || TRAITS.motif === 'tatreez' || (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin') || TRAITS.motif === 'typewriter_classic' || TRAITS.motif === 'stars_and_stripes') path.setAttribute("fill-rule", "evenodd");
 
                     if (f.wt < 0.45) zLayers['Z-Deepest'].push(path);
@@ -3368,6 +3417,14 @@ else                glyph = '*';        // asterisk</pre>
         var _canvasGraphPaperInvertedImg = null;
         var _loadedTextures = {};
 
+        // Preload default canvas textures immediately on startup to prevent lag and black flashes
+        setTimeout(function() {
+            ensureTextureLoaded(CANVAS_WHITE_PATH);
+            ensureTextureLoaded(CANVAS_BLACK_PATH);
+            ensureTextureLoaded(CANVAS_TAN_PATH);
+            ensureTextureLoaded(CANVAS_OLIVE_PATH);
+        }, 0);
+
         function ensureTextureLoaded(url, callback) {
             if (!url) return;
             if (_loadedTextures[url]) {
@@ -3440,6 +3497,22 @@ else                glyph = '*';        // asterisk</pre>
                     canvasClass = 'canvas-black';
                 }
             }
+
+            if (document.getElementById('invert-canvas') && document.getElementById('invert-canvas').checked) {
+                url = CANVAS_BLACK_PATH;
+                canvasClass = 'canvas-black';
+            }
+
+            // Set instant placeholder background color based on resolved canvasClass to prevent black flashes!
+            var placeholderBg = '#151515'; // default graphite/black
+            if (canvasClass === 'canvas-white') placeholderBg = '#fcfcfc';
+            else if (canvasClass === 'canvas-tan') placeholderBg = '#e8d8c8';
+            else if (canvasClass === 'canvas-olive') placeholderBg = '#dcdcd0';
+            else if (canvasClass === 'canvas-graph-paper') placeholderBg = '#e8e8e8';
+
+            document.querySelectorAll('.platen-panel').forEach(function (el) {
+                el.style.backgroundColor = placeholderBg;
+            });
 
             if (TRAITS.canvas === 'graph_paper' && TRAITS.invertGraph) {
                 ensureTextureLoaded(CANVAS_GRAPH_PAPER_PATH, function(originalImg) {
