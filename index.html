@@ -2230,6 +2230,17 @@ else                glyph = '*';        // asterisk</pre>
                         }
 
                         var yCoords = f.py_steps ? f.py_steps : [py];
+                        var targetContainer = gEl;
+                        var colGroup = null;
+
+                        if (f.py_steps && f.py_steps.length > 1) {
+                            colGroup = dc.createElementNS(svgNS, "g");
+                            colGroup.setAttribute("class", "extrusion-col");
+                            colGroup.setAttribute("fill", f.c);
+                            gEl.appendChild(colGroup);
+                            targetContainer = colGroup;
+                        }
+
                         yCoords.forEach(function (yVal) {
                             var path = dc.createElementNS(svgNS, "path");
                             var tx = px + (sizeX - rSize) / 2;
@@ -2245,7 +2256,11 @@ else                glyph = '*';        // asterisk</pre>
                             if (f.rot) xform += " rotate(" + f.rot + ",10,10)";
                             path.setAttribute("transform", xform);
                             path.setAttribute("d", motifPath);
-                            path.setAttribute("fill", f.c);
+                            
+                            if (!colGroup) {
+                                path.setAttribute("fill", f.c);
+                            }
+                            
                             if (traits.motif === 'ichthus') {
                                 if (traits.solid) {
                                     path.setAttribute("stroke", "none");
@@ -2256,7 +2271,7 @@ else                glyph = '*';        // asterisk</pre>
                                 }
                             }
                             if (traits.motif === 'quatrefoil' || traits.motif === 'tatreez' || traits.motif === 'typewriter_classic' || traits.motif === 'stars_and_stripes' || traits.motif === 'typewriter' || traits.motif === 'chopin') path.setAttribute("fill-rule", "evenodd");
-                            gEl.appendChild(path);
+                            targetContainer.appendChild(path);
                         });
                     }
 
@@ -3742,7 +3757,7 @@ else                glyph = '*';        // asterisk</pre>
                     }
 
                     // Exclude text or bg rects
-                    var paths = Array.from(svg.querySelectorAll('path[fill]'));
+                    var paths = Array.from(svg.querySelectorAll('path[fill], g.extrusion-col[fill]'));
                     paths.forEach(function(p) {
                         var c = p.getAttribute('fill') || '#000000';
                         if (c === 'none') c = p.getAttribute('stroke') || '#000000';
