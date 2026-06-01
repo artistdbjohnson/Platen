@@ -4004,6 +4004,16 @@ else                glyph = '*';        // asterisk</pre>
             setTimeout(function() {
                 setLayout(currentLayout);
             }, 50);
+
+            // Left-click on canvas area to regenerate (not randomize)
+            var canvasWrap = document.getElementById('canvas-wrap');
+            if (canvasWrap) {
+                canvasWrap.addEventListener('click', function (e) {
+                    // Prevent triggering if clicked on loader text or potential future overlay controls
+                    if (e.target.classList.contains('platen-loader')) return;
+                    regenerate();
+                });
+            }
         });
         var curatedGallery = [];
         var activeGalleryIndex = -1;
