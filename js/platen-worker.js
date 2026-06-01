@@ -139,7 +139,10 @@ onmessage = function (e) {
 
                 if (isFlat) {
                     // Flat field recovery: assign random noise
-                    if (rfl() < 0.2) grid[cx2][cy2].col = rc(Math.floor(totalRatio / 2));
+                    if (rfl() < 0.2) {
+                        grid[cx2][cy2].col = rc(Math.floor(totalRatio / 2));
+                        grid[cx2][cy2].wt = rfl() * 0.6 + 0.2; // non-zero height weight so it extrudes in isometric mode!
+                    }
                 } else {
                     // Skip the bottom ~7% of weights as background to let the raw canvas show through
                     if (norm > 0.07) {
