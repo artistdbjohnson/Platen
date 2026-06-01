@@ -2201,67 +2201,36 @@ else                glyph = '*';        // asterisk</pre>
                             }
                         }
 
-                        var path;
-                        if ((traits.motif === 'typewriter' || traits.motif === 'chopin')) {
-                            var charMap = {
-                                'typewriter_slash': '/',
-                                'typewriter_dot': '.',
-                                'typewriter_plus': '+',
-                                'typewriter_x': 'X',
-                                'typewriter_asterisk': '*'
-                            };
-                            var charVal = charMap[_glyphSet[_levelIdx]];
-                            path = dc.createElementNS(svgNS, "text");
-                            var tx = px + (sizeX / 2);
-                            var ty = py + (sizeY / 2) + (1 * scY); // Slight baseline adjustment
-                            path.setAttribute("x", tx);
-                            path.setAttribute("y", ty);
-                            path.setAttribute("fill", f.c);
-                            path.setAttribute("font-family", "Courier, 'Courier New', monospace");
-                            path.setAttribute("font-weight", "bold");
-                            path.setAttribute("font-size", 15.5 * scY);
-                            path.setAttribute("text-anchor", "middle");
-                            path.setAttribute("dominant-baseline", "central");
-                            path.textContent = charVal;
-                            
-                            // Optional rotation
-                            if (f.flip) {
-                                path.setAttribute("transform", "rotate(180," + tx + "," + ty + ")");
-                            } else if (f.rot) {
-                                path.setAttribute("transform", "rotate(" + f.rot + "," + tx + "," + ty + ")");
-                            }
-                        } else {
-                            path = dc.createElementNS(svgNS, "path");
-                            var tx = px + (sizeX - rSize) / 2;
-                            var ty = py + (sizeY - rSize) / 2;
-                            if (isGraphPaper && traits.motif === 'stars_and_stripes') {
-                                scX = sizeX / 20;
-                                scY = sizeY / 20;
-                                tx = px;
-                                ty = py;
-                            }
-                            var xform = "translate(" + tx + "," + ty + ") scale(" + scX + "," + scY + ")";
-                            if (f.flip) xform += " rotate(180,10,10)";
-                            if (f.rot) xform += " rotate(" + f.rot + ",10,10)";
-                            path.setAttribute("transform", xform);
-                            path.setAttribute("d", motifPath);
-                            path.setAttribute("fill", f.c);
-                            if (traits.motif === 'ichthus') {
-                                if (traits.solid) {
-                                    path.setAttribute("stroke", "none");
-                                } else {
-                                    path.setAttribute("fill", "none");
-                                    path.setAttribute("stroke", f.c);
-                                    path.setAttribute("stroke-width", "2.4");
-                                }
-                            }
-                            if (traits.motif === 'quatrefoil' || traits.motif === 'tatreez' || traits.motif === 'typewriter_hash' || traits.motif === 'stars_and_stripes') path.setAttribute("fill-rule", "evenodd");
+                        var path = dc.createElementNS(svgNS, "path");
+                        var tx = px + (sizeX - rSize) / 2;
+                        var ty = py + (sizeY - rSize) / 2;
+                        if (isGraphPaper && traits.motif === 'stars_and_stripes') {
+                            scX = sizeX / 20;
+                            scY = sizeY / 20;
+                            tx = px;
+                            ty = py;
                         }
+                        var xform = "translate(" + tx + "," + ty + ") scale(" + scX + "," + scY + ")";
+                        if (f.flip) xform += " rotate(180,10,10)";
+                        if (f.rot) xform += " rotate(" + f.rot + ",10,10)";
+                        path.setAttribute("transform", xform);
+                        path.setAttribute("d", motifPath);
+                        path.setAttribute("fill", f.c);
+                        if (traits.motif === 'ichthus') {
+                            if (traits.solid) {
+                                path.setAttribute("stroke", "none");
+                            } else {
+                                path.setAttribute("fill", "none");
+                                path.setAttribute("stroke", f.c);
+                                path.setAttribute("stroke-width", "2.4");
+                            }
+                        }
+                        if (traits.motif === 'quatrefoil' || traits.motif === 'tatreez' || traits.motif === 'typewriter_hash' || traits.motif === 'stars_and_stripes' || traits.motif === 'typewriter' || traits.motif === 'chopin') path.setAttribute("fill-rule", "evenodd");
                         gEl.appendChild(path);
                     }
 
                     // Add typewriter printout header metadata at the top of the grid
-                    if ((traits.motif === 'typewriter' || traits.motif === 'chopin')) {
+                    if ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_hash')) {
                         var hW = w;
                         var hSizeX = sizeX;
                         var hSizeY = sizeY;
