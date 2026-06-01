@@ -2145,36 +2145,62 @@
                             }
                         }
 
-                        var path = dc.createElementNS(svgNS, "path");
-                        var tx = px + (sizeX - rSize) / 2;
-                        var ty = py + (sizeY - rSize) / 2;
-                        if (isGraphPaper && traits.motif === 'stars_and_stripes') {
-                            scX = sizeX / 20;
-                            scY = sizeY / 20;
-                            tx = px;
-                            ty = py;
-                        }
+                        var path;
                         if (traits.motif === 'typewriter') {
-                            // Re-center using the actual scaled dimensions
-                            tx = px + (sizeX - (14 * scX)) / 2;
-                            ty = py + (sizeY - (14 * scY)) / 2;
-                        }
-                        var xform = "translate(" + tx + "," + ty + ") scale(" + scX + "," + scY + ")";
-                        if (f.flip) xform += " rotate(180,10,10)";
-                        if (f.rot) xform += " rotate(" + f.rot + ",10,10)";
-                        path.setAttribute("transform", xform);
-                        path.setAttribute("d", motifPath);
-                        path.setAttribute("fill", f.c);
-                        if (traits.motif === 'ichthus') {
-                            if (traits.solid) {
-                                path.setAttribute("stroke", "none");
-                            } else {
-                                path.setAttribute("fill", "none");
-                                path.setAttribute("stroke", f.c);
-                                path.setAttribute("stroke-width", "2.4");
+                            var charMap = {
+                                'typewriter_slash': '/',
+                                'typewriter_dot': '.',
+                                'typewriter_plus': '+',
+                                'typewriter_x': 'X',
+                                'typewriter_asterisk': '*'
+                            };
+                            var charVal = charMap[_glyphSet[_levelIdx]];
+                            path = dc.createElementNS(svgNS, "text");
+                            var tx = px + (sizeX / 2);
+                            var ty = py + (sizeY / 2) + (1 * scY); // Slight baseline adjustment
+                            path.setAttribute("x", tx);
+                            path.setAttribute("y", ty);
+                            path.setAttribute("fill", f.c);
+                            path.setAttribute("font-family", "Courier, 'Courier New', monospace");
+                            path.setAttribute("font-weight", "bold");
+                            path.setAttribute("font-size", 15.5 * scY);
+                            path.setAttribute("text-anchor", "middle");
+                            path.setAttribute("dominant-baseline", "central");
+                            path.textContent = charVal;
+                            
+                            // Optional rotation
+                            if (f.flip) {
+                                path.setAttribute("transform", "rotate(180," + tx + "," + ty + ")");
+                            } else if (f.rot) {
+                                path.setAttribute("transform", "rotate(" + f.rot + "," + tx + "," + ty + ")");
                             }
+                        } else {
+                            path = dc.createElementNS(svgNS, "path");
+                            var tx = px + (sizeX - rSize) / 2;
+                            var ty = py + (sizeY - rSize) / 2;
+                            if (isGraphPaper && traits.motif === 'stars_and_stripes') {
+                                scX = sizeX / 20;
+                                scY = sizeY / 20;
+                                tx = px;
+                                ty = py;
+                            }
+                            var xform = "translate(" + tx + "," + ty + ") scale(" + scX + "," + scY + ")";
+                            if (f.flip) xform += " rotate(180,10,10)";
+                            if (f.rot) xform += " rotate(" + f.rot + ",10,10)";
+                            path.setAttribute("transform", xform);
+                            path.setAttribute("d", motifPath);
+                            path.setAttribute("fill", f.c);
+                            if (traits.motif === 'ichthus') {
+                                if (traits.solid) {
+                                    path.setAttribute("stroke", "none");
+                                } else {
+                                    path.setAttribute("fill", "none");
+                                    path.setAttribute("stroke", f.c);
+                                    path.setAttribute("stroke-width", "2.4");
+                                }
+                            }
+                            if (traits.motif === 'quatrefoil' || traits.motif === 'tatreez' || traits.motif === 'typewriter_hash' || traits.motif === 'stars_and_stripes') path.setAttribute("fill-rule", "evenodd");
                         }
-                        if (traits.motif === 'quatrefoil' || traits.motif === 'tatreez' || traits.motif === 'typewriter' || traits.motif === 'typewriter_hash' || traits.motif === 'stars_and_stripes') path.setAttribute("fill-rule", "evenodd");
                         gEl.appendChild(path);
                     }
 
@@ -2367,49 +2393,34 @@
                 // Actually tEl is a separate group? No, tEl is a group.
                 // Let's find them by content or just generic iter.
 
-                // Group paths by color
-                var paths = Array.from(svg.querySelectorAll('path'));
-                var text = Array.from(svg.querySelectorAll('text, tspan'));
-
-                // Map colors
+                // Find all paths and text elements
+                var pathsAndText = Array.from(srcSvg.querySelectorAll('path, text'));
                 var groups = {};
-                paths.forEach(function (p) {
-                    var fill = p.getAttribute('fill') || '#000000';
+                
+                var headerTextEl = null;
+
+                pathsAndText.forEach(function (el) {
+                    // Identify if this is the header text block (usually has tspan children or specific font-size)
+                    if (el.tagName.toLowerCase() === 'text' && el.querySelector('tspan')) {
+                        headerTextEl = el;
+                        return; // Handle header separately
+                    }
+
+                    var fill = el.getAttribute('fill') || '#000000';
                     if (!groups[fill]) groups[fill] = [];
-                    groups[fill].push(p);
+                    groups[fill].push(el);
                 });
 
                 // Clear the main group(s)
-                // Better approach: Create a new SVG content structure.
-                // Keep dimensions/viewbox.
                 var newSvg = srcSvg.cloneNode(false); // shallow clone (attributes only)
                 newSvg.setAttribute('xmlns:inkscape', 'http://www.inkscape.org/namespaces/inkscape');
 
-                // 1. Text Layer (usually plotted first or last? Let's do last "Reference")
-                // Text is tricky on plotters if filled. Converting to outline is hard in JS.
-                // We'll put text in a separate layer "Text".
-                // Note: User's 'text' are <tspan> inside <text> or just <tspan> in <g>?
-                // In my code: t = dc.createElementNS(svgNS, "tspan"); tEl.appendChild(t).
-                // Wait, tEl must be a <text> element or <g>?
-                // In `boot`: var tEl = dc.createElementNS(svgNS, "text");
-                // So all tspans are inside one text element.
-                // If it's a <text> element, it behaves as one object.
-                // We can just clone tEl.
-                var srcTEl = srcSvg.querySelector('text');
-                if (srcTEl) {
+                // 1. Header Text Layer (Reference)
+                if (headerTextEl) {
                     var layerT = document.createElementNS(svgNS, 'g');
                     layerT.setAttribute('inkscape:groupmode', 'layer');
-                    layerT.setAttribute('inkscape:label', 'Text');
-
-                    var tClone = srcTEl.cloneNode(true);
-                    // Simplify text for plotter? Plotters often can't do filled text.
-                    // But standard SVG text is fill. 
-                    // We'll leave it as is, user can Hershey-font it in Inkscape.
-                    // Or change fill to stroke? 
-                    // tClone.setAttribute('fill', 'none'); tClone.setAttribute('stroke', '#000');
-                    // Text without fill might be invisible if stroke is not set.
-                    // Let's keep it filled for readability, Inkscape handles text conversion.
-                    layerT.appendChild(tClone);
+                    layerT.setAttribute('inkscape:label', 'Header Text');
+                    layerT.appendChild(headerTextEl.cloneNode(true));
                     newSvg.appendChild(layerT);
                 }
 
@@ -2420,13 +2431,12 @@
                     g.setAttribute('inkscape:label', color);
                     g.setAttribute('id', 'layer-' + color.replace('#', ''));
 
-                    groups[color].forEach(function (p) {
+                    groups[color].forEach(function (el) {
+                        var p = el.cloneNode(true);
                         // Plotter optimization: Fill=none, Stroke=color
                         p.setAttribute('fill', 'none');
                         p.setAttribute('stroke', color);
                         p.setAttribute('stroke-width', '1'); // 1px stroke (for visibility)
-                        // Adjust stroke width based on scale? 
-                        // SVG units 1440. 1px is fine.
                         g.appendChild(p);
                     });
                     newSvg.appendChild(g);
@@ -2743,8 +2753,8 @@
                 var svgW = parseInt(srcSvg.getAttribute('width'));
                 var svgH = parseInt(srcSvg.getAttribute('height'));
 
-                // Find all paths and group by color
-                var paths = Array.from(srcSvg.querySelectorAll('path'));
+                // Find all paths and text elements, group by color
+                var paths = Array.from(srcSvg.querySelectorAll('path, text'));
                 var groups = {};
                 paths.forEach(function (p) {
                     var fill = p.getAttribute('fill') || '#000000';
