@@ -2159,15 +2159,8 @@ else                glyph = '*';        // asterisk</pre>
 
                         var scX = rSize / 20;
                         var scY = rSize / 20;
-                        if ((traits.motif === 'typewriter' || traits.motif === 'chopin')) {
-                            if (isGraphPaper) {
-                                scX = (sizeX * 0.7) / 14; // Fit squarely inside graph paper cells
-                                scY = (sizeY * 0.7) / 14; 
-                            } else {
-                                scX = (sizeX * 0.82) / 14; 
-                                scY = (sizeX * 0.82) / 14; 
-                            }
-                        }
+                        // Special down-scaling removed so typewriter and chopin match typewriter_hash sizing
+
                         // Hyperbolic cell fitting — scale motif to local cell size; sc=1 in planar (no effect)
                         var _hsc = f.sc || 1;
                         scX *= _hsc;
