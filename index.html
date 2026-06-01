@@ -2143,16 +2143,16 @@ else                glyph = '*';        // asterisk</pre>
                             var dx = (_px - cx_px) * isoScale;
                             var dy = (_py - cy_px) * isoScale;
                             
-                            // Dynamically pull the isometric base down to the bottom of the canvas
-                            var bottom_margin = 120;
+                            // Dynamically pull the isometric base down to the bottom of the canvas (nudged down by 10%)
+                            var bottom_margin = 50;
                             var max_base_y = cy_px + (cx_px + cy_px) * isoScale * sin30;
                             var base_nudge = Math.max(120, svgH - bottom_margin - max_base_y);
                             
                             px = cx_px + (dx - dy) * cos30 + 60;
                             var py_base = cy_px + (dx + dy) * sin30 + base_nudge;
                             
-                            // Extrude all the way up to the top constraint before the header
-                            var py_header = 330; // Lower top constraint to leave beautiful space under header
+                            // Extrude all the way up to the top constraint before the header (nudged down by 10%)
+                            var py_header = 480; // Lower top constraint to Y=480 to leave a beautiful space under header
                             var py_top = py_base - (f.wt || 0) * (py_base - py_header);
                             
                             // Generate 3D columns by repeating strikes with beautiful distinct spacing
