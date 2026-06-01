@@ -1091,6 +1091,13 @@
             color: #fff;
             box-shadow: 0 0 8px var(--purple);
         }
+
+        /* Hardware-acceleration overrides for ultra-high-density 3D rendering and key animations */
+        .extrusion-col, .keyanim-path, .typewriter-header, text, path {
+            will-change: transform, opacity;
+            transform: translate3d(0, 0, 0);
+            shape-rendering: optimizeSpeed;
+        }
     </style>
 </head>
 
@@ -1163,7 +1170,7 @@ else                glyph = '*';        // asterisk</pre>
                 <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym" onchange="TRAITS.symmetry=this.value; renderAll()"></select></div>
                 <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space" onchange="TRAITS.space=this.value; renderAll()"></select></div>
                 <div class="trait"><span class="trait-label">Pattern</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value; renderAll()"></select></div>
-                <div class="trait"><span class="trait-label">Chromes</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value; renderAll()"></select></div>
+                <div class="trait"><span class="trait-label">Ink</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value; renderAll()"></select></div>
                 <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value; renderAll()"></select></div>
             </div>
 
@@ -1918,6 +1925,40 @@ else                glyph = '*';        // asterisk</pre>
                 var candidate = upper[0] + upper.substring(1).replace(/[AEIOU]/g, '');
                 return candidate.length >= 5 ? candidate.substring(0, 5) : upper.substring(0, 5);
             }
+            
+            function shortenChromeName(name) {
+                name = String(name || '').toLowerCase().trim();
+                if (!name) return "RIBBON";
+                if (name === 'typewriter_ribbon_multicolored') return "RIBBON";
+                if (name === 'typewriter_black') return "BLACK";
+                if (name === 'typewriter_black_red') return "BLK/RED";
+                
+                if (name.startsWith('typewriter_')) {
+                    name = name.substring('typewriter_'.length);
+                }
+                
+                var dict = {
+                    'stars_and_stripes': 'STRIPES', 'micron_plotter': 'MICRON', 'blueprint_cyan': 'BLCYN',
+                    'azulejo_classico': 'AZLJC', 'castelo_branco': 'CSTLO', 'concrete': 'CNCRT',
+                    'cyber_mesh': 'CYBMS', 'glitch_acid': 'ACID', 'glitch_heat': 'HEAT', 'glitch_void': 'VOID',
+                    'miami_basel': 'MIAMI', 'olive_grove': 'OLIVE', 'palestine_dawn': 'PLSTN',
+                    'two_grey_hills': '2GREY', 'woodcut': 'WDCDT', 'bedouin_night': 'BEDOU'
+                };
+                if (dict[name]) return dict[name];
+                
+                var upper = name.toUpperCase().replace(/[^A-Z0-9_]/g, '');
+                var parts = upper.split('_');
+                if (parts.length >= 2) {
+                    var abbrev = parts.map(function(p) { return p.substring(0, 3); }).join('/');
+                    if (abbrev.length <= 8) return abbrev;
+                }
+                
+                var clean = upper.replace(/_/g, '');
+                if (clean.length <= 7) return clean;
+                
+                var candidate = clean[0] + clean.substring(1).replace(/[AEIOU]/g, '');
+                return candidate.length >= 7 ? candidate.substring(0, 7) : clean.substring(0, 7);
+            }
 
             var d = new Date();
             var year = d.getUTCFullYear();
@@ -1930,15 +1971,7 @@ else                glyph = '*';        // asterisk</pre>
 
             var engineName = shortenEngineName(traits.engine);
             var symName = shortenSymmetryName(traits.symmetry);
-
-            // Resolve chrome name and shorten appropriately
-            var chromeRaw = traits.chromes || 'typewriter_ribbon_multicolored';
-            var chromeName = "RIBBON";
-            if (chromeRaw === 'typewriter_black') chromeName = "BLACK";
-            else if (chromeRaw === 'typewriter_black_red') chromeName = "BLK/RED";
-            else if (!chromeRaw.startsWith('typewriter_')) {
-                chromeName = String(chromeRaw).toUpperCase().substring(0, 10);
-            }
+            var chromeName = shortenChromeName(traits.chromes);
 
             var titleWord = ((traits.motif === 'typewriter' || traits.motif === 'chopin') && currentLayout === 'grid_us_letter') ? "PLATEN" : "PLATEN";
             
@@ -2128,11 +2161,6 @@ else                glyph = '*';        // asterisk</pre>
                     // Draw flowers using returned data into the DocumentFragment first
                     for (var i = 0; i < flowers.length; i++) {
                         var f = flowers[i];
-                        
-                        // Sparse downsampling for isometric space to reveal 3D depth, create elegant columns, and prevent DOM lag
-                        if (traits.space === 'isometric' && (f.x % 2 !== 0 || f.y % 2 !== 0)) {
-                            continue;
-                        }
 
                         var px = (f.x + 4 + margin) * sizeX;
                         var py = (f.y + 4 + margin + ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') ? 10 : 0)) * sizeY;
@@ -2171,7 +2199,7 @@ else                glyph = '*';        // asterisk</pre>
                             
                             // Generate 3D columns by repeating strikes with beautiful distinct spacing
                             f.py_steps = [];
-                            var stepVal = 64 * isoScale; // Spaced distinct typewriter ribbon glyphs
+                            var stepVal = 28 * isoScale; // Spaced distinct typewriter ribbon glyphs
                             for (var yVal = py_base; yVal >= py_top; yVal -= stepVal) {
                                 f.py_steps.push(yVal);
                             }
