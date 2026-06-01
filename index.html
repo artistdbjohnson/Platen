@@ -39,14 +39,14 @@
         }
 
         [data-theme="light"] {
-            --bg: #ffffff;
-            --panel: #ffffff;
+            --bg: #f5f5f5;
+            --panel: #f5f5f5;
             --border: #000000;
             --purple: #000000;
             --text: #000000;
             --dim: #000000;
-            --canvas-bg: #ffffff;
-            --body-bg: #ffffff;
+            --canvas-bg: #f5f5f5;
+            --body-bg: #f5f5f5;
             --shadow: none;
             --label-opacity: 1.0;
         }
@@ -3215,7 +3215,7 @@
                 if (isUsLetter) {
                     el.style.backgroundSize = '106%'; // Zoom in to crop out raw deckled edges
                     el.style.backgroundColor = '#fcfcfc'; // Ensure clean background just in case
-                    el.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)'; // Add a clean geometric shadow
+                    el.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)'; // Softer geometric shadow
                 } else {
                     el.style.backgroundSize = 'cover';
                     el.style.backgroundColor = 'transparent';
