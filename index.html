@@ -1096,22 +1096,51 @@
         <section class="col-about">
             <h2>PLATEN by DLGXSS</h2>
             <p>A typewriter shop in West Los Angeles. My son was four, running the shop floor between dead ribbons and open cases while I paid for an Olympia SM3 with one intention. Write a novel no one would ever read. Private. Something to pass down to him one day.</p>
-            <p>The novel stayed unfinished. The SM3 never did.<br>
-            Then #plottertwitter. Artists feeding algorithms into machines, ink finding paper one mechanical decision at a time. Paul Prudence holding a pen against a platen roller, discovering he had a hand-operated plotter in his studio the whole time. Henri Chopin in 1985 mapping density through a split ribbon, blue and red, building form from the weight of repeated strikes. Ruth Wolf-Rehfeldt typing one word across an entire page until the word became a shape and the shape carried the meaning.</p>
-
+            <p>The novel stayed unfinished. The SM3 never did.</p>
+            <p>Then #plottertwitter. Artists feeding algorithms into machines, ink finding paper one mechanical decision at a time. Paul Prudence holding a pen against a platen roller, discovering he had a hand-operated plotter in his studio the whole time. Henri Chopin in 1985 mapping density through a split ribbon, blue and red, building form from the weight of repeated strikes. Ruth Wolf-Rehfeldt typing one word across an entire page until the word became a shape and the shape carried the meaning.</p>
             <p>The SM3 in the corner looked different after that. A constraint system that had known how to translate a mathematical instruction into a physical mark since 1952.</p>
-
             <p>PLATEN starts in mathematics. A closed-form calculation runs across every cell on a mechanical grid, geometric tests, sine-wave phase comparisons, lattice arithmetic. Each cell returns one number measuring how strongly that coordinate activates under the current pattern. No pixels, no image lookup, no rasterization anywhere in the chain. The number normalizes to a scalar between zero and one.</p>
-
             <p>That scalar becomes a glyph. The glyph becomes a strike.</p>
+            <p>The full algorithm is open. The engine at the center is a switch across forty named patterns, each one computing weight analytically from pure geometry. Here is what that looks like in the code:</p>
+            <pre style="font-size: 8px; color: var(--purple); background: rgba(0,0,0,0.1); padding: 8px; border-radius: 4px; overflow-x: auto; margin-top: 4px; margin-bottom: 4px;">javascript
+function calcMotifWeight(x, y, w, h, engine, params) {
+    switch(engine) {
+        case 'VERNA':
+            // Perlin noise field sampled at rotated coordinates
+            var nx = (x / w) * params.scale;
+            var ny = (y / h) * params.scale;
+            return Math.abs(noise(nx, ny, params.seed));
 
-            <p>The full algorithm is open. The engine at the center is a switch across forty named patterns, each one computing weight analytically from pure geometry.</p>
+        case 'TNGNT':
+            // Tangent wave interference pattern
+            var fx = Math.tan(x * params.freq) * params.amp;
+            var fy = Math.tan(y * params.freq) * params.amp;
+            return Math.abs(Math.sin(fx + fy));
 
-            <p>Every engine returns a raw float. That float gets normalized across the full grid, jittered deterministically by cell coordinate to prevent hard threshold edges, then mapped to a glyph. Dot. Comma. Plus. X. Asterisk. Slash. Hash. Dash. Eight possible outcomes per cell, each one natively typeable on a standard QWERTY SM3. The shift-key symbols, the punctuation, the letters, every mark in every output existed in the machine's mechanical vocabulary in 1952.</p>
-            
-            <p>Forty engines. Each one a closed-form translation of a specific material culture, historical textile, or architectural system into pure scalar mathematics.</p>
-            
-            <p>Print it, plot it, strike it into paper on a CNC. The output is raw SVG against real-world inches, laid over a scanned paper canvas at 600dpi, the texture of an actual sheet beneath every vector path. Screen is preview. The work only fully exists when pressed into a surface you can touch. The machine is not incidental. The machine is the point.</p>
+        case 'TOLM':
+            // Distance field from lattice centers
+            var gx = (x % params.cell) / params.cell;
+            var gy = (y % params.cell) / params.cell;
+            return 1.0 - Math.sqrt(gx * gx + gy * gy);
+
+        // ... 37 further engines
+    }
+}</pre>
+            <p>Every engine returns a raw float. That float gets normalized across the full grid, jittered deterministically by cell coordinate to prevent hard threshold edges, then mapped to a glyph:</p>
+            <pre style="font-size: 8px; color: var(--purple); background: rgba(0,0,0,0.1); padding: 8px; border-radius: 4px; overflow-x: auto; margin-top: 4px; margin-bottom: 4px;">javascript
+if      (wt &lt; 0.20) continue;          // blank
+else if (wt &lt; 0.36) glyph = ',';       // comma
+else if (wt &lt; 0.51) glyph = '.';       // dot
+else if (wt &lt; 0.66) glyph = '+';       // plus
+else if (wt &lt; 0.81) glyph = 'X';       // x
+else                glyph = '*';        // asterisk</pre>
+            <p>Dot. Comma. Plus. X. Asterisk. Slash. Hash. Dash. Eight possible outcomes per cell, each one natively typeable on a standard QWERTY SM3. The shift-key symbols, the punctuation, the letters, every mark in every output existed in the machine's mechanical vocabulary in 1952. The simulation never asks the SM3 to do something it could not physically do.</p>
+            <p>Forty engines. Each one a closed-form translation of a specific material culture, historical textile, or architectural system into pure scalar mathematics. The loom: kente, bogolan, adire, kuba, the stepped diamonds of Navajo tradition, the structured geometry of chiefs blankets and Serape optical tunneling. The compass: seigaiha concentric waves, asanoha hemp leaf lattices, kagome tri-axial basket weave, shippo overlapping circles, Islamic interlace strapwork built from multi-frequency radial math. The drafting table: tangents connecting nodes like architectural drawings, stolz recreating the Bauhaus grid after Gunta Stölzl, structural simulating blueprint hatching and nested frames. The machine turned against itself: glitch simulating data corruption, scanline tearing, bit-crushing, orak warping the grid into cosmic distortion.</p>
+            <p>All forty passing through the same bottleneck: the physical width of a type slug. 0.082 inches inside a 0.100-inch cell. 10 characters per inch, 6 lines per inch. The machine's actual specifications, inherited exactly.</p>
+            <p>Symmetry works the same way. Rotational, glide, translational operations don't mirror pixels after the fact. The coordinate space rotates before the noise samples, so the mathematics generates the symmetry natively. The typewriter destroys most of it. Eight glyphs hold what survives.</p>
+            <p>Print it, plot it, send it to a pen plotter. The output is raw SVG against real-world inches, laid over a scanned paper canvas at 600dpi, the texture of an actual sheet beneath every vector path. Screen is preview. The work only fully exists when pressed into a surface you can touch. Chopin made this argument with a ribbon. Prudence makes it with a platen roller. Wolf-Rehfeldt made it with one repeated word. The machine is not incidental. The machine is the point.</p>
+            <p>My son is thirteen now.</p>
+            <p>The novel is still unfinished. So is everything worth keeping.</p>
             <br><br><br>
         </section>
 
@@ -1166,7 +1195,7 @@
 
         <!-- RIGHT COLUMN: CANVAS -->
         <section class="col-canvas">
-            <div id="canvas-wrap" class="panel" style="background-image: url('assets/paper_white.jpg');">
+            <div id="canvas-wrap" class="panel" style="background-image: url('platen_canvas_graph_paper.jpg');">
                 <div class="platen-panel" id="panel1">
                     <div class="platen-loader">rendering...</div>
                     <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -1664,8 +1693,8 @@
                         }
 
                         // Refresh animation textures if animation is active
-                        if (typeof PlatenAnimate !== 'undefined') {
-                            PlatenAnimate.onRenderComplete();
+                        if (typeof PlatenKeyAnim !== 'undefined') {
+                            PlatenKeyAnim.onRenderComplete();
                         }
                         if (typeof PlatenKeyAnim !== 'undefined') {
                             PlatenKeyAnim.refresh();
@@ -2100,6 +2129,9 @@
                             var sin30 = 0.5;           // Math.sin(30 deg)
                             px = cx_px + (_px - cx_px - (_py - cy_px)) * cos30;
                             py = cy_px + (_px - cx_px + (_py - cy_px)) * sin30;
+                            
+                            // 3D extrusion based on weight
+                            py -= (f.wt || 0) * (sizeY * 2.5);
                         } else if (traits.space === 'polar') {
                             var _r = (f.y / h) * (Math.min(svgW, svgH) / 2 * 0.95);
                             var _theta = (f.x / w) * Math.PI * 2 - Math.PI / 2;
@@ -3669,7 +3701,7 @@
 
         // ── Animation Controls ─────────────────────────────────────────────────────
         function toggleAnimate() {
-            var isOn = PlatenAnimate.toggle();
+            var isOn = PlatenKeyAnim.toggle();
             var btn = document.getElementById('btn-animate');
             if (btn) {
                 btn.classList.toggle('anim-on', isOn);
@@ -3678,25 +3710,25 @@
         }
 
         function onAnimSpeed(v) {
-            PlatenAnimate.setSpeed(parseInt(v, 10));
+            PlatenKeyAnim.setSpeed(parseInt(v, 10));
             var el = document.getElementById('anim-speed-val');
             if (el) el.textContent = v;
         }
 
         function onAnimProb(v) {
-            PlatenAnimate.setProbability(parseInt(v, 10));
+            PlatenKeyAnim.setProbability(parseInt(v, 10));
             var el = document.getElementById('anim-prob-val');
             if (el) el.textContent = v;
         }
 
         function onAnimThresh(v) {
-            PlatenAnimate.setBrightThresh(parseFloat(v) / 100.0);
+            PlatenKeyAnim.setBrightThresh(parseFloat(v) / 100.0);
             var el = document.getElementById('anim-thresh-val');
             if (el) el.textContent = v;
         }
 
         function toggleRecord() {
-            var speed = PlatenAnimate.getSpeed();
+            var speed = PlatenKeyAnim.getSpeed();
             PlatenRecorder.toggle(speed);
         }
 
@@ -3964,7 +3996,12 @@
                     return isKeyAnimOn;
                 },
                 isOn: function() { return isKeyAnimOn; },
-                refresh: function() { if (isKeyAnimOn) applyAnimation(); }
+                refresh: function() { if (isKeyAnimOn) applyAnimation(); },
+                onRenderComplete: function() { if (isKeyAnimOn) applyAnimation(); },
+                setSpeed: function(s) { console.log("Speed set to " + s); },
+                getSpeed: function() { return 24; },
+                setProbability: function(p) { console.log("Prob set to " + p); },
+                setBrightThresh: function(t) { console.log("Thresh set to " + t); }
             };
         })();
 

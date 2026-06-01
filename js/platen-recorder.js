@@ -51,13 +51,13 @@ var PlatenRecorder = (function () {
         }
 
         // Get the animation canvas
-        var canvas = PlatenAnimate.getRecordingCanvas();
+        var canvas = PlatenKeyAnim.getRecordingCanvas();
         if (!canvas) {
             // If animation isn't running yet, start it first
-            PlatenAnimate.start();
+            PlatenKeyAnim.start();
             // Wait a moment for the texture to load
             setTimeout(function () {
-                canvas = PlatenAnimate.getRecordingCanvas();
+                canvas = PlatenKeyAnim.getRecordingCanvas();
                 if (!canvas) {
                     alert('No animation canvas available. Please ensure a piece is rendered first.');
                     return;
