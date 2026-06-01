@@ -738,7 +738,6 @@
         }
 
         .platen-panel.loading canvas {
-            opacity: 0;
             pointer-events: none;
         }
         .platen-panel canvas {
@@ -3480,19 +3479,15 @@ else                glyph = '*';        // asterisk</pre>
 
 
             // Set instant placeholder background color based on resolved canvasClass to prevent flashes!
-            var placeholderBg = '#151515'; // default graphite/black
+            var placeholderBg = 'transparent';
             var loaderColor = '#ffffff';   // default white text
             if (canvasClass === 'canvas-white') {
-                placeholderBg = '#fcfcfc';
                 loaderColor = '#000000';
             } else if (canvasClass === 'canvas-tan') {
-                placeholderBg = '#e8d8c8';
                 loaderColor = '#000000';
             } else if (canvasClass === 'canvas-olive') {
-                placeholderBg = '#dcdcd0';
                 loaderColor = '#000000';
             } else if (canvasClass === 'canvas-graph-paper') {
-                placeholderBg = '#e8e8e8';
                 loaderColor = '#000000';
             }
 
