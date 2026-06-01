@@ -24,6 +24,10 @@
             padding: 0;
             box-sizing: border-box;
         }
+        
+        *:focus {
+            outline: none !important;
+        }
 
         :root {
             --bg: #151515;
@@ -1203,7 +1207,7 @@ else                glyph = '*';        // asterisk</pre>
 
         <!-- RIGHT COLUMN: CANVAS -->
         <section class="col-canvas">
-            <div id="canvas-wrap" class="panel" style="background-image: url('platen_canvas_graph_paper.jpg');">
+            <div id="canvas-wrap" class="panel">
                 <div class="platen-panel" id="panel1">
                     <div class="platen-loader">rendering...</div>
                     <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg"></svg>
