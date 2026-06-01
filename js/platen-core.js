@@ -1067,7 +1067,7 @@ var MOTIF_PATHS = {
 
 var CHROME_DESCS = {
     'stars_and_stripes': 'Stars and Stripes (Red & Blue)',
-    'typewriter_ribbon_multicolored': 'Typewriter Ribbon Multicolored (Carbon Black/Red/Teal/Sepia/Blue/Yellow)',
+    'typewriter_ribbon_multicolored': 'Typewriter Ribbon Multicolored',
     'typewriter_black': 'Typewriter Black (Pure Carbon Black Monochrome)',
     'typewriter_black_red': 'Typewriter Black & Red (Bi-Color Ribbon)',
     'adama': 'Earth / Southwest',

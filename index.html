@@ -1816,7 +1816,7 @@ else                glyph = '*';        // asterisk</pre>
             WorkerPool = [];
 
             for (var i = 0; i < MAX_WORKERS; i++) {
-                WorkerPool.push(new Worker('js/platen-worker.js?t=' + Date.now()));
+                WorkerPool.push(new Worker('js/platen-worker.js'));
             }
             console.log('[Platen] Worker pool re-initialized. Active processes aborted.');
         }
@@ -2105,7 +2105,7 @@ else                glyph = '*';        // asterisk</pre>
                 frag.appendChild(gEl);
 
                 // Get an available worker from the pool, or spawn a temporary one if pool is empty
-                var worker = WorkerPool.pop() || new Worker('js/platen-worker.js?t=' + Date.now());
+                var worker = WorkerPool.pop() || new Worker('js/platen-worker.js');
                 ActiveWorkers.push(worker); // Track active worker
 
                 worker.onmessage = function (e) {
@@ -2145,11 +2145,11 @@ else                glyph = '*';        // asterisk</pre>
                             
                             px = cx_px + (dx - dy) * cos30 + 60;
                             var py_base = cy_px + (dx + dy) * sin30 + 120; // Nudge down to center on page
-                            var py_top = py_base - (f.wt || 0) * (sizeY * 3.5 * isoScale);
+                            var py_top = py_base - (f.wt || 0) * (sizeY * 7.0 * isoScale); // Extrude 2x more
                             
                             // Generate dense 3D columns by repeating strikes from the bottom base up to the top
                             f.py_steps = [];
-                            var stepVal = 5 * isoScale; // Tight spacing for cohesive vertical solid block look
+                            var stepVal = 10 * isoScale; // Added spacing between glyphs
                             for (var yVal = py_base; yVal >= py_top; yVal -= stepVal) {
                                 f.py_steps.push(yVal);
                             }
@@ -2335,7 +2335,7 @@ else                glyph = '*';        // asterisk</pre>
 
                     // Kill the broken worker and replace it in the pool
                     worker.terminate();
-                    WorkerPool.push(new Worker('js/platen-worker.js?t=' + Date.now()));
+                    WorkerPool.push(new Worker('js/platen-worker.js'));
 
                     reject(err);
                 };
@@ -3123,166 +3123,56 @@ else                glyph = '*';        // asterisk</pre>
         var CANVAS_39_39_PATH = 'platen_canvas_black_39_39.png';
         var CANVAS_GRAPH_PAPER_PATH = 'platen_canvas_graph_paper.jpg';
 
-        var _canvasBlackImg = null;
-        var _canvasTanImg = null;
-        var _canvasOliveImg = null;
-        var _canvasWhiteImg = null;
-        var _canvasGalleryImg = null;
-        var _canvasSquareImg = null;
-        var _canvas3240Img = null;
-        var _canvas3951Img = null;
-        var _canvas3939Img = null;
-        var _canvasGraphPaperImg = null;
         var _activeCanvasImg = null;
-
-        var _canvasBlackDataURL = null; // for CSS instant loading
-        var _canvasTanDataURL = null;
-        var _canvasOliveDataURL = null;
-        var _canvasWhiteDataURL = null;
-        var _canvasGalleryDataURL = null;
-        var _canvasSquareDataURL = null;
-        var _canvas3240DataURL = null;
-        var _canvas3951DataURL = null;
-        var _canvas3939DataURL = null;
-        var _canvasGraphPaperDataURL = null;
-        var _canvasGraphPaperInvertedImg = null;
         var _canvasGraphPaperInvertedDataURL = null;
+        var _canvasGraphPaperInvertedImg = null;
+        var _loadedTextures = {};
 
-        function getInvertedGraphPaper() {
-            if (_canvasGraphPaperInvertedDataURL) return; // already done
-            if (!_canvasGraphPaperImg) return;
-            var c = document.createElement('canvas');
-            c.width = _canvasGraphPaperImg.width;
-            c.height = _canvasGraphPaperImg.height;
-            var ctx = c.getContext('2d');
-            ctx.drawImage(_canvasGraphPaperImg, 0, 0);
-            var idata = ctx.getImageData(0, 0, c.width, c.height);
-            var d = idata.data;
-            for(var i=0; i<d.length; i+=4) {
-                var r = 255 - d[i];
-                var g = 255 - d[i+1];
-                var b = 255 - d[i+2];
-                var gray = (r + g + b) / 3;
-                d[i] = gray;
-                d[i+1] = gray;
-                d[i+2] = gray;
+        function ensureTextureLoaded(url, callback) {
+            if (!url) return;
+            if (_loadedTextures[url]) {
+                if (callback) callback(_loadedTextures[url]);
+                return;
             }
-            ctx.putImageData(idata, 0, 0);
-            _canvasGraphPaperInvertedDataURL = c.toDataURL('image/jpeg', 0.9);
-            _canvasGraphPaperInvertedImg = new Image();
-            _canvasGraphPaperInvertedImg.onload = updateCanvasTexture;
-            _canvasGraphPaperInvertedImg.src = _canvasGraphPaperInvertedDataURL;
-        }
+            if (_loadedTextures[url] === false) {
+                if (!window._texturePendingCallbacks) window._texturePendingCallbacks = {};
+                if (!window._texturePendingCallbacks[url]) window._texturePendingCallbacks[url] = [];
+                if (callback) window._texturePendingCallbacks[url].push(callback);
+                return;
+            }
+            
+            _loadedTextures[url] = false;
+            if (!window._texturePendingCallbacks) window._texturePendingCallbacks = {};
+            window._texturePendingCallbacks[url] = [];
+            if (callback) window._texturePendingCallbacks[url].push(callback);
 
-        function preloadTexture(path, callback) {
             var img = new Image();
             img.onload = function () {
-                callback(path);
+                _loadedTextures[url] = img;
+                var callbacks = window._texturePendingCallbacks[url];
+                delete window._texturePendingCallbacks[url];
+                if (callbacks) {
+                    callbacks.forEach(function (cb) { cb(img); });
+                }
             };
-            img.src = path;
+            img.src = url;
         }
-
-        (function preloadTextures() {
-            preloadTexture(CANVAS_BLACK_PATH, function (data) {
-                _canvasBlackDataURL = data;
-                _canvasBlackImg = new Image();
-                _canvasBlackImg.onload = updateCanvasTexture;
-                _canvasBlackImg.src = data;
-            });
-            preloadTexture(CANVAS_TAN_PATH, function (data) {
-                _canvasTanDataURL = data;
-                _canvasTanImg = new Image();
-                _canvasTanImg.onload = updateCanvasTexture;
-                _canvasTanImg.src = data;
-            });
-            preloadTexture(CANVAS_OLIVE_PATH, function (data) {
-                _canvasOliveDataURL = data;
-                _canvasOliveImg = new Image();
-                _canvasOliveImg.onload = updateCanvasTexture;
-                _canvasOliveImg.src = data;
-            });
-            preloadTexture(CANVAS_WHITE_PATH, function (data) {
-                _canvasWhiteDataURL = data;
-                _canvasWhiteImg = new Image();
-                _canvasWhiteImg.onload = updateCanvasTexture;
-                _canvasWhiteImg.src = data;
-            });
-            preloadTexture(CANVAS_GALLERY_PATH, function (data) {
-                _canvasGalleryDataURL = data;
-                _canvasGalleryImg = new Image();
-                _canvasGalleryImg.onload = updateCanvasTexture;
-                _canvasGalleryImg.src = data;
-            });
-            preloadTexture(CANVAS_SQUARE_PATH, function (data) {
-                _canvasSquareDataURL = data;
-                _canvasSquareImg = new Image();
-                _canvasSquareImg.onload = updateCanvasTexture;
-                _canvasSquareImg.src = data;
-            });
-            preloadTexture(CANVAS_32_40_PATH, function (data) {
-                _canvas3240DataURL = data;
-                _canvas3240Img = new Image();
-                _canvas3240Img.onload = updateCanvasTexture;
-                _canvas3240Img.src = data;
-            });
-            preloadTexture(CANVAS_39_51_PATH, function (data) {
-                _canvas3951DataURL = data;
-                _canvas3951Img = new Image();
-                _canvas3951Img.onload = updateCanvasTexture;
-                _canvas3951Img.src = data;
-            });
-            preloadTexture(CANVAS_39_39_PATH, function (data) {
-                _canvas3939DataURL = data;
-                _canvas3939Img = new Image();
-                _canvas3939Img.onload = updateCanvasTexture;
-                _canvas3939Img.src = data;
-            });
-            preloadTexture(CANVAS_GRAPH_PAPER_PATH, function (data) {
-                _canvasGraphPaperDataURL = data;
-                _canvasGraphPaperImg = new Image();
-                _canvasGraphPaperImg.onload = updateCanvasTexture;
-                _canvasGraphPaperImg.src = data;
-            });
-        })();
 
         function updateCanvasTexture() {
             var url = CANVAS_BLACK_PATH;
-            var dataUrl = _canvasBlackDataURL;
-            var img = _canvasBlackImg;
             var canvasClass = 'canvas-black';
 
             if (TRAITS.canvas === 'tan') {
                 url = CANVAS_TAN_PATH;
-                dataUrl = _canvasTanDataURL;
-                img = _canvasTanImg;
                 canvasClass = 'canvas-tan';
             } else if (TRAITS.canvas === 'olive') {
                 url = CANVAS_OLIVE_PATH;
-                dataUrl = _canvasOliveDataURL;
-                img = _canvasOliveImg;
                 canvasClass = 'canvas-olive';
             } else if (TRAITS.canvas === 'white') {
                 url = CANVAS_WHITE_PATH;
-                dataUrl = _canvasWhiteDataURL;
-                img = _canvasWhiteImg;
                 canvasClass = 'canvas-white';
             } else if (TRAITS.canvas === 'graph_paper') {
-                if (TRAITS.invertGraph) {
-                    if (!_canvasGraphPaperInvertedDataURL) {
-                        getInvertedGraphPaper();
-                        url = CANVAS_GRAPH_PAPER_PATH;
-                        dataUrl = _canvasGraphPaperDataURL;
-                        img = _canvasGraphPaperImg;
-                    } else {
-                        url = _canvasGraphPaperInvertedDataURL;
-                        dataUrl = _canvasGraphPaperInvertedDataURL;
-                        img = _canvasGraphPaperInvertedImg;
-                    }
-                } else {
-                    url = CANVAS_GRAPH_PAPER_PATH;
-                    dataUrl = _canvasGraphPaperDataURL;
-                    img = _canvasGraphPaperImg;
-                }
+                url = CANVAS_GRAPH_PAPER_PATH;
                 canvasClass = 'canvas-graph-paper';
             }
 
@@ -3290,63 +3180,84 @@ else                glyph = '*';        // asterisk</pre>
 
             // Overrides for layouts and special motifs
             if (isTypewriter && TRAITS.canvas !== 'graph_paper') {
-                // Typewriter art always uses white canvas (looks like a white sheet of paper on black canvas background)
                 url = CANVAS_WHITE_PATH;
-                dataUrl = _canvasWhiteDataURL;
-                img = _canvasWhiteImg;
                 canvasClass = 'canvas-white';
             } else if (TRAITS.canvas === 'black') {
                 if (currentLayout === 'gallery') {
                     url = CANVAS_GALLERY_PATH;
-                    dataUrl = _canvasGalleryDataURL;
-                    img = _canvasGalleryImg;
-                    canvasClass = 'canvas-black'; // Gallery is black-based
+                    canvasClass = 'canvas-black';
                 } else if (currentLayout === 'square' || currentLayout === 'banner_sq') {
                     url = CANVAS_SQUARE_PATH;
-                    dataUrl = _canvasSquareDataURL;
-                    img = _canvasSquareImg;
-                    canvasClass = 'canvas-black'; // Square is black-based
+                    canvasClass = 'canvas-black';
                 } else if (currentLayout === 'grid_32_40' || currentLayout === 'banner_32_40') {
                     url = CANVAS_32_40_PATH;
-                    dataUrl = _canvas3240DataURL;
-                    img = _canvas3240Img;
                     canvasClass = 'canvas-black';
                 } else if (currentLayout === 'grid_39_51' || currentLayout === 'banner_39_51' || currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter') {
                     url = CANVAS_39_51_PATH;
-                    dataUrl = _canvas3951DataURL;
-                    img = _canvas3951Img;
                     canvasClass = 'canvas-black';
                 } else if (currentLayout === 'grid_39_39' || currentLayout === 'banner_39_39') {
                     url = CANVAS_39_39_PATH;
-                    dataUrl = _canvas3939DataURL;
-                    img = _canvas3939Img;
                     canvasClass = 'canvas-black';
                 }
             }
 
-            // Use Data URL for truly instant swapping if ready
-            var displayUrl = dataUrl ? dataUrl : url;
+            if (TRAITS.canvas === 'graph_paper' && TRAITS.invertGraph) {
+                ensureTextureLoaded(CANVAS_GRAPH_PAPER_PATH, function(originalImg) {
+                    if (!_canvasGraphPaperInvertedDataURL) {
+                        var c = document.createElement('canvas');
+                        c.width = originalImg.width;
+                        c.height = originalImg.height;
+                        var ctx = c.getContext('2d');
+                        ctx.drawImage(originalImg, 0, 0);
+                        var idata = ctx.getImageData(0, 0, c.width, c.height);
+                        var d = idata.data;
+                        for (var i = 0; i < d.length; i += 4) {
+                            var r = 255 - d[i];
+                            var g = 255 - d[i + 1];
+                            var b = 255 - d[i + 2];
+                            var gray = (r + g + b) / 3;
+                            d[i] = gray;
+                            d[i + 1] = gray;
+                            d[i + 2] = gray;
+                        }
+                        ctx.putImageData(idata, 0, 0);
+                        _canvasGraphPaperInvertedDataURL = c.toDataURL('image/jpeg', 0.9);
+                        _canvasGraphPaperInvertedImg = new Image();
+                        _canvasGraphPaperInvertedImg.onload = function() {
+                            _loadedTextures[_canvasGraphPaperInvertedDataURL] = _canvasGraphPaperInvertedImg;
+                            applyTexture(_canvasGraphPaperInvertedDataURL, _canvasGraphPaperInvertedImg, canvasClass);
+                        };
+                        _canvasGraphPaperInvertedImg.src = _canvasGraphPaperInvertedDataURL;
+                    } else {
+                        applyTexture(_canvasGraphPaperInvertedDataURL, _canvasGraphPaperInvertedImg, canvasClass);
+                    }
+                });
+            } else {
+                ensureTextureLoaded(url, function(img) {
+                    applyTexture(url, img, canvasClass);
+                });
+            }
+        }
 
+        function applyTexture(displayUrl, img, canvasClass) {
             var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
             if (isUsLetter && TRAITS.canvas !== 'white') {
-                canvasClass = 'canvas-white'; // Always force white texture for US Letter
+                canvasClass = 'canvas-white';
             }
 
-            // Update CSS for display
             document.querySelectorAll('.platen-panel').forEach(function (el) {
                 el.style.backgroundImage = 'url("' + displayUrl + '")';
                 
                 if (isUsLetter) {
-                    el.style.backgroundSize = '106%'; // Zoom in to crop out raw deckled edges
-                    el.style.backgroundColor = '#fcfcfc'; // Ensure clean background just in case
-                    el.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)'; // Softer geometric shadow
+                    el.style.backgroundSize = '106%';
+                    el.style.backgroundColor = '#fcfcfc';
+                    el.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)';
                 } else {
                     el.style.backgroundSize = 'cover';
                     el.style.backgroundColor = 'transparent';
                     el.style.boxShadow = 'none';
                 }
 
-                // Reset classes except for base and .loading
                 if (el.classList.contains('loading')) {
                     el.className = 'platen-panel loading ' + canvasClass;
                 } else {
@@ -3354,7 +3265,6 @@ else                glyph = '*';        // asterisk</pre>
                 }
             });
 
-            // Set active img for export
             _activeCanvasImg = img;
         }
 

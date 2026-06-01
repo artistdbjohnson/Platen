@@ -144,8 +144,8 @@ onmessage = function (e) {
                     // Skip the bottom ~7% of weights as background to let the raw canvas show through
                     if (norm > 0.07) {
                         grid[cx2][cy2].wt = norm;
-                        if (traits.chromes === 'typewriter_black_red') {
-                            // Pseudo-random selection from the bi-color palette using coordinates and searchSeed
+                        if (traits.chromes === 'typewriter_black_red' || traits.chromes === 'typewriter_ribbon_multicolored') {
+                            // Pseudo-random selection from the palette using coordinates and searchSeed
                             var hVal = Math.abs(cx2 * 31 + cy2 * 73 + searchSeed) % 1009;
                             var randRatio = (hVal / 1009.0) * totalRatio;
                             grid[cx2][cy2].col = rc(randRatio);
