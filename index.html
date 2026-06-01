@@ -3493,15 +3493,29 @@ else                glyph = '*';        // asterisk</pre>
 
 
 
-            // Set instant placeholder background color based on resolved canvasClass to prevent black flashes!
+            // Set instant placeholder background color based on resolved canvasClass to prevent flashes!
             var placeholderBg = '#151515'; // default graphite/black
-            if (canvasClass === 'canvas-white') placeholderBg = '#fcfcfc';
-            else if (canvasClass === 'canvas-tan') placeholderBg = '#e8d8c8';
-            else if (canvasClass === 'canvas-olive') placeholderBg = '#dcdcd0';
-            else if (canvasClass === 'canvas-graph-paper') placeholderBg = '#e8e8e8';
+            var loaderColor = '#ffffff';   // default white text
+            if (canvasClass === 'canvas-white') {
+                placeholderBg = '#fcfcfc';
+                loaderColor = '#000000';
+            } else if (canvasClass === 'canvas-tan') {
+                placeholderBg = '#e8d8c8';
+                loaderColor = '#000000';
+            } else if (canvasClass === 'canvas-olive') {
+                placeholderBg = '#dcdcd0';
+                loaderColor = '#000000';
+            } else if (canvasClass === 'canvas-graph-paper') {
+                placeholderBg = '#e8e8e8';
+                loaderColor = '#000000';
+            }
 
             document.querySelectorAll('.platen-panel').forEach(function (el) {
                 el.style.backgroundColor = placeholderBg;
+                var loader = el.querySelector('.platen-loader');
+                if (loader) {
+                    loader.style.color = loaderColor;
+                }
             });
 
             if (TRAITS.canvas === 'graph_paper' && TRAITS.invertGraph) {
@@ -3544,7 +3558,7 @@ else                glyph = '*';        // asterisk</pre>
 
         function applyTexture(displayUrl, img, canvasClass) {
             var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
-            if ((isUsLetter || TRAITS.chromes === 'typewriter_black') && TRAITS.canvas !== 'white') {
+            if (TRAITS.chromes === 'typewriter_black' && TRAITS.canvas !== 'white') {
                 canvasClass = 'canvas-white';
             }
 
@@ -3553,7 +3567,7 @@ else                glyph = '*';        // asterisk</pre>
                 
                 if (isUsLetter) {
                     el.style.backgroundSize = '106%';
-                    el.style.backgroundColor = '#fcfcfc';
+                    el.style.backgroundColor = 'transparent';
                     el.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)';
                 } else {
                     el.style.backgroundSize = 'cover';
