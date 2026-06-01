@@ -2156,7 +2156,7 @@ else                glyph = '*';        // asterisk</pre>
                         '    vec4 fg = texture2D(uForeground, vTexCoord);\n' +
                         '    if (uHasBackground) {\n' +
                         '        vec4 bg = texture2D(uBackground, vTexCoord);\n' +
-                        '        gl_FragColor = vec4(mix(bg.rgb, fg.rgb, fg.a), 1.0);\n' +
+                        '        gl_FragColor = vec4(mix(bg.rgb, fg.rgb, fg.a), bg.a);\n' +
                         '    } else {\n' +
                         '        gl_FragColor = fg;\n' +
                         '    }\n' +
