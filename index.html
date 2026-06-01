@@ -2543,7 +2543,7 @@ else                glyph = '*';        // asterisk</pre>
                         var textCol = '#1a1724'; // Default to dark typewriter ink for headers
                         if (traits.chromes === 'typewriter_black') textCol = '#000000'; // Pure black ink for black chrome
                         if (document.getElementById('invert-canvas') && document.getElementById('invert-canvas').checked) {
-                            textCol = '#ffffff'; // White header text when inverted (graphite)
+                            textCol = '#b8b8b8'; // Soft white header text when inverted (graphite)
                         }
 
                         var headerG = dc.createElementNS(svgNS, "g");
@@ -2583,7 +2583,7 @@ else                glyph = '*';        // asterisk</pre>
                     // Determine grid numbers text color explicitly so it exports correctly
                     var gridTextColor = (traits.canvas === 'white' || traits.canvas === 'tan' || traits.canvas.indexOf('graph_paper') === 0) ? '#1D1D1D' : '#f8f8f2';
                     if (document.getElementById('invert-canvas') && document.getElementById('invert-canvas').checked) {
-                        gridTextColor = '#ffffff'; // White grid text when inverted (graphite)
+                        gridTextColor = '#b8b8b8'; // Soft white grid text when inverted (graphite)
                     }
                     
 
