@@ -10,7 +10,7 @@
     <link rel="preload" href="platen_black.png" as="image">
     <link rel="preload" href="platen_canvas_tan.png" as="image">
     <link rel="preload" href="platen_canvas_olive.png" as="image">
-    <link rel="preload" href="platen_canvas_white.png" as="image">
+    <link rel="preload" href="platen_white.png" as="image">
     <link rel="preload" href="platen_canvas_black_gallery.png" as="image">
     <link rel="preload" href="platen_canvas_black_1x1.png" as="image">
     <link rel="preload" href="platen_canvas_black_39_51.png" as="image">
@@ -1178,6 +1178,7 @@ else                glyph = '*';        // asterisk</pre>
                 <div class="trait"><span class="trait-label">Motif</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value; renderAll()"></select></div>
                 <div class="trait"><span class="trait-label">Ink</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value; renderAll()"></select></div>
                 <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value; renderAll()"></select></div>
+                <div class="trait"><span class="trait-label">Canvas</span><select class="trait-select" id="t-canvas" onchange="TRAITS.canvas=this.value; updateCanvasTexture(); renderAll()"></select></div>
             </div>
 
             <div class="control-section">
@@ -1204,10 +1205,6 @@ else                glyph = '*';        // asterisk</pre>
                 <div style="margin-top: 15px; display: flex; align-items: center; gap: 8px;">
                     <input type="checkbox" id="inc-bg" checked onchange="renderAll()" style="cursor: pointer; accent-color: #000;">
                     <label for="inc-bg" style="font-size: 10px; cursor: pointer;">Include BG Texture</label>
-                </div>
-                <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="invert-canvas" onchange="toggleInvertCanvas()" style="cursor: pointer; accent-color: #000;">
-                    <label for="invert-canvas" style="font-size: 10px; cursor: pointer;">Invert Canvas (Graphite)</label>
                 </div>
             </div>
 
@@ -1268,7 +1265,7 @@ else                glyph = '*';        // asterisk</pre>
         // ─────────────────────────────────────────────────────────────────────────────
 
         function getRenderColor(c) {
-            if (document.getElementById('invert-canvas') && document.getElementById('invert-canvas').checked) {
+            if (TRAITS.canvas === 'black') {
                 if (c && c.startsWith('#')) {
                     var hex = c.substring(1);
                     if (hex.length === 3) {
@@ -1297,10 +1294,7 @@ else                glyph = '*';        // asterisk</pre>
             return c;
         }
 
-        function toggleInvertCanvas() {
-            updateCanvasTexture();
-            renderAll();
-        }
+
 
         function toggleTheme() {
             var el = document.documentElement;
@@ -1611,6 +1605,8 @@ else                glyph = '*';        // asterisk</pre>
                         desc = " [" + ENGINE_DESCS[key] + "]";
                     } else if (id === 't-motif' && MOTIF_DESCS[key] && key !== 'random') {
                         desc = " [" + MOTIF_DESCS[key] + "]";
+                    } else if (id === 't-canvas' && typeof CANVAS_DESCS !== 'undefined' && CANVAS_DESCS[key]) {
+                        desc = " [" + CANVAS_DESCS[key] + "]";
                     }
                     var fullText = key + desc;
                     o.value = key;
@@ -1679,6 +1675,7 @@ else                glyph = '*';        // asterisk</pre>
             populateSelect('t-motif', MOTIF_OPTS, TRAITS.motif);
             populateSelect('t-chrome', CHROME_OPTS, TRAITS.chromes);
             populateSelect('t-engine', ENGINE_OPTS, TRAITS.engine);
+            populateSelect('t-canvas', CANVAS_OPTS, TRAITS.canvas);
             
             var motifSelect = document.getElementById('t-motif');
             if (motifSelect) {
@@ -2526,7 +2523,7 @@ else                glyph = '*';        // asterisk</pre>
                         var headerLines = getTypewriterHeaderLines(traits, RENDER_SEED, hW);
                         var textCol = '#1a1724'; // Default to dark typewriter ink for headers
                         if (traits.chromes === 'typewriter_black') textCol = '#000000'; // Pure black ink for black chrome
-                        if (document.getElementById('invert-canvas') && document.getElementById('invert-canvas').checked) {
+                        if (traits.canvas === 'black') {
                             textCol = '#b8b8b8'; // Soft white header text when inverted (graphite)
                         }
 
@@ -2566,7 +2563,7 @@ else                glyph = '*';        // asterisk</pre>
 
                     // Determine grid numbers text color explicitly so it exports correctly
                     var gridTextColor = (traits.canvas === 'white' || traits.canvas === 'tan' || traits.canvas.indexOf('graph_paper') === 0) ? '#1D1D1D' : '#f8f8f2';
-                    if (document.getElementById('invert-canvas') && document.getElementById('invert-canvas').checked) {
+                    if (traits.canvas === 'black') {
                         gridTextColor = '#b8b8b8'; // Soft white grid text when inverted (graphite)
                     }
                     
@@ -3394,7 +3391,7 @@ else                glyph = '*';        // asterisk</pre>
         var CANVAS_BLACK_PATH = 'platen_black.png';
         var CANVAS_TAN_PATH = 'platen_canvas_tan.png';
         var CANVAS_OLIVE_PATH = 'platen_canvas_olive.png';
-        var CANVAS_WHITE_PATH = 'platen_canvas_white.png';
+        var CANVAS_WHITE_PATH = 'platen_white.png';
         var CANVAS_GALLERY_PATH = 'platen_canvas_black_gallery.png';
         var CANVAS_SQUARE_PATH = 'platen_canvas_black_1x1.png';
         var CANVAS_32_40_PATH = 'platen_canvas_black_39_51.png'; // Reusing 39x51 asset as missing
@@ -3463,7 +3460,12 @@ else                glyph = '*';        // asterisk</pre>
                 canvasClass = 'canvas-graph-paper';
             }
 
-            var isTypewriter = (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic' || TRAITS.motif === 'typewriter_quine') || (RESOLVED_TRAITS && (RESOLVED_TRAITS.motif === 'typewriter' || RESOLVED_TRAITS.motif === 'chopin' || RESOLVED_TRAITS.motif === 'typewriter_classic' || RESOLVED_TRAITS.motif === 'typewriter_quine'));
+            var isTypewriter = (TRAITS.motif && (TRAITS.motif.indexOf('typewriter') === 0 || TRAITS.motif === 'chopin')) ||
+                               (TRAITS.chromes && TRAITS.chromes.indexOf('typewriter') === 0) ||
+                               (RESOLVED_TRAITS && (
+                                   (RESOLVED_TRAITS.motif && (RESOLVED_TRAITS.motif.indexOf('typewriter') === 0 || RESOLVED_TRAITS.motif === 'chopin')) ||
+                                   (RESOLVED_TRAITS.chromes && RESOLVED_TRAITS.chromes.indexOf('typewriter') === 0)
+                               ));
 
             // Overrides for layouts and special motifs
             if (isTypewriter && TRAITS.canvas !== 'graph_paper') {
@@ -3488,10 +3490,7 @@ else                glyph = '*';        // asterisk</pre>
                 }
             }
 
-            if (document.getElementById('invert-canvas') && document.getElementById('invert-canvas').checked) {
-                url = CANVAS_BLACK_PATH;
-                canvasClass = 'canvas-black';
-            }
+
 
             // Set instant placeholder background color based on resolved canvasClass to prevent black flashes!
             var placeholderBg = '#151515'; // default graphite/black
@@ -4259,7 +4258,8 @@ else                glyph = '*';        // asterisk</pre>
             var canvas = art.traits.canvas;
             var layout = art.layout;
             var invertGraph = art.traits.invertGraph;
-            var isTypewriter = (art.traits.motif === 'typewriter' || art.traits.motif === 'chopin' || art.traits.motif === 'typewriter_classic' || art.traits.motif === 'typewriter_quine');
+            var isTypewriter = (art.traits.motif && (art.traits.motif.indexOf('typewriter') === 0 || art.traits.motif === 'chopin')) ||
+                               (art.traits.chromes && art.traits.chromes.indexOf('typewriter') === 0);
             
             var url = typeof _canvasBlackDataURL !== 'undefined' && _canvasBlackDataURL ? _canvasBlackDataURL : CANVAS_BLACK_PATH;
             var color = '#1a1724';
