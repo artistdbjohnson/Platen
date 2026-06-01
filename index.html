@@ -2276,9 +2276,8 @@ else                glyph = '*';        // asterisk</pre>
                         }
 
                         var headerLines = getTypewriterHeaderLines(traits, RENDER_SEED, hW);
-                        var textCol = 'var(--text)'; // Always use black/theme text for headers
+                        var textCol = '#1a1724'; // Default to dark typewriter ink for headers
                         if (traits.chromes === 'typewriter_black') textCol = '#000000'; // Pure black ink for black chrome
-                        else if (traits.chromes === 'typewriter_ribbon') textCol = '#1a1724'; // Dark typewriter ink
 
                         var headerG = dc.createElementNS(svgNS, "g");
                         headerG.setAttribute("class", "typewriter-header");
