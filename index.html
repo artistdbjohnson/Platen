@@ -1682,7 +1682,15 @@ else                glyph = '*';        // asterisk</pre>
             return [1];
         }
 
+        var _lastRenderState = null;
         function renderAll(preserveTraits) {
+            var stateKey = RENDER_SEED + '_' + JSON.stringify(TRAITS) + '_' + currentLayout;
+            if (_lastRenderState === stateKey) {
+                console.log('[Platen] Duplicate render request ignored:', stateKey);
+                return;
+            }
+            _lastRenderState = stateKey;
+
             // Abort any currently running background renders to prevent ghost flashes and timer overlaps
             initWorkers();
 
