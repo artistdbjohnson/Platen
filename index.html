@@ -1748,11 +1748,11 @@ else                glyph = '*';        // asterisk</pre>
                     if (runTraits.motif === 'random') runTraits.motif = MOTIF_OPTS[Math.floor(Math.random() * (MOTIF_OPTS.length - 1)) + 1];
                     
                     // Force a typewriter chrome for typewriter motif if none is selected
-                    if ((runTraits.motif === 'typewriter' || runTraits.motif === 'chopin')) {
-                        if (runTraits.chromes !== 'typewriter_ribbon' && 
+                    if (runTraits.motif === 'typewriter' || runTraits.motif === 'chopin' || runTraits.motif === 'typewriter_classic') {
+                        if (runTraits.chromes !== 'typewriter_ribbon_multicolored' && 
                             runTraits.chromes !== 'typewriter_black' && 
                             runTraits.chromes !== 'typewriter_black_red') {
-                            var typeOpts = ['typewriter_ribbon', 'typewriter_black', 'typewriter_black_red'];
+                            var typeOpts = ['typewriter_ribbon_multicolored', 'typewriter_black', 'typewriter_black_red'];
                             runTraits.chromes = typeOpts[Math.floor(Math.random() * typeOpts.length)];
                         }
                     } else if (runTraits.motif === 'stars_and_stripes') {
@@ -1932,7 +1932,7 @@ else                glyph = '*';        // asterisk</pre>
             var symName = shortenSymmetryName(traits.symmetry);
 
             // Resolve chrome name and shorten appropriately
-            var chromeRaw = traits.chromes || 'typewriter_ribbon';
+            var chromeRaw = traits.chromes || 'typewriter_ribbon_multicolored';
             var chromeName = "RIBBON";
             if (chromeRaw === 'typewriter_black') chromeName = "BLACK";
             else if (chromeRaw === 'typewriter_black_red') chromeName = "BLK/RED";

@@ -6,11 +6,13 @@
 // All hex values extracted from gallery color plates via pixel sampling.
 // r = relative weight (higher = more frequent), v = variant accent flag.
 var PALETTES = {
-    typewriter_ribbon: [  // classic typewriter ribbon inks
+    typewriter_ribbon_multicolored: [  // multicolored typewriter ribbon inks
         { c: "#1D1D1D", r: 4 },       // Carbon Black Ribbon - Pen 199 Black
         { c: "#7C2A24", r: 3 },       // Red Carbon / Bicolor - Pen 223 Dark Red
         { c: "#1B4D3E", r: 2 },       // Carbon Teal - Pen 156 Cobalt Green
         { c: "#8D5B4C", r: 2 },       // Aged Sepia - Pen 188 Sanguine
+        { c: "#1E4E79", r: 2 },       // Cobalt Blue - Pen 151
+        { c: "#F9D949", r: 2 },       // Cadmium Yellow - Pen 107
         { c: "#4E3629", r: 1, v: 1 }  // Weathered ink bleed accent
     ],
     typewriter_black: [  // pure black monochrome typewriter ribbon ink
@@ -1014,7 +1016,7 @@ var PEN_MAP = {
 var SYMMETRY_OPTS = ['random', 'both', 'diagonal', 'glide', 'horizontal', 'kaleidoscope', 'none', 'quad', 'radial', 'rotational', 'vertical'];
 var SPACE_OPTS = ['random', 'isometric', 'polar', 'hyperbolic', 'planar'];
 var MOTIF_OPTS = ['random', 'typewriter', 'typewriter_classic'];
-var CHROME_OPTS = ['random', 'typewriter_ribbon', 'typewriter_black', 'typewriter_black_red'];
+var CHROME_OPTS = ['random', 'typewriter_ribbon_multicolored', 'typewriter_black', 'typewriter_black_red'];
 var ENGINE_OPTS = ['random', 'railyard', 'adama', 'adire', 'argyle', 'arraiolos', 'art_deco', 'asanoha', 'axonometric', 'azulejo', 'blueprint', 'blueprint_cyan', 'bogolan', 'bricolage', 'brutalist', 'castelo_branco', 'cherokee', 'chiefs', 'chipaz', 'circuit', 'collage', 'concrete', 'cubist', 'current', 'cyber_mesh', 'cypress_hills', 'dazzler', 'flow', 'framed_vista', 'fret_bands', 'glitch', 'interlace', 'kagome', 'kanzemizu', 'kente', 'kepe', 'kikkou', 'kishtima', 'kolya', 'kshtir', 'kuba', 'kudo', 'malevich', 'mastor', 'matsukawa', 'maximalism', 'mondrian', 'narmuny', 'navajo', 'optical_box', 'orak', 'pakshats', 'panks', 'panoramic_dunes', 'pre_columbian', 'pulay', 'river_flow', 'rolling_hills', 'seigaiha', 'serape_net', 'sermat', 'sermat-kudo', 'shippo', 'shiprock', 'sierra_sunset', 'spider_cross', 'stolz', 'structural', 'tangents', 'tol', 'ved', 'verena', 'viana', 'virma', 'wari', 'woodcut', 'yagasuri', 'yoshiwara'];
 
 var CANVAS_OPTS = ['white'];
@@ -1065,7 +1067,7 @@ var MOTIF_PATHS = {
 
 var CHROME_DESCS = {
     'stars_and_stripes': 'Stars and Stripes (Red & Blue)',
-    'typewriter_ribbon': 'Typewriter Ribbon (Carbon Black/Red/Teal/Sepia)',
+    'typewriter_ribbon_multicolored': 'Typewriter Ribbon Multicolored (Carbon Black/Red/Teal/Sepia/Blue/Yellow)',
     'typewriter_black': 'Typewriter Black (Pure Carbon Black Monochrome)',
     'typewriter_black_red': 'Typewriter Black & Red (Bi-Color Ribbon)',
     'adama': 'Earth / Southwest',
