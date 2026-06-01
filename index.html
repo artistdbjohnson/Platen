@@ -2144,10 +2144,20 @@ else                glyph = '*';        // asterisk</pre>
                             var dy = (_py - cy_px) * isoScale;
                             
                             px = cx_px + (dx - dy) * cos30 + 60;
-                            py = cy_px + (dx + dy) * sin30 + 120; // Nudge down to center on page
+                            var py_base = cy_px + (dx + dy) * sin30 + 120; // Nudge down to center on page
+                            var py_top = py_base - (f.wt || 0) * (sizeY * 3.5 * isoScale);
                             
-                            // 3D extrusion based on weight
-                            py -= (f.wt || 0) * (sizeY * 3.5 * isoScale); // Slightly increased extrusion relative to scale
+                            // Generate dense 3D columns by repeating strikes from the bottom base up to the top
+                            f.py_steps = [];
+                            var stepVal = 5 * isoScale; // Tight spacing for cohesive vertical solid block look
+                            for (var yVal = py_base; yVal >= py_top; yVal -= stepVal) {
+                                f.py_steps.push(yVal);
+                            }
+                            if (f.py_steps.length === 0 || f.py_steps[f.py_steps.length - 1] > py_top) {
+                                f.py_steps.push(py_top);
+                            }
+                            
+                            py = py_top;
                             f.sc = (f.sc || 1) * isoScale * 1.15; // Scale the glyphs themselves (enlarged by 15% for isometric)
                         } else if (traits.space === 'polar') {
                             var polarScale = (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') ? 0.92 : 1.05;
@@ -2211,32 +2221,35 @@ else                glyph = '*';        // asterisk</pre>
                             }
                         }
 
-                        var path = dc.createElementNS(svgNS, "path");
-                        var tx = px + (sizeX - rSize) / 2;
-                        var ty = py + (sizeY - rSize) / 2;
-                        if (isGraphPaper && traits.motif === 'stars_and_stripes') {
-                            scX = sizeX / 20;
-                            scY = sizeY / 20;
-                            tx = px;
-                            ty = py;
-                        }
-                        var xform = "translate(" + tx + "," + ty + ") scale(" + scX + "," + scY + ")";
-                        if (f.flip) xform += " rotate(180,10,10)";
-                        if (f.rot) xform += " rotate(" + f.rot + ",10,10)";
-                        path.setAttribute("transform", xform);
-                        path.setAttribute("d", motifPath);
-                        path.setAttribute("fill", f.c);
-                        if (traits.motif === 'ichthus') {
-                            if (traits.solid) {
-                                path.setAttribute("stroke", "none");
-                            } else {
-                                path.setAttribute("fill", "none");
-                                path.setAttribute("stroke", f.c);
-                                path.setAttribute("stroke-width", "2.4");
+                        var yCoords = f.py_steps ? f.py_steps : [py];
+                        yCoords.forEach(function (yVal) {
+                            var path = dc.createElementNS(svgNS, "path");
+                            var tx = px + (sizeX - rSize) / 2;
+                            var ty = yVal + (sizeY - rSize) / 2;
+                            if (isGraphPaper && traits.motif === 'stars_and_stripes') {
+                                scX = sizeX / 20;
+                                scY = sizeY / 20;
+                                tx = px;
+                                ty = yVal;
                             }
-                        }
-                        if (traits.motif === 'quatrefoil' || traits.motif === 'tatreez' || traits.motif === 'typewriter_classic' || traits.motif === 'stars_and_stripes' || traits.motif === 'typewriter' || traits.motif === 'chopin') path.setAttribute("fill-rule", "evenodd");
-                        gEl.appendChild(path);
+                            var xform = "translate(" + tx + "," + ty + ") scale(" + scX + "," + scY + ")";
+                            if (f.flip) xform += " rotate(180,10,10)";
+                            if (f.rot) xform += " rotate(" + f.rot + ",10,10)";
+                            path.setAttribute("transform", xform);
+                            path.setAttribute("d", motifPath);
+                            path.setAttribute("fill", f.c);
+                            if (traits.motif === 'ichthus') {
+                                if (traits.solid) {
+                                    path.setAttribute("stroke", "none");
+                                } else {
+                                    path.setAttribute("fill", "none");
+                                    path.setAttribute("stroke", f.c);
+                                    path.setAttribute("stroke-width", "2.4");
+                                }
+                            }
+                            if (traits.motif === 'quatrefoil' || traits.motif === 'tatreez' || traits.motif === 'typewriter_classic' || traits.motif === 'stars_and_stripes' || traits.motif === 'typewriter' || traits.motif === 'chopin') path.setAttribute("fill-rule", "evenodd");
+                            gEl.appendChild(path);
+                        });
                     }
 
                     // Add typewriter printout header metadata at the top of the grid
