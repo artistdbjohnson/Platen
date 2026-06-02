@@ -2351,6 +2351,11 @@ else                glyph = '*';        // asterisk</pre>
                 var baseClass = panelEl.classList.contains('loading') ? 'platen-panel loading' : 'platen-panel';
                 panelEl.className = baseClass + ' ' + _activeCanvasClass;
             }
+
+            var id = canvas.id.replace('c', '');
+            if (window.drawBackCanvas) {
+                window.drawBackCanvas(id);
+            }
         }
 
         function getTypewriterGlyphs(symmetry, motif) {
@@ -5024,90 +5029,58 @@ else                glyph = '*';        // asterisk</pre>
         }
 
         window.drawBackCanvas = function (id) {
-            var canvas = document.getElementById('c' + id + '-back');
-            if (!canvas) return;
-            var ctx = canvas.getContext('2d');
-            if (!ctx) return;
+            var canvasBack = document.getElementById('c' + id + '-back');
+            var canvasFront = document.getElementById('c' + id);
+            if (!canvasBack || !canvasFront) return;
+            var ctxBack = canvasBack.getContext('2d');
+            if (!ctxBack) return;
             
             var size = 1200;
-            canvas.width = size;
-            canvas.height = size;
+            canvasBack.width = size;
+            canvasBack.height = size;
             
-            ctx.clearRect(0, 0, size, size);
+            ctxBack.clearRect(0, 0, size, size);
             
-            var activeBgImg = typeof _activeCanvasImg !== 'undefined' ? _activeCanvasImg : null;
+            // Determine paper ground color or texture
             var isNightMode = document.documentElement.getAttribute('data-theme') !== 'light';
-            if (isNightMode) {
-                ctx.fillStyle = '#151515';
-                ctx.fillRect(0, 0, size, size);
-            } else if (activeBgImg && activeBgImg.complete && activeBgImg.naturalWidth > 0) {
-                ctx.drawImage(activeBgImg, 0, 0, size, size);
-            } else {
-                ctx.fillStyle = TRAITS.canvas === 'black' ? '#151515' : '#f5f5f5';
-                ctx.fillRect(0, 0, size, size);
+            var paperColor = '#f5f5f5';
+            if (isNightMode || TRAITS.canvas === 'black') {
+                paperColor = '#151515';
+            } else if (TRAITS.canvas === 'white') {
+                paperColor = '#ffffff';
             }
             
-            var flowers = _lastFlowers[id];
-            if (!flowers || flowers.length === 0) return;
+            // Draw background paper color
+            ctxBack.fillStyle = paperColor;
+            ctxBack.fillRect(0, 0, size, size);
             
-            var gridW = _lastWGen[id] || 78;
-            var gridH = _lastHGen[id] || 148;
+            // Draw active background img (paper texture) to the back canvas
+            var activeBgImg = typeof _activeCanvasImg !== 'undefined' ? _activeCanvasImg : null;
+            if (activeBgImg && activeBgImg.complete && activeBgImg.naturalWidth > 0) {
+                ctxBack.drawImage(activeBgImg, 0, 0, size, size);
+            }
             
-            var padding = 120;
-            var availSize = size - 2 * padding;
-            var scale = Math.min(availSize / gridW, availSize / gridH);
-            
-            var offsetX = (size - gridW * scale) / 2;
-            var offsetY = (size - gridH * scale) / 2;
-            
-            flowers.forEach(function (f) {
-                var px = offsetX + f.x * scale;
-                var py = offsetY + f.y * scale;
+            // Copy the front canvas composition area to the back canvas
+            var fw = canvasFront.width;
+            var fh = canvasFront.height;
+            if (fw > 0 && fh > 0) {
+                // The composition area is a square crop of the front canvas
+                var cropSize = Math.min(fw, fh);
+                var sx = (fw - cropSize) / 2;
+                var sy = (fh - cropSize) / 2;
                 
-                ctx.save();
-                ctx.translate(px, py);
+                // We want to center it and pad it (using padding, e.g. 120px like original drawBackCanvas)
+                var padding = 120;
+                var destSize = size - 2 * padding;
+                var dx = padding;
+                var dy = padding;
                 
-                var glyphScale = (scale / 20) * (f.sc || 1);
-                if (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') {
-                    glyphScale *= 1.25;
-                }
-                
-                ctx.scale(glyphScale, glyphScale);
-                ctx.translate(10, 10);
-                if (f.flip) ctx.rotate(Math.PI);
-                if (f.rot) ctx.rotate(f.rot * Math.PI / 180);
-                ctx.translate(-10, -10);
-                
-                ctx.fillStyle = f.c;
-                
-                var opacity = 1.0;
-                if (_breathingActive[id] && (f.level === 0 || f.level === 1)) {
-                    var period = _breathingPeriods[id] || 7.0;
-                    var elapsed = (Date.now() - _breathingStartTime[id]) / 1000.0;
-                    var sine = Math.sin(2 * Math.PI * elapsed / period);
-                    opacity = 0.3 + ((sine + 1) / 2) * 0.7;
-                }
-                ctx.globalAlpha = opacity;
-                
-                var motifPath = MOTIF_PATHS[TRAITS.motif];
-                if (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') {
-                    var glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
-                    if (TRAITS.motif === 'typewriter_classic') {
-                        glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_classic'];
-                    }
-                    motifPath = MOTIF_PATHS[glyphSet[f.level]];
-                } else if (TRAITS.motif === 'stars_and_stripes') {
-                    if (f.c.toUpperCase() === '#002868' || f.c.toUpperCase() === '#FFFFFF') {
-                        motifPath = MOTIF_PATHS['star'];
-                    } else {
-                        motifPath = MOTIF_PATHS['stripes'];
-                    }
-                }
-                
-                var path2d = new Path2D(motifPath);
-                ctx.fill(path2d);
-                ctx.restore();
-            });
+                ctxBack.drawImage(
+                    canvasFront,
+                    sx, sy, cropSize, cropSize, // source crop
+                    dx, dy, destSize, destSize  // destination centered & padded
+                );
+            }
         };
 
         window.toggleFlip = function (id, event) {
