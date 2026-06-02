@@ -142,7 +142,7 @@ onmessage = function (e) {
 
 
     function getMinGlyphs(traits) {
-        if (traits.space === 'moire') return 200;
+        if (traits.space === 'moire') return 400;
         var series = (typeof ENGINE_METADATA !== 'undefined' && ENGINE_METADATA[traits.engine]) ? ENGINE_METADATA[traits.engine].series : 'FIELD';
         if (series === 'SCATTER') return 400;
         if (series === 'FIELD') return 1200;
@@ -398,36 +398,47 @@ onmessage = function (e) {
                     }
 
                     if (traits.space === 'moire' && cell.col) {
-                        var moireContrast = cell.col.c;
-                        for (var mcIdx = 0; mcIdx < cls.length; mcIdx++) {
-                            if (cls[mcIdx].c !== cell.col.c) {
-                                moireContrast = cls[mcIdx].c;
-                                break;
-                            }
-                        }
+                        var numPasses = 4 + (RENDER_SEED % 3);
 
-                        var stripCount = 0;
-                        for (var si2 = 0; si2 < moireStrips.length; si2++) {
-                            var ms = moireStrips[si2];
-                            if (fx3 >= ms.x0 + edgeNoise(fx3, fy3, ms.phase, RENDER_SEED) && 
-                                fx3 <= ms.x1 - edgeNoise(fx3, fy3, ms.phase, RENDER_SEED) && 
-                                fy3 >= ms.y0 + edgeNoise(fx3, fy3, ms.phase, RENDER_SEED) && 
-                                fy3 <= ms.y1 - edgeNoise(fx3, fy3, ms.phase, RENDER_SEED)) {
-                                stripCount++;
-                            }
-                        }
+                        for (var pi = 0; pi < numPasses; pi++) {
+                            var angle = (pi / numPasses) * Math.PI 
+                                + moireTheta 
+                                + ((RENDER_SEED * (pi + 3) * 1447) % 1000) / 1000 * 0.4;
 
-                        var overlayX = fx3 + Math.sin(moireTheta) * (0.8 + stripCount * 0.4);
-                        var overlayY = fy3 + 1.0;
-                        if (overlayY < h && overlayX >= 0 && overlayX < w) {
-                            var wp3m = warp(overlayX, overlayY);
+                            var magnitude = 0.6 + 
+                                ((RENDER_SEED * (pi + 7) * 2239) % 1000) / 1000 * 1.4;
+
+                            var offX = Math.cos(angle) * magnitude;
+                            var offY = Math.sin(angle) * magnitude;
+
+                            var passX = fx3 + offX;
+                            var passY = fy3 + offY;
+
+                            if (passY < 0 || passY >= h || passX < 0 || passX >= w) continue;
+
+                            var passColor = cell.col.c;
+                            var colorIdx = pi % cls.length;
+                            if (cls[colorIdx] && cls[colorIdx].c !== cell.col.c) {
+                                passColor = cls[colorIdx].c;
+                            } else if (cls[(colorIdx + 1) % cls.length]) {
+                                passColor = cls[(colorIdx + 1) % cls.length].c;
+                            }
+
+                            var passWt = Math.max(0.1, 
+                                cell.wt * (1.0 - (pi / numPasses) * 0.25)
+                            );
+
+                            var wp3p = warp(passX, passY);
                             iterationResults.push({
-                                x: wp3m[0], y: wp3m[1],
-                                c: moireContrast,
-                                wt: cell.wt,
+                                x: wp3p[0],
+                                y: wp3p[1],
+                                c: passColor,
+                                wt: passWt,
                                 sc: _sc,
-                                flip: !shouldFlipFlower(fx3, fy3),
-                                rot: rot,
+                                flip: (pi % 2 === 0) 
+                                    ? shouldFlipFlower(fx3, fy3) 
+                                    : !shouldFlipFlower(fx3, fy3),
+                                rot: (rot || 0) + (pi * 3),
                                 level: level
                             });
                         }
@@ -650,7 +661,7 @@ onmessage = function (e) {
         var curDist = 0;
         var minGlyphs = getMinGlyphs(traits);
         var minPenalty = (traits.space === 'moire' || traits.space === 'planar' || traits.space === 'polar') ? 200 : 1200;
-        var maxGlyphs = (traits.space === 'moire' || traits.space === 'planar' || traits.space === 'polar') ? 20000 : 8000;
+        var maxGlyphs = (traits.space === 'moire') ? 80000 : (traits.space === 'planar' || traits.space === 'polar') ? 20000 : 8000;
         
         if (isFlat) {
             curDist = 10000;
