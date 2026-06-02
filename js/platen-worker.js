@@ -142,7 +142,7 @@ onmessage = function (e) {
 
 
     function getMinGlyphs(traits) {
-        if (traits.space === 'moire') return 80;
+        if (traits.space === 'moire') return 200;
         var series = (typeof ENGINE_METADATA !== 'undefined' && ENGINE_METADATA[traits.engine]) ? ENGINE_METADATA[traits.engine].series : 'FIELD';
         if (series === 'SCATTER') return 400;
         if (series === 'FIELD') return 1200;
@@ -417,7 +417,7 @@ onmessage = function (e) {
                             }
                         }
 
-                        var overlayX = fx3 + Math.sin(moireTheta) * (0.3 + stripCount * 0.15);
+                        var overlayX = fx3 + Math.sin(moireTheta) * (0.8 + stripCount * 0.4);
                         var overlayY = fy3 + 1.0;
                         if (overlayY < h && overlayX >= 0 && overlayX < w) {
                             var wp3m = warp(overlayX, overlayY);
@@ -563,7 +563,7 @@ onmessage = function (e) {
                         baseWt = engineWeight;
                     } else {
                         baseWt = Math.min(1.0, 
-                            engineWeight * (1.0 + (stripCount - 1) * 0.4)
+                            engineWeight * (1.0 + (stripCount - 1) * 1.2)
                         );
                     }
                 } else {
@@ -607,7 +607,7 @@ onmessage = function (e) {
                     }
                 } else {
                     // Skip the bottom ~7% of weights as background to let the raw canvas show through
-                    var normThreshold = (traits.space === 'moire') ? 0.08 : (traits.space === 'planar' ? 0.02 : 0.07);
+                    var normThreshold = (traits.space === 'moire') ? 0.01 : (traits.space === 'planar' ? 0.02 : 0.07);
                     if (norm > normThreshold) {
                         grid[cx2][cy2].wt = norm;
                         if (traits.chromes === 'typewriter_black_red' || traits.chromes === 'typewriter_ribbon_multicolored') {
