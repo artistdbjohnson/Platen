@@ -2203,52 +2203,52 @@ else                glyph = '*';        // asterisk</pre>
             var g1 = _glyphChars[_gs[0]], g2 = _glyphChars[_gs[1]], g3 = _glyphChars[_gs[2]],
                 g4 = _glyphChars[_gs[3]], g5 = _glyphChars[_gs[4]];
 
-            var c1 = "LEVEL 1    GLYPH: " + g1 + "    DENSITY: 0.20 - 0.36";
-            var c2 = "LEVEL 2    GLYPH: " + g2 + "    DENSITY: 0.36 - 0.51";
-            var c3 = "LEVEL 3    GLYPH: " + g3 + "    DENSITY: 0.51 - 0.66";
-            var c4 = "LEVEL 4    GLYPH: " + g4 + "    DENSITY: 0.66 - 0.81";
-            var c5 = "LEVEL 5    GLYPH: " + g5 + "    DENSITY: 0.81 - 1.00";
+            var hLevel1 = "LEVEL 1    GLYPH: " + g1 + "    DENSITY: 0.20 - 0.36";
+            var hLevel2 = "LEVEL 2    GLYPH: " + g2 + "    DENSITY: 0.36 - 0.51";
+            var hLevel3 = "LEVEL 3    GLYPH: " + g3 + "    DENSITY: 0.51 - 0.66";
+            var hLevel4 = "LEVEL 4    GLYPH: " + g4 + "    DENSITY: 0.66 - 0.81";
+            var hLevel5 = "LEVEL 5    GLYPH: " + g5 + "    DENSITY: 0.81 - 1.00";
 
             if (traits.motif === 'typewriter_quine') {
-                c1 = "LEVEL 1    SOURCE: .    DENSITY: 0.20 - 0.36";
-                c2 = "LEVEL 2    SOURCE: r    DENSITY: 0.36 - 0.51";
-                c3 = "LEVEL 3    SOURCE: (    DENSITY: 0.51 - 0.66";
-                c4 = "LEVEL 4    SOURCE: M    DENSITY: 0.66 - 0.81";
-                c5 = "LEVEL 5    SOURCE: {    DENSITY: 0.81 - 1.00";
+                hLevel1 = "LEVEL 1    SOURCE: .    DENSITY: 0.20 - 0.36";
+                hLevel2 = "LEVEL 2    SOURCE: r    DENSITY: 0.36 - 0.51";
+                hLevel3 = "LEVEL 3    SOURCE: (    DENSITY: 0.51 - 0.66";
+                hLevel4 = "LEVEL 4    SOURCE: M    DENSITY: 0.66 - 0.81";
+                hLevel5 = "LEVEL 5    SOURCE: {    DENSITY: 0.81 - 1.00";
             }
 
             if (w < 46) {
                 if (traits.motif === 'typewriter_quine') {
-                    c1 = "LEVEL 1  SOURCE: .  DENSITY: 0.20 - 0.36";
-                    c2 = "LEVEL 2  SOURCE: r  DENSITY: 0.36 - 0.51";
-                    c3 = "LEVEL 3  SOURCE: (  DENSITY: 0.51 - 0.66";
-                    c4 = "LEVEL 4  SOURCE: M  DENSITY: 0.66 - 0.81";
-                    c5 = "LEVEL 5  SOURCE: {  DENSITY: 0.81 - 1.00";
+                    hLevel1 = "LEVEL 1  SOURCE: .  DENSITY: 0.20 - 0.36";
+                    hLevel2 = "LEVEL 2  SOURCE: r  DENSITY: 0.36 - 0.51";
+                    hLevel3 = "LEVEL 3  SOURCE: (  DENSITY: 0.51 - 0.66";
+                    hLevel4 = "LEVEL 4  SOURCE: M  DENSITY: 0.66 - 0.81";
+                    hLevel5 = "LEVEL 5  SOURCE: {  DENSITY: 0.81 - 1.00";
                 } else {
-                    c1 = "LEVEL 1  GLYPH: " + g1 + "  DENSITY: 0.20 - 0.36";
-                    c2 = "LEVEL 2  GLYPH: " + g2 + "  DENSITY: 0.36 - 0.51";
-                    c3 = "LEVEL 3  GLYPH: " + g3 + "  DENSITY: 0.51 - 0.66";
-                    c4 = "LEVEL 4  GLYPH: " + g4 + "  DENSITY: 0.66 - 0.81";
-                    c5 = "LEVEL 5  GLYPH: " + g5 + "  DENSITY: 0.81 - 1.00";
+                    hLevel1 = "LEVEL 1  GLYPH: " + g1 + "  DENSITY: 0.20 - 0.36";
+                    hLevel2 = "LEVEL 2  GLYPH: " + g2 + "  DENSITY: 0.36 - 0.51";
+                    hLevel3 = "LEVEL 3  GLYPH: " + g3 + "  DENSITY: 0.51 - 0.66";
+                    hLevel4 = "LEVEL 4  GLYPH: " + g4 + "  DENSITY: 0.66 - 0.81";
+                    hLevel5 = "LEVEL 5  GLYPH: " + g5 + "  DENSITY: 0.81 - 1.00";
                 }
             }
             if (w < 38) {
                 if (traits.motif === 'typewriter_quine') {
-                    c1 = "L1  SOURCE: .  DEN: 0.20-0.36";
-                    c2 = "L2  SOURCE: r  DEN: 0.36-0.51";
-                    c3 = "L3  SOURCE: (  DEN: 0.51-0.66";
-                    c4 = "L4  SOURCE: M  DEN: 0.66-0.81";
-                    c5 = "L5  SOURCE: {  DEN: 0.81-1.00";
+                    hLevel1 = "L1  SOURCE: .  DEN: 0.20-0.36";
+                    hLevel2 = "L2  SOURCE: r  DEN: 0.36-0.51";
+                    hLevel3 = "L3  SOURCE: (  DEN: 0.51-0.66";
+                    hLevel4 = "L4  SOURCE: M  DEN: 0.66-0.81";
+                    hLevel5 = "L5  SOURCE: {  DEN: 0.81-1.00";
                 } else {
-                    c1 = "L1  GLYPH: " + g1 + "  DEN: 0.20-0.36";
-                    c2 = "L2  GLYPH: " + g2 + "  DEN: 0.36-0.51";
-                    c3 = "L3  GLYPH: " + g3 + "  DEN: 0.51-0.66";
-                    c4 = "L4  GLYPH: " + g4 + "  DEN: 0.66-0.81";
-                    c5 = "L5  GLYPH: " + g5 + "  DEN: 0.81-1.00";
+                    hLevel1 = "L1  GLYPH: " + g1 + "  DEN: 0.20-0.36";
+                    hLevel2 = "L2  GLYPH: " + g2 + "  DEN: 0.36-0.51";
+                    hLevel3 = "L3  GLYPH: " + g3 + "  DEN: 0.51-0.66";
+                    hLevel4 = "L4  GLYPH: " + g4 + "  DEN: 0.66-0.81";
+                    hLevel5 = "L5  GLYPH: " + g5 + "  DEN: 0.81-1.00";
                 }
             }
-            c1 = c1.substring(0, w); c2 = c2.substring(0, w); c3 = c3.substring(0, w);
-            c4 = c4.substring(0, w); c5 = c5.substring(0, w);
+            hLevel1 = hLevel1.substring(0, w); hLevel2 = hLevel2.substring(0, w); hLevel3 = hLevel3.substring(0, w);
+            hLevel4 = hLevel4.substring(0, w); hLevel5 = hLevel5.substring(0, w);
 
             // 3. Info Line (with Chrome / Ink Parameter)
             var p1 = "DATE & HOUR: " + dateHourStamp;
@@ -2327,11 +2327,11 @@ else                glyph = '*';        // asterisk</pre>
                     "",
                     title,
                     "",
-                    c1,
-                    c2,
-                    c3,
-                    c4,
-                    c5,
+                    hLevel1,
+                    hLevel2,
+                    hLevel3,
+                    hLevel4,
+                    hLevel5,
                     "",
                     infoLine
                 ],

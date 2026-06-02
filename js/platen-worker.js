@@ -133,6 +133,37 @@ onmessage = function (e) {
         var stripY0 = Math.max(0, Math.floor(finalY - stripH / 2));
         var stripY1 = Math.min(h - 1, stripY0 + stripH);
 
+        // Safety bounds validation and fallback to center-covering layout if invalid or too narrow
+        var width = stripX1 - stripX0;
+        var height = stripY1 - stripY0;
+        var isInvalid = false;
+        if (orient === "VERTICAL" && (width < 6 || height < 10 || stripX1 <= 0 || stripX0 >= w)) {
+            isInvalid = true;
+        } else if (orient === "HORIZONTAL" && (height < 4 || width < 15 || stripY1 <= 0 || stripY0 >= h)) {
+            isInvalid = true;
+        } else if (width < 3 || height < 3 || stripX1 <= 0 || stripX0 >= w || stripY1 <= 0 || stripY0 >= h) {
+            isInvalid = true;
+        }
+
+        if (isInvalid) {
+            if (orient === "VERTICAL") {
+                stripX0 = Math.floor(w * 0.35);
+                stripX1 = Math.ceil(w * 0.65);
+                stripY0 = 0;
+                stripY1 = h - 1;
+            } else if (orient === "HORIZONTAL") {
+                stripX0 = 0;
+                stripX1 = w - 1;
+                stripY0 = Math.floor(h * 0.35);
+                stripY1 = Math.ceil(h * 0.65);
+            } else {
+                stripX0 = Math.floor(w * 0.25);
+                stripX1 = Math.ceil(w * 0.75);
+                stripY0 = Math.floor(h * 0.25);
+                stripY1 = Math.ceil(h * 0.75);
+            }
+        }
+
         moireStrips.push({ 
             x0: stripX0, x1: stripX1, 
             y0: stripY0, y1: stripY1,
@@ -643,11 +674,10 @@ onmessage = function (e) {
                     if (stripCount === 0) {
                         baseWt = 0;
                     } else if (stripCount === 1) {
-                        baseWt = engineWeight;
+                        baseWt = Math.max(0.15, engineWeight);
                     } else {
-                        baseWt = Math.min(1.0, 
-                            engineWeight * (1.0 + (stripCount - 1) * 1.2)
-                        );
+                        var rawWtVal = Math.min(1.0, engineWeight * (1.0 + (stripCount - 1) * 1.2));
+                        baseWt = Math.max(0.25, rawWtVal);
                     }
                 } else {
                     var wp = warp(cx, cy);
@@ -813,8 +843,8 @@ onmessage = function (e) {
     var finalCount = bestResult ? bestResult.length : 0;
     var qualityMin = getMinGlyphs(traits);
 
-    if (finalCount < qualityMin && traits.space !== 'moire') {
-        var boostThresholds = [0.05, 0.03, 0.01];
+    if (finalCount < qualityMin) {
+        var boostThresholds = (traits.space === 'moire') ? [0.01, 0.005, 0.0] : [0.05, 0.03, 0.01];
         for (var bi = 0; bi < boostThresholds.length; bi++) {
             var boostResult = reRenderWithThreshold(
                 bestGrid, bestRawWt, bestWMin, bestWRange, bestIsFlat, boostThresholds[bi], bestSeed
