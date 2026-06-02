@@ -4965,6 +4965,31 @@ else                glyph = '*';        // asterisk</pre>
                 if (btn) btn.innerHTML = '&#9724; Stop Animation';
             }
         }
+        window._swarmInstances = {};
+        window.toggleFlip = function (id, event) {
+            if (event) event.stopPropagation(); // Prevent canvas click regeneration
+            var card = document.getElementById('card' + id);
+            if (!card) return;
+            
+            card.classList.toggle('flipped');
+            var isFlipped = card.classList.contains('flipped');
+            
+            if (isFlipped) {
+                if (!window._swarmInstances[id]) {
+                    var container = document.getElementById('three-container-' + id);
+                    if (container) {
+                        window._swarmInstances[id] = new ParticlesSwarm(container, id);
+                    }
+                }
+                if (window._swarmInstances[id]) {
+                    window._swarmInstances[id].start();
+                }
+            } else {
+                if (window._swarmInstances[id]) {
+                    window._swarmInstances[id].stop();
+                }
+            }
+        };
 
     </script>
     <div id="gallery-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:var(--bg); z-index:9999; overflow-y:auto; padding: 0 0 40px 0; box-sizing: border-box;">
