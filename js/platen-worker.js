@@ -209,6 +209,47 @@ onmessage = function (e) {
                 }
         }
 
+        // ── TASK 1: DENSITY SPACING FLOOR ──
+        // Enforce spacing globally: clear cells within a Chebyshev distance of 1 of higher-weight cells.
+        var candidates = [];
+        for (var xi = 0; xi < w; xi++) {
+            for (var yi = 0; yi < h; yi++) {
+                if (grid[xi][yi].col) {
+                    candidates.push(grid[xi][yi]);
+                }
+            }
+        }
+        // Sort candidates by weight descending, with a deterministic tie-breaker to preserve symmetry
+        candidates.sort(function (a, b) {
+            if (Math.abs(b.wt - a.wt) > 0.0001) {
+                return b.wt - a.wt;
+            }
+            return (a.x * 1000 + a.y) - (b.x * 1000 + b.y);
+        });
+
+        var cleared = [];
+        for (var xi = 0; xi < w; xi++) {
+            cleared[xi] = [];
+        }
+
+        for (var ci = 0; ci < candidates.length; ci++) {
+            var cell = candidates[ci];
+            if (cleared[cell.x][cell.y]) {
+                cell.col = null;
+                cell.wt = 0;
+                continue;
+            }
+            // Mark all 8 immediate neighbors as cleared, with coordinate wrapping
+            for (var dx = -1; dx <= 1; dx++) {
+                for (var dy = -1; dy <= 1; dy++) {
+                    if (dx === 0 && dy === 0) continue;
+                    var nx = safeMod(cell.x + dx, w);
+                    var ny = safeMod(cell.y + dy, h);
+                    cleared[nx][ny] = true;
+                }
+            }
+        }
+
         // Count flowers
         var a = 0;
         for (var fy = 0; fy < h; fy++) {
@@ -292,13 +333,21 @@ onmessage = function (e) {
                                 return (traits.motif === 'ichthus' && ((fx3 * 17 + fy3 * 7) % 100 < 40)) ? 90 : 0;
                             })();
 
+                        var level = 0;
+                        if (cell.wt < 0.36) level = 0;
+                        else if (cell.wt < 0.51) level = 1;
+                        else if (cell.wt < 0.66) level = 2;
+                        else if (cell.wt < 0.81) level = 3;
+                        else level = 4;
+
                         iterationResults.push({
                             x: wp3[0], y: wp3[1],
                             c: cell.col.c,
                             wt: cell.wt, // Normalized weight (0..1) from grid
                             sc: _sc,     // local cell scale factor for hyperbolic fitting
                             flip: shouldFlipFlower(fx3, fy3),
-                            rot: rot
+                            rot: rot,
+                            level: level
                         });
                         
                         if (traits.motif === 'chopin') {
@@ -318,7 +367,8 @@ onmessage = function (e) {
                                 wt: 1.0 - cell.wt, // Invert the weight for different text character selection
                                 sc: _sc,
                                 flip: !shouldFlipFlower(fx3, fy3),
-                                rot: rot
+                                rot: rot,
+                                level: level
                             });
                         }
                     }

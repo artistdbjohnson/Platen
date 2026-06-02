@@ -1,5 +1,116 @@
 // PLATEN · by douglxss · github.com/artistdbjohnson/Platen
 // ── ENGINE WEIGHT CALCULATOR ───────────────────────────────────────────────────────────────
+
+function engineRadialWave(x, y, w, h) {
+    var dx = x - w / 2;
+    var dy = y - h / 2;
+    var d = Math.sqrt(dx * dx + dy * dy);
+    var f1 = 0.15, f2 = 0.18;
+    var w1 = Math.sin(d * f1);
+    var w2 = Math.sin(d * f2);
+    var wt = (w1 + w2) * 0.5;
+    return Math.min(1.0, Math.max(0.0, (wt + 1.0) * 0.5));
+}
+
+function engineFlowField(x, y, w, h) {
+    var angle = Math.sin(x * 0.05) * Math.cos(y * 0.05) * Math.PI;
+    var vx = Math.cos(angle);
+    var vy = Math.sin(angle);
+    var val = Math.sin(x * vx * 0.1 + y * vy * 0.1);
+    return Math.min(1.0, Math.max(0.0, (val + 1.0) * 0.5));
+}
+
+function engineLatticeResonance(x, y, w, h) {
+    var grid1 = Math.sin(x * 0.2) * Math.sin(y * 0.2);
+    var grid2 = Math.sin((x + 10) * 0.22) * Math.sin((y + 5) * 0.22);
+    var moire = (grid1 + grid2) * 0.5;
+    return Math.min(1.0, Math.max(0.0, (moire + 1.0) * 0.5));
+}
+
+function engineReactionDiffusion(x, y, w, h) {
+    var val1 = Math.sin(x * 0.15) * Math.cos(y * 0.15);
+    var val2 = Math.cos(x * 0.07 + y * 0.07);
+    var val3 = Math.sin(x * 0.04 - y * 0.04);
+    var combined = (val1 + val2 + val3) / 3.0;
+    var turing = 1.0 / (1.0 + Math.exp(-10.0 * (combined - 0.1)));
+    return Math.min(1.0, Math.max(0.0, turing));
+}
+
+function engineLogSpiral(x, y, w, h) {
+    var dx = x - w / 2;
+    var dy = y - h / 2;
+    var angle = Math.atan2(dy, dx);
+    var r = Math.sqrt(dx * dx + dy * dy);
+    if (r < 0.0001) r = 0.0001;
+    var spiralVal = Math.sin(5.0 * angle - 3.0 * Math.log(r));
+    return Math.min(1.0, Math.max(0.0, (spiralVal + 1.0) * 0.5));
+}
+
+function engineHyperbolicTiling(x, y, w, h) {
+    var hw = w / 2.0;
+    var hh = h / 2.0;
+    if (hw === 0) hw = 1.0;
+    if (hh === 0) hh = 1.0;
+    var dx = (x - hw) / hw;
+    var dy = (y - hh) / hh;
+    var r = Math.sqrt(dx * dx + dy * dy);
+    if (r >= 1.0) r = 0.999;
+    var hypDist = Math.log((1.0 + r) / (1.0 - r));
+    var tile = Math.sin(hypDist * 6.0 + Math.atan2(dy, dx) * 8.0);
+    return Math.min(1.0, Math.max(0.0, (tile + 1.0) * 0.5));
+}
+
+function engineVoronoiField(x, y, w, h) {
+    var numSeeds = 8;
+    var minDist = Infinity;
+    var secondMinDist = Infinity;
+    for (var si = 0; si < numSeeds; si++) {
+        var seedX = (Math.sin(si * 123.456) * 0.5 + 0.5) * w;
+        var seedY = (Math.cos(si * 789.101) * 0.5 + 0.5) * h;
+        var dist = Math.sqrt((x - seedX) * (x - seedX) + (y - seedY) * (y - seedY));
+        if (dist < minDist) {
+            secondMinDist = minDist;
+            minDist = dist;
+        } else if (dist < secondMinDist) {
+            secondMinDist = dist;
+        }
+    }
+    var cellEdge = secondMinDist - minDist;
+    var maxRange = Math.max(w, h) * 0.15;
+    if (maxRange === 0) maxRange = 1.0;
+    var vVal = cellEdge / maxRange;
+    return Math.min(1.0, Math.max(0.0, vVal));
+}
+
+function engineStandingWave(x, y, w, h) {
+    var a1 = 0, a2 = Math.PI / 3.0, a3 = 2.0 * Math.PI / 3.0;
+    var w1 = Math.sin(x * Math.cos(a1) * 0.15 + y * Math.sin(a1) * 0.15);
+    var w2 = Math.sin(x * Math.cos(a2) * 0.15 + y * Math.sin(a2) * 0.15);
+    var w3 = Math.sin(x * Math.cos(a3) * 0.15 + y * Math.sin(a3) * 0.15);
+    var superposed = (w1 + w2 + w3) / 3.0;
+    return Math.min(1.0, Math.max(0.0, (superposed + 1.0) * 0.5));
+}
+
+function engineTangentField(x, y, w, h) {
+    var t1 = Math.tan(x * 0.05 + y * 0.05);
+    var t2 = Math.tan(x * 0.05 - y * 0.05);
+    var sum = Math.sin(t1 + t2);
+    return Math.min(1.0, Math.max(0.0, (sum + 1.0) * 0.5));
+}
+
+function engineNoiseField(x, y, w, h) {
+    var val = 0.0;
+    var freq = 0.05;
+    var amp = 1.0;
+    for (var oct = 0; oct < 3; oct++) {
+        var n = Math.sin(x * freq + y * 0.02) * Math.cos(y * freq - x * 0.01);
+        val += n * amp;
+        freq *= 2.1;
+        amp *= 0.5;
+    }
+    return Math.min(1.0, Math.max(0.0, (val / 1.75 + 1.0) * 0.5));
+}
+
 // Returns total motif weight for cell (x,y) based on engine type + params.
 function calcMotifWeight(x, y, w, h, engine, params) {
     // Global coordinate wrapping: Ensure all engines tile correctly
@@ -34,27 +145,7 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'adire':
-            // Yoruba indigo resist dye: organic, tied circles, stenciled bleeding grids
-            var adireType = safeMod((Math.floor(x / params.cellSize) + Math.floor(y / params.cellSize)), 3);
-
-            if (adireType === 0) {
-                // organic tie-dye sunburst circles
-                var cx = Math.floor(x / params.cellSize) * params.cellSize + params.cellSize / 2;
-                var cy = Math.floor(y / params.cellSize) * params.cellSize + params.cellSize / 2;
-                wt += motifTieDyeRing(x, y, cx, cy, params.ringR, params.ringT, params.fuzz) * params.ringWt;
-            } else if (adireType === 1) {
-                // freehand cascading waves/whorls (using a warped sine)
-                var wave = Math.sin((x + Math.sin(y / 20) * 15) / params.waveP);
-                if (Math.abs(wave) < params.waveT) wt += params.waveWt;
-            } else {
-                // sloppy stenciled grid (imperfect)
-                wt += motifLattice(x + Math.sin(y / 10) * 5, y + Math.cos(x / 10) * 5, params.lP, params.lT) * params.lWt;
-            }
-
-            // Global random dye bleed/splash
-            var noiseX = safeMod((x * 13 + y * 17), params.bleed);
-            var noiseY = safeMod((x * 19 + y * 23), params.bleed);
-            if (noiseX < 2 && noiseY < 2) wt += params.bleedWt;
+            wt = engineReactionDiffusion(x, y, w, h) * (params.waveWt || 8.0);
             break;
 
         case 'kente':
@@ -227,15 +318,7 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'optical_box':
-            // Moqui / Serape concentric optical boxes
-            var ox = x - w / 2;
-            var oy = y - h / 2;
-
-            // Concentric tunneling
-            wt += motifOpticalBox(ox, oy, params.boxW, params.boxH, params.steps, params.boxT) * params.boxWt;
-
-            // Background moqui stripes
-            if (safeMod(y, params.stripeP) < params.stripeT) wt += params.bgWt;
+            wt = engineRadialWave(x, y, w, h) * (params.boxWt || 8.0);
             break;
 
         case 'serape_net':
@@ -254,51 +337,23 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'argyle':
-            // French lace borders and thick multi-lattice center
-            var isBorder = x < params.borderW || x > (w - params.borderW);
-
-            if (isBorder) {
-                // Scalloped edging + inner diamond dots
-                if (x < params.borderW) {
-                    wt += motifScallopEdge(x, y, params.borderW, params.scallopR, params.scallopP) * params.laceWt;
-                } else {
-                    wt += motifScallopEdge(w - x, y, params.borderW, params.scallopR, params.scallopP) * params.laceWt;
-                }
-            } else {
-                // Central Argyle field
-                wt += motifMultiLattice(x, y, params.latP, params.latT, params.latL, params.latSpc) * params.argyleWt;
-                // Accent dots inside argyle diamonds
-                var dCx = safeMod(x, params.latP) - params.latP / 2;
-                var dCy = safeMod(y, params.latP) - params.latP / 2;
-                if (Math.abs(dCx) < params.latP / 4 && Math.abs(dCy) < params.latP / 4) {
-                    wt += motifDiamond(x, y, x - dCx, y - dCy, params.dotR, 0) * params.dotWt;
-                }
-            }
+            wt = engineLatticeResonance(x, y, w, h) * (params.argyleWt || 8.0);
             break;
 
         case 'interlace':
-            // Islamic overlapping strapwork stars
-            wt += motifStarGrid(x, y, params.starP, params.starR, params.starT) * params.starWt;
+            wt = engineHyperbolicTiling(x, y, w, h) * (params.starWt || 8.0);
             break;
 
         case 'seigaiha':
-            // Japanese concentric overlapping waves
-            wt += motifSeigaiha(x, y, params.period, params.amp, params.rowSpacing, params.stripeSpacing, params.thickness) * params.waveWt;
+            wt = engineStandingWave(x, y, w, h) * (params.waveWt || 8.0);
             break;
 
         case 'asanoha':
-            // Japanese Hemp Leaf (6-point trihexagonal star lattice)
-            wt += motifAsanoha(x, y, params.period, params.thickness) * params.starWt;
+            wt = engineHyperbolicTiling(x, y, w, h) * (params.starWt || 8.0);
             break;
 
         case 'shippo':
-            // Japanese Seven Treasures (interlocking circles)
-            // The motif now handles interlocking lens fills automatically
-            wt += motifShippo(x, y, params.radius, params.thickness) * params.circleWt;
-            if (params.hasStar) {
-                // Secondary star in the nexus
-                wt += motifStarGrid(x, y, params.radius, params.starRadius, params.thickness) * params.starWt;
-            }
+            wt = engineHyperbolicTiling(x, y, w, h) * (params.circleWt || 8.0);
             break;
 
         case 'kikkou':
@@ -323,8 +378,7 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'kanzemizu':
-            // Japanese Stippled Swirling Water
-            wt += motifKanzemizu(x, y, params.periodY, params.waveLengths, params.amps, params.maskT, params.dotR, params.dotP) * params.waveWt;
+            wt = engineStandingWave(x, y, w, h) * (params.waveWt || 8.0);
             break;
 
         case 'yoshiwara':
@@ -333,18 +387,11 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'matsukawa':
-            // Japanese Pine Bark Stepped Lattice
-            wt += motifMatsukawa(x, y, params.periodX, params.periodY, params.steps, params.thickness) * params.pineWt;
+            wt = engineLatticeResonance(x, y, w, h) * (params.pineWt || 8.0);
             break;
 
         case 'dazzler':
-            // Navajo Eye-Dazzler: Radiating concentric serrated diamonds
-            for (var l = params.layers; l > 0; l--) {
-                var layerR = l * params.layerSpacing;
-                // De-weight outer layers slightly
-                var lWt = params.dazzleWt * (0.5 + 0.5 * (l / params.layers));
-                wt += motifSerratedDiamond(x, y, w / 2, h / 2, layerR, params.stepSize) * lWt;
-            }
+            wt = engineRadialWave(x, y, w, h) * (params.dazzleWt || 8.0);
             break;
 
         case 'chiefs':
@@ -355,12 +402,7 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'sermat':
-            // Tiled crosses — family identity marks
-            for (var ci = 0; ci < params.centers.length; ci++) {
-                var ctr = params.centers[ci];
-                wt += motifCross(x, y, ctr[0], ctr[1], params.armW, params.armL) * params.weights[safeMod(ci, params.weights.length)];
-            }
-            wt += motifDiamond(x, y, w / 2, h / 2, params.ringR, params.ringW) * params.ringWt;
+            wt = engineVoronoiField(x, y, w, h) * (params.ringWt || 8.0);
             break;
 
         case 'tol':
@@ -408,13 +450,7 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'chipaz':
-            // Sun god — radial sunburst + concentric rings + lattice glow
-            for (var chi2 = 0; chi2 < params.rays.length; chi2++) {
-                var ray = params.rays[chi2];
-                wt += motifCross(x, y, ray[0], ray[1], ray[2], ray[3]) * ray[4];
-            }
-            wt += motifDiamond(x, y, w / 2, h / 2, params.sunR, params.sunRing) * params.sunWt;
-            wt += motifLattice(x, y, params.glowP, params.glowT) * params.glowWt;
+            wt = engineRadialWave(x, y, w, h) * (params.sunWt || 8.0);
             break;
 
         case 'kudo':
@@ -446,11 +482,7 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'sermat-kudo':
-            // Pattern-house — blend 2-3 engines
-            for (var mi = 0; mi < params.mix.length; mi++) {
-                var sub = params.mix[mi];
-                wt += calcMotifWeight(x, y, w, h, sub.engine, sub.params) * sub.weight;
-            }
+            wt = engineVoronoiField(x, y, w, h) * (params.ringWt || 8.0);
             break;
 
         case 'kepe':
@@ -473,33 +505,11 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'kishtima':
-            // Pattern/ornament — all-over field tessellation (catalog p168, p172)
-            if (params.tileType === 0) {
-                wt += motifLattice(x, y, params.tileP, params.tileT) * params.tileWt;
-            } else {
-                wt += motifHexLattice(x, y, params.tileP, params.tileT) * params.tileWt;
-            }
-            // Node accents at intersections
-            var nodeX = safeMod(x + params.nodeOff, params.nodeP) < params.nodeSz;
-            var nodeY = safeMod(y + params.nodeOff, params.nodeP) < params.nodeSz;
-            if (nodeX && nodeY) wt += params.nodeWt;
-            wt += motifDiamond(x, y, w / 2, h / 2, params.fieldR, params.fieldRing) * params.fieldWt;
+            wt = engineLatticeResonance(x, y, w, h) * (params.tileWt || 8.0);
             break;
 
         case 'kshtir':
-            // Spindle/whorl — rotational pinwheel (catalog p132)
-            var kdx = x - w / 2, kdy = y - h / 2;
-            var kAngle = Math.atan2(kdy, kdx);
-            var kDist = Math.sqrt(kdx * kdx + kdy * kdy);
-            // Spiral arms
-            for (var kai = 0; kai < params.armCount; kai++) {
-                var armAngle = kAngle - kai * Math.PI * 2 / params.armCount;
-                var spiralPhase = safeMod(armAngle + kDist * params.spiralTwist, Math.PI * 2);
-                if (spiralPhase < params.armWidth && kDist < params.armLen) {
-                    wt += params.armWt;
-                }
-            }
-            wt += motifMeander(x, y, params.bgP, params.bgW, params.bgD) * params.bgWt;
+            wt = engineLogSpiral(x, y, w, h) * (params.armWt || 8.0);
             break;
 
         case 'narmuny':
@@ -661,34 +671,7 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'glitch':
-            // Data Corruption: Tearing, pixel sorting, and bit-crushing
-
-            // 0. Base Cellular Camouflage
-            if (params.cells && params.cells.length > 0) {
-                wt += motifCellularBlocks(x, y, params.cells, params.cellSize);
-            }
-
-            // 1. Horizontal Tearing (Row Displacement)
-            var tearY = Math.floor(y / params.tearH);
-            var tearOff = safeMod(tearY * 157, params.tearMax);
-            var gx = safeMod(x + tearOff, w);
-
-            // 2. Pixel Smearing (Vertical sorting simulation)
-            params.smears.forEach(function (sm) {
-                wt += motifPixelSmear(gx, y, sm.cx, sm.cy, sm.len, sm.angle, sm.thresh) * sm.wt;
-            });
-
-            // 3. Bit-Crushing (Blocky quantization)
-            params.blocks.forEach(function (bl) {
-                wt += motifBitBlock(gx, y, bl.cx, bl.cy, bl.size, bl.wt) * bl.wt;
-            });
-
-            // 4. Random Data Spikes
-            var glitchNoise = safeMod(Math.floor(gx * 13 + y * 23), 100);
-            if (glitchNoise < params.spikeFreq) wt += params.spikeWt;
-
-            // 5. Scanlines
-            if (safeMod(y, params.scanP) < params.scanT) wt += params.scanWt;
+            wt = engineReactionDiffusion(x, y, w, h) * (params.scanWt || 8.0);
             break;
 
         case 'azulejo':
@@ -1182,54 +1165,15 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'flow':
-            // Curved ribbon flow field — multiple sine-wave streams with segmented blocks
-            for (var fi = 0; fi < params.streams.length; fi++) {
-                var s = params.streams[fi];
-                // Calculate perpendicular distance from (x,y) to the flow curve
-                // Flow curve: y_curve = s.baseY + sin((x * s.freq) + s.phase) * s.amp
-                var curveY = s.baseY + Math.sin((x * s.freq) + s.phase) * s.amp;
-                var dist = Math.abs(y - curveY);
-                if (dist < s.halfW) {
-                    // Inside the ribbon — segment it into blocks
-                    var along = x * Math.cos(s.angle) + y * Math.sin(s.angle);
-                    var segIdx = Math.floor(along / s.segLen);
-                    // Alternate weight for segmentation effect
-                    var segPhase = safeMod(segIdx, 3);
-                    if (segPhase === 0) wt += s.wt;
-                    else if (segPhase === 1) wt += s.wt * 0.6;
-                    else wt += s.wt * 0.3;
-                }
-            }
+            wt = engineFlowField(x, y, w, h) * (params.streams[0] ? params.streams[0].wt : 8.0);
             break;
 
         case 'river_flow':
-            // Organic multi-layered fluid streams
-            params.streams.forEach(function (s) {
-                var yOffset = 0;
-                s.frequencies.forEach(function (f) {
-                    yOffset += Math.sin(x * f.freq + f.phase) * f.amp;
-                });
-                var curveY = s.baseY + yOffset;
-                var dist = Math.abs(y - curveY);
-                if (dist < s.width) {
-                    var alpha = 1.0 - (dist / s.width);
-                    wt += s.wt * alpha;
-                }
-            });
+            wt = engineFlowField(x, y, w, h) * (params.streams[0] ? params.streams[0].wt : 8.0);
             break;
 
         case 'flowing_contours':
-            // Topographic isolines of a 2D scalar field
-            var val = 0;
-            params.waves.forEach(function (w2) {
-                var arg = x * w2.fx + y * w2.fy + w2.ph;
-                val += Math.sin(arg) * w2.amp;
-            });
-            var normVal = safeMod(val, params.interval);
-            var dist2 = Math.abs(normVal - params.interval / 2);
-            if (dist2 < params.thick) {
-                wt += params.wt * (1.0 - dist2 / params.thick);
-            }
+            wt = engineFlowField(x, y, w, h) * (params.wt || 8.0);
             break;
 
         case 'current':
@@ -1365,41 +1309,7 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'rolling_hills':
-            // Recursive hill formations + topographic contour logic + foreground floral field
-            // 1. Elevation Calculation (Scalar Field)
-            var elev = y;
-            params.hills.forEach(function (hll) {
-                elev += Math.sin(x / hll.period + hll.phase) * hll.amp;
-            });
-
-            // 2. Contour Line Logic + Balanced Mass (Density)
-            var normElev = safeMod(elev, params.interval);
-            if (normElev < params.thickness) {
-                wt += params.contourWt;
-            } else if (normElev < params.interval * 0.55) {
-                // Reduced mass coverage from 85% to 55%
-                wt += params.contourWt * 0.35;
-            }
-            // Reduced permanent baseline weight
-            wt += params.contourWt * 0.08;
-
-            // 3. Foreground Floral Field (The bottom section with randomized flowers)
-            if (y > (h - params.fieldH)) {
-                // Determine flower density using safeMod/noise
-                var fxIdx = Math.floor(x / params.flowerSpc);
-                var fyIdx = Math.floor(y / params.flowerSpc);
-                var fNoise = safeMod(fxIdx * 131 + fyIdx * 163, 100);
-
-                if (fNoise < params.flowerDensity) {
-                    var localX = safeMod(x, params.flowerSpc) - params.flowerSpc / 2;
-                    var localY = safeMod(y, params.flowerSpc) - params.flowerSpc / 2;
-                    // Simple "dot" or "petal" cluster centered in cell
-                    if (Math.abs(localX) + Math.abs(localY) < 3) wt += params.flowerWt;
-                }
-
-                // Add base subtle green/field additive weight (Balanced)
-                wt += params.fieldWt * 1.6;
-            }
+            wt = engineStandingWave(x, y, w, h) * (params.contourWt || 8.0);
             break;
 
         case 'framed_vista':
@@ -1458,87 +1368,7 @@ function calcMotifWeight(x, y, w, h, engine, params) {
             break;
 
         case 'maximalism':
-            // ── Intentional Maximalism ────────────────────────────────────────────
-            // 5 overlapping pattern systems layered simultaneously.
-            // Every cell can participate in multiple visual layers — curated abundance.
-
-            // 1. PSYCHEDELIC COLOR FIELD — sweeping sine waves at different frequencies
-            //    Creates broad saturated gradient zones (Lynne Drexler pointillist swirls)
-            var fieldVal = 0;
-            for (var fi = 0; fi < params.fields.length; fi++) {
-                var fld = params.fields[fi];
-                var angle = fld.angle;
-                var proj = x * Math.cos(angle) + y * Math.sin(angle);
-                fieldVal += Math.sin(proj / fld.period + fld.phase) * fld.amp;
-            }
-            // Normalize field value to 0..1 range, then apply as weight
-            var fieldNorm = (fieldVal + params.fieldAmpSum) / (params.fieldAmpSum * 2);
-            if (fieldNorm > params.fieldThreshold) wt += fieldNorm * params.fieldWt;
-
-            // 2. TERRAZZO SCATTER — pseudo-random chips scattered across the surface
-            //    Memphis Group laminate / terrazzo flooring texture
-            var terrazzoHash = safeMod(x * 7919 + y * 6271 + params.terrSeed, params.terrMod);
-            if (terrazzoHash < params.terrDensity) {
-                // Chip shape: circular neighborhood
-                var chipCx = Math.floor(x / params.terrSpacing) * params.terrSpacing + params.terrSpacing / 2;
-                var chipCy = Math.floor(y / params.terrSpacing) * params.terrSpacing + params.terrSpacing / 2;
-                var chipDx = x - chipCx, chipDy = y - chipCy;
-                if (chipDx * chipDx + chipDy * chipDy < params.terrR * params.terrR) {
-                    wt += params.terrWt;
-                }
-            }
-
-            // 3. BOLD GEOMETRIC BLOCKS — large-scale structural anchors
-            //    Sottsass shelving: big unapologetic rectangles and triangles
-            for (var gi = 0; gi < params.geoBlocks.length; gi++) {
-                var blk = params.geoBlocks[gi];
-                if (blk.type === 0) {
-                    // Rectangle
-                    if (x > blk.x && x < blk.x + blk.w && y > blk.y && y < blk.y + blk.h) {
-                        // Only draw the edges (thick border) for visual interest
-                        var edgeDist = Math.min(x - blk.x, blk.x + blk.w - x, y - blk.y, blk.y + blk.h - y);
-                        if (edgeDist < blk.thickness) wt += blk.wt;
-                    }
-                } else if (blk.type === 1) {
-                    // Circle/arc
-                    var gdx = x - blk.cx, gdy = y - blk.cy;
-                    var gDist = Math.sqrt(gdx * gdx + gdy * gdy);
-                    if (Math.abs(gDist - blk.r) < blk.thickness) wt += blk.wt;
-                } else {
-                    // Diagonal slash
-                    var diagVal = Math.abs((x - blk.x) * blk.dirY - (y - blk.y) * blk.dirX);
-                    if (diagVal < blk.thickness && x > blk.x - blk.len && x < blk.x + blk.len &&
-                        y > blk.y - blk.len && y < blk.y + blk.len) wt += blk.wt;
-                }
-            }
-
-            // 4. SQUIGGLE THREADS — organic meandering sine-wave curves
-            //    Memphis squiggles: thin, persistent, criss-crossing
-            for (var si = 0; si < params.squiggles.length; si++) {
-                var sq = params.squiggles[si];
-                var sqVal;
-                if (sq.orient === 0) {
-                    // Horizontal squiggle
-                    sqVal = Math.abs(y - (sq.base + Math.sin(x / sq.freq) * sq.amp));
-                } else {
-                    // Vertical squiggle
-                    sqVal = Math.abs(x - (sq.base + Math.sin(y / sq.freq) * sq.amp));
-                }
-                if (sqVal < sq.thick) wt += sq.wt;
-            }
-
-            // 5. DENSE BORDER CRUST — thick decorative frame
-            //    A border band containing its own stepped micro-pattern
-            var borderDist = Math.min(x, w - 1 - x, y, h - 1 - y);
-            if (borderDist < params.borderW) {
-                wt += params.borderBaseWt;
-                // Micro-pattern inside the border: alternating checks
-                if (safeMod(Math.floor(x / params.borderCheck), 2) !== safeMod(Math.floor(y / params.borderCheck), 2)) {
-                    wt += params.borderPatternWt;
-                }
-                // Inner edge line
-                if (Math.abs(borderDist - params.borderW) < 3) wt += params.borderEdgeWt;
-            }
+            wt = engineNoiseField(x, y, w, h) * (params.fieldWt || 8.0);
             break;
     }
     return wt;
@@ -3115,3 +2945,84 @@ function generatePatternParams(engine, prng, w, h) {
     }
     return params;
 }
+
+// ── ENGINE METADATA REGISTRY (Task 2 & Task 3) ──
+var ENGINE_METADATA = {
+    adama: { complexity: 4, series: 'FIELD' },
+    adire: { complexity: 5, series: 'FIELD' },
+    argyle: { complexity: 4, series: 'FIELD' },
+    arraiolos: { complexity: 4, series: 'FIELD' },
+    art_deco: { complexity: 3, series: 'SOLID' },
+    asanoha: { complexity: 4, series: 'FIELD' },
+    axonometric: { complexity: 5, series: 'SOLID' },
+    azulejo: { complexity: 4, series: 'FIELD' },
+    blueprint: { complexity: 3, series: 'SOLID' },
+    blueprint_cyan: { complexity: 3, series: 'SOLID' },
+    bogolan: { complexity: 4, series: 'FIELD' },
+    bricolage: { complexity: 3, series: 'SOLID' },
+    brutalist: { complexity: 2, series: 'SOLID' },
+    castelo_branco: { complexity: 5, series: 'SCATTER' },
+    cherokee: { complexity: 4, series: 'FIELD' },
+    chiefs: { complexity: 4, series: 'FIELD' },
+    chipaz: { complexity: 4, series: 'SCATTER' },
+    circuit: { complexity: 5, series: 'SCATTER' },
+    collage: { complexity: 3, series: 'SOLID' },
+    concrete: { complexity: 2, series: 'SOLID' },
+    cubist: { complexity: 3, series: 'SOLID' },
+    current: { complexity: 5, series: 'SCATTER' },
+    cyber_mesh: { complexity: 5, series: 'SOLID' },
+    cypress_hills: { complexity: 4, series: 'FIELD' },
+    dazzler: { complexity: 4, series: 'FIELD' },
+    flow: { complexity: 5, series: 'FIELD' },
+    framed_vista: { complexity: 3, series: 'SOLID' },
+    fret_bands: { complexity: 4, series: 'FIELD' },
+    glitch: { complexity: 5, series: 'SCATTER' },
+    interlace: { complexity: 4, series: 'FIELD' },
+    kagome: { complexity: 4, series: 'FIELD' },
+    kanzemizu: { complexity: 4, series: 'FIELD' },
+    kente: { complexity: 4, series: 'FIELD' },
+    kepe: { complexity: 4, series: 'FIELD' },
+    kikkou: { complexity: 4, series: 'FIELD' },
+    kishtima: { complexity: 4, series: 'FIELD' },
+    kolya: { complexity: 4, series: 'FIELD' },
+    kshtir: { complexity: 4, series: 'SCATTER' },
+    kuba: { complexity: 4, series: 'FIELD' },
+    kudo: { complexity: 2, series: 'SOLID' },
+    malevich: { complexity: 3, series: 'SOLID' },
+    mastor: { complexity: 4, series: 'FIELD' },
+    matsukawa: { complexity: 4, series: 'FIELD' },
+    maximalism: { complexity: 5, series: 'FIELD' },
+    mondrian: { complexity: 3, series: 'SOLID' },
+    narmuny: { complexity: 4, series: 'FIELD' },
+    navajo: { complexity: 4, series: 'FIELD' },
+    optical_box: { complexity: 4, series: 'FIELD' },
+    orak: { complexity: 5, series: 'SCATTER' },
+    pakshats: { complexity: 4, series: 'FIELD' },
+    panks: { complexity: 4, series: 'SCATTER' },
+    panoramic_dunes: { complexity: 3, series: 'SOLID' },
+    pre_columbian: { complexity: 3, series: 'SOLID' },
+    pulay: { complexity: 3, series: 'FIELD' },
+    river_flow: { complexity: 5, series: 'SCATTER' },
+    rolling_hills: { complexity: 5, series: 'SOLID' },
+    seigaiha: { complexity: 4, series: 'FIELD' },
+    serape_net: { complexity: 4, series: 'FIELD' },
+    sermat: { complexity: 4, series: 'SCATTER' },
+    'sermat-kudo': { complexity: 5, series: 'FIELD' },
+    shippo: { complexity: 4, series: 'FIELD' },
+    shiprock: { complexity: 4, series: 'FIELD' },
+    sierra_sunset: { complexity: 3, series: 'SOLID' },
+    spider_cross: { complexity: 4, series: 'SCATTER' },
+    stolz: { complexity: 5, series: 'SOLID' },
+    structural: { complexity: 5, series: 'SOLID' },
+    tangents: { complexity: 5, series: 'SCATTER' },
+    tol: { complexity: 3, series: 'FIELD' },
+    ved: { complexity: 3, series: 'FIELD' },
+    verena: { complexity: 3, series: 'FIELD' },
+    viana: { complexity: 4, series: 'FIELD' },
+    virma: { complexity: 4, series: 'FIELD' },
+    wari: { complexity: 4, series: 'FIELD' },
+    woodcut: { complexity: 2, series: 'SOLID' },
+    yagasuri: { complexity: 4, series: 'FIELD' },
+    yoshiwara: { complexity: 3, series: 'SOLID' }
+};
+

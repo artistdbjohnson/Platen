@@ -728,7 +728,7 @@
 
         /* ── CSS 3D Card Flip ── */
         .platen-panel {
-            perspective: 1500px;
+            perspective: 1200px;
             position: relative;
             overflow: visible !important;
         }
@@ -737,7 +737,7 @@
             height: 100%;
             position: relative;
             transform-style: preserve-3d;
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.7s ease; /* ~700ms ease transition */
         }
         .platen-card.flipped {
             transform: rotateY(180deg);
@@ -763,28 +763,61 @@
         }
         .btn-flip {
             position: absolute;
-            bottom: 12px;
-            right: 12px;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.95);
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 24px;
+            background: transparent;
             color: #000000;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #000000;
             font-family: monospace;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 12px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: transform 0.2s, background 0.2s;
+            transition: background 0.2s;
         }
         .btn-flip:hover {
-            transform: scale(1.1);
-            background: #ffffff;
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .breathing-toggle-container {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            font-family: monospace;
+            font-size: 9px;
+            color: #000000;
+            background: transparent;
+            border: 1px dashed #000000;
+            padding: 3px 6px;
+            white-space: nowrap;
+        }
+        .breathing-toggle-container label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+        .breathing-toggle-container input {
+            cursor: pointer;
+            margin: 0;
+        }
+        .canvas-black .btn-flip {
+            color: #ffffff;
+            border-color: #ffffff;
+        }
+        .canvas-black .btn-flip:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .canvas-black .breathing-toggle-container {
+            color: #ffffff;
+            border-color: #ffffff;
         }
 
         .platen-panel.loading .platen-loader {
@@ -1303,10 +1336,16 @@ else                glyph = '*';        // asterisk</pre>
                             <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
                         </div>
                         <div class="platen-face back">
-                            <div class="three-container" id="three-container-1" style="width: 100%; height: 100%;"></div>
+                            <canvas id="c1-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                            <div class="breathing-toggle-container">
+                                <label>
+                                    <input type="checkbox" id="breathing-toggle-1" onchange="toggleBreathing(1)">
+                                    BREATHING
+                                </label>
+                            </div>
                         </div>
                     </div>
-                    <button class="btn-flip" onclick="toggleFlip(1, event)" title="Flip Artwork">3D</button>
+                    <button class="btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">▲</button>
                 </div>
                 <div class="platen-panel canvas-white" id="panel2">
                     <div class="platen-card" id="card2">
@@ -1316,10 +1355,16 @@ else                glyph = '*';        // asterisk</pre>
                             <svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
                         </div>
                         <div class="platen-face back">
-                            <div class="three-container" id="three-container-2" style="width: 100%; height: 100%;"></div>
+                            <canvas id="c2-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                            <div class="breathing-toggle-container">
+                                <label>
+                                    <input type="checkbox" id="breathing-toggle-2" onchange="toggleBreathing(2)">
+                                    BREATHING
+                                </label>
+                            </div>
                         </div>
                     </div>
-                    <button class="btn-flip" onclick="toggleFlip(2, event)" title="Flip Artwork">3D</button>
+                    <button class="btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">▲</button>
                 </div>
                 <div class="platen-panel canvas-white" id="panel3">
                     <div class="platen-card" id="card3">
@@ -1329,10 +1374,16 @@ else                glyph = '*';        // asterisk</pre>
                             <svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
                         </div>
                         <div class="platen-face back">
-                            <div class="three-container" id="three-container-3" style="width: 100%; height: 100%;"></div>
+                            <canvas id="c3-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                            <div class="breathing-toggle-container">
+                                <label>
+                                    <input type="checkbox" id="breathing-toggle-3" onchange="toggleBreathing(3)">
+                                    BREATHING
+                                </label>
+                            </div>
                         </div>
                     </div>
-                    <button class="btn-flip" onclick="toggleFlip(3, event)" title="Flip Artwork">3D</button>
+                    <button class="btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">▲</button>
                 </div>
             </div>
         </section>
@@ -1350,8 +1401,6 @@ else                glyph = '*';        // asterisk</pre>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="js/platen-particles.js"></script>
     <script src="js/platen-core.js?v=chopin"></script>
     <script src="js/platen-motifs.js"></script>
     <script src="js/platen-engines.js"></script>
@@ -2168,6 +2217,11 @@ else                glyph = '*';        // asterisk</pre>
             var neededSpacesInfo = w - totalPartsLen;
 
             var infoLine = "";
+            var engStartIdx = -1;
+            var engEndIdx = -1;
+            var inkStartIdx = -1;
+            var inkEndIdx = -1;
+
             if (neededSpacesInfo >= minSpacersLen) {
                 var remainingSpaces = neededSpacesInfo - 3; // Subtract the three "-" characters
                 var space1 = Math.floor(remainingSpaces / 6); // 6 space sections: [p1] s1 - s2 [p2] s3 - s4 [p3] s5 - s6 [p4]
@@ -2181,30 +2235,64 @@ else                glyph = '*';        // asterisk</pre>
                 var padL3 = " ".repeat(space1 + (extra > 4 ? 1 : 0));
                 var padR3 = " ".repeat(space1);
                 
+                var lenP1 = p1.length;
+                var lenSep1 = padL1.length + 1 + padR1.length;
+                var lenP2 = p2.length;
+                var lenSep2 = padL2.length + 1 + padR2.length;
+                var lenP3 = p3.length;
+                var lenSep3 = padL3.length + 1 + padR3.length;
+
+                engStartIdx = lenP1 + lenSep1 + (p2.startsWith("ENGINE: ") ? 8 : 5);
+                engEndIdx = engStartIdx + engineName.length;
+
+                inkStartIdx = lenP1 + lenSep1 + lenP2 + lenSep2 + lenP3 + lenSep3 + (p4.startsWith("INK: ") ? 5 : 4);
+                inkEndIdx = inkStartIdx + chromeName.length;
+
                 infoLine = p1 + padL1 + "-" + padR1 + p2 + padL2 + "-" + padR2 + p3 + padL3 + "-" + padR3 + p4;
             } else {
-                infoLine = (p1 + " - " + p2 + " - " + p3 + " - " + p4).substring(0, w);
+                infoLine = p1 + " - " + p2 + " - " + p3 + " - " + p4;
+                var idxEng = infoLine.indexOf(p2);
+                if (idxEng !== -1) {
+                    engStartIdx = idxEng + (p2.startsWith("ENGINE: ") ? 8 : 5);
+                    engEndIdx = engStartIdx + engineName.length;
+                }
+                var idxInk = infoLine.indexOf(p4);
+                if (idxInk !== -1) {
+                    inkStartIdx = idxInk + (p4.startsWith("INK: ") ? 5 : 4);
+                    inkEndIdx = inkStartIdx + chromeName.length;
+                }
+                infoLine = infoLine.substring(0, w);
             }
 
-            return [
-                "",
-                title,
-                "",
-                c1,
-                c2,
-                c3,
-                c4,
-                c5,
-                "",
-                infoLine
-            ];
+            // 4. Series Line (Task 3)
+            var engineMetadata = typeof ENGINE_METADATA !== 'undefined' ? ENGINE_METADATA[traits.engine] : { complexity: 3, series: 'FIELD' };
+            var seriesVal = engineMetadata ? engineMetadata.series : 'FIELD';
+            var seriesLine = ("SERIES: " + seriesVal).padEnd(w, " ").substring(0, w);
+
+            return {
+                lines: [
+                    "",
+                    title,
+                    "",
+                    c1,
+                    c2,
+                    c3,
+                    c4,
+                    c5,
+                    "",
+                    infoLine,
+                    seriesLine
+                ],
+                engStart: engStartIdx,
+                engEnd: engEndIdx,
+                inkStart: inkStartIdx,
+                inkEnd: inkEndIdx,
+                infoRow: 9,
+                seriesRow: 10
+            };
         }
 
-        var _glContexts = {};
         function drawToWebGL(canvas, foregroundImg, backgroundImg) {
-            var canvasId = canvas.id;
-            var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-            
             var w = foregroundImg.naturalWidth || foregroundImg.width || 800;
             var h = foregroundImg.naturalHeight || foregroundImg.height || 1200;
             
@@ -2213,171 +2301,48 @@ else                glyph = '*';        // asterisk</pre>
             
             var includeBG = document.getElementById('inc-bg') ? document.getElementById('inc-bg').checked : true;
             
-            function fallback2D() {
-                var ctx2d = canvas.getContext('2d');
-                if (ctx2d) {
-                    ctx2d.clearRect(0, 0, w, h);
-                    if (backgroundImg && includeBG) {
-                        ctx2d.drawImage(backgroundImg, 0, 0, w, h);
-                    }
-                    ctx2d.drawImage(foregroundImg, 0, 0);
+            var ctx2d = canvas.getContext('2d');
+            if (ctx2d) {
+                ctx2d.clearRect(0, 0, w, h);
+                if (backgroundImg && includeBG) {
+                    ctx2d.drawImage(backgroundImg, 0, 0, w, h);
                 }
-                var panelEl = canvas.closest('.platen-panel');
-                if (panelEl) {
-                    var frontFace = panelEl.querySelector('.platen-face.front');
-                    var backFace = panelEl.querySelector('.platen-face.back');
-                    var targetEl = frontFace || panelEl;
-                    
-                    targetEl.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
-                    
-                    var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
-                    if (isUsLetter) {
-                        targetEl.style.backgroundSize = '106%';
-                        targetEl.style.backgroundColor = 'transparent';
-                    } else {
-                        targetEl.style.backgroundSize = 'cover';
-                        targetEl.style.backgroundColor = 'transparent';
-                    }
-                    var baseClass = panelEl.classList.contains('loading') ? 'platen-panel loading' : 'platen-panel';
-                    panelEl.className = baseClass + ' ' + _activeCanvasClass;
-                }
+                ctx2d.drawImage(foregroundImg, 0, 0);
             }
-
-            if (!gl) {
-                fallback2D();
-                return;
-            }
-
-            try {
-                gl.viewport(0, 0, w, h);
-                gl.clearColor(0.0, 0.0, 0.0, 0.0);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-
-                var cached = _glContexts[canvasId];
-                if (!cached) {
-                    var vsSource = 
-                        'attribute vec2 position;\n' +
-                        'varying vec2 vTexCoord;\n' +
-                        'void main() {\n' +
-                        '    vTexCoord = position * 0.5 + 0.5;\n' +
-                        '    vTexCoord.y = 1.0 - vTexCoord.y;\n' +
-                        '    gl_Position = vec4(position, 0.0, 1.0);\n' +
-                        '}\n';
-                    var fsSource = 
-                        'precision mediump float;\n' +
-                        'varying vec2 vTexCoord;\n' +
-                        'uniform sampler2D uBackground;\n' +
-                        'uniform sampler2D uForeground;\n' +
-                        'uniform bool uHasBackground;\n' +
-                        'void main() {\n' +
-                        '    vec4 fg = texture2D(uForeground, vTexCoord);\n' +
-                        '    if (uHasBackground) {\n' +
-                        '        vec4 bg = texture2D(uBackground, vTexCoord);\n' +
-                        '        gl_FragColor = vec4(mix(bg.rgb, fg.rgb, fg.a), bg.a);\n' +
-                        '    } else {\n' +
-                        '        gl_FragColor = fg;\n' +
-                        '    }\n' +
-                        '}\n';
-
-                    var vs = gl.createShader(gl.VERTEX_SHADER);
-                    gl.shaderSource(vs, vsSource);
-                    gl.compileShader(vs);
-                    if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
-                        console.error("VS compile error:", gl.getShaderInfoLog(vs));
-                    }
-
-                    var fs = gl.createShader(gl.FRAGMENT_SHADER);
-                    gl.shaderSource(fs, fsSource);
-                    gl.compileShader(fs);
-                    if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
-                        console.error("FS compile error:", gl.getShaderInfoLog(fs));
-                    }
-
-                    var program = gl.createProgram();
-                    gl.attachShader(program, vs);
-                    gl.attachShader(program, fs);
-                    gl.linkProgram(program);
-                    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-                        console.error("Link error:", gl.getProgramInfoLog(program));
-                    }
-
-                    var vertices = new Float32Array([
-                        -1.0, -1.0,
-                         1.0, -1.0,
-                        -1.0,  1.0,
-                        -1.0,  1.0,
-                         1.0, -1.0,
-                         1.0,  1.0
-                    ]);
-                    var buffer = gl.createBuffer();
-                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-                    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-                    cached = {
-                        program: program,
-                        buffer: buffer,
-                        positionLoc: gl.getAttribLocation(program, 'position'),
-                        uBackgroundLoc: gl.getUniformLocation(program, 'uBackground'),
-                        uForegroundLoc: gl.getUniformLocation(program, 'uForeground'),
-                        uHasBackgroundLoc: gl.getUniformLocation(program, 'uHasBackground'),
-                        bgTexture: gl.createTexture(),
-                        fgTexture: gl.createTexture()
-                    };
-                    _glContexts[canvasId] = cached;
-                }
-
-                gl.useProgram(cached.program);
-
-                gl.bindBuffer(gl.ARRAY_BUFFER, cached.buffer);
-                gl.enableVertexAttribArray(cached.positionLoc);
-                gl.vertexAttribPointer(cached.positionLoc, 2, gl.FLOAT, false, 0, 0);
-
-                if (backgroundImg && backgroundImg.complete && backgroundImg.naturalWidth > 0 && includeBG) {
-                    gl.activeTexture(gl.TEXTURE0);
-                    gl.bindTexture(gl.TEXTURE_2D, cached.bgTexture);
-                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, backgroundImg);
-                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-                    gl.uniform1i(cached.uBackgroundLoc, 0);
-                    gl.uniform1i(cached.uHasBackgroundLoc, 1);
+            var panelEl = canvas.closest('.platen-panel');
+            if (panelEl) {
+                var frontFace = panelEl.querySelector('.platen-face.front');
+                var targetEl = frontFace || panelEl;
+                
+                targetEl.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
+                
+                var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
+                if (isUsLetter) {
+                    targetEl.style.backgroundSize = '106%';
+                    targetEl.style.backgroundColor = 'transparent';
                 } else {
-                    gl.uniform1i(cached.uHasBackgroundLoc, 0);
+                    targetEl.style.backgroundSize = 'cover';
+                    targetEl.style.backgroundColor = 'transparent';
                 }
+                var baseClass = panelEl.classList.contains('loading') ? 'platen-panel loading' : 'platen-panel';
+                panelEl.className = baseClass + ' ' + _activeCanvasClass;
+            }
+        }
 
-                gl.activeTexture(gl.TEXTURE1);
-                gl.bindTexture(gl.TEXTURE_2D, cached.fgTexture);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, foregroundImg);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-                gl.uniform1i(cached.uForegroundLoc, 1);
-
-                gl.drawArrays(gl.TRIANGLES, 0, 6);
-                var panelEl = canvas.closest('.platen-panel');
-                if (panelEl) {
-                    var frontFace = panelEl.querySelector('.platen-face.front');
-                    var backFace = panelEl.querySelector('.platen-face.back');
-                    var targetEl = frontFace || panelEl;
-                    
-                    targetEl.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
-                    
-                    var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
-                    if (isUsLetter) {
-                        targetEl.style.backgroundSize = '106%';
-                        targetEl.style.backgroundColor = 'transparent';
-                    } else {
-                        targetEl.style.backgroundSize = 'cover';
-                        targetEl.style.backgroundColor = 'transparent';
-                    }
-                    var baseClass = panelEl.classList.contains('loading') ? 'platen-panel loading' : 'platen-panel';
-                    panelEl.className = baseClass + ' ' + _activeCanvasClass;
-                }
-            } catch (e) {
-                console.warn("WebGL draw failed, falling back to 2D context:", e);
-                fallback2D();
+        function getTypewriterGlyphs(symmetry, motif) {
+            var isClassic = motif === 'typewriter_classic';
+            if (symmetry === 'rotational' || symmetry === 'quad' || symmetry === 'kaleidoscope' || symmetry === 'radial' || symmetry === 'both') {
+                return isClassic ? 
+                    ['typewriter_dot', 'typewriter_circle', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_classic'] :
+                    ['typewriter_dot', 'typewriter_circle', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_square'];
+            } else if (symmetry === 'glide' || symmetry === 'diagonal') {
+                return isClassic ?
+                    ['typewriter_comma', 'typewriter_slash', 'typewriter_x', 'typewriter_asterisk', 'typewriter_classic'] :
+                    ['typewriter_comma', 'typewriter_slash', 'typewriter_x', 'typewriter_asterisk', 'typewriter_square'];
+            } else {
+                return isClassic ?
+                    ['typewriter_dash', 'typewriter_dot', 'typewriter_plus', 'typewriter_classic', 'typewriter_classic'] :
+                    ['typewriter_dash', 'typewriter_dot', 'typewriter_plus', 'typewriter_square', 'typewriter_square'];
             }
         }
 
@@ -2406,7 +2371,7 @@ else                glyph = '*';        // asterisk</pre>
 
                 var margin = 0;
                 var w_gen = w - 2 * margin;
-                var h_gen = h - 2 * margin - ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') ? 10 : 0);
+                var h_gen = h - 2 * margin - ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') ? 11 : 0);
 
                 // We will build a new DocumentFragment to hold the new elements,
                 // and swap it out once the worker completes.
@@ -2454,14 +2419,14 @@ else                glyph = '*';        // asterisk</pre>
                         var f = flowers[i];
 
                         var px = (f.x + 4 + margin) * sizeX;
-                        var py = (f.y + 4 + margin + ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') ? 10 : 0)) * sizeY;
+                        var py = (f.y + 4 + margin + ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') ? 11 : 0)) * sizeY;
                         
                         var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
                         if (isGraphPaper) {
                             var offX = isGraphPaperSq ? 1 : 0;
                             var offY = isGraphPaperSq ? 1 : 0;
                             px = 9 + (f.x + offX) * sizeX;
-                            py = 38 + (f.y + offY + ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') ? 10 : 0)) * sizeY;
+                            py = 38 + (f.y + offY + ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') ? 11 : 0)) * sizeY;
                         }
 
                         // Apply new spaces
@@ -2544,11 +2509,7 @@ else                glyph = '*';        // asterisk</pre>
                                 // Skip low density cells entirely
                                 continue;
                             }
-                            var _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
-                            if (traits.motif === 'typewriter_classic') {
-                                // Classic Density Matrix uses / * # (mapped to classic density scale)
-                                _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_classic'];
-                            }
+                            var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
                             // FIVE-TIER DENSITY MAP
                             var _levelIdx;
                             if (f.wt < 0.36) {
@@ -2653,7 +2614,8 @@ else                glyph = '*';        // asterisk</pre>
                             hSizeY = sizeY * (w / 78);
                         }
 
-                        var headerLines = getTypewriterHeaderLines(traits, RENDER_SEED, hW);
+                        var headerData = getTypewriterHeaderLines(traits, RENDER_SEED, hW);
+                        var headerLines = headerData.lines;
                         var textCol = '#000000'; // Default to black
                         if (traits.canvas === 'black') {
                             textCol = '#ffffff'; // Pure white header text for black canvas
@@ -2677,13 +2639,56 @@ else                glyph = '*';        // asterisk</pre>
                                     charY = 38 + (row - 1) * hSizeY + hSizeY / 2;
                                 }
 
-                                 var textEl = dc.createElementNS(svgNS, "text");
+                                var textEl = dc.createElementNS(svgNS, "text");
                                 textEl.setAttribute("x", charX);
                                 textEl.setAttribute("y", charY);
-                                 textEl.setAttribute("fill", textCol);
-                                textEl.setAttribute("font-size", (hSizeY * 0.92) + "px");
+                                
+                                var currentCharCol = textCol;
+                                var currentSize = hSizeY * 0.92;
+                                var currentWeight = "bold";
+
+                                // Task 2 & Task 3 dynamic character styling
+                                if (row === headerData.infoRow) {
+                                    if (col >= headerData.inkStart && col < headerData.inkEnd) {
+                                        if (cls && cls.length > 0) {
+                                            var chromeName = shortenChromeName(traits.chromes);
+                                            var relativeColIdx = col - headerData.inkStart;
+                                            var parts = chromeName.split(/[\/\s-]/);
+                                            if (parts.length > 1) {
+                                                var currentPos = 0;
+                                                var partIdx = -1;
+                                                for (var pi = 0; pi < parts.length; pi++) {
+                                                    var part = parts[pi];
+                                                    var nextPos = currentPos + part.length;
+                                                    if (relativeColIdx >= currentPos && relativeColIdx < nextPos) {
+                                                        partIdx = pi;
+                                                        break;
+                                                    }
+                                                    currentPos = nextPos + 1; // plus separator
+                                                }
+                                                if (partIdx !== -1) {
+                                                    var colIdx = partIdx % cls.length;
+                                                    currentCharCol = getRenderColor(cls[colIdx].c);
+                                                }
+                                            } else {
+                                                var colIdx = relativeColIdx % cls.length;
+                                                currentCharCol = getRenderColor(cls[colIdx].c);
+                                            }
+                                        }
+                                    } else if (col >= headerData.engStart && col < headerData.engEnd) {
+                                        var engineMetadata = typeof ENGINE_METADATA !== 'undefined' ? ENGINE_METADATA[traits.engine] : { complexity: 3, series: 'FIELD' };
+                                        var rank = engineMetadata ? engineMetadata.complexity : 3;
+                                        var sizeScale = 0.8 + (rank - 1) * 0.1; // 0.8 to 1.2
+                                        currentSize = hSizeY * 0.92 * sizeScale;
+                                        var weights = ['300', '400', '600', '800', '900'];
+                                        currentWeight = weights[rank - 1] || 'bold';
+                                    }
+                                }
+
+                                textEl.setAttribute("fill", currentCharCol);
+                                textEl.setAttribute("font-size", currentSize + "px");
                                 textEl.setAttribute("font-family", "Courier, 'Courier New', monospace");
-                                textEl.setAttribute("font-weight", "bold");
+                                textEl.setAttribute("font-weight", currentWeight);
                                 textEl.setAttribute("text-anchor", "middle");
                                 textEl.setAttribute("dominant-baseline", "central");
                                 textEl.textContent = char;
@@ -2733,8 +2738,17 @@ else                glyph = '*';        // asterisk</pre>
                     WorkerPool.push(worker);
 
                     _lastFlowers[id] = flowers; // Store for heightmap/Z-SVG
-                    if (window._swarmInstances && window._swarmInstances[id]) {
-                        window._swarmInstances[id].update();
+                    _lastWGen[id] = w_gen;
+                    _lastHGen[id] = h_gen;
+                    if (document.getElementById('card' + id) && document.getElementById('card' + id).classList.contains('flipped') && document.getElementById('breathing-toggle-' + id) && document.getElementById('breathing-toggle-' + id).checked) {
+                        _breathingActive[id] = false;
+                        if (_breathingRafIds[id]) {
+                            cancelAnimationFrame(_breathingRafIds[id]);
+                            _breathingRafIds[id] = null;
+                        }
+                        startBreathing(id);
+                    } else {
+                        drawBackCanvas(id);
                     }
                     resolve({ flowers: data.flowerCount, seed: data.seed, attempts: data.attempts });
                 };
@@ -2965,13 +2979,13 @@ else                glyph = '*';        // asterisk</pre>
                 var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
                 flowers.forEach(function (f) {
                     var cellX = (f.x + 4) * sizeX;
-                    var cellY = (f.y + 4 + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') ? 10 : 0)) * sizeY;
+                    var cellY = (f.y + 4 + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') ? 11 : 0)) * sizeY;
                     if (isGraphPaper) {
                         var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
                         var offX = isGraphPaperSq ? 1 : 0;
                         var offY = isGraphPaperSq ? 1 : 0;
                         cellX = 9 + (f.x + offX) * sizeX;
-                        cellY = 38 + (f.y + offY + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') ? 10 : 0)) * sizeY;
+                        cellY = 38 + (f.y + offY + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') ? 11 : 0)) * sizeY;
                     }
                     var scX = (rSize / 20) * scale, scY = (rSize / 20) * scale;
                     var charW = rSize * scale, charH = rSize * scale;
@@ -3009,10 +3023,7 @@ else                glyph = '*';        // asterisk</pre>
                         if (f.wt < 0.20) {
                             return; // skip low density cells
                         }
-                        var _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
-                        if (TRAITS.motif === 'typewriter_classic') {
-                            _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_classic'];
-                        }
+                        var _glyphSet = getTypewriterGlyphs(TRAITS.symmetry, TRAITS.motif);
                         // FIVE-TIER DENSITY MAP
                         var _levelIdx;
                         if (f.wt < 0.36) {
@@ -3106,10 +3117,7 @@ else                glyph = '*';        // asterisk</pre>
                         if (f.wt < 0.20) {
                             return; // skip low density cells
                         }
-                        var _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
-                        if (TRAITS.motif === 'typewriter_classic') {
-                            _glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_classic'];
-                        }
+                        var _glyphSet = getTypewriterGlyphs(TRAITS.symmetry, TRAITS.motif);
                         // FIVE-TIER DENSITY MAP
                         var _levelIdx;
                         if (f.wt < 0.36) {
@@ -3140,13 +3148,13 @@ else                glyph = '*';        // asterisk</pre>
                     var path = document.createElementNS(svgNS, "path");
                     var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
                     var px = (f.x + 4) * sizeX;
-                    var py = (f.y + 4 + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') ? 10 : 0)) * sizeY;
+                    var py = (f.y + 4 + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') ? 11 : 0)) * sizeY;
                     if (isGraphPaper) {
                         var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
                         var offX = isGraphPaperSq ? 1 : 0;
                         var offY = isGraphPaperSq ? 1 : 0;
                         px = 9 + (f.x + offX) * sizeX;
-                        py = 38 + (f.y + offY + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') ? 10 : 0)) * sizeY;
+                        py = 38 + (f.y + offY + ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') ? 11 : 0)) * sizeY;
                     }
                     var scX = rSize / 20, scY = rSize / 20;
                     if (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') {
@@ -5003,9 +5011,103 @@ else                glyph = '*';        // asterisk</pre>
                 if (btn) btn.innerHTML = '&#9724; Stop Animation';
             }
         }
-        window._swarmInstances = {};
+        var _lastFlowers = {};
+        var _lastWGen = {};
+        var _lastHGen = {};
+        var _breathingActive = { 1: false, 2: false, 3: false };
+        var _breathingPeriods = { 1: 7.0, 2: 7.0, 3: 7.0 };
+        var _breathingStartTime = { 1: 0, 2: 0, 3: 0 };
+        var _breathingRafIds = {};
+
+        function getBreathingPeriod(seed) {
+            return 6.0 + (Math.abs(seed) % 200) / 100.0;
+        }
+
+        window.drawBackCanvas = function (id) {
+            var canvas = document.getElementById('c' + id + '-back');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            
+            var size = 1200;
+            canvas.width = size;
+            canvas.height = size;
+            
+            ctx.clearRect(0, 0, size, size);
+            
+            var activeBgImg = typeof _activeCanvasImg !== 'undefined' ? _activeCanvasImg : null;
+            if (activeBgImg && activeBgImg.complete && activeBgImg.naturalWidth > 0) {
+                ctx.drawImage(activeBgImg, 0, 0, size, size);
+            } else {
+                ctx.fillStyle = TRAITS.canvas === 'black' ? '#151515' : '#f5f5f5';
+                ctx.fillRect(0, 0, size, size);
+            }
+            
+            var flowers = _lastFlowers[id];
+            if (!flowers || flowers.length === 0) return;
+            
+            var gridW = _lastWGen[id] || 78;
+            var gridH = _lastHGen[id] || 148;
+            
+            var padding = 120;
+            var availSize = size - 2 * padding;
+            var scale = Math.min(availSize / gridW, availSize / gridH);
+            
+            var offsetX = (size - gridW * scale) / 2;
+            var offsetY = (size - gridH * scale) / 2;
+            
+            flowers.forEach(function (f) {
+                var px = offsetX + f.x * scale;
+                var py = offsetY + f.y * scale;
+                
+                ctx.save();
+                ctx.translate(px, py);
+                
+                var glyphScale = (scale / 20) * (f.sc || 1);
+                if (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') {
+                    glyphScale *= 1.25;
+                }
+                
+                ctx.scale(glyphScale, glyphScale);
+                ctx.translate(10, 10);
+                if (f.flip) ctx.rotate(Math.PI);
+                if (f.rot) ctx.rotate(f.rot * Math.PI / 180);
+                ctx.translate(-10, -10);
+                
+                ctx.fillStyle = f.c;
+                
+                var opacity = 1.0;
+                if (_breathingActive[id] && (f.level === 0 || f.level === 1)) {
+                    var period = _breathingPeriods[id] || 7.0;
+                    var elapsed = (Date.now() - _breathingStartTime[id]) / 1000.0;
+                    var sine = Math.sin(2 * Math.PI * elapsed / period);
+                    opacity = 0.3 + ((sine + 1) / 2) * 0.7;
+                }
+                ctx.globalAlpha = opacity;
+                
+                var motifPath = MOTIF_PATHS[TRAITS.motif];
+                if (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') {
+                    var glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
+                    if (TRAITS.motif === 'typewriter_classic') {
+                        glyphSet = ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_classic'];
+                    }
+                    motifPath = MOTIF_PATHS[glyphSet[f.level]];
+                } else if (TRAITS.motif === 'stars_and_stripes') {
+                    if (f.c.toUpperCase() === '#002868' || f.c.toUpperCase() === '#FFFFFF') {
+                        motifPath = MOTIF_PATHS['star'];
+                    } else {
+                        motifPath = MOTIF_PATHS['stripes'];
+                    }
+                }
+                
+                var path2d = new Path2D(motifPath);
+                ctx.fill(path2d);
+                ctx.restore();
+            });
+        };
+
         window.toggleFlip = function (id, event) {
-            if (event) event.stopPropagation(); // Prevent canvas click regeneration
+            if (event) event.stopPropagation();
             var card = document.getElementById('card' + id);
             if (!card) return;
             
@@ -5013,21 +5115,48 @@ else                glyph = '*';        // asterisk</pre>
             var isFlipped = card.classList.contains('flipped');
             
             if (isFlipped) {
-                if (!window._swarmInstances[id]) {
-                    var container = document.getElementById('three-container-' + id);
-                    if (container) {
-                        window._swarmInstances[id] = new ParticlesSwarm(container, id);
-                    }
-                }
-                if (window._swarmInstances[id]) {
-                    window._swarmInstances[id].start();
+                var toggle = document.getElementById('breathing-toggle-' + id);
+                if (toggle && toggle.checked) {
+                    startBreathing(id);
+                } else {
+                    drawBackCanvas(id);
                 }
             } else {
-                if (window._swarmInstances[id]) {
-                    window._swarmInstances[id].stop();
-                }
+                stopBreathing(id);
             }
         };
+
+        window.toggleBreathing = function (id) {
+            var toggle = document.getElementById('breathing-toggle-' + id);
+            if (toggle && toggle.checked) {
+                startBreathing(id);
+            } else {
+                stopBreathing(id);
+            }
+        };
+
+        function startBreathing(id) {
+            if (_breathingActive[id]) return;
+            _breathingActive[id] = true;
+            _breathingPeriods[id] = getBreathingPeriod(RENDER_SEED);
+            _breathingStartTime[id] = Date.now();
+            
+            function loop() {
+                if (!_breathingActive[id]) return;
+                drawBackCanvas(id);
+                _breathingRafIds[id] = requestAnimationFrame(loop);
+            }
+            _breathingRafIds[id] = requestAnimationFrame(loop);
+        }
+
+        function stopBreathing(id) {
+            _breathingActive[id] = false;
+            if (_breathingRafIds[id]) {
+                cancelAnimationFrame(_breathingRafIds[id]);
+                _breathingRafIds[id] = null;
+            }
+            drawBackCanvas(id);
+        }
 
     </script>
     <div id="gallery-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:var(--bg); z-index:9999; overflow-y:auto; padding: 0 0 40px 0; box-sizing: border-box;">
