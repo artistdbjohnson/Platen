@@ -1375,14 +1375,14 @@ else                glyph = '*';        // asterisk</pre>
                         </div>
                         <div class="platen-face back">
                             <canvas id="c1-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
-                            <button class="back-btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">←</button>
+                            <button class="back-btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">RECTO</button>
                             <div class="back-download-links">
                                 <a href="#" onclick="downloadBackHiRes(1, 'png', event)">png</a>
                                 <a href="#" onclick="downloadBackHiRes(1, 'jpg', event)">jpg</a>
                             </div>
                         </div>
                     </div>
-                    <button class="btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">→</button>
+                    <button class="btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">VERSO</button>
                 </div>
                 <div class="platen-panel canvas-white" id="panel2">
                     <div class="platen-card" id="card2">
@@ -1393,14 +1393,14 @@ else                glyph = '*';        // asterisk</pre>
                         </div>
                         <div class="platen-face back">
                             <canvas id="c2-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
-                            <button class="back-btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">←</button>
+                            <button class="back-btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">RECTO</button>
                             <div class="back-download-links">
                                 <a href="#" onclick="downloadBackHiRes(2, 'png', event)">png</a>
                                 <a href="#" onclick="downloadBackHiRes(2, 'jpg', event)">jpg</a>
                             </div>
                         </div>
                     </div>
-                    <button class="btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">→</button>
+                    <button class="btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">VERSO</button>
                 </div>
                 <div class="platen-panel canvas-white" id="panel3">
                     <div class="platen-card" id="card3">
@@ -1411,14 +1411,14 @@ else                glyph = '*';        // asterisk</pre>
                         </div>
                         <div class="platen-face back">
                             <canvas id="c3-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
-                            <button class="back-btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">←</button>
+                            <button class="back-btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">RECTO</button>
                             <div class="back-download-links">
                                 <a href="#" onclick="downloadBackHiRes(3, 'png', event)">png</a>
                                 <a href="#" onclick="downloadBackHiRes(3, 'jpg', event)">jpg</a>
                             </div>
                         </div>
                     </div>
-                    <button class="btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">→</button>
+                    <button class="btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">VERSO</button>
                 </div>
             </div>
         </section>
@@ -1654,16 +1654,13 @@ else                glyph = '*';        // asterisk</pre>
             else if (mode === 'graph_paper_banner' && btnGraphPaperBanner) btnGraphPaperBanner.classList.add('active');
             else if (mode === 'graph_paper_sq_banner' && btnGraphPaperSqBanner) btnGraphPaperSqBanner.classList.add('active');
 
-            // Reverse the arrow on the solo layouts
-            if (mode === 'square' || mode === 'panel') {
-                document.querySelectorAll('#panel1 .btn-flip, #panel1 .back-btn-flip').forEach(function(btn) {
-                    btn.textContent = '←';
-                });
-            } else {
-                document.querySelectorAll('#panel1 .btn-flip, #panel1 .back-btn-flip').forEach(function(btn) {
-                    btn.textContent = '→';
-                });
-            }
+            // Maintain the VERSO/RECTO labels
+            document.querySelectorAll('.btn-flip').forEach(function(btn) {
+                btn.textContent = 'VERSO';
+            });
+            document.querySelectorAll('.back-btn-flip').forEach(function(btn) {
+                btn.textContent = 'RECTO';
+            });
 
             // Auto-render on layout change
             renderAll(true);
