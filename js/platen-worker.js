@@ -252,10 +252,12 @@ onmessage = function (e) {
         // ── TASK 1: DENSITY SPACING FLOOR ──
         // Enforce spacing globally: clear cells within a Chebyshev distance of 1 of higher-weight cells.
         var candidates = [];
-        for (var xi = 0; xi < w; xi++) {
-            for (var yi = 0; yi < h; yi++) {
-                if (grid[xi][yi].col) {
-                    candidates.push(grid[xi][yi]);
+        if (traits.space !== 'moire') {
+            for (var xi = 0; xi < w; xi++) {
+                for (var yi = 0; yi < h; yi++) {
+                    if (grid[xi][yi].col) {
+                        candidates.push(grid[xi][yi]);
+                    }
                 }
             }
         }
