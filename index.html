@@ -117,12 +117,14 @@
 
         /* ── Left Column: About ── */
         .col-about {
-            padding: 0 25px 30px 25px;
+            padding: 0 20px 20px 20px;
             border-right: 1px solid var(--border);
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
+            height: 100vh;
+            box-sizing: border-box;
         }
 
         .col-about h2 {
@@ -130,22 +132,24 @@
             font-weight: 500;
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             position: sticky;
             top: 0;
             background: var(--bg);
-            padding-top: 30px;
-            padding-bottom: 10px;
+            padding-top: 15px;
+            padding-bottom: 5px;
             margin-top: 0;
             z-index: 10;
         }
 
         .col-about p {
-            font-size: 10px;
-            line-height: 1.5;
+            font-size: 11px;
+            line-height: 1.3;
+            letter-spacing: -0.02em;
             color: var(--text);
             opacity: 0.85;
             max-width: 45ch;
+            margin: 4px 0;
         }
 
         /* ── Middle Column: Controls ── */
@@ -155,6 +159,8 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
         }
 
         .control-section {
@@ -268,6 +274,8 @@
             flex-direction: column;
             overflow: hidden;
             position: relative;
+            height: 100vh;
+            box-sizing: border-box;
         }
 
         .platen-panel {
@@ -337,8 +345,8 @@
         }
 
         #canvas-wrap.banner .platen-panel {
-            width: min(calc((100vw - 120px) / 3), calc(80vh * 9 / 16));
-            height: min(80vh, calc(((100vw - 120px) / 3) * 16 / 9));
+            width: min(calc((100vw - 120px) / 3), calc(100% * 9 / 16));
+            height: min(100%, calc(((100vw - 120px) / 3) * 16 / 9));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -374,7 +382,8 @@
             justify-content: center;
             height: 100%;
             aspect-ratio: 9 / 16;
-            min-height: 80vh;
+            max-height: 100%;
+            max-width: 100%;
             /* Ensure size while loading */
         }
 
@@ -443,8 +452,8 @@
             justify-content: center;
             height: 100%;
             aspect-ratio: 1 / 1;
-            min-height: 80vh;
-            max-height: 80vh;
+            max-height: 100%;
+            max-width: 100%;
         }
 
         /* Banner 1:1: 3 square panels side by side */
@@ -455,8 +464,8 @@
         }
 
         #canvas-wrap.banner_sq .platen-panel {
-            width: min(calc((100vw - 120px) / 3), calc(80vh * 1 / 1));
-            height: min(80vh, calc(((100vw - 120px) / 3) * 1 / 1));
+            width: min(calc((100vw - 120px) / 3), calc(100% * 1 / 1));
+            height: min(100%, calc(((100vw - 120px) / 3) * 1 / 1));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -482,7 +491,8 @@
             justify-content: center;
             height: 100%;
             aspect-ratio: 32 / 40;
-            min-height: 80vh;
+            max-height: 100%;
+            max-width: 100%;
         }
 
         #canvas-wrap.grid_32_40 .platen-panel svg {
@@ -500,14 +510,11 @@
         }
 
         #canvas-wrap.banner_32_40 .platen-panel {
-            flex: 0 0 31%;
-            aspect-ratio: 32 / 40;
+            width: min(calc((100vw - 120px) / 3), calc(100% * 32 / 40));
+            height: min(100%, calc(((100vw - 120px) / 3) * 40 / 32));
             display: flex;
             align-items: center;
             justify-content: center;
-            min-width: 0;
-            height: auto;
-            max-height: 80vh;
         }
 
         #canvas-wrap.banner_32_40 .platen-panel svg {
@@ -523,7 +530,8 @@
             justify-content: center;
             height: 100%;
             aspect-ratio: 39 / 51;
-            min-height: 80vh;
+            max-height: 100%;
+            max-width: 100%;
         }
 
         #canvas-wrap.grid_39_51 .platen-panel svg {
@@ -541,14 +549,11 @@
         }
 
         #canvas-wrap.banner_39_51 .platen-panel {
-            flex: 0 0 31%;
-            aspect-ratio: 39 / 51;
+            width: min(calc((100vw - 120px) / 3), calc(100% * 39 / 51));
+            height: min(100%, calc(((100vw - 120px) / 3) * 51 / 39));
             display: flex;
             align-items: center;
             justify-content: center;
-            min-width: 0;
-            height: auto;
-            max-height: 80vh;
         }
 
         #canvas-wrap.banner_39_51 .platen-panel svg {
@@ -565,7 +570,8 @@
             justify-content: center;
             height: 100%;
             aspect-ratio: 8.5 / 11;
-            min-height: 80vh;
+            max-height: 100%;
+            max-width: 100%;
         }
 
         #canvas-wrap.grid_us_letter .platen-panel svg {
@@ -583,8 +589,8 @@
         }
 
         #canvas-wrap.banner_us_letter .platen-panel {
-            width: min(calc((100vw - 120px) / 3), calc(80vh * 8.5 / 11));
-            height: min(80vh, calc(((100vw - 120px) / 3) * 11 / 8.5));
+            width: min(calc((100vw - 120px) / 3), calc(100% * 8.5 / 11));
+            height: min(100%, calc(((100vw - 120px) / 3) * 11 / 8.5));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -604,7 +610,8 @@
             justify-content: center;
             height: 100%;
             aspect-ratio: 1 / 1;
-            min-height: 80vh;
+            max-height: 100%;
+            max-width: 100%;
         }
 
         #canvas-wrap.grid_39_39 .platen-panel svg {
@@ -622,8 +629,8 @@
         }
 
         #canvas-wrap.banner_32_40 .platen-panel {
-            width: min(calc((100vw - 120px) / 3), calc(80vh * 32 / 40));
-            height: min(80vh, calc(((100vw - 120px) / 3) * 40 / 32));
+            width: min(calc((100vw - 120px) / 3), calc(100% * 32 / 40));
+            height: min(100%, calc(((100vw - 120px) / 3) * 40 / 32));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -644,8 +651,8 @@
         }
 
         #canvas-wrap.banner_39_39 .platen-panel {
-            width: min(calc((100vw - 120px) / 3), calc(80vh * 1 / 1));
-            height: min(80vh, calc(((100vw - 120px) / 3) * 1 / 1));
+            width: min(calc((100vw - 120px) / 3), calc(100% * 1 / 1));
+            height: min(100%, calc(((100vw - 120px) / 3) * 1 / 1));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -662,7 +669,8 @@
             justify-content: center;
             height: 100%;
             aspect-ratio: 1696 / 2192;
-            min-height: 80vh;
+            max-height: 100%;
+            max-width: 100%;
             margin: 0 auto;
             background-size: 100% 100% !important;
         }
@@ -672,7 +680,8 @@
             justify-content: center;
             height: 100%;
             aspect-ratio: 1696 / 1707.08;
-            min-height: 80vh;
+            max-height: 100%;
+            max-width: 100%;
             margin: 0 auto;
             background-size: 100% auto !important;
             background-position: top center !important;
@@ -688,8 +697,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: min(calc((100vw - 120px) / 3), calc(80vh * 1696 / 2192));
-            height: min(80vh, calc(((100vw - 120px) / 3) * 2192 / 1696));
+            width: min(calc((100vw - 120px) / 3), calc(100% * 1696 / 2192));
+            height: min(100%, calc(((100vw - 120px) / 3) * 2192 / 1696));
             background-size: 100% 100% !important;
         }
         #canvas-wrap.graph_paper_sq_banner {
@@ -703,8 +712,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: min(calc((100vw - 120px) / 3), calc(80vh * 1696 / 1707.08));
-            height: min(80vh, calc(((100vw - 120px) / 3) * 1707.08 / 1696));
+            width: min(calc((100vw - 120px) / 3), calc(100% * 1696 / 1707.08));
+            height: min(100%, calc(((100vw - 120px) / 3) * 1707.08 / 1696));
             background-size: 100% auto !important;
             background-position: top center !important;
         }
@@ -2052,86 +2061,87 @@ else                glyph = '*';        // asterisk</pre>
             return { w: w, h: h, sizeX: sizeX, sizeY: sizeY, rSize: rSize };
         }
 
-        function getTypewriterHeaderLines(traits, seed, w) {
-            function shortenEngineName(name) {
-                name = String(name || '').toLowerCase().trim();
-                if (!name) return "MASTR";
-                var dict = {
-                    'circuit': 'CRCIT', 'mastor': 'MASTR', 'adama': 'ADAMA', 'adire': 'ADIRE',
-                    'argyle': 'ARGYL', 'arraiolos': 'ARRLS', 'art_deco': 'ARTDC', 'asanoha': 'ASNHA',
-                    'axonometric': 'AXNMT', 'azulejo': 'AZLJO', 'blueprint': 'BLPRN', 'blueprint_cyan': 'BLCYN',
-                    'bogolan': 'BOGLN', 'bricolage': 'BRCLG', 'brutalist': 'BRUTL', 'castelo_branco': 'CSTLO',
-                    'cherokee': 'CHRKE', 'chiefs': 'CHIEF', 'chipaz': 'CHIPZ', 'collage': 'COLLG',
-                    'concrete': 'CNCRT', 'cubist': 'CUBST', 'current': 'CRRNT', 'cyber_mesh': 'CYBMS',
-                    'cypress_hills': 'CYHIL', 'dazzler': 'DAZLR', 'flow': 'FLOWM', 'framed_vista': 'FRMVS',
-                    'fret_bands': 'FRTBD', 'glitch': 'GLTCH', 'interlace': 'INTLC', 'kagome': 'KAGOM',
-                    'kanzemizu': 'KNZMZ', 'kente': 'KENTE', 'kepe': 'KEPEM', 'kikkou': 'KIKKO',
-                    'kishtima': 'KSHTM', 'kolya': 'KOLYA', 'kshtir': 'KSHTR', 'kuba': 'KUBAM',
-                    'kudo': 'KUDOM', 'malevich': 'MALVC', 'narmuny': 'NRMNY', 'navajo': 'NAVJO',
-                    'optical_box': 'OPTBX', 'orak': 'ORAKM', 'pakshats': 'PKSHT', 'panks': 'PANKS',
-                    'panoramic_dunes': 'PNDUN', 'pre_columbian': 'PRCLM', 'pulay': 'PULAY',
-                    'river_flow': 'RIVFL', 'rolling_hills': 'RLHIL', 'seigaiha': 'SEIGH',
-                    'serape_net': 'SRPNT', 'sermat': 'SRMAT', 'sermat-kudo': 'SRMKD', 'shippo': 'SHIPO',
-                    'shiprock': 'SHPRK', 'sierra_sunset': 'SRSUN', 'spider_cross': 'SPDRC', 'stolz': 'STOLZ',
-                    'structural': 'STRCT', 'tangents': 'TNGNT', 'tol': 'TOLM', 'ved': 'VEDM',
-                    'verena': 'VERNA', 'viana': 'VIANA', 'virma': 'VIRMA', 'wari': 'WARIM',
-                    'woodcut': 'WDCDT', 'yagasuri': 'YGSRI', 'yoshiwara': 'YSHWR'
-                };
-                if (dict[name]) return dict[name];
-                var upper = name.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                if (upper.length <= 5) return upper.padEnd(5, 'M');
-                var candidate = upper[0] + upper.substring(1).replace(/[AEIOU]/g, '');
-                return candidate.length >= 5 ? candidate.substring(0, 5) : upper.substring(0, 5);
-            }
+        function shortenEngineName(name) {
+            name = String(name || '').toLowerCase().trim();
+            if (!name) return "MASTR";
+            var dict = {
+                'circuit': 'CRCIT', 'mastor': 'MASTR', 'adama': 'ADAMA', 'adire': 'ADIRE',
+                'argyle': 'ARGYL', 'arraiolos': 'ARRLS', 'art_deco': 'ARTDC', 'asanoha': 'ASNHA',
+                'axonometric': 'AXNMT', 'azulejo': 'AZLJO', 'blueprint': 'BLPRN', 'blueprint_cyan': 'BLCYN',
+                'bogolan': 'BOGLN', 'bricolage': 'BRCLG', 'brutalist': 'BRUTL', 'castelo_branco': 'CSTLO',
+                'cherokee': 'CHRKE', 'chiefs': 'CHIEF', 'chipaz': 'CHIPZ', 'collage': 'COLLG',
+                'concrete': 'CNCRT', 'cubist': 'CUBST', 'current': 'CRRNT', 'cyber_mesh': 'CYBMS',
+                'cypress_hills': 'CYHIL', 'dazzler': 'DAZLR', 'flow': 'FLOWM', 'framed_vista': 'FRMVS',
+                'fret_bands': 'FRTBD', 'glitch': 'GLTCH', 'interlace': 'INTLC', 'kagome': 'KAGOM',
+                'kanzemizu': 'KNZMZ', 'kente': 'KENTE', 'kepe': 'KEPEM', 'kikkou': 'KIKKO',
+                'kishtima': 'KSHTM', 'kolya': 'KOLYA', 'kshtir': 'KSHTR', 'kuba': 'KUBAM',
+                'kudo': 'KUDOM', 'malevich': 'MALVC', 'narmuny': 'NRMNY', 'navajo': 'NAVJO',
+                'optical_box': 'OPTBX', 'orak': 'ORAKM', 'pakshats': 'PKSHT', 'panks': 'PANKS',
+                'panoramic_dunes': 'PNDUN', 'pre_columbian': 'PRCLM', 'pulay': 'PULAY',
+                'river_flow': 'RIVFL', 'rolling_hills': 'RLHIL', 'seigaiha': 'SEIGH',
+                'serape_net': 'SRPNT', 'sermat': 'SRMAT', 'sermat-kudo': 'SRMKD', 'shippo': 'SHIPO',
+                'shiprock': 'SHPRK', 'sierra_sunset': 'SRSUN', 'spider_cross': 'SPDRC', 'stolz': 'STOLZ',
+                'structural': 'STRCT', 'tangents': 'TNGNT', 'tol': 'TOLM', 'ved': 'VEDM',
+                'verena': 'VERNA', 'viana': 'VIANA', 'virma': 'VIRMA', 'wari': 'WARIM',
+                'woodcut': 'WDCDT', 'yagasuri': 'YGSRI', 'yoshiwara': 'YSHWR'
+            };
+            if (dict[name]) return dict[name];
+            var upper = name.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (upper.length <= 5) return upper.padEnd(5, 'M');
+            var candidate = upper[0] + upper.substring(1).replace(/[AEIOU]/g, '');
+            return candidate.length >= 5 ? candidate.substring(0, 5) : upper.substring(0, 5);
+        }
 
-            function shortenSymmetryName(name) {
-                name = String(name || '').toLowerCase().trim();
-                if (!name) return "NONE";
-                var dict = {
-                    'none': 'NONE', 'both': 'BOTH', 'diagonal': 'DIAGN', 'glide': 'GLIDE',
-                    'horizontal': 'HORIZ', 'kaleidoscope': 'KLIDR', 'quad': 'QUADR',
-                    'radial': 'RADIL', 'rotational': 'ROTAT', 'vertical': 'VERTC'
-                };
-                if (dict[name]) return dict[name];
-                var upper = name.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                if (upper.length <= 5) return upper.padEnd(5, 'M');
-                var candidate = upper[0] + upper.substring(1).replace(/[AEIOU]/g, '');
-                return candidate.length >= 5 ? candidate.substring(0, 5) : upper.substring(0, 5);
+        function shortenSymmetryName(name) {
+            name = String(name || '').toLowerCase().trim();
+            if (!name) return "NONE";
+            var dict = {
+                'none': 'NONE', 'both': 'BOTH', 'diagonal': 'DIAGN', 'glide': 'GLIDE',
+                'horizontal': 'HORIZ', 'kaleidoscope': 'KLIDR', 'quad': 'QUADR',
+                'radial': 'RADIL', 'rotational': 'ROTAT', 'vertical': 'VERTC'
+            };
+            if (dict[name]) return dict[name];
+            var upper = name.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (upper.length <= 5) return upper.padEnd(5, 'M');
+            var candidate = upper[0] + upper.substring(1).replace(/[AEIOU]/g, '');
+            return candidate.length >= 5 ? candidate.substring(0, 5) : upper.substring(0, 5);
+        }
+        
+        function shortenChromeName(name) {
+            name = String(name || '').toLowerCase().trim();
+            if (!name) return "RIBBON";
+            if (name === 'typewriter_ribbon_multicolored') return "RIBBON";
+            if (name === 'typewriter_black') return "BLACK";
+            if (name === 'typewriter_black_red') return "BLK/RED";
+            
+            if (name.startsWith('typewriter_')) {
+                name = name.substring('typewriter_'.length);
             }
             
-            function shortenChromeName(name) {
-                name = String(name || '').toLowerCase().trim();
-                if (!name) return "RIBBON";
-                if (name === 'typewriter_ribbon_multicolored') return "RIBBON";
-                if (name === 'typewriter_black') return "BLACK";
-                if (name === 'typewriter_black_red') return "BLK/RED";
-                
-                if (name.startsWith('typewriter_')) {
-                    name = name.substring('typewriter_'.length);
-                }
-                
-                var dict = {
-                    'stars_and_stripes': 'STRIPES', 'micron_plotter': 'MICRON', 'blueprint_cyan': 'BLCYN',
-                    'azulejo_classico': 'AZLJC', 'castelo_branco': 'CSTLO', 'concrete': 'CNCRT',
-                    'cyber_mesh': 'CYBMS', 'glitch_acid': 'ACID', 'glitch_heat': 'HEAT', 'glitch_void': 'VOID',
-                    'miami_basel': 'MIAMI', 'olive_grove': 'OLIVE', 'palestine_dawn': 'PLSTN',
-                    'two_grey_hills': '2GREY', 'woodcut': 'WDCDT', 'bedouin_night': 'BEDOU'
-                };
-                if (dict[name]) return dict[name];
-                
-                var upper = name.toUpperCase().replace(/[^A-Z0-9_]/g, '');
-                var parts = upper.split('_');
-                if (parts.length >= 2) {
-                    var abbrev = parts.map(function(p) { return p.substring(0, 3); }).join('/');
-                    if (abbrev.length <= 8) return abbrev;
-                }
-                
-                var clean = upper.replace(/_/g, '');
-                if (clean.length <= 7) return clean;
-                
-                var candidate = clean[0] + clean.substring(1).replace(/[AEIOU]/g, '');
-                return candidate.length >= 7 ? candidate.substring(0, 7) : clean.substring(0, 7);
+            var dict = {
+                'stars_and_stripes': 'STRIPES', 'micron_plotter': 'MICRON', 'blueprint_cyan': 'BLCYN',
+                'azulejo_classico': 'AZLJC', 'castelo_branco': 'CSTLO', 'concrete': 'CNCRT',
+                'cyber_mesh': 'CYBMS', 'glitch_acid': 'ACID', 'glitch_heat': 'HEAT', 'glitch_void': 'VOID',
+                'miami_basel': 'MIAMI', 'olive_grove': 'OLIVE', 'palestine_dawn': 'PLSTN',
+                'two_grey_hills': '2GREY', 'woodcut': 'WDCDT', 'bedouin_night': 'BEDOU'
+            };
+            if (dict[name]) return dict[name];
+            
+            var upper = name.toUpperCase().replace(/[^A-Z0-9_]/g, '');
+            var parts = upper.split('_');
+            if (parts.length >= 2) {
+                var abbrev = parts.map(function(p) { return p.substring(0, 3); }).join('/');
+                if (abbrev.length <= 8) return abbrev;
             }
+            
+            var clean = upper.replace(/_/g, '');
+            if (clean.length <= 7) return clean;
+            
+            var candidate = clean[0] + clean.substring(1).replace(/[AEIOU]/g, '');
+            return candidate.length >= 7 ? candidate.substring(0, 7) : clean.substring(0, 7);
+        }
+
+        function getTypewriterHeaderLines(traits, seed, w) {
 
             var d = new Date();
             var year = d.getUTCFullYear();
