@@ -1887,8 +1887,7 @@ else                glyph = '*';        // asterisk</pre>
             }
             _lastRenderState = stateKey;
 
-            // Abort any currently running background renders to prevent ghost flashes and timer overlaps
-            initWorkers();
+            _renderGeneration++;
 
             updateTraitBar();
             // updateCanvasTexture(); // Wait for trait resolution for WYSIWYG
@@ -1923,7 +1922,7 @@ else                glyph = '*';        // asterisk</pre>
                     var id = panels[pi];
                     // Render one panel asynchronously
                     var t1 = performance.now();
-                    renderPlaten('s' + id, id, runTraits).then(function (r) {
+                    renderPlaten('s' + id, id, runTraits, _renderGeneration).then(function (r) {
                         var dt = (performance.now() - t1).toFixed(0);
                         console.log('  v' + id + ': ' + r.flowers + ' glyphs, ' + r.attempts + ' att, ' + dt + 'ms');
                         infos.push('v' + id + ': ' + (r.flowers||0) + ' glyphs');
@@ -2016,16 +2015,16 @@ else                glyph = '*';        // asterisk</pre>
         var _renderGeneration = 0; // Increment to track generation requests
 
         function initWorkers() {
-            // Kill all running workers to completely cancel any pending background tasks
-            ActiveWorkers.forEach(function (w) { w.terminate(); });
-            WorkerPool.forEach(function (w) { w.terminate(); });
+            if (WorkerPool.length > 0 || ActiveWorkers.length > 0) {
+                return;
+            }
             ActiveWorkers = [];
             WorkerPool = [];
 
             for (var i = 0; i < MAX_WORKERS; i++) {
                 WorkerPool.push(new Worker('js/platen-worker.js'));
             }
-            console.log('[Platen] Worker pool re-initialized. Active processes aborted.');
+            console.log('[Platen] Worker pool pre-warmed.');
         }
 
         // Initialize workers as soon as the script parses
@@ -2215,19 +2214,43 @@ else                glyph = '*';        // asterisk</pre>
             var c4 = "LEVEL 4    GLYPH: " + g4 + "    DENSITY: 0.66 - 0.81";
             var c5 = "LEVEL 5    GLYPH: " + g5 + "    DENSITY: 0.81 - 1.00";
 
+            if (traits.motif === 'typewriter_quine') {
+                c1 = "LEVEL 1    SOURCE: .    DENSITY: 0.20 - 0.36";
+                c2 = "LEVEL 2    SOURCE: r    DENSITY: 0.36 - 0.51";
+                c3 = "LEVEL 3    SOURCE: (    DENSITY: 0.51 - 0.66";
+                c4 = "LEVEL 4    SOURCE: M    DENSITY: 0.66 - 0.81";
+                c5 = "LEVEL 5    SOURCE: {    DENSITY: 0.81 - 1.00";
+            }
+
             if (w < 46) {
-                c1 = "LEVEL 1  GLYPH: " + g1 + "  DENSITY: 0.20 - 0.36";
-                c2 = "LEVEL 2  GLYPH: " + g2 + "  DENSITY: 0.36 - 0.51";
-                c3 = "LEVEL 3  GLYPH: " + g3 + "  DENSITY: 0.51 - 0.66";
-                c4 = "LEVEL 4  GLYPH: " + g4 + "  DENSITY: 0.66 - 0.81";
-                c5 = "LEVEL 5  GLYPH: " + g5 + "  DENSITY: 0.81 - 1.00";
+                if (traits.motif === 'typewriter_quine') {
+                    c1 = "LEVEL 1  SOURCE: .  DENSITY: 0.20 - 0.36";
+                    c2 = "LEVEL 2  SOURCE: r  DENSITY: 0.36 - 0.51";
+                    c3 = "LEVEL 3  SOURCE: (  DENSITY: 0.51 - 0.66";
+                    c4 = "LEVEL 4  SOURCE: M  DENSITY: 0.66 - 0.81";
+                    c5 = "LEVEL 5  SOURCE: {  DENSITY: 0.81 - 1.00";
+                } else {
+                    c1 = "LEVEL 1  GLYPH: " + g1 + "  DENSITY: 0.20 - 0.36";
+                    c2 = "LEVEL 2  GLYPH: " + g2 + "  DENSITY: 0.36 - 0.51";
+                    c3 = "LEVEL 3  GLYPH: " + g3 + "  DENSITY: 0.51 - 0.66";
+                    c4 = "LEVEL 4  GLYPH: " + g4 + "  DENSITY: 0.66 - 0.81";
+                    c5 = "LEVEL 5  GLYPH: " + g5 + "  DENSITY: 0.81 - 1.00";
+                }
             }
             if (w < 38) {
-                c1 = "L1  GLYPH: " + g1 + "  DEN: 0.20-0.36";
-                c2 = "L2  GLYPH: " + g2 + "  DEN: 0.36-0.51";
-                c3 = "L3  GLYPH: " + g3 + "  DEN: 0.51-0.66";
-                c4 = "L4  GLYPH: " + g4 + "  DEN: 0.66-0.81";
-                c5 = "L5  GLYPH: " + g5 + "  DEN: 0.81-1.00";
+                if (traits.motif === 'typewriter_quine') {
+                    c1 = "L1  SOURCE: .  DEN: 0.20-0.36";
+                    c2 = "L2  SOURCE: r  DEN: 0.36-0.51";
+                    c3 = "L3  SOURCE: (  DEN: 0.51-0.66";
+                    c4 = "L4  SOURCE: M  DEN: 0.66-0.81";
+                    c5 = "L5  SOURCE: {  DEN: 0.81-1.00";
+                } else {
+                    c1 = "L1  GLYPH: " + g1 + "  DEN: 0.20-0.36";
+                    c2 = "L2  GLYPH: " + g2 + "  DEN: 0.36-0.51";
+                    c3 = "L3  GLYPH: " + g3 + "  DEN: 0.51-0.66";
+                    c4 = "L4  GLYPH: " + g4 + "  DEN: 0.66-0.81";
+                    c5 = "L5  GLYPH: " + g5 + "  DEN: 0.81-1.00";
+                }
             }
             c1 = c1.substring(0, w); c2 = c2.substring(0, w); c3 = c3.substring(0, w);
             c4 = c4.substring(0, w); c5 = c5.substring(0, w);
@@ -2451,6 +2474,13 @@ else                glyph = '*';        // asterisk</pre>
                 worker.onmessage = function (e) {
                     var awIdx = ActiveWorkers.indexOf(worker);
                     if (awIdx > -1) ActiveWorkers.splice(awIdx, 1);
+
+                    if (expectedGen !== undefined && expectedGen !== _renderGeneration) {
+                        WorkerPool.push(worker);
+                        if (panel) panel.classList.remove('loading');
+                        resolve({ flowers: 0, seed: RENDER_SEED, attempts: 0 });
+                        return;
+                    }
 
                     var data = e.data;
                     var flowers = data.flowers; // Array of {x, y, c, flip}
