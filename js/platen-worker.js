@@ -140,7 +140,362 @@ onmessage = function (e) {
         });
     }
 
-    while (attempts++ < MAX_ATTEMPTS) {
+
+    function getMinGlyphs(traits) {
+        if (traits.space === 'moire') return 80;
+        var series = (typeof ENGINE_METADATA !== 'undefined' && ENGINE_METADATA[traits.engine]) ? ENGINE_METADATA[traits.engine].series : 'FIELD';
+        if (series === 'SCATTER') return 400;
+        if (series === 'FIELD') return 1200;
+        if (series === 'SOLID') return 1000;
+        return 900;
+    }
+
+    function getMinZones(traits) {
+        if (traits.space === 'moire') return 0;
+        var series = (typeof ENGINE_METADATA !== 'undefined' && ENGINE_METADATA[traits.engine]) ? ENGINE_METADATA[traits.engine].series : 'FIELD';
+        if (series === 'SCATTER') return 4;
+        if (series === 'FIELD') return 10;
+        if (series === 'SOLID') return 8;
+        return 8;
+    }
+
+    function applySymmetryAndFloor(grid) {
+        // Apply symmetry
+    var sym = traits.symmetry;
+    if (sym === 'horizontal' || sym === 'both') {
+        for (var sy = 0; sy < h; sy++)
+            for (var sx = 0; sx < Math.floor(w / 2); sx++) {
+                grid[w - 1 - sx][sy].col = grid[sx][sy].col;
+                grid[w - 1 - sx][sy].wt = grid[sx][sy].wt;
+            }
+    }
+    if (sym === 'vertical' || sym === 'both') {
+        for (var sy2 = 0; sy2 < Math.floor(h / 2); sy2++)
+            for (var sx2 = 0; sx2 < w; sx2++) {
+                grid[sx2][h - 1 - sy2].col = grid[sx2][sy2].col;
+                grid[sx2][h - 1 - sy2].wt = grid[sx2][sy2].wt;
+            }
+    }
+    if (sym === 'diagonal') {
+        for (var dy2 = 0; dy2 < h; dy2++)
+            for (var dx2 = 0; dx2 < w; dx2++) {
+                var mx = Math.min(Math.floor(dx2 * h / w), h - 1);
+                var my = Math.min(Math.floor(dy2 * w / h), w - 1);
+                grid[dx2][dy2].col = grid[my][mx].col;
+                grid[dx2][dy2].wt = grid[my][mx].wt;
+            }
+    }
+    if (sym === 'rotational') {
+        for (var ry2 = 0; ry2 < h; ry2++)
+            for (var rx2 = 0; rx2 < w; rx2++) {
+                var rrx = w - 1 - rx2, rry = h - 1 - ry2;
+                if (ry2 * w + rx2 > rry * w + rrx) {
+                    grid[rx2][ry2].col = grid[rrx][rry].col;
+                    grid[rx2][ry2].wt = grid[rrx][rry].wt;
+                }
+            }
+    }
+    if (sym === 'quad') {
+        var hw2 = Math.floor(w / 2), hh2 = Math.floor(h / 2);
+        for (var qy = 0; qy < hh2; qy++)
+            for (var qx = 0; qx < hw2; qx++) {
+                grid[w - 1 - qx][qy].col = grid[qx][qy].col;
+                grid[w - 1 - qx][qy].wt = grid[qx][qy].wt;
+                grid[qx][h - 1 - qy].col = grid[qx][qy].col;
+                grid[qx][h - 1 - qy].wt = grid[qx][qy].wt;
+                grid[w - 1 - qx][h - 1 - qy].col = grid[qx][qy].col;
+                grid[w - 1 - qx][h - 1 - qy].wt = grid[qx][qy].wt;
+            }
+    }
+
+    // ── TASK 1: DENSITY SPACING FLOOR ──
+    // Enforce spacing globally: clear cells within a Chebyshev distance of 1 of higher-weight cells.
+    var candidates = [];
+    if (traits.space !== 'moire' && traits.space !== 'planar' && traits.space !== 'polar') {
+        for (var xi = 0; xi < w; xi++) {
+            for (var yi = 0; yi < h; yi++) {
+                if (grid[xi][yi].col) {
+                    candidates.push(grid[xi][yi]);
+                }
+            }
+        }
+    }
+    // Sort candidates by weight descending, with a deterministic tie-breaker to preserve symmetry
+    candidates.sort(function (a, b) {
+        if (Math.abs(b.wt - a.wt) > 0.0001) {
+            return b.wt - a.wt;
+        }
+        return (a.x * 1000 + a.y) - (b.x * 1000 + b.y);
+    });
+
+    var cleared = [];
+    for (var xi = 0; xi < w; xi++) {
+        cleared[xi] = [];
+    }
+
+    for (var ci = 0; ci < candidates.length; ci++) {
+        var cell = candidates[ci];
+        if (cleared[cell.x][cell.y]) {
+            cell.col = null;
+            cell.wt = 0;
+            continue;
+        }
+        // Mark all 8 immediate neighbors as cleared, with coordinate wrapping
+        for (var dx = -1; dx <= 1; dx++) {
+            for (var dy = -1; dy <= 1; dy++) {
+                if (dx === 0 && dy === 0) continue;
+                var nx = safeMod(cell.x + dx, w);
+                var ny = safeMod(cell.y + dy, h);
+                cleared[nx][ny] = true;
+            }
+        }
+    }
+
+    }
+
+    function generateIterationResults(grid) {
+        var iterationResults = [];
+        for (var fy3 = 0; fy3 < h; fy3++) {
+            for (var fx3 = 0; fx3 < w; fx3++) {
+                var cell = grid[fx3][fy3];
+                if (cell.col) {
+                    var wp3 = warp(cell.x, cell.y);
+                    // Local cell scale (Jacobian of warp). In planar warp is identity → sc=1.
+                    // In hyperbolic sc > 1 toward edges, < 1 toward centre. Capped at 3.5.
+                    var _wp3dx = warp(cell.x + 1, cell.y);
+                    var maxSc = traits.space === 'hyperbolic' ? 1.2 : 3.5;
+                    var _sc = Math.min(Math.hypot(_wp3dx[0] - wp3[0], _wp3dx[1] - wp3[1]), maxSc);
+                    
+                    // Prevent typewriter glyphs from stretching in hyperbolic space
+                    if (traits.space === 'hyperbolic' && (traits.motif === 'typewriter' || traits.motif === 'typewriter_classic' || traits.motif === 'chopin')) {
+                        _sc = 1.0; 
+                    }
+                    
+                    var rot = (function () {
+                            if (traits.engine === 'river_flow') {
+                                // Calculate tangent of the flow at this point
+                                var dxSum = 0;
+                                var totalWt = 0;
+                                motifParams.streams.forEach(function (s) {
+                                    var yOffset = 0;
+                                    var slope = 0;
+                                    s.frequencies.forEach(function (f) {
+                                        var arg = fx3 * f.freq + f.phase;
+                                        yOffset += Math.sin(arg) * f.amp;
+                                        slope += Math.cos(arg) * f.amp * f.freq;
+                                    });
+                                    var curveY = s.baseY + yOffset;
+                                    var dist = Math.abs(fy3 - curveY);
+                                    if (dist < s.width) {
+                                        var influence = 1.0 - (dist / s.width);
+                                        dxSum += slope * influence;
+                                        totalWt += influence;
+                                    }
+                                });
+                                if (totalWt > 0) {
+                                    var avgSlope = dxSum / totalWt;
+                                    return Math.atan2(avgSlope, 1) * (180 / Math.PI);
+                                }
+                            } else if (traits.engine === 'flowing_contours') {
+                                // Calculate gradient of the 2D scalar field: nabla Z = (dz/dx, dz/dy)
+                                var dzdx = 0;
+                                var dzdy = 0;
+                                motifParams.waves.forEach(function (w2) {
+                                    var arg = fx3 * w2.fx + fy3 * w2.fy + w2.ph;
+                                    var deriv = Math.cos(arg) * w2.amp;
+                                    dzdx += deriv * w2.fx;
+                                    dzdy += deriv * w2.fy;
+                                });
+                                // Tangent vector along the contour is (-dz/dy, dz/dx)
+                                return Math.atan2(dzdx, -dzdy) * (180 / Math.PI);
+                            }
+                            return (traits.motif === 'ichthus' && ((fx3 * 17 + fy3 * 7) % 100 < 40)) ? 90 : 0;
+                        })();
+
+                    var level = 0;
+                    if (cell.wt < 0.36) level = 0;
+                    else if (cell.wt < 0.51) level = 1;
+                    else if (cell.wt < 0.66) level = 2;
+                    else if (cell.wt < 0.81) level = 3;
+                    else level = 4;
+
+                    iterationResults.push({
+                        x: wp3[0], y: wp3[1],
+                        c: cell.col.c,
+                        wt: cell.wt, // Normalized weight (0..1) from grid
+                        sc: _sc,     // local cell scale factor for hyperbolic fitting
+                        flip: shouldFlipFlower(fx3, fy3),
+                        rot: rot,
+                        level: level
+                    });
+
+                    if (traits.space === 'planar' && cell.col) {
+                        // Second pass: contrasting color, one line height offset
+                        // Find contrasting color from palette
+                        var moireContrast = cell.col.c;
+                        for (var mcIdx = 0; mcIdx < cls.length; mcIdx++) {
+                            if (cls[mcIdx].c !== cell.col.c) {
+                                moireContrast = cls[mcIdx].c;
+                                break;
+                            }
+                        }
+
+                        // Y offset: exactly one line height in cell units
+                        // The cell grid is h rows tall. One line = 1 row unit.
+                        // Apply drift: horizontal phase offset from moireDriftRate
+                        // makes the overlay angle drift left to right
+                        var overlayX = fx3 + Math.sin(moireTheta) * 0.5 + (fy3 * moireDriftRate * 10);
+                        var overlayY = fy3 + 1.0;
+
+                        // Clamp to grid bounds
+                        if (overlayY < h && overlayX >= 0 && overlayX < w) {
+                            var wp3o = warp(overlayX, overlayY);
+                            iterationResults.push({
+                                x: wp3o[0],
+                                y: wp3o[1],
+                                c: moireContrast,
+                                wt: cell.wt,
+                                sc: _sc,
+                                flip: !shouldFlipFlower(fx3, fy3),
+                                rot: rot,
+                                level: level
+                            });
+                        }
+                    }
+
+                    if (traits.space === 'polar' && cell.col) {
+                        // Second pass: contrasting color, one line height offset
+                        // Find contrasting color from palette
+                        var moireContrast = cell.col.c;
+                        for (var mcIdx = 0; mcIdx < cls.length; mcIdx++) {
+                            if (cls[mcIdx].c !== cell.col.c) {
+                                moireContrast = cls[mcIdx].c;
+                                break;
+                            }
+                        }
+
+                        // Y offset: exactly one line height in cell units
+                        // The cell grid is h rows tall. One line = 1 row unit.
+                        // Apply drift: horizontal phase offset from moireDriftRate
+                        // makes the overlay angle drift left to right
+                        var overlayX = fx3 + Math.sin(moireTheta) * 0.5 + (fy3 * moireDriftRate * 10);
+                        var overlayY = fy3 + 1.0;
+
+                        // Clamp to grid bounds
+                        if (overlayY < h && overlayX >= 0 && overlayX < w) {
+                            var wp3o = warp(overlayX, overlayY);
+                            iterationResults.push({
+                                x: wp3o[0],
+                                y: wp3o[1],
+                                c: moireContrast,
+                                wt: cell.wt,
+                                sc: _sc,
+                                flip: !shouldFlipFlower(fx3, fy3),
+                                rot: rot,
+                                level: level
+                            });
+                        }
+                    }
+
+                    if (traits.space === 'moire' && cell.col) {
+                        var moireContrast = cell.col.c;
+                        for (var mcIdx = 0; mcIdx < cls.length; mcIdx++) {
+                            if (cls[mcIdx].c !== cell.col.c) {
+                                moireContrast = cls[mcIdx].c;
+                                break;
+                            }
+                        }
+
+                        var stripCount = 0;
+                        for (var si2 = 0; si2 < moireStrips.length; si2++) {
+                            var ms = moireStrips[si2];
+                            if (fx3 >= ms.x0 + edgeNoise(fx3, fy3, ms.phase, RENDER_SEED) && 
+                                fx3 <= ms.x1 - edgeNoise(fx3, fy3, ms.phase, RENDER_SEED) && 
+                                fy3 >= ms.y0 + edgeNoise(fx3, fy3, ms.phase, RENDER_SEED) && 
+                                fy3 <= ms.y1 - edgeNoise(fx3, fy3, ms.phase, RENDER_SEED)) {
+                                stripCount++;
+                            }
+                        }
+
+                        var overlayX = fx3 + Math.sin(moireTheta) * (0.3 + stripCount * 0.15);
+                        var overlayY = fy3 + 1.0;
+                        if (overlayY < h && overlayX >= 0 && overlayX < w) {
+                            var wp3m = warp(overlayX, overlayY);
+                            iterationResults.push({
+                                x: wp3m[0], y: wp3m[1],
+                                c: moireContrast,
+                                wt: cell.wt,
+                                sc: _sc,
+                                flip: !shouldFlipFlower(fx3, fy3),
+                                rot: rot,
+                                level: level
+                            });
+                        }
+                    }
+                    
+                    if (traits.motif === 'chopin') {
+                        // Find a contrasting color from the palette array `cls`
+                        var contrastColor = cell.col.c;
+                        for (var cidx = 0; cidx < cls.length; cidx++) {
+                            if (cls[cidx].c !== cell.col.c) {
+                                contrastColor = cls[cidx].c;
+                                break;
+                            }
+                        }
+                        // Calculate a secondary warp with an offset (half a character width)
+                        var wp3_offset = warp(cell.x + 0.5, cell.y + 0.5);
+                        iterationResults.push({
+                            x: wp3_offset[0], y: wp3_offset[1],
+                            c: contrastColor,
+                            wt: 1.0 - cell.wt, // Invert the weight for different text character selection
+                            sc: _sc,
+                            flip: !shouldFlipFlower(fx3, fy3),
+                            rot: rot,
+                            level: level
+                        });
+                    }
+                }
+            }
+        }
+        bestResult = iterationResults;
+    }
+
+    function reRenderWithThreshold(grid, rawWt, wMin, wRange, isFlat, threshold, seed) {
+        var ri2 = 0;
+        var prng = makePRNG(seed);
+        var rfl = prng.rfl;
+        
+        for (var cy2 = 0; cy2 < h; cy2++) {
+            for (var cx2 = 0; cx2 < w; cx2++) {
+                grid[cx2][cy2].col = null;
+                grid[cx2][cy2].wt = 0;
+                var norm = (rawWt[ri2++] - wMin) / wRange;
+
+                if (isFlat) {
+                    if (rfl() < 0.2) {
+                        grid[cx2][cy2].col = rc(Math.floor(totalRatio / 2));
+                        grid[cx2][cy2].wt = rfl() * 0.6 + 0.2;
+                    }
+                } else {
+                    if (norm > threshold) {
+                        grid[cx2][cy2].wt = norm;
+                        if (traits.chromes === 'typewriter_black_red' || traits.chromes === 'typewriter_ribbon_multicolored') {
+                            var hVal = Math.abs(cx2 * 31 + cy2 * 73 + seed) % 1009;
+                            var randRatio = (hVal / 1009.0) * totalRatio;
+                            grid[cx2][cy2].col = rc(randRatio);
+                        } else {
+                            var c = Math.floor(norm * (totalRatio - 0.001));
+                            grid[cx2][cy2].col = rc(c);
+                        }
+                    }
+                }
+            }
+        }
+        applySymmetryAndFloor(grid);
+        return generateIterationResults(grid);
+    }
+
+    function runSearchIteration(currentSeed) {
         var grid = [];
         for (var xi = 0; xi < w; xi++) {
             grid[xi] = [];
@@ -148,9 +503,8 @@ onmessage = function (e) {
                 grid[xi][yi] = { x: xi, y: yi, col: null, c: null, run: 0, prev: null };
         }
 
-        var prng = makePRNG(searchSeed);
+        var prng = makePRNG(currentSeed);
         var rfl = prng.rfl, rin = prng.rin;
-
         // Plane perturbation lines (Internal search)
         var pls = [];
         for (var pi = 0; pi < 3; pi++) {
@@ -257,8 +611,8 @@ onmessage = function (e) {
                     if (norm > normThreshold) {
                         grid[cx2][cy2].wt = norm;
                         if (traits.chromes === 'typewriter_black_red' || traits.chromes === 'typewriter_ribbon_multicolored') {
-                            // Pseudo-random selection from the palette using coordinates and searchSeed
-                            var hVal = Math.abs(cx2 * 31 + cy2 * 73 + searchSeed) % 1009;
+                            // Pseudo-random selection from the palette using coordinates and currentSeed
+                            var hVal = Math.abs(cx2 * 31 + cy2 * 73 + currentSeed) % 1009;
                             var randRatio = (hVal / 1009.0) * totalRatio;
                             grid[cx2][cy2].col = rc(randRatio);
                         } else {
@@ -270,112 +624,35 @@ onmessage = function (e) {
             }
         }
 
-        // Apply symmetry
-        var sym = traits.symmetry;
-        if (sym === 'horizontal' || sym === 'both') {
-            for (var sy = 0; sy < h; sy++)
-                for (var sx = 0; sx < Math.floor(w / 2); sx++) {
-                    grid[w - 1 - sx][sy].col = grid[sx][sy].col;
-                    grid[w - 1 - sx][sy].wt = grid[sx][sy].wt;
-                }
-        }
-        if (sym === 'vertical' || sym === 'both') {
-            for (var sy2 = 0; sy2 < Math.floor(h / 2); sy2++)
-                for (var sx2 = 0; sx2 < w; sx2++) {
-                    grid[sx2][h - 1 - sy2].col = grid[sx2][sy2].col;
-                    grid[sx2][h - 1 - sy2].wt = grid[sx2][sy2].wt;
-                }
-        }
-        if (sym === 'diagonal') {
-            for (var dy2 = 0; dy2 < h; dy2++)
-                for (var dx2 = 0; dx2 < w; dx2++) {
-                    var mx = Math.min(Math.floor(dx2 * h / w), h - 1);
-                    var my = Math.min(Math.floor(dy2 * w / h), w - 1);
-                    grid[dx2][dy2].col = grid[my][mx].col;
-                    grid[dx2][dy2].wt = grid[my][mx].wt;
-                }
-        }
-        if (sym === 'rotational') {
-            for (var ry2 = 0; ry2 < h; ry2++)
-                for (var rx2 = 0; rx2 < w; rx2++) {
-                    var rrx = w - 1 - rx2, rry = h - 1 - ry2;
-                    if (ry2 * w + rx2 > rry * w + rrx) {
-                        grid[rx2][ry2].col = grid[rrx][rry].col;
-                        grid[rx2][ry2].wt = grid[rrx][rry].wt;
-                    }
-                }
-        }
-        if (sym === 'quad') {
-            var hw2 = Math.floor(w / 2), hh2 = Math.floor(h / 2);
-            for (var qy = 0; qy < hh2; qy++)
-                for (var qx = 0; qx < hw2; qx++) {
-                    grid[w - 1 - qx][qy].col = grid[qx][qy].col;
-                    grid[w - 1 - qx][qy].wt = grid[qx][qy].wt;
-                    grid[qx][h - 1 - qy].col = grid[qx][qy].col;
-                    grid[qx][h - 1 - qy].wt = grid[qx][qy].wt;
-                    grid[w - 1 - qx][h - 1 - qy].col = grid[qx][qy].col;
-                    grid[w - 1 - qx][h - 1 - qy].wt = grid[qx][qy].wt;
-                }
-        }
 
-        // ── TASK 1: DENSITY SPACING FLOOR ──
-        // Enforce spacing globally: clear cells within a Chebyshev distance of 1 of higher-weight cells.
-        var candidates = [];
-        if (traits.space !== 'moire' && traits.space !== 'planar' && traits.space !== 'polar') {
-            for (var xi = 0; xi < w; xi++) {
-                for (var yi = 0; yi < h; yi++) {
-                    if (grid[xi][yi].col) {
-                        candidates.push(grid[xi][yi]);
-                    }
-                }
-            }
-        }
-        // Sort candidates by weight descending, with a deterministic tie-breaker to preserve symmetry
-        candidates.sort(function (a, b) {
-            if (Math.abs(b.wt - a.wt) > 0.0001) {
-                return b.wt - a.wt;
-            }
-            return (a.x * 1000 + a.y) - (b.x * 1000 + b.y);
-        });
-
-        var cleared = [];
-        for (var xi = 0; xi < w; xi++) {
-            cleared[xi] = [];
-        }
-
-        for (var ci = 0; ci < candidates.length; ci++) {
-            var cell = candidates[ci];
-            if (cleared[cell.x][cell.y]) {
-                cell.col = null;
-                cell.wt = 0;
-                continue;
-            }
-            // Mark all 8 immediate neighbors as cleared, with coordinate wrapping
-            for (var dx = -1; dx <= 1; dx++) {
-                for (var dy = -1; dy <= 1; dy++) {
-                    if (dx === 0 && dy === 0) continue;
-                    var nx = safeMod(cell.x + dx, w);
-                    var ny = safeMod(cell.y + dy, h);
-                    cleared[nx][ny] = true;
-                }
-            }
-        }
+        applySymmetryAndFloor(grid);
 
         // Count flowers
         var a = 0;
+        var zoneW = Math.ceil(w / 4);
+        var zoneH = Math.ceil(h / 4);
+        var zones = [];
+        for (var zi = 0; zi < 16; zi++) zones[zi] = false;
+
         for (var fy = 0; fy < h; fy++) {
             for (var fx = 0; fx < w; fx++) {
-                if (grid[fx][fy].col) a++;
+                if (grid[fx][fy].col) {
+                    a++;
+                    var zx = Math.floor(fx / zoneW);
+                    var zy = Math.floor(fy / zoneH);
+                    zones[zy * 4 + zx] = true;
+                }
             }
         }
+        var zonesOccupied = zones.filter(Boolean).length;
 
         // Track best result
         var curDist = 0;
-        var minGlyphs = (traits.space === 'moire' || traits.space === 'planar' || traits.space === 'polar') ? 80 : 600;
+        var minGlyphs = getMinGlyphs(traits);
         var minPenalty = (traits.space === 'moire' || traits.space === 'planar' || traits.space === 'polar') ? 200 : 1200;
         var maxGlyphs = (traits.space === 'moire' || traits.space === 'planar' || traits.space === 'polar') ? 20000 : 8000;
+        
         if (isFlat) {
-            // Flat fields (monochromatic noise) are penalized heavily so we keep searching
             curDist = 10000;
         } else if (a < minGlyphs) {
             curDist = minPenalty - a;
@@ -385,218 +662,69 @@ onmessage = function (e) {
             curDist = 0;
         }
 
-        if (curDist < bestDist || bestResult === null) {
-            bestDist = curDist;
+        var minZones = getMinZones(traits);
+        if (zonesOccupied < minZones) {
+            curDist += (minZones - zonesOccupied) * 150;
+        }
+
+        return { grid: grid, rawWt: rawWt, wMin: wMin, wRange: wRange, isFlat: isFlat, a: a, dist: curDist, zonesOccupied: zonesOccupied };
+    }
+
+    var bestGrid = null, bestRawWt = null, bestWMin = 0, bestWRange = 1, bestIsFlat = false;
+
+    while (attempts++ < MAX_ATTEMPTS) {
+        var res = runSearchIteration(searchSeed);
+
+        if (res.dist < bestDist || bestResult === null) {
+            bestDist = res.dist;
             bestSeed = searchSeed;
-            // Capture this grid's output
-            var iterationResults = [];
-            for (var fy3 = 0; fy3 < h; fy3++) {
-                for (var fx3 = 0; fx3 < w; fx3++) {
-                    var cell = grid[fx3][fy3];
-                    if (cell.col) {
-                        var wp3 = warp(cell.x, cell.y);
-                        // Local cell scale (Jacobian of warp). In planar warp is identity → sc=1.
-                        // In hyperbolic sc > 1 toward edges, < 1 toward centre. Capped at 3.5.
-                        var _wp3dx = warp(cell.x + 1, cell.y);
-                        var maxSc = traits.space === 'hyperbolic' ? 1.2 : 3.5;
-                        var _sc = Math.min(Math.hypot(_wp3dx[0] - wp3[0], _wp3dx[1] - wp3[1]), maxSc);
-                        
-                        // Prevent typewriter glyphs from stretching in hyperbolic space
-                        if (traits.space === 'hyperbolic' && (traits.motif === 'typewriter' || traits.motif === 'typewriter_classic' || traits.motif === 'chopin')) {
-                            _sc = 1.0; 
-                        }
-                        
-                        var rot = (function () {
-                                if (traits.engine === 'river_flow') {
-                                    // Calculate tangent of the flow at this point
-                                    var dxSum = 0;
-                                    var totalWt = 0;
-                                    motifParams.streams.forEach(function (s) {
-                                        var yOffset = 0;
-                                        var slope = 0;
-                                        s.frequencies.forEach(function (f) {
-                                            var arg = fx3 * f.freq + f.phase;
-                                            yOffset += Math.sin(arg) * f.amp;
-                                            slope += Math.cos(arg) * f.amp * f.freq;
-                                        });
-                                        var curveY = s.baseY + yOffset;
-                                        var dist = Math.abs(fy3 - curveY);
-                                        if (dist < s.width) {
-                                            var influence = 1.0 - (dist / s.width);
-                                            dxSum += slope * influence;
-                                            totalWt += influence;
-                                        }
-                                    });
-                                    if (totalWt > 0) {
-                                        var avgSlope = dxSum / totalWt;
-                                        return Math.atan2(avgSlope, 1) * (180 / Math.PI);
-                                    }
-                                } else if (traits.engine === 'flowing_contours') {
-                                    // Calculate gradient of the 2D scalar field: nabla Z = (dz/dx, dz/dy)
-                                    var dzdx = 0;
-                                    var dzdy = 0;
-                                    motifParams.waves.forEach(function (w2) {
-                                        var arg = fx3 * w2.fx + fy3 * w2.fy + w2.ph;
-                                        var deriv = Math.cos(arg) * w2.amp;
-                                        dzdx += deriv * w2.fx;
-                                        dzdy += deriv * w2.fy;
-                                    });
-                                    // Tangent vector along the contour is (-dz/dy, dz/dx)
-                                    return Math.atan2(dzdx, -dzdy) * (180 / Math.PI);
-                                }
-                                return (traits.motif === 'ichthus' && ((fx3 * 17 + fy3 * 7) % 100 < 40)) ? 90 : 0;
-                            })();
-
-                        var level = 0;
-                        if (cell.wt < 0.36) level = 0;
-                        else if (cell.wt < 0.51) level = 1;
-                        else if (cell.wt < 0.66) level = 2;
-                        else if (cell.wt < 0.81) level = 3;
-                        else level = 4;
-
-                        iterationResults.push({
-                            x: wp3[0], y: wp3[1],
-                            c: cell.col.c,
-                            wt: cell.wt, // Normalized weight (0..1) from grid
-                            sc: _sc,     // local cell scale factor for hyperbolic fitting
-                            flip: shouldFlipFlower(fx3, fy3),
-                            rot: rot,
-                            level: level
-                        });
-
-                        if (traits.space === 'planar' && cell.col) {
-                            // Second pass: contrasting color, one line height offset
-                            // Find contrasting color from palette
-                            var moireContrast = cell.col.c;
-                            for (var mcIdx = 0; mcIdx < cls.length; mcIdx++) {
-                                if (cls[mcIdx].c !== cell.col.c) {
-                                    moireContrast = cls[mcIdx].c;
-                                    break;
-                                }
-                            }
-
-                            // Y offset: exactly one line height in cell units
-                            // The cell grid is h rows tall. One line = 1 row unit.
-                            // Apply drift: horizontal phase offset from moireDriftRate
-                            // makes the overlay angle drift left to right
-                            var overlayX = fx3 + Math.sin(moireTheta) * 0.5 + (fy3 * moireDriftRate * 10);
-                            var overlayY = fy3 + 1.0;
-
-                            // Clamp to grid bounds
-                            if (overlayY < h && overlayX >= 0 && overlayX < w) {
-                                var wp3o = warp(overlayX, overlayY);
-                                iterationResults.push({
-                                    x: wp3o[0],
-                                    y: wp3o[1],
-                                    c: moireContrast,
-                                    wt: cell.wt,
-                                    sc: _sc,
-                                    flip: !shouldFlipFlower(fx3, fy3),
-                                    rot: rot,
-                                    level: level
-                                });
-                            }
-                        }
-
-                        if (traits.space === 'polar' && cell.col) {
-                            // Second pass: contrasting color, one line height offset
-                            // Find contrasting color from palette
-                            var moireContrast = cell.col.c;
-                            for (var mcIdx = 0; mcIdx < cls.length; mcIdx++) {
-                                if (cls[mcIdx].c !== cell.col.c) {
-                                    moireContrast = cls[mcIdx].c;
-                                    break;
-                                }
-                            }
-
-                            // Y offset: exactly one line height in cell units
-                            // The cell grid is h rows tall. One line = 1 row unit.
-                            // Apply drift: horizontal phase offset from moireDriftRate
-                            // makes the overlay angle drift left to right
-                            var overlayX = fx3 + Math.sin(moireTheta) * 0.5 + (fy3 * moireDriftRate * 10);
-                            var overlayY = fy3 + 1.0;
-
-                            // Clamp to grid bounds
-                            if (overlayY < h && overlayX >= 0 && overlayX < w) {
-                                var wp3o = warp(overlayX, overlayY);
-                                iterationResults.push({
-                                    x: wp3o[0],
-                                    y: wp3o[1],
-                                    c: moireContrast,
-                                    wt: cell.wt,
-                                    sc: _sc,
-                                    flip: !shouldFlipFlower(fx3, fy3),
-                                    rot: rot,
-                                    level: level
-                                });
-                            }
-                        }
-
-                        if (traits.space === 'moire' && cell.col) {
-                            var moireContrast = cell.col.c;
-                            for (var mcIdx = 0; mcIdx < cls.length; mcIdx++) {
-                                if (cls[mcIdx].c !== cell.col.c) {
-                                    moireContrast = cls[mcIdx].c;
-                                    break;
-                                }
-                            }
-
-                            var stripCount = 0;
-                            for (var si2 = 0; si2 < moireStrips.length; si2++) {
-                                var ms = moireStrips[si2];
-                                if (fx3 >= ms.x0 + edgeNoise(fx3, fy3, ms.phase, RENDER_SEED) && 
-                                    fx3 <= ms.x1 - edgeNoise(fx3, fy3, ms.phase, RENDER_SEED) && 
-                                    fy3 >= ms.y0 + edgeNoise(fx3, fy3, ms.phase, RENDER_SEED) && 
-                                    fy3 <= ms.y1 - edgeNoise(fx3, fy3, ms.phase, RENDER_SEED)) {
-                                    stripCount++;
-                                }
-                            }
-
-                            var overlayX = fx3 + Math.sin(moireTheta) * (0.3 + stripCount * 0.15);
-                            var overlayY = fy3 + 1.0;
-                            if (overlayY < h && overlayX >= 0 && overlayX < w) {
-                                var wp3m = warp(overlayX, overlayY);
-                                iterationResults.push({
-                                    x: wp3m[0], y: wp3m[1],
-                                    c: moireContrast,
-                                    wt: cell.wt,
-                                    sc: _sc,
-                                    flip: !shouldFlipFlower(fx3, fy3),
-                                    rot: rot,
-                                    level: level
-                                });
-                            }
-                        }
-                        
-                        if (traits.motif === 'chopin') {
-                            // Find a contrasting color from the palette array `cls`
-                            var contrastColor = cell.col.c;
-                            for (var cidx = 0; cidx < cls.length; cidx++) {
-                                if (cls[cidx].c !== cell.col.c) {
-                                    contrastColor = cls[cidx].c;
-                                    break;
-                                }
-                            }
-                            // Calculate a secondary warp with an offset (half a character width)
-                            var wp3_offset = warp(cell.x + 0.5, cell.y + 0.5);
-                            iterationResults.push({
-                                x: wp3_offset[0], y: wp3_offset[1],
-                                c: contrastColor,
-                                wt: 1.0 - cell.wt, // Invert the weight for different text character selection
-                                sc: _sc,
-                                flip: !shouldFlipFlower(fx3, fy3),
-                                rot: rot,
-                                level: level
-                            });
-                        }
-                    }
-                }
-            }
-            bestResult = iterationResults;
+            bestGrid = res.grid;
+            bestRawWt = res.rawWt;
+            bestWMin = res.wMin;
+            bestWRange = res.wRange;
+            bestIsFlat = res.isFlat;
+            bestResult = generateIterationResults(bestGrid);
         }
 
         if (bestDist === 0) break;
         searchSeed++;
+    }
+
+    var EXTENDED_ATTEMPTS = 200;
+    if (bestDist > 300 && traits.space !== 'moire') {
+        var extraAttempts = 0;
+        while (extraAttempts++ < EXTENDED_ATTEMPTS && bestDist > 300) {
+            var res = runSearchIteration(searchSeed);
+            if (res.dist < bestDist) {
+                bestDist = res.dist;
+                bestSeed = searchSeed;
+                bestGrid = res.grid;
+                bestRawWt = res.rawWt;
+                bestWMin = res.wMin;
+                bestWRange = res.wRange;
+                bestIsFlat = res.isFlat;
+                bestResult = generateIterationResults(bestGrid);
+            }
+            if (bestDist === 0) break;
+            searchSeed++;
+            attempts++;
+        }
+    }
+
+    var finalCount = bestResult ? bestResult.length : 0;
+    var qualityMin = getMinGlyphs(traits);
+
+    if (finalCount < qualityMin && traits.space !== 'moire') {
+        var boostThresholds = [0.05, 0.03, 0.01];
+        for (var bi = 0; bi < boostThresholds.length; bi++) {
+            var boostResult = reRenderWithThreshold(
+                bestGrid, bestRawWt, bestWMin, bestWRange, bestIsFlat, boostThresholds[bi], bestSeed
+            );
+            if (boostResult.length >= qualityMin) {
+                bestResult = boostResult;
+                break;
+            }
+        }
     }
 
     postMessage({
