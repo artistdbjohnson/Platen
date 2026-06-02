@@ -760,7 +760,6 @@
         .platen-face.back {
             transform: rotateY(180deg);
             z-index: 1;
-            background: var(--panel) !important;
         }
         .btn-flip {
             position: absolute;
@@ -1443,27 +1442,23 @@ else                glyph = '*';        // asterisk</pre>
             var btnAuto = document.getElementById('btn-auto');
             if (btnAuto) btnAuto.classList.add('auto-on');
             
-            // Mark as active but without a scheduled timer if no mode is chosen yet
-            _autoTimeout = "waiting"; 
+            if (!_autoMode) {
+                _autoMode = 'regenerate'; // Default to regenerate (gen new art from selection)
+            }
 
             var guide = document.getElementById('auto-guide');
             if (guide) {
-                if (!_autoMode) {
-                    guide.textContent = "(Select Randomize or Regenerate to start)";
-                    guide.style.display = "inline";
-                } else {
-                    guide.textContent = "(" + (_autoMode === 'regenerate' ? 'Regenerating' : 'Randomizing') + " cycle active)";
-                    guide.style.display = "inline";
-                    
-                    // Schedule next
-                    scheduleAutoTimer();
-                }
+                guide.textContent = "(" + (_autoMode === 'regenerate' ? 'Regenerating' : 'Randomizing') + " cycle active)";
+                guide.style.display = "inline";
+                
+                // Schedule next
+                scheduleAutoTimer();
             }
             updateAutoUI();
         }
 
         function scheduleAutoTimer() {
-            if (_autoTimeout && _autoTimeout !== "waiting" && _autoTimeout !== "running") {
+            if (_autoTimeout) {
                 clearTimeout(_autoTimeout);
             }
             if (!_autoMode || !_autoCycleActive) return;
@@ -1476,13 +1471,14 @@ else                glyph = '*';        // asterisk</pre>
 
         function stopAuto() {
             _autoCycleActive = false;
-            if (_autoTimeout && _autoTimeout !== "waiting" && _autoTimeout !== "running") {
+            if (_autoTimeout) {
                 clearTimeout(_autoTimeout);
             }
             _autoTimeout = null;
             var btnAuto = document.getElementById('btn-auto');
-            if (btnAuto) btnAuto.classList.remove('btn-auto', 'auto-on'); // Ensure auto-on is removed
-            if (btnAuto) btnAuto.classList.remove('auto-on');
+            if (btnAuto) {
+                btnAuto.classList.remove('btn-auto', 'auto-on');
+            }
             
             var guide = document.getElementById('auto-guide');
             if (guide) guide.style.display = "none";
@@ -2658,11 +2654,9 @@ else                glyph = '*';        // asterisk</pre>
                         }
 
                         var headerLines = getTypewriterHeaderLines(traits, RENDER_SEED, hW);
-                        var textCol = '#1a1724'; // Default to dark typewriter ink for headers
-                        if (traits.chromes === 'typewriter_black') {
-                            textCol = '#000000'; // Pure black ink for black chrome
-                        } else if (traits.canvas === 'black') {
-                            textCol = '#b8b8b8'; // Soft white header text when inverted (graphite)
+                        var textCol = '#000000'; // Default to black
+                        if (traits.canvas === 'black') {
+                            textCol = '#ffffff'; // Pure white header text for black canvas
                         }
 
                         var headerG = dc.createElementNS(svgNS, "g");
@@ -2700,9 +2694,9 @@ else                glyph = '*';        // asterisk</pre>
                     }
 
                     // Determine grid numbers text color explicitly so it exports correctly
-                    var gridTextColor = (traits.canvas === 'white' || traits.canvas === 'tan' || traits.canvas.indexOf('graph_paper') === 0) ? '#1D1D1D' : '#f8f8f2';
+                    var gridTextColor = '#000000';
                     if (traits.canvas === 'black') {
-                        gridTextColor = '#b8b8b8'; // Soft white grid text when inverted (graphite)
+                        gridTextColor = '#ffffff';
                     }
                     
 
@@ -3642,6 +3636,9 @@ else                glyph = '*';        // asterisk</pre>
             panels.forEach(function (id) {
                 var canvas = document.getElementById('c' + id);
                 var svg = document.getElementById('s' + id);
+                var panel = document.getElementById('panel' + id);
+                if (panel) panel.classList.add('loading'); // Instantly hide during async bake
+                
                 if (canvas && svg) {
                     var svgString = new XMLSerializer().serializeToString(svg);
                     var svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
@@ -3650,8 +3647,11 @@ else                glyph = '*';        // asterisk</pre>
                     svgImg.onload = function() {
                         drawToWebGL(canvas, svgImg, img);
                         URL.revokeObjectURL(url);
+                        if (panel) panel.classList.remove('loading'); // Show when finished baking
                     };
                     svgImg.src = url;
+                } else {
+                    if (panel) panel.classList.remove('loading');
                 }
             });
         }
@@ -4934,20 +4934,60 @@ else                glyph = '*';        // asterisk</pre>
             // Load traits
             TRAITS = JSON.parse(JSON.stringify(art.traits));
             RESOLVED_TRAITS = JSON.parse(JSON.stringify(art.traits));
-            setLayout(art.layout);
             
-            // Restore SVGs
+            // Set layout but don't call renderAll yet, we will handle it cleanly
+            currentLayout = art.layout;
+            var canvasWrap = document.getElementById('canvas-wrap');
+            if (canvasWrap) canvasWrap.className = art.layout;
+            
+            // Update active buttons in layout selector
+            var layoutButtons = [
+                { mode: 'panel', id: 'btn-panel' },
+                { mode: 'banner', id: 'btn-banner' },
+                { mode: 'banner_sq', id: 'btn-banner-sq' },
+                { mode: 'gallery', id: 'btn-gallery' },
+                { mode: 'square', id: 'btn-square' },
+                { mode: 'grid_us_letter', id: 'btn-grid-us-letter' },
+                { mode: 'graph_paper', id: 'btn-graph-paper' },
+                { mode: 'graph_paper_sq', id: 'btn-graph-paper-sq' },
+                { mode: 'graph_paper_banner', id: 'btn-graph-paper-banner' },
+                { mode: 'graph_paper_sq_banner', id: 'btn-graph-paper-sq-banner' }
+            ];
+            layoutButtons.forEach(function(item) {
+                var btn = document.getElementById(item.id);
+                if (btn) btn.classList.toggle('active', item.mode === art.layout);
+            });
+
+            // Restore SVGs into the front faces and update Canvas/WebGL instantly
             var panels = activePanels();
             panels.forEach(function(pid, idx) {
                 var el = document.getElementById('panel' + pid);
                 if (el && art.svgs[idx]) {
-                    el.innerHTML = '<div class="platen-loader" style="display:none;"></div>' + art.svgs[idx];
+                    var front = el.querySelector('.platen-face.front');
+                    if (front) {
+                        var oldSvg = document.getElementById('s' + pid);
+                        var parser = new DOMParser();
+                        var doc = parser.parseFromString(art.svgs[idx], 'image/svg+xml');
+                        var newSvg = doc.documentElement;
+                        newSvg.id = 's' + pid;
+                        newSvg.className = 'qs';
+                        newSvg.style.display = 'none';
+                        if (oldSvg) {
+                            oldSvg.parentNode.replaceChild(newSvg, oldSvg);
+                        } else {
+                            front.appendChild(newSvg);
+                        }
+                    }
                 }
             });
-            
+
             closeGalleryDetail();
             toggleGalleryModal();
             updateCanvasTexture();
+            updateTraitBar();
+            
+            // Trigger renderAll(true) to cleanly rebuild the state in the background and populate particles
+            renderAll(true);
         }
 
         var isGridAnimOn = true;
