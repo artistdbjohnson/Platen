@@ -84,6 +84,14 @@ onmessage = function (e) {
     var patternType = traits.engine || 'mastor';
     var motifParams = generatePatternParams(traits.engine, patPRNG, w, h);
 
+    // Moire-specific parameters derived deterministically from RENDER_SEED
+    var moirePRNG = makePRNG(RENDER_SEED + 987654);
+    var moireAngleDeg = moirePRNG.rfl(3, 7); // 3 to 7 degrees
+    var moireAngleRad = moireAngleDeg * Math.PI / 180;
+    var moireYOffset = moirePRNG.rfl(0.5, 1.5); // 0.5 to 1.5 character heights
+    var moireHasPass3 = moirePRNG.rfl() < 0.5; // seed-dependent pass 3
+    var moireScaleFactor = moirePRNG.rfl(0.92, 1.08); // 0.92 to 1.08 frequency scale
+
     while (attempts++ < MAX_ATTEMPTS) {
         var grid = [];
         for (var xi = 0; xi < w; xi++) {
@@ -104,21 +112,72 @@ onmessage = function (e) {
 
         // Pass 1: raw weights
         var rawWt = [];
-        var wMin = Infinity, wMax = -Infinity;
+        var wMax = -Infinity;
         for (var cy = 0; cy < h; cy++) {
             for (var cx = 0; cx < w; cx++) {
-                var wp = warp(cx, cy);
-                var p = [wp[0], wp[1]], d;
-                var qq = [cx + 16, cy + 16];
-                for (var pli = 0; pli < pls.length; pli++) {
-                    var pl = pls[pli];
-                    d = (Math.abs(p[pl[1]] - pl[0]) + 1) / pl[2];
-                    if (d < 1) {
-                        p[0] = d * p[0] + (1 - d) * qq[0];
-                        p[1] = d * p[1] + (1 - d) * qq[1];
+                var baseWt;
+                if (traits.space === 'moire') {
+                    var cx_c = w / 2;
+                    var cy_c = h / 2;
+                    var cosA = Math.cos(moireAngleRad);
+                    var sinA = Math.sin(moireAngleRad);
+
+                    var p1 = [cx, cy];
+                    
+                    var dx = cx - cx_c;
+                    var dy = cy - cy_c;
+                    var p2 = [
+                        dx * cosA - dy * sinA + cx_c,
+                        dx * sinA + dy * cosA + cy_c + moireYOffset
+                    ];
+
+                    var p3 = null;
+                    if (moireHasPass3) {
+                        var sdx = dx * moireScaleFactor;
+                        var sdy = dy * moireScaleFactor;
+                        p3 = [
+                            sdx * cosA - sdy * sinA + cx_c,
+                            sdx * sinA + sdy * cosA + cy_c + moireYOffset
+                        ];
                     }
+
+                    var passes = [p1, p2];
+                    if (moireHasPass3) passes.push(p3);
+
+                    var passWts = [];
+                    for (var psi = 0; psi < passes.length; psi++) {
+                        var cp = [passes[psi][0], passes[psi][1]];
+                        var qq = [cx + 16, cy + 16];
+                        for (var pli = 0; pli < pls.length; pli++) {
+                            var pl = pls[pli];
+                            var d = (Math.abs(cp[pl[1]] - pl[0]) + 1) / pl[2];
+                            if (d < 1) {
+                                cp[0] = d * cp[0] + (1 - d) * qq[0];
+                                cp[1] = d * cp[1] + (1 - d) * qq[1];
+                            }
+                        }
+                        var wt = calcMotifWeight(Math.round(cp[0]), Math.round(cp[1]), w, h, patternType, motifParams);
+                        passWts.push(wt);
+                    }
+
+                    var compositeWt = passWts[0] * passWts[1];
+                    if (moireHasPass3) compositeWt *= passWts[2];
+                    baseWt = Math.max(0.0, Math.min(1.0, compositeWt));
+                } else {
+                    var wp = warp(cx, cy);
+                    var p = [wp[0], wp[1]], d;
+                    var qq = [cx + 16, cy + 16];
+                    for (var pli = 0; pli < pls.length; pli++) {
+                        var pl = pls[pli];
+                        d = (Math.abs(p[pl[1]] - pl[0]) + 1) / pl[2];
+                        if (d < 1) {
+                            p[0] = d * p[0] + (1 - d) * qq[0];
+                            p[1] = d * p[1] + (1 - d) * qq[1];
+                        }
+                    }
+                    baseWt = calcMotifWeight(Math.round(p[0]), Math.round(p[1]), w, h, patternType, motifParams);
                 }
-                var baseWt = calcMotifWeight(Math.round(p[0]), Math.round(p[1]), w, h, patternType, motifParams);
+
                 // Dither/Jitter: Add small deterministic noise to spread colors across palette segments
                 var jitter = baseWt > 0 ? (((cx * 37 + cy * 13) % 100) / 400.0) : 0;
                 rawWt.push(baseWt + jitter);

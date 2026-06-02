@@ -2320,18 +2320,27 @@ else                glyph = '*';        // asterisk</pre>
             var w = foregroundImg.naturalWidth || foregroundImg.width || 800;
             var h = foregroundImg.naturalHeight || foregroundImg.height || 1200;
             
-            canvas.width = w;
-            canvas.height = h;
+            // Create an offscreen canvas to perform double-buffering
+            var offscreen = document.createElement('canvas');
+            offscreen.width = w;
+            offscreen.height = h;
+            var offCtx = offscreen.getContext('2d');
             
             var includeBG = document.getElementById('inc-bg') ? document.getElementById('inc-bg').checked : true;
             
+            if (offCtx) {
+                if (backgroundImg && includeBG) {
+                    offCtx.drawImage(backgroundImg, 0, 0, w, h);
+                }
+                offCtx.drawImage(foregroundImg, 0, 0);
+            }
+            
+            // Atomic copy of the offscreen canvas to the visible display canvas
+            canvas.width = w;
+            canvas.height = h;
             var ctx2d = canvas.getContext('2d');
             if (ctx2d) {
-                ctx2d.clearRect(0, 0, w, h);
-                if (backgroundImg && includeBG) {
-                    ctx2d.drawImage(backgroundImg, 0, 0, w, h);
-                }
-                ctx2d.drawImage(foregroundImg, 0, 0);
+                ctx2d.drawImage(offscreen, 0, 0);
             }
             var panelEl = canvas.closest('.platen-panel');
             if (panelEl) {
@@ -2362,16 +2371,16 @@ else                glyph = '*';        // asterisk</pre>
             var isClassic = motif === 'typewriter_classic';
             if (symmetry === 'rotational' || symmetry === 'quad' || symmetry === 'kaleidoscope' || symmetry === 'radial' || symmetry === 'both') {
                 return isClassic ? 
-                    ['typewriter_dot', 'typewriter_circle', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_classic'] :
-                    ['typewriter_dot', 'typewriter_circle', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_square'];
+                    ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_classic'] :
+                    ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
             } else if (symmetry === 'glide' || symmetry === 'diagonal') {
                 return isClassic ?
-                    ['typewriter_comma', 'typewriter_slash', 'typewriter_x', 'typewriter_asterisk', 'typewriter_classic'] :
-                    ['typewriter_comma', 'typewriter_slash', 'typewriter_x', 'typewriter_asterisk', 'typewriter_square'];
+                    ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_classic'] :
+                    ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
             } else {
                 return isClassic ?
-                    ['typewriter_dash', 'typewriter_dot', 'typewriter_plus', 'typewriter_classic', 'typewriter_classic'] :
-                    ['typewriter_dash', 'typewriter_dot', 'typewriter_plus', 'typewriter_square', 'typewriter_square'];
+                    ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_asterisk', 'typewriter_classic'] :
+                    ['typewriter_slash', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk'];
             }
         }
 
@@ -3595,16 +3604,9 @@ else                glyph = '*';        // asterisk</pre>
             }
 
             // Immediately apply the theme class to ALL panels so styles switch instantly (header text, etc.)
-            // And instantly clear old background image to force a clean fallback to the theme's background color
             document.querySelectorAll('.platen-panel').forEach(function (el) {
                 var isBgLoading = el.classList.contains('loading');
                 el.className = 'platen-panel ' + (isBgLoading ? 'loading ' : '') + canvasClass;
-                
-                var frontFace = el.querySelector('.platen-face.front');
-                var backFace = el.querySelector('.platen-face.back');
-                if (frontFace) frontFace.style.backgroundImage = 'none';
-                if (backFace) backFace.style.backgroundImage = 'none';
-                el.style.backgroundImage = 'none';
             });
 
             if (_loadedTextures[url]) {
