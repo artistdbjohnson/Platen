@@ -1667,6 +1667,18 @@ else                glyph = '*';        // asterisk</pre>
             else if (mode === 'graph_paper_sq' && btnGraphPaperSq) btnGraphPaperSq.classList.add('active');
             else if (mode === 'graph_paper_banner' && btnGraphPaperBanner) btnGraphPaperBanner.classList.add('active');
             else if (mode === 'graph_paper_sq_banner' && btnGraphPaperSqBanner) btnGraphPaperSqBanner.classList.add('active');
+
+            // Reverse the arrow on the solo 1:1 (square) layout
+            if (mode === 'square') {
+                document.querySelectorAll('#panel1 .btn-flip, #panel1 .back-btn-flip').forEach(function(btn) {
+                    btn.textContent = '←';
+                });
+            } else {
+                document.querySelectorAll('#panel1 .btn-flip, #panel1 .back-btn-flip').forEach(function(btn) {
+                    btn.textContent = '→';
+                });
+            }
+
             // Auto-render on layout change
             renderAll(true);
         }
@@ -2642,7 +2654,7 @@ else                glyph = '*';        // asterisk</pre>
                     }
 
                     // Add typewriter printout header metadata at the top of the grid
-                    if ((traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine')) {
+                    if (currentLayout !== 'square' && currentLayout !== 'grid_39_39' && (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine')) {
                         var hW = w;
                         var hSizeX = sizeX;
                         var hSizeY = sizeY;
