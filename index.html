@@ -1165,12 +1165,12 @@ else                glyph = '*';        // asterisk</pre>
         <section class="col-controls">
             <div class="control-section">
                 <h3>Parameters</h3>
-                <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym" onchange="TRAITS.symmetry=this.value; renderAll()"></select></div>
-                <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space" onchange="TRAITS.space=this.value; renderAll()"></select></div>
-                <div class="trait"><span class="trait-label">Motif</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value; renderAll()"></select></div>
-                <div class="trait"><span class="trait-label">Ink</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value; renderAll()"></select></div>
-                <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value; renderAll()"></select></div>
-                <div class="trait"><span class="trait-label">Canvas</span><select class="trait-select" id="t-canvas" onchange="TRAITS.canvas=this.value; renderAll()"></select></div>
+                <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym" onchange="TRAITS.symmetry=this.value;"></select></div>
+                <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space" onchange="TRAITS.space=this.value;"></select></div>
+                <div class="trait"><span class="trait-label">Motif</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value;"></select></div>
+                <div class="trait"><span class="trait-label">Ink</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value;"></select></div>
+                <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value;"></select></div>
+                <div class="trait"><span class="trait-label">Canvas</span><select class="trait-select" id="t-canvas" onchange="TRAITS.canvas=this.value; updateCanvasTexture()"></select></div>
             </div>
 
             <div class="control-section">
