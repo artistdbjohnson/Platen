@@ -90,6 +90,34 @@ onmessage = function (e) {
     var moireBandsPerLine = 8 + (RENDER_SEED % 800) / 800 * 8;
     var moireHasPass3 = (RENDER_SEED % 3 !== 0);
 
+    var moireStrips = [];
+    var numStrips = 4 + (RENDER_SEED % 5);
+
+    for (var si = 0; si < numStrips; si++) {
+      var stripW = 6 + Math.floor(
+        ((RENDER_SEED * (si + 7) * 2311) % 1000) / 1000 * 12
+      );
+      var spreadFactor = 0.35 + 
+        ((RENDER_SEED * (si + 3) * 1733) % 100) / 100 * 0.3;
+      var stripCX = Math.floor(w * (
+        0.5 + (((si / numStrips) - 0.5) * spreadFactor)
+      ));
+      var stripX0 = Math.max(0, stripCX - Math.floor(stripW / 2));
+      var stripX1 = Math.min(w - 1, stripX0 + stripW);
+      var stripH = Math.floor(h * (
+        0.5 + ((RENDER_SEED * (si + 11) * 997) % 1000) / 1000 * 0.45
+      ));
+      var stripY0 = Math.floor(
+        ((RENDER_SEED * (si + 5) * 1453) % 1000) / 1000 
+        * (h - stripH)
+      );
+      var stripY1 = stripY0 + stripH;
+      moireStrips.push({ 
+        x0: stripX0, x1: stripX1, 
+        y0: stripY0, y1: stripY1 
+      });
+    }
+
     while (attempts++ < MAX_ATTEMPTS) {
         var grid = [];
         for (var xi = 0; xi < w; xi++) {
@@ -113,8 +141,7 @@ onmessage = function (e) {
         var wMax = -Infinity;
         for (var cy = 0; cy < h; cy++) {
             for (var cx = 0; cx < w; cx++) {
-                var baseWt;
-                if (traits.space === 'moire') {
+                if (traits.space === 'planar') {
                     var p = [cx, cy], d;
                     var qq = [cx + 16, cy + 16];
                     for (var pli = 0; pli < pls.length; pli++) {
@@ -130,6 +157,37 @@ onmessage = function (e) {
                     // MOIRE produces its strongest effect with two-color split ribbon palettes.
                     // typewriter_black_red and typewriter_ribbon_multicolored are the natural pairings.
                     baseWt = engineWeight;
+                } else if (traits.space === 'moire') {
+                    var p = [cx, cy], d;
+                    var qq = [cx + 16, cy + 16];
+                    for (var pli = 0; pli < pls.length; pli++) {
+                        var pl = pls[pli];
+                        d = (Math.abs(p[pl[1]] - pl[0]) + 1) / pl[2];
+                        if (d < 1) {
+                            p[0] = d * p[0] + (1 - d) * qq[0];
+                            p[1] = d * p[1] + (1 - d) * qq[1];
+                        }
+                    }
+                    var engineWeight = calcMotifWeight(Math.round(p[0]), Math.round(p[1]), w, h, patternType, motifParams);
+
+                    var stripCount = 0;
+                    for (var si2 = 0; si2 < moireStrips.length; si2++) {
+                        var ms = moireStrips[si2];
+                        if (cx >= ms.x0 && cx <= ms.x1 && 
+                            cy >= ms.y0 && cy <= ms.y1) {
+                            stripCount++;
+                        }
+                    }
+
+                    if (stripCount === 0) {
+                        baseWt = 0;
+                    } else if (stripCount === 1) {
+                        baseWt = engineWeight;
+                    } else {
+                        baseWt = Math.min(1.0, 
+                            engineWeight * (1.0 + (stripCount - 1) * 0.4)
+                        );
+                    }
                 } else {
                     var wp = warp(cx, cy);
                     var p = [wp[0], wp[1]], d;
@@ -171,7 +229,7 @@ onmessage = function (e) {
                     }
                 } else {
                     // Skip the bottom ~7% of weights as background to let the raw canvas show through
-                    var normThreshold = (traits.space === 'moire') ? 0.02 : 0.07;
+                    var normThreshold = (traits.space === 'moire' || traits.space === 'planar') ? 0.02 : 0.07;
                     if (norm > normThreshold) {
                         grid[cx2][cy2].wt = norm;
                         if (traits.chromes === 'typewriter_black_red' || traits.chromes === 'typewriter_ribbon_multicolored') {
@@ -239,7 +297,7 @@ onmessage = function (e) {
         // ── TASK 1: DENSITY SPACING FLOOR ──
         // Enforce spacing globally: clear cells within a Chebyshev distance of 1 of higher-weight cells.
         var candidates = [];
-        if (traits.space !== 'moire') {
+        if (traits.space !== 'moire' && traits.space !== 'planar') {
             for (var xi = 0; xi < w; xi++) {
                 for (var yi = 0; yi < h; yi++) {
                     if (grid[xi][yi].col) {
@@ -289,9 +347,9 @@ onmessage = function (e) {
 
         // Track best result
         var curDist = 0;
-        var minGlyphs = (traits.space === 'moire') ? 80 : 600;
-        var minPenalty = (traits.space === 'moire') ? 200 : 1200;
-        var maxGlyphs = (traits.space === 'moire') ? 20000 : 8000;
+        var minGlyphs = (traits.space === 'moire' || traits.space === 'planar') ? 80 : 600;
+        var minPenalty = (traits.space === 'moire' || traits.space === 'planar') ? 200 : 1200;
+        var maxGlyphs = (traits.space === 'moire' || traits.space === 'planar') ? 20000 : 8000;
         if (isFlat) {
             // Flat fields (monochromatic noise) are penalized heavily so we keep searching
             curDist = 10000;
@@ -382,7 +440,7 @@ onmessage = function (e) {
                             level: level
                         });
 
-                        if (traits.space === 'moire' && cell.col) {
+                        if (traits.space === 'planar' && cell.col) {
                             // Second pass: contrasting color, one line height offset
                             // Find contrasting color from palette
                             var moireContrast = cell.col.c;
@@ -406,6 +464,40 @@ onmessage = function (e) {
                                 iterationResults.push({
                                     x: wp3o[0],
                                     y: wp3o[1],
+                                    c: moireContrast,
+                                    wt: cell.wt,
+                                    sc: _sc,
+                                    flip: !shouldFlipFlower(fx3, fy3),
+                                    rot: rot,
+                                    level: level
+                                });
+                            }
+                        }
+
+                        if (traits.space === 'moire' && cell.col) {
+                            var moireContrast = cell.col.c;
+                            for (var mcIdx = 0; mcIdx < cls.length; mcIdx++) {
+                                if (cls[mcIdx].c !== cell.col.c) {
+                                    moireContrast = cls[mcIdx].c;
+                                    break;
+                                }
+                            }
+
+                            var stripCount = 0;
+                            for (var si2 = 0; si2 < moireStrips.length; si2++) {
+                                var ms = moireStrips[si2];
+                                if (fx3 >= ms.x0 && fx3 <= ms.x1 && 
+                                    fy3 >= ms.y0 && fy3 <= ms.y1) {
+                                    stripCount++;
+                                }
+                            }
+
+                            var overlayX = fx3 + Math.sin(moireTheta) * (0.3 + stripCount * 0.15);
+                            var overlayY = fy3 + 1.0;
+                            if (overlayY < h && overlayX >= 0 && overlayX < w) {
+                                var wp3m = warp(overlayX, overlayY);
+                                iterationResults.push({
+                                    x: wp3m[0], y: wp3m[1],
                                     c: moireContrast,
                                     wt: cell.wt,
                                     sc: _sc,
