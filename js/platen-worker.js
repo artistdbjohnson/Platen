@@ -457,7 +457,7 @@ onmessage = function (e) {
                 }
             }
         }
-        bestResult = iterationResults;
+        return iterationResults;
     }
 
     function reRenderWithThreshold(grid, rawWt, wMin, wRange, isFlat, threshold, seed) {
