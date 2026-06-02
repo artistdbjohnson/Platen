@@ -401,12 +401,12 @@ onmessage = function (e) {
                         var numPasses = 4 + (RENDER_SEED % 3);
 
                         for (var pi = 0; pi < numPasses; pi++) {
-                            var angle = (pi / numPasses) * Math.PI 
+                            var angle = (pi / numPasses) * Math.PI * 2
                                 + moireTheta 
-                                + ((RENDER_SEED * (pi + 3) * 1447) % 1000) / 1000 * 0.4;
+                                + ((RENDER_SEED * (pi + 3) * 1447) % 1000) / 1000 * 0.6;
 
-                            var magnitude = 0.6 + 
-                                ((RENDER_SEED * (pi + 7) * 2239) % 1000) / 1000 * 1.4;
+                            var magnitude = 1.5 + 
+                                ((RENDER_SEED * (pi + 7) * 2239) % 1000) / 1000 * 2.5;
 
                             var offX = Math.cos(angle) * magnitude;
                             var offY = Math.sin(angle) * magnitude;
@@ -440,6 +440,41 @@ onmessage = function (e) {
                                     : !shouldFlipFlower(fx3, fy3),
                                 rot: (rot || 0) + (pi * 3),
                                 level: level
+                            });
+                        }
+
+                        var numGhosts = 1 + (RENDER_SEED % 2);
+                        // 1 or 2 ghost passes per cell
+
+                        for (var gi = 0; gi < numGhosts; gi++) {
+                            var ghostAngle = ((RENDER_SEED * (gi + 23) * 3761) 
+                                % 1000) / 1000 * Math.PI * 2;
+                            var ghostMag = 5.0 + 
+                                ((RENDER_SEED * (gi + 11) * 2953) % 1000) 
+                                / 1000 * 3.0;
+                            // Ghost magnitude: 5 to 8 cells.
+                            
+                            var ghostX = fx3 + Math.cos(ghostAngle) * ghostMag;
+                            var ghostY = fy3 + Math.sin(ghostAngle) * ghostMag;
+                            
+                            if (ghostY < 0 || ghostY >= h || 
+                                ghostX < 0 || ghostX >= w) continue;
+                            
+                            // Ghost weight: very light, 15% to 30% of source.
+                            var ghostWt = cell.wt * (0.15 + 
+                                ((fx3 * 13 + fy3 * 7) % 100) / 100 * 0.15);
+                            
+                            // Ghost color: primary ink color, not contrast.
+                            var wp3g = warp(ghostX, ghostY);
+                            iterationResults.push({
+                                x: wp3g[0],
+                                y: wp3g[1],
+                                c: cell.col.c,
+                                wt: ghostWt,
+                                sc: _sc,
+                                flip: shouldFlipFlower(fx3, fy3),
+                                rot: (rot || 0) + (gi * 7),
+                                level: 0
                             });
                         }
                     }
@@ -661,7 +696,7 @@ onmessage = function (e) {
         var curDist = 0;
         var minGlyphs = getMinGlyphs(traits);
         var minPenalty = (traits.space === 'moire' || traits.space === 'planar' || traits.space === 'polar') ? 200 : 1200;
-        var maxGlyphs = (traits.space === 'moire') ? 80000 : (traits.space === 'planar' || traits.space === 'polar') ? 20000 : 8000;
+        var maxGlyphs = (traits.space === 'moire') ? 150000 : (traits.space === 'planar' || traits.space === 'polar') ? 20000 : 8000;
         
         if (isFlat) {
             curDist = 10000;
