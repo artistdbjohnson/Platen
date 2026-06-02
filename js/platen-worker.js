@@ -211,7 +211,10 @@ onmessage = function (e) {
     // ── TASK 1: DENSITY SPACING FLOOR ──
     // Enforce spacing globally: clear cells within a Chebyshev distance of 1 of higher-weight cells.
     var candidates = [];
-    if (traits.space !== 'moire' && traits.space !== 'planar' && traits.space !== 'polar') {
+    if (traits.space !== 'moire' && 
+        traits.space !== 'planar' && 
+        traits.space !== 'polar' &&
+        traits.space !== 'hyperbolic') {
         for (var xi = 0; xi < w; xi++) {
             for (var yi = 0; yi < h; yi++) {
                 if (grid[xi][yi].col) {
@@ -364,6 +367,40 @@ onmessage = function (e) {
                     }
 
                     if (traits.space === 'polar' && cell.col) {
+                        // Second pass: contrasting color, one line height offset
+                        // Find contrasting color from palette
+                        var moireContrast = cell.col.c;
+                        for (var mcIdx = 0; mcIdx < cls.length; mcIdx++) {
+                            if (cls[mcIdx].c !== cell.col.c) {
+                                moireContrast = cls[mcIdx].c;
+                                break;
+                            }
+                        }
+
+                        // Y offset: exactly one line height in cell units
+                        // The cell grid is h rows tall. One line = 1 row unit.
+                        // Apply drift: horizontal phase offset from moireDriftRate
+                        // makes the overlay angle drift left to right
+                        var overlayX = fx3 + Math.sin(moireTheta) * 0.5 + (fy3 * moireDriftRate * 10);
+                        var overlayY = fy3 + 1.0;
+
+                        // Clamp to grid bounds
+                        if (overlayY < h && overlayX >= 0 && overlayX < w) {
+                            var wp3o = warp(overlayX, overlayY);
+                            iterationResults.push({
+                                x: wp3o[0],
+                                y: wp3o[1],
+                                c: moireContrast,
+                                wt: cell.wt,
+                                sc: _sc,
+                                flip: !shouldFlipFlower(fx3, fy3),
+                                rot: rot,
+                                level: level
+                            });
+                        }
+                    }
+
+                    if (traits.space === 'hyperbolic' && cell.col) {
                         // Second pass: contrasting color, one line height offset
                         // Find contrasting color from palette
                         var moireContrast = cell.col.c;
@@ -653,7 +690,11 @@ onmessage = function (e) {
                     }
                 } else {
                     // Skip the bottom ~7% of weights as background to let the raw canvas show through
-                    var normThreshold = (traits.space === 'moire') ? 0.01 : (traits.space === 'planar' ? 0.02 : 0.07);
+                    var normThreshold = 
+                        (traits.space === 'moire') ? 0.02 :
+                        (traits.space === 'planar') ? 0.02 :
+                        (traits.space === 'polar') ? 0.02 :
+                        (traits.space === 'hyperbolic') ? 0.02 : 0.07;
                     if (norm > normThreshold) {
                         grid[cx2][cy2].wt = norm;
                         if (traits.chromes === 'typewriter_black_red' || traits.chromes === 'typewriter_ribbon_multicolored') {
@@ -694,9 +735,21 @@ onmessage = function (e) {
 
         // Track best result
         var curDist = 0;
-        var minGlyphs = getMinGlyphs(traits);
-        var minPenalty = (traits.space === 'moire' || traits.space === 'planar' || traits.space === 'polar') ? 200 : 1200;
-        var maxGlyphs = (traits.space === 'moire') ? 150000 : (traits.space === 'planar' || traits.space === 'polar') ? 20000 : 8000;
+        var minGlyphs = (traits.space === 'moire' || 
+                         traits.space === 'planar' ||
+                         traits.space === 'polar' ||
+                         traits.space === 'hyperbolic') 
+                         ? 80 : 600;
+        var minPenalty = (traits.space === 'moire' || 
+                          traits.space === 'planar' ||
+                          traits.space === 'polar' ||
+                          traits.space === 'hyperbolic') 
+                          ? 200 : 1200;
+        var maxGlyphs = (traits.space === 'moire') ? 150000 : 
+                        (traits.space === 'planar' || 
+                         traits.space === 'polar' ||
+                         traits.space === 'hyperbolic') 
+                         ? 20000 : 8000;
         
         if (isFlat) {
             curDist = 10000;
