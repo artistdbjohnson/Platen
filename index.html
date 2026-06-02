@@ -726,6 +726,67 @@
             display: none;
         }
 
+        /* ── CSS 3D Card Flip ── */
+        .platen-panel {
+            perspective: 1500px;
+            position: relative;
+            overflow: visible !important;
+        }
+        .platen-card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .platen-card.flipped {
+            transform: rotateY(180deg);
+        }
+        .platen-face {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            backface-visibility: hidden;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .platen-face.front {
+            z-index: 2;
+            transform: rotateY(0deg);
+        }
+        .platen-face.back {
+            transform: rotateY(180deg);
+            z-index: 1;
+        }
+        .btn-flip {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            color: #000000;
+            border: 1px solid #e0e0e0;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.2s, background 0.2s;
+        }
+        .btn-flip:hover {
+            transform: scale(1.1);
+            background: #ffffff;
+        }
+
         .platen-panel.loading .platen-loader {
             display: block;
         }
@@ -747,6 +808,15 @@
         }
         .canvas-black .typewriter-header text {
             fill: #ffffff !important;
+        }
+
+        .platen-panel.canvas-white,
+        .platen-panel.canvas-white .platen-face {
+            background-color: #f5f5f5 !important;
+        }
+        .platen-panel.canvas-black,
+        .platen-panel.canvas-black .platen-face {
+            background-color: #151515 !important;
         }
 
         /* Old about modal removed */
@@ -1226,19 +1296,43 @@ else                glyph = '*';        // asterisk</pre>
         <section class="col-canvas">
             <div id="canvas-wrap" class="panel">
                 <div class="platen-panel" id="panel1">
-                    <div class="platen-loader">rendering...</div>
-                    <canvas id="c1" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
-                    <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
+                    <div class="platen-card" id="card1">
+                        <div class="platen-face front">
+                            <div class="platen-loader">rendering...</div>
+                            <canvas id="c1" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                            <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
+                        </div>
+                        <div class="platen-face back">
+                            <div class="three-container" id="three-container-1" style="width: 100%; height: 100%;"></div>
+                        </div>
+                    </div>
+                    <button class="btn-flip" onclick="toggleFlip(1, event)" title="Flip Artwork">3D</button>
                 </div>
                 <div class="platen-panel" id="panel2">
-                    <div class="platen-loader">rendering...</div>
-                    <canvas id="c2" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
-                    <svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
+                    <div class="platen-card" id="card2">
+                        <div class="platen-face front">
+                            <div class="platen-loader">rendering...</div>
+                            <canvas id="c2" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                            <svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
+                        </div>
+                        <div class="platen-face back">
+                            <div class="three-container" id="three-container-2" style="width: 100%; height: 100%;"></div>
+                        </div>
+                    </div>
+                    <button class="btn-flip" onclick="toggleFlip(2, event)" title="Flip Artwork">3D</button>
                 </div>
                 <div class="platen-panel" id="panel3">
-                    <div class="platen-loader">rendering...</div>
-                    <canvas id="c3" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
-                    <svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
+                    <div class="platen-card" id="card3">
+                        <div class="platen-face front">
+                            <div class="platen-loader">rendering...</div>
+                            <canvas id="c3" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                            <svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
+                        </div>
+                        <div class="platen-face back">
+                            <div class="three-container" id="three-container-3" style="width: 100%; height: 100%;"></div>
+                        </div>
+                    </div>
+                    <button class="btn-flip" onclick="toggleFlip(3, event)" title="Flip Artwork">3D</button>
                 </div>
             </div>
         </section>
@@ -1256,6 +1350,8 @@ else                glyph = '*';        // asterisk</pre>
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/platen-particles.js"></script>
     <script src="js/platen-core.js?v=chopin"></script>
     <script src="js/platen-motifs.js"></script>
     <script src="js/platen-engines.js"></script>
@@ -2129,19 +2225,25 @@ else                glyph = '*';        // asterisk</pre>
                     }
                     ctx2d.drawImage(foregroundImg, 0, 0);
                 }
-                if (canvas.parentElement) {
-                    var el = canvas.parentElement;
-                    el.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
+                var panelEl = canvas.closest('.platen-panel');
+                if (panelEl) {
+                    var frontFace = panelEl.querySelector('.platen-face.front');
+                    var backFace = panelEl.querySelector('.platen-face.back');
+                    var targetEl = frontFace || panelEl;
+                    
+                    targetEl.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
+                    if (backFace) backFace.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
+                    
                     var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
                     if (isUsLetter) {
-                        el.style.backgroundSize = '106%';
-                        el.style.backgroundColor = 'transparent';
+                        targetEl.style.backgroundSize = '106%';
+                        targetEl.style.backgroundColor = 'transparent';
                     } else {
-                        el.style.backgroundSize = 'cover';
-                        el.style.backgroundColor = 'transparent';
+                        targetEl.style.backgroundSize = 'cover';
+                        targetEl.style.backgroundColor = 'transparent';
                     }
-                    var baseClass = el.classList.contains('loading') ? 'platen-panel loading' : 'platen-panel';
-                    el.className = baseClass + ' ' + _activeCanvasClass;
+                    var baseClass = panelEl.classList.contains('loading') ? 'platen-panel loading' : 'platen-panel';
+                    panelEl.className = baseClass + ' ' + _activeCanvasClass;
                 }
             }
 
@@ -2258,19 +2360,25 @@ else                glyph = '*';        // asterisk</pre>
                 gl.uniform1i(cached.uForegroundLoc, 1);
 
                 gl.drawArrays(gl.TRIANGLES, 0, 6);
-                if (canvas.parentElement) {
-                    var el = canvas.parentElement;
-                    el.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
+                var panelEl = canvas.closest('.platen-panel');
+                if (panelEl) {
+                    var frontFace = panelEl.querySelector('.platen-face.front');
+                    var backFace = panelEl.querySelector('.platen-face.back');
+                    var targetEl = frontFace || panelEl;
+                    
+                    targetEl.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
+                    if (backFace) backFace.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
+                    
                     var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
                     if (isUsLetter) {
-                        el.style.backgroundSize = '106%';
-                        el.style.backgroundColor = 'transparent';
+                        targetEl.style.backgroundSize = '106%';
+                        targetEl.style.backgroundColor = 'transparent';
                     } else {
-                        el.style.backgroundSize = 'cover';
-                        el.style.backgroundColor = 'transparent';
+                        targetEl.style.backgroundSize = 'cover';
+                        targetEl.style.backgroundColor = 'transparent';
                     }
-                    var baseClass = el.classList.contains('loading') ? 'platen-panel loading' : 'platen-panel';
-                    el.className = baseClass + ' ' + _activeCanvasClass;
+                    var baseClass = panelEl.classList.contains('loading') ? 'platen-panel loading' : 'platen-panel';
+                    panelEl.className = baseClass + ' ' + _activeCanvasClass;
                 }
             } catch (e) {
                 console.warn("WebGL draw failed, falling back to 2D context:", e);
@@ -2339,7 +2447,6 @@ else                glyph = '*';        // asterisk</pre>
                     if (awIdx > -1) ActiveWorkers.splice(awIdx, 1);
 
                     clearTimeout(loadTimeout);
-                    if (panel) panel.classList.remove('loading');
                     var data = e.data;
                     var flowers = data.flowers; // Array of {x, y, c, flip}
 
@@ -2438,7 +2545,7 @@ else                glyph = '*';        // asterisk</pre>
                         // Support Typewriter Halftone (Density Shading)
                         var motifPath = MOTIF_PATHS[traits.motif];
                         if (traits.motif === 'typewriter_quine') {
-                            if (f.wt < 0.28) {
+                            if (f.wt < 0.35) {
                                 continue;
                             }
                         } else if (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') {
@@ -2626,14 +2733,20 @@ else                glyph = '*';        // asterisk</pre>
                             var activeBgImg = typeof _activeCanvasImg !== 'undefined' ? _activeCanvasImg : null;
                             drawToWebGL(canvas, svgImg, activeBgImg);
                             URL.revokeObjectURL(url);
+                            if (panel) panel.classList.remove('loading');
                         };
                         svgImg.src = url;
+                    } else {
+                        if (panel) panel.classList.remove('loading');
                     }
 
                     // Return worker to pool instead of terminating
                     WorkerPool.push(worker);
 
                     _lastFlowers[id] = flowers; // Store for heightmap/Z-SVG
+                    if (window._swarmInstances && window._swarmInstances[id]) {
+                        window._swarmInstances[id].update();
+                    }
                     resolve({ flowers: data.flowerCount, seed: data.seed, attempts: data.attempts });
                 };
 
@@ -3480,16 +3593,19 @@ else                glyph = '*';        // asterisk</pre>
                 canvasClass = 'canvas-black';
             }
 
-            // Set instant placeholder background color to transparent
-            var placeholderBg = 'transparent';
-
+            // Immediately apply the theme class to ALL panels so styles switch instantly (header text, etc.)
             document.querySelectorAll('.platen-panel').forEach(function (el) {
-                el.style.backgroundColor = placeholderBg;
+                var isBgLoading = el.classList.contains('loading');
+                el.className = 'platen-panel ' + (isBgLoading ? 'loading ' : '') + canvasClass;
             });
 
-            ensureTextureLoaded(url, function(img) {
-                applyTexture(url, img, canvasClass);
-            });
+            if (_loadedTextures[url]) {
+                applyTexture(url, _loadedTextures[url], canvasClass);
+            } else {
+                ensureTextureLoaded(url, function(img) {
+                    applyTexture(url, img, canvasClass);
+                });
+            }
         }
 
         function applyTexture(displayUrl, img, canvasClass) {
@@ -3497,23 +3613,28 @@ else                glyph = '*';        // asterisk</pre>
             _activeCanvasClass = canvasClass;
             _activeDisplayUrl = displayUrl;
 
-            // Only apply styling to parent element immediately if the panel is currently NOT loading
-            // (this avoids any mid-render mismatches!)
+            // Apply styling immediately to all panel faces (front and back) to avoid any blank flashes
             document.querySelectorAll('.platen-panel').forEach(function (el) {
-                if (!el.classList.contains('loading')) {
-                    el.style.backgroundImage = 'url("' + displayUrl + '")';
-                    var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
-                    if (isUsLetter) {
-                        el.style.backgroundSize = '106%';
-                        el.style.backgroundColor = 'transparent';
-                        el.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)';
-                    } else {
-                        el.style.backgroundSize = 'cover';
-                        el.style.backgroundColor = 'transparent';
-                        el.style.boxShadow = 'none';
-                    }
-                    el.className = 'platen-panel ' + canvasClass;
+                var frontFace = el.querySelector('.platen-face.front');
+                var backFace = el.querySelector('.platen-face.back');
+                var targetEl = frontFace || el;
+                
+                targetEl.style.backgroundImage = 'url("' + displayUrl + '")';
+                if (backFace) backFace.style.backgroundImage = 'url("' + displayUrl + '")';
+
+                var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
+                if (isUsLetter) {
+                    targetEl.style.backgroundSize = '106%';
+                    targetEl.style.backgroundColor = 'transparent';
+                    targetEl.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)';
+                } else {
+                    targetEl.style.backgroundSize = 'cover';
+                    targetEl.style.backgroundColor = 'transparent';
+                    targetEl.style.boxShadow = 'none';
                 }
+                
+                var isBgLoading = el.classList.contains('loading');
+                el.className = 'platen-panel ' + (isBgLoading ? 'loading ' : '') + canvasClass;
             });
 
             // Re-render WebGL canvases with the new background texture
