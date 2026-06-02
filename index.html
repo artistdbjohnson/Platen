@@ -3408,29 +3408,17 @@ else                glyph = '*';        // asterisk</pre>
 
         // Canvas textures — preload both
         var CANVAS_BLACK_PATH = 'platen_black.png';
-        var CANVAS_TAN_PATH = 'platen_canvas_tan.png';
-        var CANVAS_OLIVE_PATH = 'platen_canvas_olive.png';
         var CANVAS_WHITE_PATH = 'platen_white.png';
-        var CANVAS_GALLERY_PATH = 'platen_canvas_black_gallery.png';
-        var CANVAS_SQUARE_PATH = 'platen_canvas_black_1x1.png';
-        var CANVAS_32_40_PATH = 'platen_canvas_black_39_51.png'; // Reusing 39x51 asset as missing
-        var CANVAS_39_51_PATH = 'platen_canvas_black_39_51.png';
-        var CANVAS_39_39_PATH = 'platen_canvas_black_39_39.png';
-        var CANVAS_GRAPH_PAPER_PATH = 'platen_canvas_graph_paper.jpg';
 
         var _activeCanvasImg = null;
         var _activeCanvasClass = 'canvas-white';
         var _activeDisplayUrl = 'platen_white.png';
-        var _canvasGraphPaperInvertedDataURL = null;
-        var _canvasGraphPaperInvertedImg = null;
         var _loadedTextures = {};
 
         // Preload default canvas textures immediately on startup to prevent lag and black flashes
         setTimeout(function() {
             ensureTextureLoaded(CANVAS_WHITE_PATH);
             ensureTextureLoaded(CANVAS_BLACK_PATH);
-            ensureTextureLoaded(CANVAS_TAN_PATH);
-            ensureTextureLoaded(CANVAS_OLIVE_PATH);
         }, 0);
 
         function ensureTextureLoaded(url, callback) {
@@ -3467,33 +3455,13 @@ else                glyph = '*';        // asterisk</pre>
             var url = CANVAS_BLACK_PATH;
             var canvasClass = 'canvas-black';
 
-            if (TRAITS.canvas === 'tan') {
-                url = CANVAS_TAN_PATH;
-                canvasClass = 'canvas-tan';
-            } else if (TRAITS.canvas === 'olive') {
-                url = CANVAS_OLIVE_PATH;
-                canvasClass = 'canvas-olive';
-            } else if (TRAITS.canvas === 'white') {
+            if (TRAITS.canvas === 'white') {
                 url = CANVAS_WHITE_PATH;
                 canvasClass = 'canvas-white';
-            } else if (TRAITS.canvas === 'graph_paper') {
-                url = CANVAS_GRAPH_PAPER_PATH;
-                canvasClass = 'canvas-graph-paper';
-            }
-
-            var isTypewriter = (TRAITS.motif && (TRAITS.motif.indexOf('typewriter') === 0 || TRAITS.motif === 'chopin')) ||
-                               (TRAITS.chromes && TRAITS.chromes.indexOf('typewriter') === 0) ||
-                               (RESOLVED_TRAITS && (
-                                   (RESOLVED_TRAITS.motif && (RESOLVED_TRAITS.motif.indexOf('typewriter') === 0 || RESOLVED_TRAITS.motif === 'chopin')) ||
-                                   (RESOLVED_TRAITS.chromes && RESOLVED_TRAITS.chromes.indexOf('typewriter') === 0)
-                               ));
-
-            if (TRAITS.canvas === 'black') {
+            } else {
                 url = CANVAS_BLACK_PATH;
                 canvasClass = 'canvas-black';
             }
-
-
 
             // Set instant placeholder background color to transparent
             var placeholderBg = 'transparent';
@@ -3502,42 +3470,9 @@ else                glyph = '*';        // asterisk</pre>
                 el.style.backgroundColor = placeholderBg;
             });
 
-            if (TRAITS.canvas === 'graph_paper' && TRAITS.invertGraph) {
-                ensureTextureLoaded(CANVAS_GRAPH_PAPER_PATH, function(originalImg) {
-                    if (!_canvasGraphPaperInvertedDataURL) {
-                        var c = document.createElement('canvas');
-                        c.width = originalImg.width;
-                        c.height = originalImg.height;
-                        var ctx = c.getContext('2d');
-                        ctx.drawImage(originalImg, 0, 0);
-                        var idata = ctx.getImageData(0, 0, c.width, c.height);
-                        var d = idata.data;
-                        for (var i = 0; i < d.length; i += 4) {
-                            var r = 255 - d[i];
-                            var g = 255 - d[i + 1];
-                            var b = 255 - d[i + 2];
-                            var gray = (r + g + b) / 3;
-                            d[i] = gray;
-                            d[i + 1] = gray;
-                            d[i + 2] = gray;
-                        }
-                        ctx.putImageData(idata, 0, 0);
-                        _canvasGraphPaperInvertedDataURL = c.toDataURL('image/jpeg', 0.9);
-                        _canvasGraphPaperInvertedImg = new Image();
-                        _canvasGraphPaperInvertedImg.onload = function() {
-                            _loadedTextures[_canvasGraphPaperInvertedDataURL] = _canvasGraphPaperInvertedImg;
-                            applyTexture(_canvasGraphPaperInvertedDataURL, _canvasGraphPaperInvertedImg, canvasClass);
-                        };
-                        _canvasGraphPaperInvertedImg.src = _canvasGraphPaperInvertedDataURL;
-                    } else {
-                        applyTexture(_canvasGraphPaperInvertedDataURL, _canvasGraphPaperInvertedImg, canvasClass);
-                    }
-                });
-            } else {
-                ensureTextureLoaded(url, function(img) {
-                    applyTexture(url, img, canvasClass);
-                });
-            }
+            ensureTextureLoaded(url, function(img) {
+                applyTexture(url, img, canvasClass);
+            });
         }
 
         function applyTexture(displayUrl, img, canvasClass) {
