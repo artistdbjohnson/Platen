@@ -127,23 +127,9 @@ onmessage = function (e) {
                     }
                     var engineWeight = calcMotifWeight(Math.round(p[0]), Math.round(p[1]), w, h, patternType, motifParams);
 
-                    var rowsPerCycle = h / Math.max(1, moireBandsPerLine);
-                    var driftedPhase = (cy / Math.max(1, rowsPerCycle)) * 2 * Math.PI + cx * moireDriftRate;
-                    var rawEnvelope = (Math.cos(driftedPhase) + 1) / 2;
-
-                    var envelope;
-                    if (moireHasPass3) {
-                        var harmonicPhase = (cy / Math.max(1, rowsPerCycle * 1.618)) * 2 * Math.PI - cx * moireDriftRate * 0.618;
-                        var harmonicEnvelope = (Math.cos(harmonicPhase) + 1) / 2;
-                        envelope = rawEnvelope * 0.65 + harmonicEnvelope * 0.35;
-                    } else {
-                        envelope = rawEnvelope;
-                    }
-
-                    var t = Math.max(0.0, Math.min(1.0, (envelope - 0.3) / 0.4));
-                    var sharpEnvelope = t * t * (3.0 - 2.0 * t);
-
-                    baseWt = Math.max(0.0, Math.min(1.0, engineWeight * (0.25 + 0.75 * sharpEnvelope)));
+                    // MOIRE produces its strongest effect with two-color split ribbon palettes.
+                    // typewriter_black_red and typewriter_ribbon_multicolored are the natural pairings.
+                    baseWt = engineWeight;
                 } else {
                     var wp = warp(cx, cy);
                     var p = [wp[0], wp[1]], d;
@@ -305,13 +291,14 @@ onmessage = function (e) {
         var curDist = 0;
         var minGlyphs = (traits.space === 'moire') ? 80 : 600;
         var minPenalty = (traits.space === 'moire') ? 200 : 1200;
+        var maxGlyphs = (traits.space === 'moire') ? 20000 : 8000;
         if (isFlat) {
             // Flat fields (monochromatic noise) are penalized heavily so we keep searching
             curDist = 10000;
         } else if (a < minGlyphs) {
             curDist = minPenalty - a;
-        } else if (a > 8000) {
-            curDist = (a - 8000) * 0.5;
+        } else if (a > maxGlyphs) {
+            curDist = (a - maxGlyphs) * 0.5;
         } else {
             curDist = 0;
         }
@@ -394,6 +381,40 @@ onmessage = function (e) {
                             rot: rot,
                             level: level
                         });
+
+                        if (traits.space === 'moire' && cell.col) {
+                            // Second pass: contrasting color, one line height offset
+                            // Find contrasting color from palette
+                            var moireContrast = cell.col.c;
+                            for (var mcIdx = 0; mcIdx < cls.length; mcIdx++) {
+                                if (cls[mcIdx].c !== cell.col.c) {
+                                    moireContrast = cls[mcIdx].c;
+                                    break;
+                                }
+                            }
+
+                            // Y offset: exactly one line height in cell units
+                            // The cell grid is h rows tall. One line = 1 row unit.
+                            // Apply drift: horizontal phase offset from moireDriftRate
+                            // makes the overlay angle drift left to right
+                            var overlayX = fx3 + Math.sin(moireTheta) * 0.5 + (fy3 * moireDriftRate * 10);
+                            var overlayY = fy3 + 1.0;
+
+                            // Clamp to grid bounds
+                            if (overlayY < h && overlayX >= 0 && overlayX < w) {
+                                var wp3o = warp(overlayX, overlayY);
+                                iterationResults.push({
+                                    x: wp3o[0],
+                                    y: wp3o[1],
+                                    c: moireContrast,
+                                    wt: cell.wt,
+                                    sc: _sc,
+                                    flip: !shouldFlipFlower(fx3, fy3),
+                                    rot: rot,
+                                    level: level
+                                });
+                            }
+                        }
                         
                         if (traits.motif === 'chopin') {
                             // Find a contrasting color from the palette array `cls`
