@@ -7,15 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Platen</title>
     <!-- Preload canvas textures for instant loading -->
-    <link rel="preload" href="platen_black.png" as="image">
-    <link rel="preload" href="platen_canvas_tan.png" as="image">
-    <link rel="preload" href="platen_canvas_olive.png" as="image">
-    <link rel="preload" href="platen_white.png" as="image">
-    <link rel="preload" href="platen_canvas_black_gallery.png" as="image">
-    <link rel="preload" href="platen_canvas_black_1x1.png" as="image">
-    <link rel="preload" href="platen_canvas_black_39_51.png" as="image">
-    <link rel="preload" href="platen_canvas_black_39_39.png" as="image">
-    <link rel="preload" href="platen_canvas_graph_paper.jpg" as="image">
+    <link rel="preload" href="platen_black_b.jpg" as="image">
+    <link rel="preload" href="platen_white_b.jpg" as="image">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -3407,12 +3400,12 @@ else                glyph = '*';        // asterisk</pre>
         }
 
         // Canvas textures — preload both
-        var CANVAS_BLACK_PATH = 'platen_black.png';
-        var CANVAS_WHITE_PATH = 'platen_white.png';
+        var CANVAS_BLACK_PATH = 'platen_black_b.jpg';
+        var CANVAS_WHITE_PATH = 'platen_white_b.jpg';
 
         var _activeCanvasImg = null;
         var _activeCanvasClass = 'canvas-white';
-        var _activeDisplayUrl = 'platen_white.png';
+        var _activeDisplayUrl = 'platen_white_b.jpg';
         var _loadedTextures = {};
 
         // Preload default canvas textures immediately on startup to prevent lag and black flashes
