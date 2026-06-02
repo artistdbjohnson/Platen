@@ -1972,28 +1972,18 @@ else                glyph = '*';        // asterisk</pre>
                     }
                     if (runTraits.engine === 'random') runTraits.engine = ENGINE_OPTS[Math.floor(Math.random() * (ENGINE_OPTS.length - 1)) + 1];
                     
-                    // Synchronous Contrast Check against paper ground #f5f0e8
-                    var paperGroundLuminance = getLuminance('#f5f0e8');
-                    var paletteEntry = PALETTES[runTraits.chromes] || PALETTES.panar;
-                    var cls = (typeof paletteEntry === 'function') ? paletteEntry(RENDER_SEED) : paletteEntry;
-                    
-                    var minContrast = Infinity;
-                    if (Array.isArray(cls)) {
-                        for (var i = 0; i < cls.length; i++) {
-                            var entry = cls[i];
-                            var colorHex = (typeof entry === 'object' && entry !== null) ? entry.c : entry;
-                            if (!colorHex) continue;
-                            
-                            var inkLuminance = getLuminance(colorHex);
-                            var contrast = getContrastRatio(inkLuminance, paperGroundLuminance);
-                            if (contrast < minContrast) {
-                                minContrast = contrast;
-                            }
+                    if (runTraits.canvas === 'random') {
+                        var affinity = (PALETTES[runTraits.chromes] && PALETTES[runTraits.chromes].canvasAffinity) ? PALETTES[runTraits.chromes].canvasAffinity : 'both';
+                        if (affinity === 'paper') {
+                            runTraits._algoCanvas = 'WHITE';
+                        } else if (affinity === 'black') {
+                            runTraits._algoCanvas = 'BLACK';
+                        } else {
+                            runTraits._algoCanvas = (RENDER_SEED % 3 === 0) ? 'BLACK' : 'WHITE';
                         }
-                    }
-                    
-                    if (runTraits.canvas === 'white' && minContrast < 2.5) {
-                        runTraits.canvas = 'black';
+                        runTraits.canvas = runTraits._algoCanvas.toLowerCase();
+                    } else {
+                        runTraits._algoCanvas = null;
                     }
 
                     RESOLVED_TRAITS = runTraits;
@@ -2055,32 +2045,6 @@ else                glyph = '*';        // asterisk</pre>
         initWorkers();
 
         // ── PLATEN ENGINE (Worker Version) ──────────────────────────────────────────
-        function getLuminance(hex) {
-            hex = hex.replace('#', '');
-            if (hex.length === 3) {
-                hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-            }
-            var r = parseInt(hex.substring(0, 2), 16);
-            var g = parseInt(hex.substring(2, 4), 16);
-            var b = parseInt(hex.substring(4, 6), 16);
-            
-            var rl = r / 255;
-            var gl = g / 255;
-            var bl = b / 255;
-            
-            var r_lin = rl <= 0.04045 ? rl / 12.92 : Math.pow((rl + 0.055) / 1.055, 2.4);
-            var g_lin = gl <= 0.04045 ? gl / 12.92 : Math.pow((gl + 0.055) / 1.055, 2.4);
-            var b_lin = bl <= 0.04045 ? bl / 12.92 : Math.pow((bl + 0.055) / 1.055, 2.4);
-            
-            return 0.2126 * r_lin + 0.7152 * g_lin + 0.0722 * b_lin;
-        }
-        
-        function getContrastRatio(l1, l2) {
-            var lighter = Math.max(l1, l2);
-            var darker = Math.min(l1, l2);
-            return (lighter + 0.05) / (darker + 0.05);
-        }
-
         // ── Layout Sizing Helper ──────────────────────────────────────────────────────
         function getLayoutSizes(layout) {
             var w = 78;
@@ -2350,7 +2314,16 @@ else                glyph = '*';        // asterisk</pre>
             // 4. Series Line (Task 3)
             var engineMetadata = typeof ENGINE_METADATA !== 'undefined' ? ENGINE_METADATA[traits.engine] : { complexity: 3, series: 'FIELD' };
             var seriesVal = engineMetadata ? engineMetadata.series : 'FIELD';
-            var seriesLine = ("SERIES: " + seriesVal).padEnd(w, " ").substring(0, w);
+            
+            var canvasDisplay = "WHITE";
+            if (traits._algoCanvas) {
+                canvasDisplay = "RANDOM [" + traits._algoCanvas + "]";
+            } else if (traits.canvas === "black") {
+                canvasDisplay = "BLACK";
+            }
+            var p5 = "CANVAS: " + canvasDisplay;
+            
+            var seriesLine = ("SERIES: " + seriesVal + "  -  " + p5).padEnd(w, " ").substring(0, w);
 
             return {
                 lines: [
