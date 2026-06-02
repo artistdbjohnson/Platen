@@ -302,6 +302,16 @@
             opacity: 1.0;
         }
 
+        /* Instant header color overrides to prevent lag when switching canvases */
+        .canvas-white .typewriter-header text,
+        .canvas-tan .typewriter-header text,
+        .canvas-olive .typewriter-header text {
+            fill: #1a1a1a !important;
+        }
+        .canvas-black .typewriter-header text {
+            fill: #e8e4dc !important;
+        }
+
         /* High-contrast grid numbers for lighter canvas textures */
         .canvas-white .grid-numbers text {
             fill: #1D1D1D !important;
@@ -799,6 +809,10 @@
         }
         .btn-flip:hover {
             opacity: 1.0;
+        }
+        .platen-card.flipped ~ .btn-flip {
+            opacity: 0 !important;
+            pointer-events: none;
         }
         .back-btn-flip {
             position: absolute;
@@ -1361,7 +1375,7 @@ else                glyph = '*';        // asterisk</pre>
                         </div>
                         <div class="platen-face back">
                             <canvas id="c1-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
-                            <button class="back-btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">→</button>
+                            <button class="back-btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">←</button>
                             <div class="back-download-links">
                                 <a href="#" onclick="downloadBackHiRes(1, 'png', event)">png</a>
                                 <a href="#" onclick="downloadBackHiRes(1, 'jpg', event)">jpg</a>
@@ -1379,7 +1393,7 @@ else                glyph = '*';        // asterisk</pre>
                         </div>
                         <div class="platen-face back">
                             <canvas id="c2-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
-                            <button class="back-btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">→</button>
+                            <button class="back-btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">←</button>
                             <div class="back-download-links">
                                 <a href="#" onclick="downloadBackHiRes(2, 'png', event)">png</a>
                                 <a href="#" onclick="downloadBackHiRes(2, 'jpg', event)">jpg</a>
@@ -1397,7 +1411,7 @@ else                glyph = '*';        // asterisk</pre>
                         </div>
                         <div class="platen-face back">
                             <canvas id="c3-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
-                            <button class="back-btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">→</button>
+                            <button class="back-btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">←</button>
                             <div class="back-download-links">
                                 <a href="#" onclick="downloadBackHiRes(3, 'png', event)">png</a>
                                 <a href="#" onclick="downloadBackHiRes(3, 'jpg', event)">jpg</a>
@@ -1435,32 +1449,6 @@ else                glyph = '*';        // asterisk</pre>
         // ─────────────────────────────────────────────────────────────────────────────
 
         function getRenderColor(c) {
-            if (TRAITS.canvas === 'black') {
-                if (c && c.startsWith('#')) {
-                    var hex = c.substring(1);
-                    if (hex.length === 3) {
-                        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-                    }
-                    var r = parseInt(hex.substring(0, 2), 16);
-                    var g = parseInt(hex.substring(2, 4), 16);
-                    var b = parseInt(hex.substring(4, 6), 16);
-                    
-                    // Invert RGB channels
-                    var ir = 255 - r;
-                    var ig = 255 - g;
-                    var ib = 255 - b;
-                    
-                    // Clean cap
-                    ir = Math.min(255, Math.max(0, ir));
-                    ig = Math.min(255, Math.max(0, ig));
-                    ib = Math.min(255, Math.max(0, ib));
-                    
-                    var irHex = ir.toString(16).padStart(2, '0');
-                    var igHex = ig.toString(16).padStart(2, '0');
-                    var ibHex = ib.toString(16).padStart(2, '0');
-                    return '#' + irHex + igHex + ibHex;
-                }
-            }
             return c;
         }
 
@@ -2327,15 +2315,13 @@ else                glyph = '*';        // asterisk</pre>
                     c4,
                     c5,
                     "",
-                    infoLine,
-                    seriesLine
+                    infoLine
                 ],
                 engStart: engStartIdx,
                 engEnd: engEndIdx,
                 inkStart: inkStartIdx,
                 inkEnd: inkEndIdx,
-                infoRow: 9,
-                seriesRow: 10
+                infoRow: 9
             };
         }
 
