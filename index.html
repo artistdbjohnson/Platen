@@ -760,6 +760,7 @@
         .platen-face.back {
             transform: rotateY(180deg);
             z-index: 1;
+            background: var(--panel) !important;
         }
         .btn-flip {
             position: absolute;
@@ -2232,7 +2233,6 @@ else                glyph = '*';        // asterisk</pre>
                     var targetEl = frontFace || panelEl;
                     
                     targetEl.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
-                    if (backFace) backFace.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
                     
                     var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
                     if (isUsLetter) {
@@ -2367,7 +2367,6 @@ else                glyph = '*';        // asterisk</pre>
                     var targetEl = frontFace || panelEl;
                     
                     targetEl.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
-                    if (backFace) backFace.style.backgroundImage = 'url("' + _activeDisplayUrl + '")';
                     
                     var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
                     if (isUsLetter) {
@@ -3622,7 +3621,6 @@ else                glyph = '*';        // asterisk</pre>
                 var targetEl = frontFace || el;
                 
                 targetEl.style.backgroundImage = 'url("' + displayUrl + '")';
-                if (backFace) backFace.style.backgroundImage = 'url("' + displayUrl + '")';
 
                 var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
                 if (isUsLetter) {
