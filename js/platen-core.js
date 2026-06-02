@@ -911,7 +911,7 @@ var PALETTES = {
 
 
 // ── CANVAS AFFINITIES ───────────────────────────────────────────────────────
-PALETTES.typewriter_ribbon_multicolored.canvasAffinity = "black";
+PALETTES.typewriter_ribbon_multicolored.canvasAffinity = "paper";
 PALETTES.typewriter_black.canvasAffinity = "paper";
 PALETTES.typewriter_black_red.canvasAffinity = "paper";
 PALETTES.chopin.canvasAffinity = "paper";
@@ -990,8 +990,8 @@ PALETTES.adire.canvasAffinity = "paper";
 PALETTES.kuba.canvasAffinity = "both";
 PALETTES.kente.canvasAffinity = "paper";
 PALETTES.suprematism.canvasAffinity = "paper";
-PALETTES.rodchenko.canvasAffinity = "black";
-PALETTES.lissitzky.canvasAffinity = "black";
+PALETTES.rodchenko.canvasAffinity = "paper";
+PALETTES.lissitzky.canvasAffinity = "paper";
 PALETTES.structural.canvasAffinity = "black";
 PALETTES.orak.canvasAffinity = "black";
 PALETTES.glitch_acid.canvasAffinity = "black";
@@ -1015,7 +1015,7 @@ PALETTES.negev_gold.canvasAffinity = "both";
 PALETTES.bedouin_night.canvasAffinity = "both";
 PALETTES.gaza_dusk.canvasAffinity = "black";
 PALETTES.olive_grove.canvasAffinity = "both";
-PALETTES.oil_pastel.canvasAffinity = "black";
+PALETTES.oil_pastel.canvasAffinity = "both";
 PALETTES.memphis.canvasAffinity = "black";
 PALETTES.miami_basel.canvasAffinity = "black";
 
