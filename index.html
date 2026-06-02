@@ -800,34 +800,46 @@
         .btn-flip:hover {
             opacity: 1.0;
         }
-        .breathing-toggle-container {
+        .back-btn-flip {
             position: absolute;
-            bottom: 40px;
+            bottom: 8px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1001;
-            font-family: monospace;
-            font-size: 9px;
-            color: #000000;
             background: transparent;
-            border: 1px dashed #000000;
-            padding: 3px 6px;
-            white-space: nowrap;
+            color: var(--text);
+            border: none;
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            z-index: 1002;
+            padding: 4px 8px;
+            text-transform: uppercase;
+            opacity: 0.5;
+            transition: opacity 0.2s ease;
         }
-        .breathing-toggle-container label {
+        .back-btn-flip:hover {
+            opacity: 1.0;
+        }
+        .back-download-links {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            z-index: 1002;
             display: flex;
-            align-items: center;
-            gap: 4px;
+            gap: 8px;
+            font-family: 'IBM Plex Mono', 'Courier New', monospace;
+            font-size: 10px;
+        }
+        .back-download-links a {
+            color: var(--text);
+            text-decoration: none;
+            opacity: 0.5;
+            transition: opacity 0.2s ease;
             cursor: pointer;
         }
-        .breathing-toggle-container input {
-            cursor: pointer;
-            margin: 0;
-        }
-
-        .canvas-black .breathing-toggle-container {
-            color: #ffffff;
-            border-color: #ffffff;
+        .back-download-links a:hover {
+            opacity: 1.0;
         }
 
         .platen-panel.loading .platen-loader {
@@ -1351,11 +1363,10 @@ else                glyph = '*';        // asterisk</pre>
                         </div>
                         <div class="platen-face back">
                             <canvas id="c1-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
-                            <div class="breathing-toggle-container">
-                                <label>
-                                    <input type="checkbox" id="breathing-toggle-1" onchange="toggleBreathing(1)">
-                                    BREATHING
-                                </label>
+                            <button class="back-btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">→</button>
+                            <div class="back-download-links">
+                                <a href="#" onclick="downloadBackHiRes(1, 'png', event)">png</a>
+                                <a href="#" onclick="downloadBackHiRes(1, 'jpg', event)">jpg</a>
                             </div>
                         </div>
                     </div>
@@ -1370,11 +1381,10 @@ else                glyph = '*';        // asterisk</pre>
                         </div>
                         <div class="platen-face back">
                             <canvas id="c2-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
-                            <div class="breathing-toggle-container">
-                                <label>
-                                    <input type="checkbox" id="breathing-toggle-2" onchange="toggleBreathing(2)">
-                                    BREATHING
-                                </label>
+                            <button class="back-btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">→</button>
+                            <div class="back-download-links">
+                                <a href="#" onclick="downloadBackHiRes(2, 'png', event)">png</a>
+                                <a href="#" onclick="downloadBackHiRes(2, 'jpg', event)">jpg</a>
                             </div>
                         </div>
                     </div>
@@ -1389,11 +1399,10 @@ else                glyph = '*';        // asterisk</pre>
                         </div>
                         <div class="platen-face back">
                             <canvas id="c3-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
-                            <div class="breathing-toggle-container">
-                                <label>
-                                    <input type="checkbox" id="breathing-toggle-3" onchange="toggleBreathing(3)">
-                                    BREATHING
-                                </label>
+                            <button class="back-btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">→</button>
+                            <div class="back-download-links">
+                                <a href="#" onclick="downloadBackHiRes(3, 'png', event)">png</a>
+                                <a href="#" onclick="downloadBackHiRes(3, 'jpg', event)">jpg</a>
                             </div>
                         </div>
                     </div>
@@ -5136,24 +5145,28 @@ else                glyph = '*';        // asterisk</pre>
             var isFlipped = card.classList.contains('flipped');
             
             if (isFlipped) {
-                var toggle = document.getElementById('breathing-toggle-' + id);
-                if (toggle && toggle.checked) {
-                    startBreathing(id);
-                } else {
-                    drawBackCanvas(id);
-                }
-            } else {
-                stopBreathing(id);
+                drawBackCanvas(id);
             }
         };
 
-        window.toggleBreathing = function (id) {
-            var toggle = document.getElementById('breathing-toggle-' + id);
-            if (toggle && toggle.checked) {
-                startBreathing(id);
-            } else {
-                stopBreathing(id);
+        window.downloadBackHiRes = function (id, format, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
             }
+            var canvas = document.getElementById('c' + id + '-back');
+            if (!canvas) return;
+            
+            var mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+            var quality = format === 'png' ? undefined : 0.95;
+            var dataUrl = canvas.toDataURL(mimeType, quality);
+            
+            var a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = 'platen-' + RENDER_SEED + '.' + format;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         };
 
         function startBreathing(id) {
