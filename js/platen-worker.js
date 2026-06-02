@@ -85,12 +85,10 @@ onmessage = function (e) {
     var motifParams = generatePatternParams(traits.engine, patPRNG, w, h);
 
     // Moire-specific parameters derived deterministically from RENDER_SEED
-    var moirePRNG = makePRNG(RENDER_SEED + 987654);
-    var moireAngleDeg = moirePRNG.rfl(3, 7); // 3 to 7 degrees
-    var moireAngleRad = moireAngleDeg * Math.PI / 180;
-    var moireYOffset = moirePRNG.rfl(0.5, 1.5); // 0.5 to 1.5 character heights
-    var moireHasPass3 = moirePRNG.rfl() < 0.5; // seed-dependent pass 3
-    var moireScaleFactor = moirePRNG.rfl(0.92, 1.08); // 0.92 to 1.08 frequency scale
+    var moireTheta = (3 + (RENDER_SEED % 1000) / 1000 * 4) * Math.PI / 180;
+    var moireDriftRate = 0.0008 + (RENDER_SEED % 500) / 500 * 0.0015;
+    var moireBandsPerLine = 8 + (RENDER_SEED % 800) / 800 * 8;
+    var moireHasPass3 = (RENDER_SEED % 3 !== 0);
 
     while (attempts++ < MAX_ATTEMPTS) {
         var grid = [];
@@ -117,52 +115,35 @@ onmessage = function (e) {
             for (var cx = 0; cx < w; cx++) {
                 var baseWt;
                 if (traits.space === 'moire') {
-                    var cx_c = w / 2;
-                    var cy_c = h / 2;
-                    var cosA = Math.cos(moireAngleRad);
-                    var sinA = Math.sin(moireAngleRad);
-
-                    var p1 = [cx, cy];
-                    
-                    var dx = cx - cx_c;
-                    var dy = cy - cy_c;
-                    var p2 = [
-                        dx * cosA - dy * sinA + cx_c,
-                        dx * sinA + dy * cosA + cy_c + moireYOffset
-                    ];
-
-                    var p3 = null;
-                    if (moireHasPass3) {
-                        var sdx = dx * moireScaleFactor;
-                        var sdy = dy * moireScaleFactor;
-                        p3 = [
-                            sdx * cosA - sdy * sinA + cx_c,
-                            sdx * sinA + sdy * cosA + cy_c + moireYOffset
-                        ];
-                    }
-
-                    var passes = [p1, p2];
-                    if (moireHasPass3) passes.push(p3);
-
-                    var passWts = [];
-                    for (var psi = 0; psi < passes.length; psi++) {
-                        var cp = [passes[psi][0], passes[psi][1]];
-                        var qq = [cx + 16, cy + 16];
-                        for (var pli = 0; pli < pls.length; pli++) {
-                            var pl = pls[pli];
-                            var d = (Math.abs(cp[pl[1]] - pl[0]) + 1) / pl[2];
-                            if (d < 1) {
-                                cp[0] = d * cp[0] + (1 - d) * qq[0];
-                                cp[1] = d * cp[1] + (1 - d) * qq[1];
-                            }
+                    var p = [cx, cy], d;
+                    var qq = [cx + 16, cy + 16];
+                    for (var pli = 0; pli < pls.length; pli++) {
+                        var pl = pls[pli];
+                        d = (Math.abs(p[pl[1]] - pl[0]) + 1) / pl[2];
+                        if (d < 1) {
+                            p[0] = d * p[0] + (1 - d) * qq[0];
+                            p[1] = d * p[1] + (1 - d) * qq[1];
                         }
-                        var wt = calcMotifWeight(Math.round(cp[0]), Math.round(cp[1]), w, h, patternType, motifParams);
-                        passWts.push(wt);
+                    }
+                    var engineWeight = calcMotifWeight(Math.round(p[0]), Math.round(p[1]), w, h, patternType, motifParams);
+
+                    var phaseDiff = (cy * Math.cos(moireTheta) + cx * Math.sin(moireTheta) + 1.0) * (2 * Math.PI) / Math.max(1, moireBandsPerLine);
+                    var driftedPhase = phaseDiff + cx * moireDriftRate;
+                    var rawEnvelope = (Math.cos(driftedPhase) + 1) / 2;
+
+                    var envelope;
+                    if (moireHasPass3) {
+                        var harmonicPhase = driftedPhase * 1.618 - cx * moireDriftRate * 0.618;
+                        var harmonicEnvelope = (Math.cos(harmonicPhase) + 1) / 2;
+                        envelope = rawEnvelope * 0.65 + harmonicEnvelope * 0.35;
+                    } else {
+                        envelope = rawEnvelope;
                     }
 
-                    var compositeWt = passWts[0] * passWts[1];
-                    if (moireHasPass3) compositeWt *= passWts[2];
-                    baseWt = Math.max(0.0, Math.min(1.0, compositeWt));
+                    var t = Math.max(0.0, Math.min(1.0, (envelope - 0.3) / 0.4));
+                    var sharpEnvelope = t * t * (3.0 - 2.0 * t);
+
+                    baseWt = Math.max(0.0, Math.min(1.0, engineWeight * (0.25 + 0.75 * sharpEnvelope)));
                 } else {
                     var wp = warp(cx, cy);
                     var p = [wp[0], wp[1]], d;
