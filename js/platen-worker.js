@@ -127,13 +127,13 @@ onmessage = function (e) {
                     }
                     var engineWeight = calcMotifWeight(Math.round(p[0]), Math.round(p[1]), w, h, patternType, motifParams);
 
-                    var phaseDiff = (cy * Math.cos(moireTheta) + cx * Math.sin(moireTheta) + 1.0) * (2 * Math.PI) / Math.max(1, moireBandsPerLine);
-                    var driftedPhase = phaseDiff + cx * moireDriftRate;
+                    var rowsPerCycle = h / Math.max(1, moireBandsPerLine);
+                    var driftedPhase = (cy / Math.max(1, rowsPerCycle)) * 2 * Math.PI + cx * moireDriftRate;
                     var rawEnvelope = (Math.cos(driftedPhase) + 1) / 2;
 
                     var envelope;
                     if (moireHasPass3) {
-                        var harmonicPhase = driftedPhase * 1.618 - cx * moireDriftRate * 0.618;
+                        var harmonicPhase = (cy / Math.max(1, rowsPerCycle * 1.618)) * 2 * Math.PI - cx * moireDriftRate * 0.618;
                         var harmonicEnvelope = (Math.cos(harmonicPhase) + 1) / 2;
                         envelope = rawEnvelope * 0.65 + harmonicEnvelope * 0.35;
                     } else {
@@ -185,7 +185,8 @@ onmessage = function (e) {
                     }
                 } else {
                     // Skip the bottom ~7% of weights as background to let the raw canvas show through
-                    if (norm > 0.07) {
+                    var normThreshold = (traits.space === 'moire') ? 0.02 : 0.07;
+                    if (norm > normThreshold) {
                         grid[cx2][cy2].wt = norm;
                         if (traits.chromes === 'typewriter_black_red' || traits.chromes === 'typewriter_ribbon_multicolored') {
                             // Pseudo-random selection from the palette using coordinates and searchSeed
@@ -302,13 +303,15 @@ onmessage = function (e) {
 
         // Track best result
         var curDist = 0;
+        var minGlyphs = (traits.space === 'moire') ? 80 : 600;
+        var minPenalty = (traits.space === 'moire') ? 200 : 1200;
         if (isFlat) {
             // Flat fields (monochromatic noise) are penalized heavily so we keep searching
             curDist = 10000;
-        } else if (a < 600) {
-            curDist = 1200 - a; // Penalize lack of flowers more
+        } else if (a < minGlyphs) {
+            curDist = minPenalty - a;
         } else if (a > 8000) {
-            curDist = (a - 8000) * 0.5; // High density is better than blank
+            curDist = (a - 8000) * 0.5;
         } else {
             curDist = 0;
         }
