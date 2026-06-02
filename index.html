@@ -1972,7 +1972,29 @@ else                glyph = '*';        // asterisk</pre>
                     }
                     if (runTraits.engine === 'random') runTraits.engine = ENGINE_OPTS[Math.floor(Math.random() * (ENGINE_OPTS.length - 1)) + 1];
                     
-
+                    // Synchronous Contrast Check against paper ground #f5f0e8
+                    var paperGroundLuminance = getLuminance('#f5f0e8');
+                    var paletteEntry = PALETTES[runTraits.chromes] || PALETTES.panar;
+                    var cls = (typeof paletteEntry === 'function') ? paletteEntry(RENDER_SEED) : paletteEntry;
+                    
+                    var minContrast = Infinity;
+                    if (Array.isArray(cls)) {
+                        for (var i = 0; i < cls.length; i++) {
+                            var entry = cls[i];
+                            var colorHex = (typeof entry === 'object' && entry !== null) ? entry.c : entry;
+                            if (!colorHex) continue;
+                            
+                            var inkLuminance = getLuminance(colorHex);
+                            var contrast = getContrastRatio(inkLuminance, paperGroundLuminance);
+                            if (contrast < minContrast) {
+                                minContrast = contrast;
+                            }
+                        }
+                    }
+                    
+                    if (runTraits.canvas === 'white' && minContrast < 2.5) {
+                        runTraits.canvas = 'black';
+                    }
 
                     RESOLVED_TRAITS = runTraits;
                 }
@@ -2033,6 +2055,32 @@ else                glyph = '*';        // asterisk</pre>
         initWorkers();
 
         // ── PLATEN ENGINE (Worker Version) ──────────────────────────────────────────
+        function getLuminance(hex) {
+            hex = hex.replace('#', '');
+            if (hex.length === 3) {
+                hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+            }
+            var r = parseInt(hex.substring(0, 2), 16);
+            var g = parseInt(hex.substring(2, 4), 16);
+            var b = parseInt(hex.substring(4, 6), 16);
+            
+            var rl = r / 255;
+            var gl = g / 255;
+            var bl = b / 255;
+            
+            var r_lin = rl <= 0.04045 ? rl / 12.92 : Math.pow((rl + 0.055) / 1.055, 2.4);
+            var g_lin = gl <= 0.04045 ? gl / 12.92 : Math.pow((gl + 0.055) / 1.055, 2.4);
+            var b_lin = bl <= 0.04045 ? bl / 12.92 : Math.pow((bl + 0.055) / 1.055, 2.4);
+            
+            return 0.2126 * r_lin + 0.7152 * g_lin + 0.0722 * b_lin;
+        }
+        
+        function getContrastRatio(l1, l2) {
+            var lighter = Math.max(l1, l2);
+            var darker = Math.min(l1, l2);
+            return (lighter + 0.05) / (darker + 0.05);
+        }
+
         // ── Layout Sizing Helper ──────────────────────────────────────────────────────
         function getLayoutSizes(layout) {
             var w = 78;
@@ -2669,9 +2717,9 @@ else                glyph = '*';        // asterisk</pre>
 
                         var headerData = getTypewriterHeaderLines(traits, RENDER_SEED, hW);
                         var headerLines = headerData.lines;
-                        var textCol = '#000000'; // Default to black
+                        var textCol = '#1a1a1a'; // Paper ground canvas: black
                         if (traits.canvas === 'black') {
-                            textCol = '#ffffff'; // Pure white header text for black canvas
+                            textCol = '#e8e4dc'; // Black canvas: off-white
                         }
 
                         var headerG = dc.createElementNS(svgNS, "g");
@@ -2709,6 +2757,11 @@ else                glyph = '*';        // asterisk</pre>
                                         currentSize = hSizeY * 0.92 * sizeScale;
                                         var weights = ['300', '400', '600', '800', '900'];
                                         currentWeight = weights[rank - 1] || 'bold';
+                                    } else if (col >= headerData.inkStart && col < headerData.inkEnd) {
+                                        // Dynamic character styling for INK field values in actual ink colors
+                                        var inkColIndex = (col - headerData.inkStart) % cls.length;
+                                        var inkColorObj = cls[inkColIndex];
+                                        currentCharCol = (typeof inkColorObj === 'object' && inkColorObj !== null) ? inkColorObj.c : inkColorObj;
                                     }
                                 }
 
@@ -3607,8 +3660,10 @@ else                glyph = '*';        // asterisk</pre>
         function updateCanvasTexture() {
             var url = CANVAS_BLACK_PATH;
             var canvasClass = 'canvas-black';
+            
+            var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
 
-            if (TRAITS.canvas === 'white') {
+            if (activeCanvas === 'white') {
                 url = CANVAS_WHITE_PATH;
                 canvasClass = 'canvas-white';
             } else {
@@ -3754,7 +3809,8 @@ else                glyph = '*';        // asterisk</pre>
                                 }
                                 ctx.drawImage(texImg, 0, 0, imgW, imgH, dx, dy, newW, newH);
                             } else {
-                                ctx.fillStyle = '#1a1724';
+                                var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
+                                ctx.fillStyle = activeCanvas === 'black' ? '#0a0a0a' : '#f5f0e8';
                                 ctx.fillRect(0, 0, outW, outH);
                             }
                         }
@@ -3865,7 +3921,8 @@ else                glyph = '*';        // asterisk</pre>
                             ctx.drawImage(texImg, 0, 0, imgW, imgH, dx, dy, newW, newH);
                             ctx.restore();
                         } else {
-                            ctx.fillStyle = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter') ? '#fcfcfc' : '#1a1724';
+                            var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
+                            ctx.fillStyle = activeCanvas === 'black' ? '#0a0a0a' : '#f5f0e8';
                             ctx.fillRect(x, y, w, h);
                         }
 
@@ -5058,11 +5115,12 @@ else                glyph = '*';        // asterisk</pre>
             
             // Determine paper ground color or texture
             var isNightMode = document.documentElement.getAttribute('data-theme') !== 'light';
-            var paperColor = '#f5f5f5';
-            if (isNightMode || TRAITS.canvas === 'black') {
-                paperColor = '#151515';
-            } else if (TRAITS.canvas === 'white') {
-                paperColor = '#ffffff';
+            var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
+            var paperColor = '#f5f0e8';
+            if (isNightMode || activeCanvas === 'black') {
+                paperColor = '#0a0a0a';
+            } else if (activeCanvas === 'white') {
+                paperColor = '#f5f0e8';
             }
             
             // Draw background paper color
@@ -5079,10 +5137,31 @@ else                glyph = '*';        // asterisk</pre>
             var fw = canvasFront.width;
             var fh = canvasFront.height;
             if (fw > 0 && fh > 0) {
-                // The composition area is a square crop of the front canvas
-                var cropSize = Math.min(fw, fh);
-                var sx = (fw - cropSize) / 2;
-                var sy = (fh - cropSize) / 2;
+                var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
+                
+                var sx, sy, cropSize;
+                
+                if (isGraphPaper) {
+                    cropSize = Math.min(fw, fh);
+                    sx = (fw - cropSize) / 2;
+                    sy = (fh - cropSize) / 2;
+                } else {
+                    var sizes = getLayoutSizes(currentLayout);
+                    var sizeX = sizes.sizeX;
+                    var sizeY = sizes.sizeY;
+                    var w = sizes.w;
+                    var h = sizes.h;
+                    
+                    var hasHeader = (currentLayout !== 'square' && currentLayout !== 'grid_39_39' && (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic' || TRAITS.motif === 'typewriter_quine'));
+                    var headerRows = hasHeader ? 11 : 0;
+                    
+                    var W = w * sizeX;
+                    var H = (h - headerRows) * sizeY;
+                    
+                    cropSize = Math.min(W, H);
+                    sx = 4 * sizeX + (W - cropSize) / 2;
+                    sy = (4 + headerRows) * sizeY + (H - cropSize) / 2;
+                }
                 
                 // We want to center it and pad it (using padding, e.g. 120px like original drawBackCanvas)
                 var padding = 120;
