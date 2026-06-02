@@ -782,24 +782,23 @@
         }
         .btn-flip {
             position: absolute;
-            bottom: 8px;
-            right: 8px;
+            bottom: -32px;
+            right: 0px;
             background: transparent;
-            color: #ffffff; /* Default to white for dark theme (nightmode) */
+            color: var(--text);
             border: none;
             font-family: 'IBM Plex Mono', 'Courier New', monospace;
             font-size: 10px;
             letter-spacing: 0.1em;
             cursor: pointer;
             z-index: 1002;
-            padding: 4px 8px;
+            padding: 4px 0px;
             text-transform: uppercase;
+            opacity: 0.5;
+            transition: opacity 0.2s ease;
         }
         .btn-flip:hover {
-            opacity: 0.8;
-        }
-        [data-theme="light"] .btn-flip {
-            color: var(--text);
+            opacity: 1.0;
         }
         .breathing-toggle-container {
             position: absolute;
