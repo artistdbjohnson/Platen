@@ -7,8 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Platen</title>
     <!-- Preload canvas textures for instant loading -->
-    <link rel="preload" href="platen_black_b.jpg" as="image">
-    <link rel="preload" href="platen_white_b.jpg" as="image">
+    <link rel="preload" href="platen_black_b.jpg?v=2" as="image">
+    <link rel="preload" href="platen_white_b.jpg?v=2" as="image">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -1295,7 +1295,7 @@ else                glyph = '*';        // asterisk</pre>
         <!-- RIGHT COLUMN: CANVAS -->
         <section class="col-canvas">
             <div id="canvas-wrap" class="panel">
-                <div class="platen-panel" id="panel1">
+                <div class="platen-panel canvas-white" id="panel1">
                     <div class="platen-card" id="card1">
                         <div class="platen-face front">
                             <div class="platen-loader">rendering...</div>
@@ -1308,7 +1308,7 @@ else                glyph = '*';        // asterisk</pre>
                     </div>
                     <button class="btn-flip" onclick="toggleFlip(1, event)" title="Flip Artwork">3D</button>
                 </div>
-                <div class="platen-panel" id="panel2">
+                <div class="platen-panel canvas-white" id="panel2">
                     <div class="platen-card" id="card2">
                         <div class="platen-face front">
                             <div class="platen-loader">rendering...</div>
@@ -1321,7 +1321,7 @@ else                glyph = '*';        // asterisk</pre>
                     </div>
                     <button class="btn-flip" onclick="toggleFlip(2, event)" title="Flip Artwork">3D</button>
                 </div>
-                <div class="platen-panel" id="panel3">
+                <div class="platen-panel canvas-white" id="panel3">
                     <div class="platen-card" id="card3">
                         <div class="platen-face front">
                             <div class="platen-loader">rendering...</div>
@@ -1470,7 +1470,7 @@ else                glyph = '*';        // asterisk</pre>
             _autoTimeout = setTimeout(function () {
                 var fn = (_autoMode === 'regenerate') ? regenerate : randomize;
                 fn();
-            }, 30000);
+            }, 10000);
         }
 
         function stopAuto() {
@@ -2396,10 +2396,7 @@ else                glyph = '*';        // asterisk</pre>
 
                 id = Math.min(Math.max(id | 0, 1), 3);
                 var panel = dc.getElementById('panel' + id);
-                // Delayed loader to prevent flicker for fast renders
-                var loadTimeout = setTimeout(function () {
-                    if (panel) panel.classList.add('loading');
-                }, 200);
+                if (panel) panel.classList.add('loading');
 
                 var sizes = getLayoutSizes(currentLayout);
                 if (id !== 1 && currentLayout !== 'banner' && currentLayout !== 'banner_sq' && currentLayout !== 'banner_32_40' && currentLayout !== 'banner_39_51' && currentLayout !== 'banner_us_letter' && currentLayout !== 'banner_39_39' && currentLayout !== 'graph_paper_banner' && currentLayout !== 'graph_paper_sq_banner') {
@@ -2446,7 +2443,6 @@ else                glyph = '*';        // asterisk</pre>
                     var awIdx = ActiveWorkers.indexOf(worker);
                     if (awIdx > -1) ActiveWorkers.splice(awIdx, 1);
 
-                    clearTimeout(loadTimeout);
                     var data = e.data;
                     var flowers = data.flowers; // Array of {x, y, c, flip}
 
@@ -2754,7 +2750,6 @@ else                glyph = '*';        // asterisk</pre>
                     var awIdx = ActiveWorkers.indexOf(worker);
                     if (awIdx > -1) ActiveWorkers.splice(awIdx, 1);
 
-                    clearTimeout(loadTimeout);
                     if (panel) panel.classList.remove('loading');
                     console.error("Worker error in panel " + id + ":", err.message);
 
@@ -3537,12 +3532,12 @@ else                glyph = '*';        // asterisk</pre>
         }
 
         // Canvas textures — preload both
-        var CANVAS_BLACK_PATH = 'platen_black_b.jpg';
-        var CANVAS_WHITE_PATH = 'platen_white_b.jpg';
+        var CANVAS_BLACK_PATH = 'platen_black_b.jpg?v=2';
+        var CANVAS_WHITE_PATH = 'platen_white_b.jpg?v=2';
 
         var _activeCanvasImg = null;
         var _activeCanvasClass = 'canvas-white';
-        var _activeDisplayUrl = 'platen_white_b.jpg';
+        var _activeDisplayUrl = 'platen_white_b.jpg?v=2';
         var _loadedTextures = {};
 
         // Preload default canvas textures immediately on startup to prevent lag and black flashes
@@ -3594,9 +3589,16 @@ else                glyph = '*';        // asterisk</pre>
             }
 
             // Immediately apply the theme class to ALL panels so styles switch instantly (header text, etc.)
+            // And instantly clear old background image to force a clean fallback to the theme's background color
             document.querySelectorAll('.platen-panel').forEach(function (el) {
                 var isBgLoading = el.classList.contains('loading');
                 el.className = 'platen-panel ' + (isBgLoading ? 'loading ' : '') + canvasClass;
+                
+                var frontFace = el.querySelector('.platen-face.front');
+                var backFace = el.querySelector('.platen-face.back');
+                if (frontFace) frontFace.style.backgroundImage = 'none';
+                if (backFace) backFace.style.backgroundImage = 'none';
+                el.style.backgroundImage = 'none';
             });
 
             if (_loadedTextures[url]) {
