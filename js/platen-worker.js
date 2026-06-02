@@ -90,32 +90,54 @@ onmessage = function (e) {
     var moireBandsPerLine = 8 + (RENDER_SEED % 800) / 800 * 8;
     var moireHasPass3 = (RENDER_SEED % 3 !== 0);
 
+    function edgeNoise(cx, cy, si, RENDER_SEED) {
+        var n = ((cx * 7331 + cy * 5003 + si * 1999 + RENDER_SEED) % 1000) / 1000;
+        return (n - 0.5) * 2.5;
+    }
+
     var moireStrips = [];
-    var numStrips = 4 + (RENDER_SEED % 5);
+    var numStrips = 3 + (RENDER_SEED % 4);
+
+    var gravX = w * (0.35 + ((RENDER_SEED * 2017) % 1000) / 1000 * 0.30);
+    var gravY = h * (0.35 + ((RENDER_SEED * 3011) % 1000) / 1000 * 0.30);
 
     for (var si = 0; si < numStrips; si++) {
-      var stripW = 6 + Math.floor(
-        ((RENDER_SEED * (si + 7) * 2311) % 1000) / 1000 * 12
-      );
-      var spreadFactor = 0.35 + 
-        ((RENDER_SEED * (si + 3) * 1733) % 100) / 100 * 0.3;
-      var stripCX = Math.floor(w * (
-        0.5 + (((si / numStrips) - 0.5) * spreadFactor)
-      ));
-      var stripX0 = Math.max(0, stripCX - Math.floor(stripW / 2));
-      var stripX1 = Math.min(w - 1, stripX0 + stripW);
-      var stripH = Math.floor(h * (
-        0.5 + ((RENDER_SEED * (si + 11) * 997) % 1000) / 1000 * 0.45
-      ));
-      var stripY0 = Math.floor(
-        ((RENDER_SEED * (si + 5) * 1453) % 1000) / 1000 
-        * (h - stripH)
-      );
-      var stripY1 = stripY0 + stripH;
-      moireStrips.push({ 
-        x0: stripX0, x1: stripX1, 
-        y0: stripY0, y1: stripY1 
-      });
+        var orientSeed = (RENDER_SEED * (si + 17) * 4789) % 100;
+        var orient = "ACCENT";
+        if (orientSeed < 40) orient = "VERTICAL";
+        else if (orientSeed < 75) orient = "HORIZONTAL";
+        
+        var stripW, stripH, rawX, rawY;
+        if (orient === "VERTICAL") {
+            stripW = 8 + Math.floor(((RENDER_SEED * (si + 7) * 2311) % 1000) / 1000 * 15);
+            stripH = Math.floor(h * (0.45 + ((RENDER_SEED * (si + 11) * 997) % 1000) / 1000 * 0.45));
+            rawX = Math.floor(((RENDER_SEED * (si + 3) * 1733) % 1000) / 1000 * w);
+            rawY = Math.floor(((RENDER_SEED * (si + 5) * 1453) % 1000) / 1000 * h);
+        } else if (orient === "HORIZONTAL") {
+            stripW = 30 + Math.floor(((RENDER_SEED * (si + 7) * 2311) % 1000) / 1000 * 41);
+            stripH = 4 + Math.floor(((RENDER_SEED * (si + 11) * 997) % 1000) / 1000 * 11);
+            rawX = Math.floor(((RENDER_SEED * (si + 3) * 1733) % 1000) / 1000 * w);
+            rawY = Math.floor(((RENDER_SEED * (si + 5) * 1453) % 1000) / 1000 * h);
+        } else {
+            stripW = 3 + Math.floor(((RENDER_SEED * (si + 7) * 2311) % 1000) / 1000 * 8);
+            stripH = 4 + Math.floor(((RENDER_SEED * (si + 11) * 997) % 1000) / 1000 * 9);
+            rawX = Math.floor(((RENDER_SEED * (si + 3) * 1733) % 1000) / 1000 * w);
+            rawY = Math.floor(((RENDER_SEED * (si + 5) * 1453) % 1000) / 1000 * h);
+        }
+
+        var finalX = rawX * 0.5 + gravX * 0.5;
+        var finalY = rawY * 0.5 + gravY * 0.5;
+
+        var stripX0 = Math.max(0, Math.floor(finalX - stripW / 2));
+        var stripX1 = Math.min(w - 1, stripX0 + stripW);
+        var stripY0 = Math.max(0, Math.floor(finalY - stripH / 2));
+        var stripY1 = Math.min(h - 1, stripY0 + stripH);
+
+        moireStrips.push({ 
+            x0: stripX0, x1: stripX1, 
+            y0: stripY0, y1: stripY1,
+            phase: si
+        });
     }
 
     while (attempts++ < MAX_ATTEMPTS) {
@@ -173,8 +195,10 @@ onmessage = function (e) {
                     var stripCount = 0;
                     for (var si2 = 0; si2 < moireStrips.length; si2++) {
                         var ms = moireStrips[si2];
-                        if (cx >= ms.x0 && cx <= ms.x1 && 
-                            cy >= ms.y0 && cy <= ms.y1) {
+                        if (cx >= ms.x0 + edgeNoise(cx, cy, ms.phase, RENDER_SEED) && 
+                            cx <= ms.x1 - edgeNoise(cx, cy, ms.phase, RENDER_SEED) && 
+                            cy >= ms.y0 + edgeNoise(cx, cy, ms.phase, RENDER_SEED) && 
+                            cy <= ms.y1 - edgeNoise(cx, cy, ms.phase, RENDER_SEED)) {
                             stripCount++;
                         }
                     }
@@ -229,7 +253,7 @@ onmessage = function (e) {
                     }
                 } else {
                     // Skip the bottom ~7% of weights as background to let the raw canvas show through
-                    var normThreshold = (traits.space === 'moire' || traits.space === 'planar' || traits.space === 'polar') ? 0.02 : 0.07;
+                    var normThreshold = (traits.space === 'moire') ? 0.08 : (traits.space === 'planar' ? 0.02 : 0.07);
                     if (norm > normThreshold) {
                         grid[cx2][cy2].wt = norm;
                         if (traits.chromes === 'typewriter_black_red' || traits.chromes === 'typewriter_ribbon_multicolored') {
@@ -520,8 +544,10 @@ onmessage = function (e) {
                             var stripCount = 0;
                             for (var si2 = 0; si2 < moireStrips.length; si2++) {
                                 var ms = moireStrips[si2];
-                                if (fx3 >= ms.x0 && fx3 <= ms.x1 && 
-                                    fy3 >= ms.y0 && fy3 <= ms.y1) {
+                                if (fx3 >= ms.x0 + edgeNoise(fx3, fy3, ms.phase, RENDER_SEED) && 
+                                    fx3 <= ms.x1 - edgeNoise(fx3, fy3, ms.phase, RENDER_SEED) && 
+                                    fy3 >= ms.y0 + edgeNoise(fx3, fy3, ms.phase, RENDER_SEED) && 
+                                    fy3 <= ms.y1 - edgeNoise(fx3, fy3, ms.phase, RENDER_SEED)) {
                                     stripCount++;
                                 }
                             }
