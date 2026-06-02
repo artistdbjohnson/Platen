@@ -2379,7 +2379,7 @@ else                glyph = '*';        // asterisk</pre>
                             
                             // Extrude all the way up to the top constraint before the header (nudged down by 10%)
                             var py_header = 530; // Lower top constraint to Y=530 to leave a beautiful space under header
-                            var py_top = py_base - (f.wt || 0) * (py_base - py_header);
+                            var py_top = py_base - Math.pow(f.wt || 0, 2.0) * (py_base - py_header);
                             
                             // Generate 3D columns by repeating strikes with beautiful distinct spacing
                             f.py_steps = [];
@@ -2421,7 +2421,7 @@ else                glyph = '*';        // asterisk</pre>
                         // Support Typewriter Halftone (Density Shading)
                         var motifPath = MOTIF_PATHS[traits.motif];
                         if (traits.motif === 'typewriter_quine') {
-                            if (f.wt < 0.25) {
+                            if (f.wt < 0.20) {
                                 continue;
                             }
                         } else if (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') {
