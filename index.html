@@ -1318,9 +1318,10 @@ else                glyph = '*';        // asterisk</pre>
         // ── Auto-randomizer ────────────────────────────────────────────────────────────────
         var _autoTimeout = null;
         var _autoMode = null; // null until selected
+        var _autoCycleActive = false;
 
         function toggleAuto() {
-            if (_autoTimeout) {
+            if (_autoCycleActive) {
                 stopAuto();
             } else {
                 startAuto();
@@ -1329,6 +1330,7 @@ else                glyph = '*';        // asterisk</pre>
 
         function startAuto() {
             stopAuto();
+            _autoCycleActive = true;
             var btnAuto = document.getElementById('btn-auto');
             if (btnAuto) btnAuto.classList.add('auto-on');
             
@@ -1355,7 +1357,7 @@ else                glyph = '*';        // asterisk</pre>
             if (_autoTimeout && _autoTimeout !== "waiting" && _autoTimeout !== "running") {
                 clearTimeout(_autoTimeout);
             }
-            if (!_autoMode) return;
+            if (!_autoMode || !_autoCycleActive) return;
             
             _autoTimeout = setTimeout(function () {
                 var fn = (_autoMode === 'regenerate') ? regenerate : randomize;
@@ -1364,11 +1366,13 @@ else                glyph = '*';        // asterisk</pre>
         }
 
         function stopAuto() {
+            _autoCycleActive = false;
             if (_autoTimeout && _autoTimeout !== "waiting" && _autoTimeout !== "running") {
                 clearTimeout(_autoTimeout);
             }
             _autoTimeout = null;
             var btnAuto = document.getElementById('btn-auto');
+            if (btnAuto) btnAuto.classList.remove('btn-auto', 'auto-on'); // Ensure auto-on is removed
             if (btnAuto) btnAuto.classList.remove('auto-on');
             
             var guide = document.getElementById('auto-guide');
@@ -1380,8 +1384,8 @@ else                glyph = '*';        // asterisk</pre>
         function updateAutoUI() {
             var btnRand = document.getElementById('btn-randomize');
             var btnRegen = document.getElementById('btn-regen');
-            if (btnRand) btnRand.classList.toggle('active', !!_autoTimeout && _autoMode === 'randomize');
-            if (btnRegen) btnRegen.classList.toggle('active', !!_autoTimeout && _autoMode === 'regenerate');
+            if (btnRand) btnRand.classList.toggle('active', _autoCycleActive && _autoMode === 'randomize');
+            if (btnRegen) btnRegen.classList.toggle('active', _autoCycleActive && _autoMode === 'regenerate');
         }
 
         // ── Platen flower path (normalized to 20×20 viewBox) ───────────────────────
@@ -1493,8 +1497,8 @@ else                glyph = '*';        // asterisk</pre>
         function randomize() {
             _autoMode = 'randomize';
             var guide = document.getElementById('auto-guide');
-            if (_autoTimeout) {
-                if (_autoTimeout !== "running" && _autoTimeout !== "waiting") clearTimeout(_autoTimeout);
+            if (_autoCycleActive) {
+                if (_autoTimeout && _autoTimeout !== "running" && _autoTimeout !== "waiting") clearTimeout(_autoTimeout);
                 _autoTimeout = "running"; // Temporarily mark as running while rendering
                 if (guide) {
                     guide.textContent = "(Randomizing cycle active)";
@@ -1524,8 +1528,8 @@ else                glyph = '*';        // asterisk</pre>
         function regenerate() {
             _autoMode = 'regenerate';
             var guide = document.getElementById('auto-guide');
-            if (_autoTimeout) {
-                if (_autoTimeout !== "running" && _autoTimeout !== "waiting") clearTimeout(_autoTimeout);
+            if (_autoCycleActive) {
+                if (_autoTimeout && _autoTimeout !== "running" && _autoTimeout !== "waiting") clearTimeout(_autoTimeout);
                 _autoTimeout = "running";
                 if (guide) {
                     guide.textContent = "(Regenerating cycle active)";
@@ -1732,7 +1736,7 @@ else                glyph = '*';        // asterisk</pre>
                         document.getElementById('st-info').textContent = prefix + '  ·  #' + RENDER_SEED + '  |  ' + traitStr;
 
                         // Wait 30 seconds after rendering before triggering next cycle
-                        if (_autoTimeout) {
+                        if (_autoCycleActive) {
                             scheduleAutoTimer();
                         }
 
@@ -2372,7 +2376,15 @@ else                glyph = '*';        // asterisk</pre>
                             
                             // Extrude all the way up to the top constraint before the header (nudged down by 10%)
                             var py_header = 530; // Lower top constraint to Y=530 to leave a beautiful space under header
-                            var py_top = py_base - Math.pow(f.wt || 0, 2.0) * (py_base - py_header);
+                            var hFactor = Math.pow(f.wt || 0, 2.0);
+                            var py_top = py_base - hFactor * (py_base - py_header);
+                            
+                            // Nudge up lower elevation outputs so they don't start at the very bottom of the canvas
+                            if (hFactor < 0.35) {
+                                var nudgeUp = (0.35 - hFactor) * 120;
+                                py_base -= nudgeUp;
+                                py_top -= nudgeUp;
+                            }
                             
                             // Generate 3D columns by repeating strikes with beautiful distinct spacing
                             f.py_steps = [];
