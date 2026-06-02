@@ -730,11 +730,23 @@
             display: block;
         }
 
-        .platen-panel.loading canvas {
-            pointer-events: none;
-        }
         .platen-panel canvas {
             transition: opacity 0.25s ease-in-out;
+            opacity: 1;
+        }
+        .platen-panel.qs {
+            opacity: 1;
+        }
+        .platen-panel.loading canvas {
+            opacity: 0 !important;
+            pointer-events: none;
+        }
+
+        .canvas-white .typewriter-header text {
+            fill: #000000 !important;
+        }
+        .canvas-black .typewriter-header text {
+            fill: #ffffff !important;
         }
 
         /* Old about modal removed */
@@ -1439,7 +1451,7 @@ else                glyph = '*';        // asterisk</pre>
             symmetry: 'random',
             space: 'isometric',
             motif: 'typewriter',
-            chromes: 'typewriter_black',
+            chromes: 'random',
             engine: 'random',
             canvas: 'white',
             solid: false,
@@ -2426,7 +2438,7 @@ else                glyph = '*';        // asterisk</pre>
                         // Support Typewriter Halftone (Density Shading)
                         var motifPath = MOTIF_PATHS[traits.motif];
                         if (traits.motif === 'typewriter_quine') {
-                            if (f.wt < 0.20) {
+                            if (f.wt < 0.28) {
                                 continue;
                             }
                         } else if (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic') {
