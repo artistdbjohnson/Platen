@@ -364,36 +364,40 @@ onmessage = function (e) {
                     });
 
                     if (traits.space === 'planar' && cell.col) {
-                        // Second pass: contrasting color, one line height offset
-                        // Find contrasting color from palette
-                        var moireContrast = cell.col.c;
-                        for (var mcIdx = 0; mcIdx < cls.length; mcIdx++) {
-                            if (cls[mcIdx].c !== cell.col.c) {
-                                moireContrast = cls[mcIdx].c;
-                                break;
+                        // Multi-pass moire overlay for planar space (3 or 4 passes based on RENDER_SEED)
+                        var numPasses = 3 + (RENDER_SEED % 2);
+                        for (var pi = 0; pi < numPasses; pi++) {
+                            var angle = (pi / numPasses) * Math.PI * 2 + moireTheta;
+                            var magnitude = 1.0 + ((RENDER_SEED * (pi + 5) * 131) % 100) / 100 * 1.5;
+                            var offX = Math.cos(angle) * magnitude;
+                            var offY = Math.sin(angle) * magnitude;
+
+                            var overlayX = fx3 + offX + (fy3 * moireDriftRate * 5);
+                            var overlayY = fy3 + offY;
+
+                            if (overlayY >= 0 && overlayY < h && overlayX >= 0 && overlayX < w) {
+                                var wp3o = warp(overlayX, overlayY);
+                                var moireContrast = cell.col.c;
+                                var colorIdx = (pi + 1) % cls.length;
+                                if (cls[colorIdx] && cls[colorIdx].c !== cell.col.c) {
+                                    moireContrast = cls[colorIdx].c;
+                                } else if (cls[(colorIdx + 1) % cls.length]) {
+                                    moireContrast = cls[(colorIdx + 1) % cls.length].c;
+                                }
+
+                                var passWt = Math.max(0.1, cell.wt * (1.0 - (pi / numPasses) * 0.15));
+
+                                iterationResults.push({
+                                    x: wp3o[0],
+                                    y: wp3o[1],
+                                    c: moireContrast,
+                                    wt: passWt,
+                                    sc: _sc,
+                                    flip: (pi % 2 === 0) ? shouldFlipFlower(fx3, fy3) : !shouldFlipFlower(fx3, fy3),
+                                    rot: rot + (pi * 5),
+                                    level: level
+                                });
                             }
-                        }
-
-                        // Y offset: exactly one line height in cell units
-                        // The cell grid is h rows tall. One line = 1 row unit.
-                        // Apply drift: horizontal phase offset from moireDriftRate
-                        // makes the overlay angle drift left to right
-                        var overlayX = fx3 + Math.sin(moireTheta) * 0.5 + (fy3 * moireDriftRate * 10);
-                        var overlayY = fy3 + 1.0;
-
-                        // Clamp to grid bounds
-                        if (overlayY < h && overlayX >= 0 && overlayX < w) {
-                            var wp3o = warp(overlayX, overlayY);
-                            iterationResults.push({
-                                x: wp3o[0],
-                                y: wp3o[1],
-                                c: moireContrast,
-                                wt: cell.wt,
-                                sc: _sc,
-                                flip: !shouldFlipFlower(fx3, fy3),
-                                rot: rot,
-                                level: level
-                            });
                         }
                     }
 
