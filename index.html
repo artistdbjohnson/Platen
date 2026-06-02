@@ -721,20 +721,16 @@
 
         .platen-loader {
             position: absolute;
-            top: 50%;
+            bottom: -30px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            color: #ffffff;
+            transform: translateX(-50%);
+            color: #ffffff !important;
             font-size: 11px;
             letter-spacing: 0.15em;
             text-transform: uppercase;
             pointer-events: none;
             z-index: 100;
             display: none;
-        }
-
-        .canvas-black .platen-loader {
-            color: #ffffff !important;
         }
 
         .platen-panel.loading .platen-loader {
@@ -3499,25 +3495,11 @@ else                glyph = '*';        // asterisk</pre>
 
 
 
-            // Set instant placeholder background color based on resolved canvasClass to prevent flashes!
+            // Set instant placeholder background color to transparent
             var placeholderBg = 'transparent';
-            var loaderColor = '#ffffff';   // default white text
-            if (canvasClass === 'canvas-white') {
-                loaderColor = '#000000';
-            } else if (canvasClass === 'canvas-tan') {
-                loaderColor = '#000000';
-            } else if (canvasClass === 'canvas-olive') {
-                loaderColor = '#000000';
-            } else if (canvasClass === 'canvas-graph-paper') {
-                loaderColor = '#000000';
-            }
 
             document.querySelectorAll('.platen-panel').forEach(function (el) {
                 el.style.backgroundColor = placeholderBg;
-                var loader = el.querySelector('.platen-loader');
-                if (loader) {
-                    loader.style.color = loaderColor;
-                }
             });
 
             if (TRAITS.canvas === 'graph_paper' && TRAITS.invertGraph) {
