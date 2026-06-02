@@ -2675,33 +2675,7 @@ else                glyph = '*';        // asterisk</pre>
 
                                 // Task 2 & Task 3 dynamic character styling
                                 if (row === headerData.infoRow) {
-                                    if (col >= headerData.inkStart && col < headerData.inkEnd) {
-                                        if (cls && cls.length > 0) {
-                                            var chromeName = shortenChromeName(traits.chromes);
-                                            var relativeColIdx = col - headerData.inkStart;
-                                            var parts = chromeName.split(/[\/\s-]/);
-                                            if (parts.length > 1) {
-                                                var currentPos = 0;
-                                                var partIdx = -1;
-                                                for (var pi = 0; pi < parts.length; pi++) {
-                                                    var part = parts[pi];
-                                                    var nextPos = currentPos + part.length;
-                                                    if (relativeColIdx >= currentPos && relativeColIdx < nextPos) {
-                                                        partIdx = pi;
-                                                        break;
-                                                    }
-                                                    currentPos = nextPos + 1; // plus separator
-                                                }
-                                                if (partIdx !== -1) {
-                                                    var colIdx = partIdx % cls.length;
-                                                    currentCharCol = getRenderColor(cls[colIdx].c);
-                                                }
-                                            } else {
-                                                var colIdx = relativeColIdx % cls.length;
-                                                currentCharCol = getRenderColor(cls[colIdx].c);
-                                            }
-                                        }
-                                    } else if (col >= headerData.engStart && col < headerData.engEnd) {
+                                    if (col >= headerData.engStart && col < headerData.engEnd) {
                                         var engineMetadata = typeof ENGINE_METADATA !== 'undefined' ? ENGINE_METADATA[traits.engine] : { complexity: 3, series: 'FIELD' };
                                         var rank = engineMetadata ? engineMetadata.complexity : 3;
                                         var sizeScale = 0.8 + (rank - 1) * 0.1; // 0.8 to 1.2
