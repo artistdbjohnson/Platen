@@ -2757,11 +2757,6 @@ else                glyph = '*';        // asterisk</pre>
                                         currentSize = hSizeY * 0.92 * sizeScale;
                                         var weights = ['300', '400', '600', '800', '900'];
                                         currentWeight = weights[rank - 1] || 'bold';
-                                    } else if (col >= headerData.inkStart && col < headerData.inkEnd) {
-                                        // Dynamic character styling for INK field values in actual ink colors
-                                        var inkColIndex = (col - headerData.inkStart) % cls.length;
-                                        var inkColorObj = cls[inkColIndex];
-                                        currentCharCol = (typeof inkColorObj === 'object' && inkColorObj !== null) ? inkColorObj.c : inkColorObj;
                                     }
                                 }
 
