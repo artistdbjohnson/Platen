@@ -1341,10 +1341,8 @@ else                glyph = '*';        // asterisk</pre>
             <div class="control-section">
                 <h3>Export</h3>
                 <div class="control-grid">
-                    <button id="btn-out-svg" onclick="saveSVG('full')">Download SVG</button>
                     <button id="btn-out-png" onclick="savePNG()">Download PNG</button>
-                    <button id="btn-out-plot" onclick="savePlotterSVG()">Download PLOT</button>
-                    <button id="btn-out-dst" onclick="saveDST()">Download DST</button>
+                    <button id="btn-out-jpg" onclick="saveJPG()">Download JPG</button>
                 </div>
                 
                 <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
@@ -3711,7 +3709,7 @@ else                glyph = '*';        // asterisk</pre>
             });
         }
 
-        function savePNG() {
+        function saveAsImage(format) {
             var panels = activePanels();
             panels.forEach(function (id) {
                 var svg = document.getElementById('s' + id);
@@ -3766,7 +3764,7 @@ else                glyph = '*';        // asterisk</pre>
 
                         var includeBG = document.getElementById('inc-bg').checked;
 
-                        // Layer 1: canvas texture (full res)
+                        // Layer 1: canvas texture (full res) or fallback background color fill for JPEG
                         if (includeBG) {
                             if (texImg) {
                                 var imgW = texImg.width, imgH = texImg.height;
@@ -3785,6 +3783,11 @@ else                glyph = '*';        // asterisk</pre>
                                 ctx.fillStyle = activeCanvas === 'black' ? '#0a0a0a' : '#f5f0e8';
                                 ctx.fillRect(0, 0, outW, outH);
                             }
+                        } else if (format === 'jpg') {
+                            // JPEGs must have a solid background color if BG texture is not included
+                            var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
+                            ctx.fillStyle = activeCanvas === 'black' ? '#0a0a0a' : '#f5f0e8';
+                            ctx.fillRect(0, 0, outW, outH);
                         }
 
                         // Layer 2: SVG pattern scaled to fill
@@ -3793,13 +3796,16 @@ else                glyph = '*';        // asterisk</pre>
                         ctx.drawImage(svgImg, 0, 0, outW, outH);
                         ctx.restore();
 
-                        canvas.toBlob(function (pngBlob) {
+                        var mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+                        var quality = format === 'png' ? undefined : 0.95;
+
+                        canvas.toBlob(function (imgBlob) {
                             var rt = RESOLVED_TRAITS || TRAITS;
                             var tStr = "-sym_" + rt.symmetry + "-space_" + rt.space + "-motif_" + rt.motif + "-chrome_" + rt.chromes + "-engine_" + rt.engine;
-                            var name = 'platen-' + RENDER_SEED + '-v' + id + tStr + '.png';
-                            downloadBlob(pngBlob, name);
-                            console.log('[Platen] Saved PNG: ' + name + ' (' + outW + 'x' + outH + ')');
-                        }, 'image/png');
+                            var name = 'platen-' + RENDER_SEED + '-v' + id + tStr + '.' + format;
+                            downloadBlob(imgBlob, name);
+                            console.log('[Platen] Saved ' + format.toUpperCase() + ': ' + name + ' (' + outW + 'x' + outH + ')');
+                        }, mimeType, quality);
                     }
 
                     if (_activeCanvasImg) {
@@ -3810,6 +3816,14 @@ else                glyph = '*';        // asterisk</pre>
                 };
                 svgImg.src = svgUrl;
             });
+        }
+
+        function savePNG() {
+            saveAsImage('png');
+        }
+
+        function saveJPG() {
+            saveAsImage('jpg');
         }
 
         function saveTriptych() {
