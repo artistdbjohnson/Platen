@@ -4637,6 +4637,11 @@ else                glyph = '*';        // asterisk</pre>
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.globalAlpha = 1;
 
+                var card = document.getElementById('card' + id);
+                if (card && card.classList.contains('flipped')) {
+                    drawBackCanvas(id);
+                }
+
                 _rafIds[id] = requestAnimationFrame(function () { _frame(id); });
             }
 
@@ -5438,9 +5443,13 @@ else                glyph = '*';        // asterisk</pre>
         window.drawBackCanvas = function (id) {
             var canvasBack = document.getElementById('c' + id + '-back');
             var canvasFront = document.getElementById('c' + id);
+            var canvasHS = document.getElementById('c' + id + '-hs');
             if (!canvasBack || !canvasFront) return;
             var ctxBack = canvasBack.getContext('2d');
             if (!ctxBack) return;
+            
+            var isHSActive = window.PlatenHyperspeed && PlatenHyperspeed.isActive();
+            var sourceCanvas = (isHSActive && canvasHS && canvasHS.style.display !== 'none') ? canvasHS : canvasFront;
             
             var size = 1200;
             canvasBack.width = size;
@@ -5469,8 +5478,8 @@ else                glyph = '*';        // asterisk</pre>
             }
             
             // Copy the front canvas composition area to the back canvas
-            var fw = canvasFront.width;
-            var fh = canvasFront.height;
+            var fw = sourceCanvas.width;
+            var fh = sourceCanvas.height;
             if (fw > 0 && fh > 0) {
                 var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
                 
@@ -5505,7 +5514,7 @@ else                glyph = '*';        // asterisk</pre>
                 var dy = padding;
                 
                 ctxBack.drawImage(
-                    canvasFront,
+                    sourceCanvas,
                     sx, sy, cropSize, cropSize, // source crop
                     dx, dy, destSize, destSize  // destination centered & padded
                 );
