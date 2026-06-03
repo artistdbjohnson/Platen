@@ -1372,6 +1372,7 @@ else                glyph = '*';        // asterisk</pre>
                     <button id="btn-gallery-modal" onclick="toggleGalleryModal()">Gallery</button>
                     <button id="btn-set-seed" onclick="setSeed()">Set Seed</button>
                     <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()">Motus: OFF</button>
+                    <button id="btn-canvas-toggle" onclick="toggleCanvasBackground()">canvas: white</button>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; width: 100%; justify-content: space-between;" onclick="toggleAuto()">
                     <span style="font-size: 9px; text-transform: uppercase; user-select: none; opacity: 0.8; letter-spacing: 0.05em;">auto cycle</span>
@@ -1904,8 +1905,37 @@ else                glyph = '*';        // asterisk</pre>
                         chromeSelect.options[i].disabled = restrictTypewriter;
                     }
                 }
+            var canvasVal = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
+            var canvasBtn = document.getElementById('btn-canvas-toggle');
+            if (canvasBtn) {
+                canvasBtn.textContent = 'canvas: ' + canvasVal;
             }
+        }
 
+        function toggleCanvasBackground() {
+            var currentCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
+            var nextCanvas = (currentCanvas === 'white') ? 'black' : 'white';
+            
+            TRAITS.canvas = nextCanvas;
+            if (window.RESOLVED_TRAITS) {
+                window.RESOLVED_TRAITS.canvas = nextCanvas;
+            }
+            
+            var btn = document.getElementById('btn-canvas-toggle');
+            if (btn) {
+                btn.textContent = 'canvas: ' + nextCanvas;
+            }
+            
+            updateCanvasTexture();
+            
+            var activePanelsList = activePanels();
+            activePanelsList.forEach(function (id) {
+                if (window.PlatenHyperspeed && PlatenHyperspeed.isActive()) {
+                    PlatenHyperspeed.prepare(id);
+                    PlatenHyperspeed.stop(id);
+                    PlatenHyperspeed.start(id);
+                }
+            });
         }
 
         function toggleInvertGraph(invert) {
@@ -3751,7 +3781,7 @@ else                glyph = '*';        // asterisk</pre>
                 var canvas = document.getElementById('c' + id);
                 var svg = document.getElementById('s' + id);
                 var panel = document.getElementById('panel' + id);
-                if (panel) panel.classList.add('loading'); // Instantly hide during async bake
+                if (panel && (!window.PlatenHyperspeed || !PlatenHyperspeed.isActive())) panel.classList.add('loading'); // Instantly hide during async bake if not in Motus mode
                 
                 if (canvas && svg) {
                     var activeBackground = resolveCanvasBackground(window.RESOLVED_TRAITS || TRAITS, RENDER_SEED);
