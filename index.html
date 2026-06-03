@@ -4246,6 +4246,14 @@ else                glyph = '*';        // asterisk</pre>
                 var cx_px   = svgW / 2;
                 var cy_px   = svgH / 2;
 
+                var quineText = "";
+                var quineIdx = 0;
+                if (traits.motif === 'typewriter_quine') {
+                    quineText = (renderPlaten.toString() + "\n" + updateCanvasTexture.toString() + "\n" + initWorkers.toString() + "\n" + ensureTextureLoaded.toString())
+                        .replace(/[\r\n\t]/g, ' ')
+                        .replace(/\s+/g, ' ');
+                }
+
                 // Scale factors matching renderPlaten
                 var baseScX = (rSize / 20) * (isTypewriter ? 1.25 : 1.0);
                 var baseScY = baseScX;
@@ -4255,6 +4263,16 @@ else                glyph = '*';        // asterisk</pre>
 
                 for (var i = 0; i < flowers.length; i++) {
                     var f = flowers[i];
+
+                    if (traits.motif === 'typewriter_quine') {
+                        if (f.wt < 0.35) continue;
+                    }
+
+                    var char = '';
+                    if (traits.motif === 'typewriter_quine') {
+                        char = quineText[quineIdx % quineText.length];
+                        quineIdx++;
+                    }
 
                     // Base pixel position
                     var px = (f.x + 4 + margin) * sizeX;
@@ -4337,7 +4355,12 @@ else                glyph = '*';        // asterisk</pre>
                             scX:     scX,
                             scY:     scY,
                             flip:    !!f.flip,
-                            rot:     f.rot || 0
+                            rot:     f.rot || 0,
+                            isQuine: traits.motif === 'typewriter_quine',
+                            char:    char,
+                            quineX:  px + (sizeX - rSize) / 2,
+                            quineY:  yVal + sizeY * 0.78,
+                            fontSize: rSize * 1.35
                         };
 
                         if (animSet[i]) {
@@ -4411,14 +4434,30 @@ else                glyph = '*';        // asterisk</pre>
                 var entries = _baseEntries[id] || [];
                 for (var i = 0; i < entries.length; i++) {
                     var e   = entries[i];
-                    var p2d = _p2d[e.pathKey];
-                    if (!p2d) continue;
-                    
-                    ctx.fillStyle   = e.color;
-                    ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
-                    if (e.flip) ctx.transform(-1, 0, 0, -1, 20, 20);
-                    if (e.rot)  ctx.rotate(e.rot * Math.PI / 180);
-                    ctx.fill(p2d.path || p2d, 'evenodd');
+                    if (e.isQuine) {
+                        ctx.save();
+                        ctx.fillStyle = e.color;
+                        ctx.font = 'bold ' + (e.fontSize) + 'px Courier, \'Courier New\', monospace';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'alphabetic';
+                        ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * e.quineX, scaleY * e.quineY);
+                        if (e.rot) {
+                            ctx.translate(e.fontSize / 2, -e.fontSize / 2);
+                            ctx.rotate(e.rot * Math.PI / 180);
+                            ctx.translate(-e.fontSize / 2, e.fontSize / 2);
+                        }
+                        ctx.fillText(e.char, 0, 0);
+                        ctx.restore();
+                    } else {
+                        var p2d = _p2d[e.pathKey];
+                        if (!p2d) continue;
+                        
+                        ctx.fillStyle   = e.color;
+                        ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
+                        if (e.flip) ctx.transform(-1, 0, 0, -1, 20, 20);
+                        if (e.rot)  ctx.rotate(e.rot * Math.PI / 180);
+                        ctx.fill(p2d.path || p2d, 'evenodd');
+                    }
                 }
                 ctx.restore();
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -4467,8 +4506,6 @@ else                glyph = '*';        // asterisk</pre>
 
                 for (var i = 0; i < entries.length; i++) {
                     var e = entries[i];
-                    var p2d = _p2d[e.pathKey];
-                    if (!p2d) continue;
 
                     var fieldFlow = 0;
                     if (_animMode === 'blend' || _animMode === 'flow') {
@@ -4489,11 +4526,31 @@ else                glyph = '*';        // asterisk</pre>
 
                     // Strict shape retention (no scaling/pulsing)
                     ctx.globalAlpha = Math.min(hyperspeedBase + fieldFlow, 1.0);
-                    ctx.fillStyle = e.color;
-                    ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
-                    if (e.flip) ctx.transform(-1, 0, 0, -1, 20, 20);
-                    if (e.rot)  ctx.rotate(e.rot * Math.PI / 180);
-                    ctx.fill(p2d.path || p2d, 'evenodd');
+                    
+                    if (e.isQuine) {
+                        ctx.save();
+                        ctx.fillStyle = e.color;
+                        ctx.font = 'bold ' + (e.fontSize) + 'px Courier, \'Courier New\', monospace';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'alphabetic';
+                        ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * e.quineX, scaleY * e.quineY);
+                        if (e.rot) {
+                            ctx.translate(e.fontSize / 2, -e.fontSize / 2);
+                            ctx.rotate(e.rot * Math.PI / 180);
+                            ctx.translate(-e.fontSize / 2, e.fontSize / 2);
+                        }
+                        ctx.fillText(e.char, 0, 0);
+                        ctx.restore();
+                    } else {
+                        var p2d = _p2d[e.pathKey];
+                        if (!p2d) continue;
+
+                        ctx.fillStyle = e.color;
+                        ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
+                        if (e.flip) ctx.transform(-1, 0, 0, -1, 20, 20);
+                        if (e.rot)  ctx.rotate(e.rot * Math.PI / 180);
+                        ctx.fill(p2d.path || p2d, 'evenodd');
+                    }
                 }
 
                 ctx.restore();
