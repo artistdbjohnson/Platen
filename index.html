@@ -184,6 +184,33 @@
         .code-num { color: var(--code-num); }
         .code-fn { color: var(--code-fn); }
 
+        .canvas-toggle-btn {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 10px;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            text-transform: lowercase;
+            opacity: 0.5;
+            padding: 0;
+            margin: 0;
+            display: inline-block;
+            border-bottom: 1px solid transparent;
+            width: auto !important;
+            transition: opacity 0.2s;
+        }
+        .canvas-toggle-btn.active {
+            opacity: 1 !important;
+            border-bottom: 1px solid var(--text) !important;
+            text-decoration: none !important;
+        }
+        .canvas-toggle-btn:hover {
+            opacity: 1 !important;
+            text-decoration: none !important;
+        }
+
         /* ── Middle Column: Controls ── */
         .col-controls {
             padding: 30px 20px;
@@ -1424,7 +1451,12 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     <button id="btn-gallery-modal" onclick="toggleGalleryModal()">Gallery</button>
                     <button id="btn-set-seed" onclick="setSeed()">Set Seed</button>
                     <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()">Motus: OFF</button>
-                    <button id="btn-canvas-toggle" onclick="toggleCanvasBackground()">canvas: white</button>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <span style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.5; text-transform: lowercase;">canvas:</span>
+                        <button id="btn-canvas-black" class="canvas-toggle-btn" onclick="setCanvasBackground('black')">black</button>
+                        <span style="font-size: 9px; opacity: 0.3;">/</span>
+                        <button id="btn-canvas-white" class="canvas-toggle-btn" onclick="setCanvasBackground('white')">white</button>
+                    </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; width: 100%; justify-content: space-between;" onclick="toggleAuto()">
                     <span style="font-size: 9px; text-transform: uppercase; user-select: none; opacity: 0.8; letter-spacing: 0.05em;">auto cycle</span>
@@ -1959,27 +1991,26 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 }
             }
             var canvasVal = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
-            var canvasBtn = document.getElementById('btn-canvas-toggle');
-            if (canvasBtn) {
-                canvasBtn.textContent = 'canvas: ' + canvasVal;
+            var btnBlack = document.getElementById('btn-canvas-black');
+            var btnWhite = document.getElementById('btn-canvas-white');
+            if (btnBlack && btnWhite) {
+                if (canvasVal === 'black') {
+                    btnBlack.classList.add('active');
+                    btnWhite.classList.remove('active');
+                } else {
+                    btnWhite.classList.add('active');
+                    btnBlack.classList.remove('active');
+                }
             }
         }
 
-        function toggleCanvasBackground() {
-            var currentCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
-            var nextCanvas = (currentCanvas === 'white') ? 'black' : 'white';
-            
-            TRAITS.canvas = nextCanvas;
+        function setCanvasBackground(canvasType) {
+            TRAITS.canvas = canvasType;
             if (window.RESOLVED_TRAITS) {
-                window.RESOLVED_TRAITS.canvas = nextCanvas;
+                window.RESOLVED_TRAITS.canvas = canvasType;
             }
-            
-            var btn = document.getElementById('btn-canvas-toggle');
-            if (btn) {
-                btn.textContent = 'canvas: ' + nextCanvas;
-            }
-            
             updateCanvasTexture();
+            updateTraitBar();
             
             var activePanelsList = activePanels();
             activePanelsList.forEach(function (id) {
