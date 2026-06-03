@@ -1361,24 +1361,7 @@ else                glyph = '*';        // asterisk</pre>
                 <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value;"></select></div>
             </div>
 
-            <div class="control-section" id="anim-controls" style="display: none; margin-top: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                    <h3>Animation</h3>
-                    <button class="trait-label" style="background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0;" onclick="PlatenHyperspeed.reroll()">re-roll seed</button>
-                </div>
-                <div class="trait">
-                    <span class="trait-label">Mode</span>
-                    <button class="trait-select" id="hs-mode-btn" onclick="PlatenHyperspeed.cycleMode()" style="background: transparent; border: none; text-align: right; cursor: pointer;">BLEND</button>
-                </div>
-                <div class="trait" style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="display: flex; justify-content: space-between; width: 100%;"><span class="trait-label">Speed</span></div>
-                    <input type="range" class="anim-slider" id="hs-speed" min="1" max="50" value="12" oninput="PlatenHyperspeed.setSpeed(this.value)">
-                </div>
-                <div class="trait" style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="display: flex; justify-content: space-between; width: 100%;"><span class="trait-label">Prob %</span></div>
-                    <input type="range" class="anim-slider" id="hs-prob" min="10" max="100" value="50" oninput="PlatenHyperspeed.setProb(this.value)">
-                </div>
-            </div>
+
 
             <div class="control-section">
                 <h3>Actions</h3>
@@ -1388,7 +1371,7 @@ else                glyph = '*';        // asterisk</pre>
                     <button id="btn-curate" onclick="curateArtwork()">Curate</button>
                     <button id="btn-gallery-modal" onclick="toggleGalleryModal()">Gallery</button>
                     <button id="btn-set-seed" onclick="setSeed()">Set Seed</button>
-                    <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()">Hyperspeed</button>
+                    <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()">Motus: OFF</button>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; width: 100%; justify-content: space-between;" onclick="toggleAuto()">
                     <span style="font-size: 9px; text-transform: uppercase; user-select: none; opacity: 0.8; letter-spacing: 0.05em;">auto cycle</span>
@@ -4574,7 +4557,6 @@ else                glyph = '*';        // asterisk</pre>
                     var ids   = [1, 2, 3];
                     var anyOn = ids.some(function (id) { return _active[id]; });
                     var btn   = document.getElementById('btn-hyperspeed');
-                    var animControls = document.getElementById('anim-controls');
                     
                     ids.forEach(function (id) {
                         if (document.getElementById('c' + id)) {
@@ -4582,8 +4564,7 @@ else                glyph = '*';        // asterisk</pre>
                         }
                     });
                     
-                    if (btn) btn.textContent = anyOn ? 'Hyperspeed' : 'Still';
-                    if (animControls) animControls.style.display = anyOn ? 'none' : 'block';
+                    if (btn) btn.textContent = anyOn ? 'Motus: OFF' : 'Motus: ON';
                 },
 
                 isActive: function () {
