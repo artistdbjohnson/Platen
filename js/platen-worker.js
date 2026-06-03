@@ -173,6 +173,7 @@ onmessage = function (e) {
 
     function getMinGlyphs(traits) {
         if (traits.space === 'moire') return 400;
+        if (traits.space === 'planar' || traits.space === 'polar' || traits.space === 'hyperbolic') return 200;
         var series = (typeof ENGINE_METADATA !== 'undefined' && ENGINE_METADATA[traits.engine]) ? ENGINE_METADATA[traits.engine].series : 'FIELD';
         if (series === 'SCATTER') return 400;
         if (series === 'FIELD') return 1200;
@@ -855,7 +856,10 @@ onmessage = function (e) {
     var qualityMin = getMinGlyphs(traits);
 
     if (finalCount < qualityMin) {
-        var boostThresholds = (traits.space === 'moire') ? [0.01, 0.005, 0.0] : [0.05, 0.03, 0.01];
+        var boostThresholds = (traits.space === 'moire' || traits.space === 'planar' || traits.space === 'polar' || traits.space === 'hyperbolic') 
+            ? [0.01, 0.005, 0.0] 
+            : [0.05, 0.03, 0.01];
+        var absoluteBestResult = bestResult;
         for (var bi = 0; bi < boostThresholds.length; bi++) {
             var boostResult = reRenderWithThreshold(
                 bestGrid, bestRawWt, bestWMin, bestWRange, bestIsFlat, boostThresholds[bi], bestSeed
@@ -864,7 +868,20 @@ onmessage = function (e) {
                 bestResult = boostResult;
                 break;
             }
+            if (boostResult.length > absoluteBestResult.length) {
+                absoluteBestResult = boostResult;
+            }
         }
+        if (bestResult.length < qualityMin) {
+            bestResult = absoluteBestResult;
+        }
+    }
+
+    // Ultimate safeguard: if still less than 50 glyphs, force flat-field recovery noise
+    if (!bestResult || bestResult.length < 50) {
+        bestResult = reRenderWithThreshold(
+            bestGrid, bestRawWt, bestWMin, bestWRange, true, 0.05, bestSeed
+        );
     }
 
     postMessage({
