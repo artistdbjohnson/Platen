@@ -1433,11 +1433,11 @@ else</span>                     level = <span class="code-num">4</span>;   <span
         <section class="col-controls">
             <div class="control-section">
                 <h3>Parameters</h3>
-                <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym" onchange="TRAITS.symmetry=this.value;"></select></div>
-                <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space" onchange="TRAITS.space=this.value;"></select></div>
-                <div class="trait"><span class="trait-label">Motif</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value;"></select></div>
-                <div class="trait"><span class="trait-label">Ink</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value;"></select></div>
-                <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value;"></select></div>
+                <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym" onchange="TRAITS.symmetry=this.value; renderAll();"></select></div>
+                <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space" onchange="TRAITS.space=this.value; renderAll();"></select></div>
+                <div class="trait"><span class="trait-label">Motif</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value; renderAll();"></select></div>
+                <div class="trait"><span class="trait-label">Ink</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value; renderAll();"></select></div>
+                <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value; renderAll();"></select></div>
             </div>
 
 
@@ -2146,6 +2146,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                     RESOLVED_TRAITS = runTraits;
                 }
+
+                updateTraitBar();
 
                 // Ensure background matches resolved traits immediately
                 updateCanvasTexture();
