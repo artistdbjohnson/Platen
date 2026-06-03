@@ -1076,6 +1076,35 @@
             box-shadow: 0 0 8px rgba(125, 133, 140, 0.5);
         }
 
+        /* ── Animation Controls ── */
+        .anim-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 1px;
+            background: rgba(232, 230, 223, 0.3); /* match trait-select borders slightly */
+            outline: none;
+            margin-top: 4px;
+        }
+        .anim-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 0 2px rgba(0,0,0,0.3);
+        }
+        .anim-slider::-moz-range-thumb {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 2px rgba(0,0,0,0.3);
+        }
+
         /* ── Mobile Optimization ── */
         @media (max-width: 768px) {
             body {
@@ -1330,6 +1359,26 @@ else                glyph = '*';        // asterisk</pre>
                 <div class="trait"><span class="trait-label">Motif</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value;"></select></div>
                 <div class="trait"><span class="trait-label">Ink</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value;"></select></div>
                 <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value;"></select></div>
+            </div>
+
+            <div class="control-section" id="anim-controls" style="display: none; margin-top: 20px;">
+                <h3>Animation</h3>
+                <div class="trait">
+                    <span class="trait-label">Mode</span>
+                    <select class="trait-select" id="hs-mode" onchange="PlatenHyperspeed.setMode(this.value)">
+                        <option value="blend" selected>Blend (Flow + Flicker)</option>
+                        <option value="flow">Flow (Sine Wave)</option>
+                        <option value="flicker">Flicker (Quantized)</option>
+                    </select>
+                </div>
+                <div class="trait" style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between; width: 100%;"><span class="trait-label">Speed</span></div>
+                    <input type="range" class="anim-slider" id="hs-speed" min="1" max="50" value="12" oninput="PlatenHyperspeed.setSpeed(this.value)">
+                </div>
+                <div class="trait" style="display: flex; flex-direction: column; gap: 4px;">
+                    <div style="display: flex; justify-content: space-between; width: 100%;"><span class="trait-label">Prob %</span></div>
+                    <input type="range" class="anim-slider" id="hs-prob" min="10" max="100" value="50" oninput="PlatenHyperspeed.setProb(this.value)">
+                </div>
             </div>
 
             <div class="control-section">
@@ -4420,36 +4469,35 @@ else                glyph = '*';        // asterisk</pre>
                 ctx.save();
                 ctx.scale(scaleX, scaleY);
 
-                // Draw live animation layer
+                // AE Dual-Axis Blending logic
                 var entries = _animEntries[id] || [];
+                var qTime = Math.floor(t * _animSpeed);
+                var masterSeed = (window.RENDER_SEED || 9248);
+
                 for (var i = 0; i < entries.length; i++) {
                     var e = entries[i];
                     var p2d = _p2d[e.pathKey];
                     if (!p2d) continue;
 
-                    // Group spread replaces the binary column offset
-                    var gIdx   = Math.floor(i / _GROUP_SIZE);
-                    var spread = gIdx * _colSpread * 0.1;
-
-                    // Smooth sine wave
-                    var sine = Math.sin((t * e.cycleSpeed) + e.phase + spread);
-                    
-                    // Remap sine (-1 to 1) to opacity (0.08 to 1.0)
-                    ctx.globalAlpha = 0.54 + (sine * 0.46);
-
-                    var currentScX = e.scX;
-                    var currentScY = e.scY;
-                    if (e.scalePulse) {
-                        var pulse = 1.0 + (sine * 0.05); // +/- 5% scale
-                        currentScX *= pulse;
-                        currentScY *= pulse;
+                    var fieldFlow = 0;
+                    if (_animMode === 'blend' || _animMode === 'flow') {
+                        var phaseOffset = i * 2.39996; // 2*PI * golden ratio
+                        fieldFlow = (Math.sin(t * _flowSpeed + phaseOffset) * 0.5 + 0.5) * _flowBlend;
                     }
 
-                    var currentTx = e.tx + (e.driftX * sine);
-                    var currentTy = e.ty + (e.driftY * sine);
+                    var hyperspeedBase = 1.0;
+                    if (_animMode === 'blend' || _animMode === 'flicker') {
+                        // Mulberry32-style hash replacement
+                        var h = (i * 374761393 + qTime * 668265263 + masterSeed) ^ 0x9e3779b9;
+                        h = (h ^ (h >>> 13)) * 1274126177;
+                        var hyperspeedOn = ((h >>> 0) % 100) < _animProb;
+                        hyperspeedBase = hyperspeedOn ? 1.0 : _ghostOp;
+                    }
 
+                    // Strict shape retention (no scaling/pulsing)
+                    ctx.globalAlpha = Math.min(hyperspeedBase + fieldFlow, 1.0);
                     ctx.fillStyle = e.color;
-                    ctx.setTransform(scaleX * currentScX, 0, 0, scaleY * currentScY, scaleX * currentTx, scaleY * currentTy);
+                    ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
                     if (e.flip) ctx.transform(-1, 0, 0, -1, 20, 20);
                     if (e.rot)  ctx.rotate(e.rot * Math.PI / 180);
                     ctx.fill(p2d.path || p2d, 'evenodd');
@@ -4516,16 +4564,32 @@ else                glyph = '*';        // asterisk</pre>
                     var ids   = [1, 2, 3];
                     var anyOn = ids.some(function (id) { return _active[id]; });
                     var btn   = document.getElementById('btn-hyperspeed');
+                    var animControls = document.getElementById('anim-controls');
+                    
                     ids.forEach(function (id) {
                         if (document.getElementById('c' + id)) {
                             anyOn ? PlatenHyperspeed.stop(id) : PlatenHyperspeed.start(id);
                         }
                     });
-                    if (btn)   btn.textContent = anyOn ? 'Hyperspeed' : 'Still';
+                    
+                    if (btn) btn.textContent = anyOn ? 'Hyperspeed' : 'Still';
+                    if (animControls) animControls.style.display = anyOn ? 'none' : 'block';
                 },
 
                 isActive: function () {
                     return [1, 2, 3].some(function (id) { return _active[id]; });
+                },
+
+                setMode: function (mode) {
+                    _animMode = mode;
+                },
+
+                setSpeed: function (val) {
+                    _animSpeed = parseInt(val, 10);
+                },
+
+                setProb: function (val) {
+                    _animProb = parseInt(val, 10);
                 }
             };
         })();
