@@ -4693,6 +4693,11 @@ else                glyph = '*';        // asterisk</pre>
                     }
                     if (src) src.style.visibility = 'visible';
                     _baseCanvas[id] = null;
+
+                    var card = document.getElementById('card' + id);
+                    if (card && card.classList.contains('flipped')) {
+                        drawBackCanvas(id);
+                    }
                 },
 
                 toggle: function () {
@@ -5452,8 +5457,10 @@ else                glyph = '*';        // asterisk</pre>
             var sourceCanvas = (isHSActive && canvasHS && canvasHS.style.display !== 'none') ? canvasHS : canvasFront;
             
             var size = 1200;
-            canvasBack.width = size;
-            canvasBack.height = size;
+            if (canvasBack.width !== size || canvasBack.height !== size) {
+                canvasBack.width = size;
+                canvasBack.height = size;
+            }
             
             ctxBack.clearRect(0, 0, size, size);
             
