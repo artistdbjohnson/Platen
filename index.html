@@ -2351,17 +2351,24 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             
             // 1. Title Line
             var title = "";
-            var fullTitle = titleWord + "  -  BY DLGXSS  -  SEED #" + seed;
-            var medTitle = titleWord + "  -  DLGXSS  -  SEED #" + seed;
+            var titleMid = "-  BY DLGXSS  -";
+            var titleRight = "SEED #" + seed;
+            var fullTitle = titleWord + "  " + titleMid + "  " + titleRight;
+            var medTitle = titleWord + "  -  DLGXSS  -  " + titleRight;
             var compTitle = titleWord + "  -  DLGXSS  -  #" + seed;
 
             if (w >= fullTitle.length) {
-                // Dynamically pad the title to span exactly from column 1 to column w
-                var neededSpaces = w - fullTitle.length;
-                if (neededSpaces >= 4) {
-                    var space1 = Math.floor(neededSpaces / 2);
-                    var space2 = neededSpaces - space1;
-                    title = titleWord + " ".repeat(space1) + "-  BY DLGXSS  -" + " ".repeat(space2) + "SEED #" + seed;
+                // Symmetrically center the middle text titleMid:
+                // titleWord.length + space1 = space2 + titleRight.length
+                var totalSidesWidth = w - titleMid.length;
+                var targetLeftWidth = Math.floor(totalSidesWidth / 2);
+                var targetRightWidth = totalSidesWidth - targetLeftWidth;
+                
+                var space1 = targetLeftWidth - titleWord.length;
+                var space2 = targetRightWidth - titleRight.length;
+                
+                if (space1 >= 0 && space2 >= 0) {
+                    title = titleWord + " ".repeat(space1) + titleMid + " ".repeat(space2) + titleRight;
                 } else {
                     title = fullTitle;
                 }
