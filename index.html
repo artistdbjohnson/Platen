@@ -330,6 +330,11 @@
             fill: #ffffff !important;
         }
 
+        svg.motus-active .platen-artwork,
+        svg.motus-active .grid-numbers {
+            display: none !important;
+        }
+
         .platen-panel:active {
             cursor: grabbing;
             transition: none;
@@ -2539,6 +2544,7 @@ else                glyph = '*';        // asterisk</pre>
                 frag.appendChild(bg);
 
                 var gEl = dc.createElementNS(svgNS, "g");
+                gEl.setAttribute("class", "platen-artwork");
                 frag.appendChild(gEl);
 
                 // Get an available worker from the pool, or spawn a temporary one if pool is empty
@@ -4448,27 +4454,6 @@ else                glyph = '*';        // asterisk</pre>
                 ctx.save();
                 ctx.scale(scaleX, scaleY);
 
-                // Draw header text directly to base canvas
-                if (srcSvg) {
-                    var headerGroup = srcSvg.querySelector('.typewriter-header');
-                    if (headerGroup) {
-                        var texts = headerGroup.querySelectorAll('text');
-                        for (var k = 0; k < texts.length; k++) {
-                            var tEl = texts[k];
-                            var tx = parseFloat(tEl.getAttribute('x'));
-                            var ty = parseFloat(tEl.getAttribute('y'));
-                            ctx.globalAlpha = 0.85; // match css
-                            ctx.font = (tEl.getAttribute('font-weight') || '400') + ' ' +
-                                       (tEl.getAttribute('font-size')   || '12px') + ' ' +
-                                       (tEl.getAttribute('font-family') || "Courier, 'Courier New', monospace");
-                            ctx.fillStyle = tEl.getAttribute('fill');
-                            ctx.textAlign = "center";
-                            ctx.textBaseline = "middle";
-                            ctx.fillText(tEl.textContent, tx, ty);
-                        }
-                    }
-                }
-                
                 ctx.globalAlpha = 1.0;
 
                 // Draw base entries once
@@ -4645,7 +4630,7 @@ else                glyph = '*';        // asterisk</pre>
                     
                     cvs.style.display = 'block';
                     var svg = document.getElementById('s' + id);
-                    if (svg) svg.style.display = 'none';
+                    if (svg) svg.classList.add('motus-active');
                     
                     _active[id]    = true;
                     _paused[id]    = false;
@@ -4670,7 +4655,7 @@ else                glyph = '*';        // asterisk</pre>
                             cvs.dataset.bgUrl = '';
                         }
                     }
-                    if (svg) svg.style.display = 'block';
+                    if (svg) svg.classList.remove('motus-active');
                     _baseCanvas[id] = null;
 
                     var card = document.getElementById('card' + id);
