@@ -1362,14 +1362,13 @@ else                glyph = '*';        // asterisk</pre>
             </div>
 
             <div class="control-section" id="anim-controls" style="display: none; margin-top: 20px;">
-                <h3>Animation</h3>
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <h3>Animation</h3>
+                    <button class="trait-label" style="background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0;" onclick="PlatenHyperspeed.reroll()">re-roll seed</button>
+                </div>
                 <div class="trait">
                     <span class="trait-label">Mode</span>
-                    <select class="trait-select" id="hs-mode" onchange="PlatenHyperspeed.setMode(this.value)">
-                        <option value="blend" selected>Blend (Flow + Flicker)</option>
-                        <option value="flow">Flow (Sine Wave)</option>
-                        <option value="flicker">Flicker (Quantized)</option>
-                    </select>
+                    <button class="trait-select" id="hs-mode-btn" onclick="PlatenHyperspeed.cycleMode()" style="background: transparent; border: none; text-align: right; cursor: pointer;">BLEND</button>
                 </div>
                 <div class="trait" style="display: flex; flex-direction: column; gap: 4px;">
                     <div style="display: flex; justify-content: space-between; width: 100%;"><span class="trait-label">Speed</span></div>
@@ -4171,6 +4170,7 @@ else                glyph = '*';        // asterisk</pre>
             var _ghostOp = 0.10;
             var _flowBlend = 0.25;
             var _flowSpeed = 1.0;
+            var _animSeed = null;
 
             // Build Path2D cache from MOTIF_PATHS (defined in platen-core.js)
             function _buildPaths() {
@@ -4480,7 +4480,7 @@ else                glyph = '*';        // asterisk</pre>
                 // AE Dual-Axis Blending logic
                 var entries = _animEntries[id] || [];
                 var qTime = Math.floor(t * _animSpeed);
-                var masterSeed = (window.RENDER_SEED || 9248);
+                var masterSeed = (_animSeed || window.RENDER_SEED || 9248);
 
                 for (var i = 0; i < entries.length; i++) {
                     var e = entries[i];
@@ -4500,6 +4500,8 @@ else                glyph = '*';        // asterisk</pre>
                         h = (h ^ (h >>> 13)) * 1274126177;
                         var hyperspeedOn = ((h >>> 0) % 100) < _animProb;
                         hyperspeedBase = hyperspeedOn ? 1.0 : _ghostOp;
+                    } else if (_animMode === 'flow') {
+                        hyperspeedBase = _ghostOp; // Base is ghost, flow pushes it up
                     }
 
                     // Strict shape retention (no scaling/pulsing)
@@ -4588,8 +4590,13 @@ else                glyph = '*';        // asterisk</pre>
                     return [1, 2, 3].some(function (id) { return _active[id]; });
                 },
 
-                setMode: function (mode) {
-                    _animMode = mode;
+                cycleMode: function () {
+                    var modes = ['blend', 'flow', 'flicker'];
+                    var labels = { 'blend': 'BLEND', 'flow': 'FLOW', 'flicker': 'FLICKER' };
+                    var idx = modes.indexOf(_animMode);
+                    _animMode = modes[(idx + 1) % modes.length];
+                    var btn = document.getElementById('hs-mode-btn');
+                    if (btn) btn.textContent = labels[_animMode];
                 },
 
                 setSpeed: function (val) {
@@ -4598,6 +4605,10 @@ else                glyph = '*';        // asterisk</pre>
 
                 setProb: function (val) {
                     _animProb = parseInt(val, 10);
+                },
+
+                reroll: function () {
+                    _animSeed = Math.floor(Math.random() * 999983) + 1;
                 }
             };
         })();
