@@ -4396,7 +4396,9 @@ else                glyph = '*';        // asterisk</pre>
                             var tx = parseFloat(tEl.getAttribute('x'));
                             var ty = parseFloat(tEl.getAttribute('y'));
                             ctx.globalAlpha = 0.85; // match css
-                            ctx.font = tEl.getAttribute('font-weight') + " " + tEl.getAttribute('font-size') + " " + (tEl.getAttribute('font-family') || "Courier, 'Courier New', monospace");
+                            ctx.font = (tEl.getAttribute('font-weight') || '400') + ' ' +
+                                       (tEl.getAttribute('font-size')   || '12px') + ' ' +
+                                       (tEl.getAttribute('font-family') || "Courier, 'Courier New', monospace");
                             ctx.fillStyle = tEl.getAttribute('fill');
                             ctx.textAlign = "center";
                             ctx.textBaseline = "middle";
