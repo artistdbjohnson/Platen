@@ -459,7 +459,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            width: 100%;
+            height: auto;
             aspect-ratio: 9 / 16;
             max-height: 100%;
             max-width: 100%;
@@ -529,7 +530,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            width: 100%;
+            height: auto;
             aspect-ratio: 1 / 1;
             max-height: 100%;
             max-width: 100%;
@@ -568,7 +570,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            width: 100%;
+            height: auto;
             aspect-ratio: 32 / 40;
             max-height: 100%;
             max-width: 100%;
@@ -607,7 +610,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            width: 100%;
+            height: auto;
             aspect-ratio: 39 / 51;
             max-height: 100%;
             max-width: 100%;
@@ -647,7 +651,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            width: 100%;
+            height: auto;
             aspect-ratio: 8.5 / 11;
             max-height: 100%;
             max-width: 100%;
@@ -687,7 +692,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            width: 100%;
+            height: auto;
             aspect-ratio: 1 / 1;
             max-height: 100%;
             max-width: 100%;
@@ -746,7 +752,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            width: 100%;
+            height: auto;
             aspect-ratio: 1696 / 2192;
             max-height: 100%;
             max-width: 100%;
@@ -757,7 +764,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100%;
+            width: 100%;
+            height: auto;
             aspect-ratio: 1696 / 1707.08;
             max-height: 100%;
             max-width: 100%;
@@ -808,6 +816,10 @@
 
         .platen-panel svg {
             transform-origin: center center;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
         }
 
         .platen-loader {
@@ -2950,7 +2962,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     svg.setAttribute("width", svgW);
                     svg.setAttribute("height", svgH);
                     svg.setAttribute("viewBox", "0 0 " + svgW + " " + svgH);
-                    svg.setAttribute("preserveAspectRatio", "none");
+                    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
 
                     // Append the new fragment instantly
                     svg.appendChild(frag);
