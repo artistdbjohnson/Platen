@@ -1411,9 +1411,9 @@ else                glyph = '*';        // asterisk</pre>
                     <div class="platen-card" id="card1">
                         <div class="platen-face front">
                             <div class="platen-loader">rendering...</div>
-                            <canvas id="c1" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                            <canvas id="c1" class="qs" style="display: none;"></canvas>
                             <canvas id="c1-hs" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;"></canvas>
-                            <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
+                            <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; object-fit: contain; display: block;"></svg>
                         </div>
                         <div class="platen-face back">
                             <canvas id="c1-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
@@ -1430,9 +1430,9 @@ else                glyph = '*';        // asterisk</pre>
                     <div class="platen-card" id="card2">
                         <div class="platen-face front">
                             <div class="platen-loader">rendering...</div>
-                            <canvas id="c2" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                            <canvas id="c2" class="qs" style="display: none;"></canvas>
                             <canvas id="c2-hs" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;"></canvas>
-                            <svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
+                            <svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; object-fit: contain; display: block;"></svg>
                         </div>
                         <div class="platen-face back">
                             <canvas id="c2-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
@@ -1449,9 +1449,9 @@ else                glyph = '*';        // asterisk</pre>
                     <div class="platen-card" id="card3">
                         <div class="platen-face front">
                             <div class="platen-loader">rendering...</div>
-                            <canvas id="c3" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                            <canvas id="c3" class="qs" style="display: none;"></canvas>
                             <canvas id="c3-hs" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;"></canvas>
-                            <svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
+                            <svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; object-fit: contain; display: block;"></svg>
                         </div>
                         <div class="platen-face back">
                             <canvas id="c3-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
@@ -4639,7 +4639,9 @@ else                glyph = '*';        // asterisk</pre>
                     _buildBaseLayer(id);
                     
                     cvs.style.display = 'block';
-                    src.style.visibility = 'hidden';
+                    var svg = document.getElementById('s' + id);
+                    if (svg) svg.style.display = 'none';
+                    
                     _active[id]    = true;
                     _paused[id]    = false;
                     _tAccum[id]    = 0;
@@ -4654,7 +4656,7 @@ else                glyph = '*';        // asterisk</pre>
                     _active[id] = false;
                     if (_rafIds[id]) cancelAnimationFrame(_rafIds[id]);
                     var cvs = document.getElementById('c' + id + '-hs');
-                    var src = document.getElementById('c' + id);
+                    var svg = document.getElementById('s' + id);
                     if (cvs) {
                         cvs.style.display = 'none';
                         if (cvs.dataset.bgUrl) {
@@ -4663,7 +4665,7 @@ else                glyph = '*';        // asterisk</pre>
                             cvs.dataset.bgUrl = '';
                         }
                     }
-                    if (src) src.style.visibility = 'visible';
+                    if (svg) svg.style.display = 'block';
                     _baseCanvas[id] = null;
 
                     var card = document.getElementById('card' + id);
