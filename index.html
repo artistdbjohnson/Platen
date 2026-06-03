@@ -4158,11 +4158,38 @@ else                glyph = '*';        // asterisk</pre>
                 // Scale factors matching renderPlaten
                 var baseScX = (rSize / 20) * (isTypewriter ? 1.25 : 1.0);
                 var baseScY = baseScX;
+                var baseScY = baseScX;
+
+                // Color counting to fallback to 2nd dominant color
+                var colorCounts = {};
+                for (var i = 0; i < flowers.length; i++) {
+                    var c = flowers[i].c;
+                    colorCounts[c] = (colorCounts[c] || 0) + 1;
+                }
+                var colorKeys = Object.keys(colorCounts).sort(function(a, b) { return colorCounts[b] - colorCounts[a]; });
+                var targetColor = colorKeys.length > 1 ? colorKeys[1] : null;
+                var randLimit = 150 + Math.random() * 100;
+                var animatedCount = 0;
+
+                for (var i = 0; i < flowers.length; i++) {
+                    var f = flowers[i];
+                    var isAnimated = false;
+                    if (targetColor) {
+                        if (f.c === targetColor) isAnimated = true;
+                    } else {
+                        if (Math.random() < (randLimit / flowers.length) && animatedCount < randLimit) {
+                            isAnimated = true;
+                            animatedCount++;
+                        }
+                    }
+                    f._isAnimated = isAnimated; // Mark on original array for SVG background sync
+                }
 
                 var entries = [];
 
                 for (var i = 0; i < flowers.length; i++) {
                     var f = flowers[i];
+                    if (!f._isAnimated) continue;
 
                     // Base pixel position
                     var px = (f.x + 4 + margin) * sizeX;
@@ -4259,9 +4286,25 @@ else                glyph = '*';        // asterisk</pre>
 
                 ctx.clearRect(0, 0, cvs.width, cvs.height);
 
+                // Platen renders SVG at svgW x svgH, but canvases are targetW x targetH (e.g. 1376x2496).
+                // We must scale the drawing context to precisely map the coordinates and avoid hourglass distortion.
+                var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(window.currentLayout || 'default') : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
+                var w = sizes.w, h = sizes.h, sizeX = sizes.sizeX, sizeY = sizes.sizeY;
+                var svgW = (w + 8) * sizeX;
+                var svgH = (h + 8) * sizeY;
+                var isGraphPaper = (window.currentLayout === 'graph_paper' || window.currentLayout === 'graph_paper_sq' || window.currentLayout === 'graph_paper_banner' || window.currentLayout === 'graph_paper_sq_banner');
+                if (isGraphPaper) {
+                    svgW = 1696;
+                    svgH = (window.currentLayout === 'graph_paper_sq' || window.currentLayout === 'graph_paper_sq_banner') ? 1707.08 : 2192;
+                }
+
+                ctx.save();
+                ctx.scale(cvs.width / svgW, cvs.height / svgH);
+
                 for (var i = 0; i < entries.length; i++) {
                     var e = entries[i];
-                    var p2d = _p2d[e.pathKey];
+                    var p2d = _p2d[id] && _p2d[id][e.idx];
+                    if (!p2d) p2d = _p2d[e.pathKey];
                     if (!p2d) continue;
 
                     var on = _visible(e.idx, qtime, P.prob, P.grain);
@@ -4275,12 +4318,13 @@ else                glyph = '*';        // asterisk</pre>
                     }
 
                     ctx.fillStyle = e.color;
-                    ctx.setTransform(e.scX, 0, 0, e.scY, e.tx, e.ty);
+                    ctx.setTransform((cvs.width / svgW) * e.scX, 0, 0, (cvs.height / svgH) * e.scY, (cvs.width / svgW) * e.tx, (cvs.height / svgH) * e.ty);
                     if (e.flip) ctx.transform(-1, 0, 0, -1, 20, 20);
                     if (e.rot)  ctx.rotate(e.rot * Math.PI / 180);
-                    ctx.fill(p2d, 'evenodd');
+                    ctx.fill(p2d.path || p2d, 'evenodd');
                 }
 
+                ctx.restore();
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.globalAlpha = 1;
 
@@ -4307,9 +4351,16 @@ else                glyph = '*';        // asterisk</pre>
                     var svg = document.getElementById('s' + id);
                     if (svg) {
                         var clone = svg.cloneNode(true);
-                        var paths = clone.querySelectorAll('path[fill], g.extrusion-col[fill]');
-                        for (var i = 0; i < paths.length; i++) {
-                            if (paths[i].parentNode) paths[i].parentNode.removeChild(paths[i]);
+                        var artworkG = clone.querySelector('g:not(.typewriter-header)');
+                        var flowers = window._lastFlowers && window._lastFlowers[id];
+                        if (artworkG && flowers) {
+                            var nodes = Array.from(artworkG.childNodes);
+                            for (var i = 0; i < nodes.length; i++) {
+                                // Exclude the paths that are currently animated so they don't render twice
+                                if (i < flowers.length && flowers[i]._isAnimated) {
+                                    artworkG.removeChild(nodes[i]);
+                                }
+                            }
                         }
                         var str = new XMLSerializer().serializeToString(clone);
                         var blob = new Blob([str], { type: 'image/svg+xml' });
