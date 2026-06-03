@@ -1255,6 +1255,38 @@
         .extrusion-col, .keyanim-path {
             shape-rendering: optimizeSpeed;
         }
+
+        #hs-controls {
+            display: none;
+            align-items: center;
+            gap: 16px;
+            padding: 10px 14px;
+            font-family: ui-monospace, Menlo, monospace;
+            font-size: 11px;
+            color: #8f8c83;
+            background: transparent;
+            flex-wrap: wrap;
+        }
+        #hs-controls.visible { display: flex; }
+        #hs-controls button {
+            font-family: inherit;
+            font-size: 11px;
+            background: transparent;
+            border: 1px solid currentColor;
+            padding: 2px 10px;
+            cursor: pointer;
+            color: inherit;
+            border-radius: 3px;
+        }
+        #hs-controls label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 160px;
+        }
+        #hs-controls input[type="range"] { flex: 1; }
+        #hs-fps { min-width: 54px; text-align: right; margin-left: auto; }
     </style>
 </head>
 
@@ -1430,7 +1462,18 @@ else                glyph = '*';        // asterisk</pre>
                         </div>
                     </div>
                     <button class="btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">VERSO</button>
-                </div>
+            </div>
+            <div id="hs-controls">
+                <button id="hs-pause" onclick="PlatenHyperspeed.togglePause()">pause</button>
+                <label>flow
+                    <input type="range" id="hs-flow" min="0" max="200" value="60" step="1"
+                           oninput="PlatenHyperspeed.setFlowMult(this.value)">
+                </label>
+                <label id="hs-col-label">column offset
+                    <input type="range" id="hs-col" min="0" max="20" value="5" step="1"
+                           oninput="PlatenHyperspeed.setColSpread(this.value)">
+                </label>
+                <span id="hs-fps"></span>
             </div>
         </section>
     </main>
@@ -4104,6 +4147,14 @@ else                glyph = '*';        // asterisk</pre>
             var _prepared  = {};   // id → array of draw entries
             var _params    = {};   // id → seed-locked params
             var _p2d       = null; // path key → Path2D, built once
+            var _paused     = {};   // id → boolean
+            var _tAccum     = {};   // id → accumulated seconds (stops when paused)
+            var _tLast      = {};   // id → last performance.now() at frame
+            var _flowMult   = 1.0;  // global runtime flow multiplier (slider)
+            var _colSpread  = 5;    // quantized-time offset per flower group (slider)
+            var _fpsFrames  = {};   // id → frame count for fps calc
+            var _fpsTime    = {};   // id → last fps sample time
+            var _GROUP_SIZE = 18;   // flowers per group for column-offset ripple
 
             // Build Path2D cache from MOTIF_PATHS (defined in platen-core.js)
             function _buildPaths() {
@@ -4273,14 +4324,32 @@ else                glyph = '*';        // asterisk</pre>
                 _prepared[id] = entries;
             }
 
-            // RAF render loop
             function _frame(id) {
                 var cvs = document.getElementById('c' + id + '-hs');
                 if (!cvs || !_active[id]) return;
                 var ctx = cvs.getContext('2d');
                 var P   = _params[id];
                 var now = performance.now();
-                var t   = (now - _startTime[id]) / 1000;
+
+                // Accumulate time only when not paused
+                if (!_paused[id]) {
+                    var dt = (now - (_tLast[id] || now)) / 1000;
+                    _tAccum[id] = (_tAccum[id] || 0) + dt * _flowMult;
+                }
+                _tLast[id] = now;
+                var t = _tAccum[id] || 0;
+
+                // FPS counter
+                _fpsFrames[id] = (_fpsFrames[id] || 0) + 1;
+                if (!_fpsTime[id]) _fpsTime[id] = now;
+                if (now - _fpsTime[id] > 500) {
+                    var fps = Math.round(_fpsFrames[id] / (now - _fpsTime[id]) * 1000);
+                    var fpsEl = document.getElementById('hs-fps');
+                    if (fpsEl) fpsEl.textContent = fps + ' fps';
+                    _fpsFrames[id] = 0;
+                    _fpsTime[id]   = now;
+                }
+
                 var qtime = Math.floor(t * P.fps);
                 var entries = _prepared[id] || [];
 
@@ -4298,8 +4367,11 @@ else                glyph = '*';        // asterisk</pre>
                     svgH = (window.currentLayout === 'graph_paper_sq' || window.currentLayout === 'graph_paper_sq_banner') ? 1707.08 : 2192;
                 }
 
+                var scaleX = cvs.width / svgW;
+                var scaleY = cvs.height / svgH;
+
                 ctx.save();
-                ctx.scale(cvs.width / svgW, cvs.height / svgH);
+                ctx.scale(scaleX, scaleY);
 
                 for (var i = 0; i < entries.length; i++) {
                     var e = entries[i];
@@ -4307,9 +4379,13 @@ else                glyph = '*';        // asterisk</pre>
                     if (!p2d) p2d = _p2d[e.pathKey];
                     if (!p2d) continue;
 
-                    var on = _visible(e.idx, qtime, P.prob, P.grain);
+                    // Column offset: offset quantized time per group for ripple effect
+                    var gIdx     = Math.floor(i / _GROUP_SIZE);
+                    var colQtime = qtime + gIdx * _colSpread;
+
+                    var on = _visible(e.idx, colQtime, P.prob, P.grain);
                     var phase     = e.idx * 2.39996; // golden ratio phase offset
-                    var flowAlpha = (Math.sin(t * P.flowSpeed + phase) * 0.5 + 0.5) * (P.flowBlend / 100);
+                    var flowAlpha = (Math.sin(t * P.flowSpeed * _flowMult + phase) * 0.5 + 0.5) * (P.flowBlend / 100);
 
                     if (on) {
                         ctx.globalAlpha = Math.min(1, 0.55 + flowAlpha * 0.45);
@@ -4318,7 +4394,7 @@ else                glyph = '*';        // asterisk</pre>
                     }
 
                     ctx.fillStyle = e.color;
-                    ctx.setTransform((cvs.width / svgW) * e.scX, 0, 0, (cvs.height / svgH) * e.scY, (cvs.width / svgW) * e.tx, (cvs.height / svgH) * e.ty);
+                    ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
                     if (e.flip) ctx.transform(-1, 0, 0, -1, 20, 20);
                     if (e.rot)  ctx.rotate(e.rot * Math.PI / 180);
                     ctx.fill(p2d.path || p2d, 'evenodd');
@@ -4376,6 +4452,11 @@ else                glyph = '*';        // asterisk</pre>
                     cvs.style.display = 'block';
                     src.style.visibility = 'hidden';
                     _active[id]    = true;
+                    _paused[id]    = false;
+                    _tAccum[id]    = 0;
+                    _tLast[id]     = performance.now();
+                    _fpsFrames[id] = 0;
+                    _fpsTime[id]   = performance.now();
                     _startTime[id] = performance.now();
                     _frame(id);
                 },
@@ -4397,20 +4478,51 @@ else                glyph = '*';        // asterisk</pre>
                 },
 
                 toggle: function () {
-                    // Toggle all active panels (1, 2, 3)
-                    var ids    = [1, 2, 3];
-                    var anyOn  = ids.some(function (id) { return _active[id]; });
-                    var btn    = document.getElementById('btn-hyperspeed');
+                    var ids   = [1, 2, 3];
+                    var anyOn = ids.some(function (id) { return _active[id]; });
+                    var btn   = document.getElementById('btn-hyperspeed');
+                    var ctrls = document.getElementById('hs-controls');
                     ids.forEach(function (id) {
                         if (document.getElementById('c' + id)) {
                             anyOn ? PlatenHyperspeed.stop(id) : PlatenHyperspeed.start(id);
                         }
                     });
-                    if (btn) btn.textContent = anyOn ? 'Hyperspeed' : 'Still';
+                    if (btn)   btn.textContent = anyOn ? 'Hyperspeed' : 'Still';
+                    if (ctrls) ctrls.classList.toggle('visible', !anyOn);
+
+                    // Reset pause button label when toggling off
+                    if (anyOn) {
+                        var pb = document.getElementById('hs-pause');
+                        if (pb) pb.textContent = 'pause';
+                    }
                 },
 
                 isActive: function () {
                     return [1, 2, 3].some(function (id) { return _active[id]; });
+                },
+
+                togglePause: function () {
+                    var ids = [1, 2, 3];
+                    var anyActive = ids.some(function (id) { return _active[id]; });
+                    if (!anyActive) return;
+                    // Use panel 1 as the pause state reference
+                    var nowPaused = !_paused[1];
+                    ids.forEach(function (id) {
+                        if (_active[id]) {
+                            _paused[id] = nowPaused;
+                            if (!nowPaused) _tLast[id] = performance.now(); // resume from now
+                        }
+                    });
+                    var btn = document.getElementById('hs-pause');
+                    if (btn) btn.textContent = nowPaused ? 'play' : 'pause';
+                },
+
+                setFlowMult: function (v) {
+                    _flowMult = parseInt(v, 10) / 100;
+                },
+
+                setColSpread: function (v) {
+                    _colSpread = parseInt(v, 10);
                 }
             };
         })();
