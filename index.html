@@ -1494,18 +1494,7 @@ else                glyph = '*';        // asterisk</pre>
 
         function getRenderColor(c) {
             var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
-            if (activeCanvas === 'black') {
-                var upper = c.toUpperCase();
-                if (upper === '#000000' || upper === '#1A1A1A' || upper === '#1B1918' || upper === '#0A0A0A' || upper === '#101010' || upper === '#0D0D0D' || upper === '#202020') {
-                    return '#e8e4dc';
-                }
-            } else if (activeCanvas === 'white') {
-                var upper = c.toUpperCase();
-                if (upper === '#FFFFFF' || upper === '#F8F8F8' || upper === '#F2F2F2' || upper === '#EAD8CF' || upper === '#EEDFCC' || upper === '#F2ECE4') {
-                    return '#1a1a1a';
-                }
-            }
-            return c;
+            return activeCanvas === 'black' ? '#e8e4dc' : '#1a1a1a';
         }
 
         function updateSVGColorsForTheme(svg, theme) {
