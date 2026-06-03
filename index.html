@@ -302,14 +302,18 @@
             opacity: 1.0;
         }
 
-        /* Instant header color overrides to prevent lag when switching canvases */
+        /* Instant header and grid numbers color overrides to prevent lag when switching canvases */
         .canvas-white .typewriter-header text,
         .canvas-tan .typewriter-header text,
-        .canvas-olive .typewriter-header text {
+        .canvas-olive .typewriter-header text,
+        .canvas-white svg text,
+        .canvas-white svg tspan {
             fill: #1a1a1a !important;
         }
-        .canvas-black .typewriter-header text {
-            fill: #e8e4dc !important;
+        .canvas-black .typewriter-header text,
+        .canvas-black svg text,
+        .canvas-black svg tspan {
+            fill: #ffffff !important;
         }
 
         /* High-contrast grid numbers for lighter canvas textures */
@@ -319,10 +323,11 @@
         .canvas-tan .grid-numbers text {
             fill: #4E3629 !important;
         }
-
-
         .canvas-olive .grid-numbers text {
             fill: #1B4D3E !important;
+        }
+        .canvas-black .grid-numbers text {
+            fill: #ffffff !important;
         }
 
         .platen-panel:active {
@@ -873,7 +878,7 @@
         }
 
         .canvas-white .typewriter-header text {
-            fill: #000000 !important;
+            fill: #1a1a1a !important;
         }
         .canvas-black .typewriter-header text {
             fill: #ffffff !important;
