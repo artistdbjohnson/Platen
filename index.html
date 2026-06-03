@@ -4278,8 +4278,11 @@ else                glyph = '*';        // asterisk</pre>
                     var px = (f.x + 4 + margin) * sizeX;
                     var py = (f.y + 4 + margin + tyOffset) * sizeY;
                     if (isGraphPaper) {
-                        px = 9 + f.x * sizeX + sizeX / 2;
-                        py = 38 + (f.y - 1) * sizeY + sizeY / 2;
+                        var isGraphPaperSq = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner');
+                        var offX = isGraphPaperSq ? 1 : 0;
+                        var offY = isGraphPaperSq ? 1 : 0;
+                        px = 9 + (f.x + offX) * sizeX;
+                        py = 38 + (f.y + offY + tyOffset) * sizeY;
                     }
 
                     // Space projections — mirrors renderPlaten
