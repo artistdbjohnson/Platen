@@ -1483,12 +1483,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     <button id="btn-out-png" onclick="savePNG()">Download PNG</button>
                     <button id="btn-out-jpg" onclick="saveJPG()">Download JPG</button>
                     <button id="btn-out-svg" onclick="saveSVG('full')">Download SVG</button>
-                    <button id="btn-out-dst" onclick="saveDST()">Download DST</button>
-                    <button id="btn-out-plot" onclick="savePlotterSVG()">Download PLOT</button>
-                    <button id="btn-out-cnc" onclick="saveCNCBlocks()">Download CNC</button>
-                    <button id="btn-out-height" onclick="saveHeightmap()">Download DEPTH</button>
-                    <button id="btn-out-zsvg" onclick="saveZSVG()">Download Z-SVG</button>
-                    <button id="btn-out-triptych" onclick="saveTriptych()">Download TRIPTYCH</button>
                 </div>
                 
                 <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
@@ -2201,16 +2195,12 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     'btn-panel', 'btn-banner', 'btn-banner-sq', 'btn-square', 
                     'btn-grid-39-51', 'btn-banner-39-51', 'btn-grid-us-letter', 
                     'btn-banner-us-letter', 'btn-grid-39-39', 'btn-banner-39-39', 
-                    'btn-out-svg', 'btn-out-png', 'btn-out-jpg', 'btn-out-dst', 'btn-out-plot', 
-                    'btn-out-cnc', 'btn-out-height', 'btn-out-zsvg'
+                    'btn-out-svg', 'btn-out-png', 'btn-out-jpg'
                 ];
                 btnIds.forEach(function(id) {
                     var el = document.getElementById(id);
                     if (el) el.disabled = false;
                 });
-                
-                var btnTrip = document.getElementById('btn-out-triptych');
-                if (btnTrip) btnTrip.disabled = !currentLayout.includes('banner');
 
                 document.getElementById('t-sym').disabled = false;
                 document.getElementById('t-space').disabled = false;
@@ -5713,7 +5703,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             <div class="btn-group" style="display: flex; gap: 10px; margin-left: auto;">
                 <button onclick="downloadGallerySVG()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">download svg</button>
                 <button onclick="downloadGalleryPNG()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">download png</button>
-                <button onclick="downloadGalleryDST()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">download dst</button>
                 <button id="btn-gallery-rec" onclick="startGalleryRecording()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">record loop</button>
                 <button id="btn-gallery-anim" onclick="toggleGalleryAnimation()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">animate</button>
                 <button onclick="loadCuratedIntoMain()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px; text-decoration: underline;">load to main</button>
