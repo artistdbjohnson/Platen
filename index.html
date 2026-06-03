@@ -1483,9 +1483,16 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 <div class="control-grid">
                     <button id="btn-out-png" onclick="savePNG()">Download PNG</button>
                     <button id="btn-out-jpg" onclick="saveJPG()">Download JPG</button>
+                    <button id="btn-out-svg" onclick="saveSVG('full')">Download SVG</button>
+                    <button id="btn-out-dst" onclick="saveDST()">Download DST</button>
+                    <button id="btn-out-plot" onclick="savePlotterSVG()">Download PLOT</button>
+                    <button id="btn-out-cnc" onclick="saveCNCBlocks()">Download CNC</button>
+                    <button id="btn-out-height" onclick="saveHeightmap()">Download DEPTH</button>
+                    <button id="btn-out-zsvg" onclick="saveZSVG()">Download Z-SVG</button>
+                    <button id="btn-out-triptych" onclick="saveTriptych()">Download TRIPTYCH</button>
                 </div>
                 
-                <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+                <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
                     <input type="checkbox" id="inc-bg" checked onchange="renderAll()" style="cursor: pointer; accent-color: #000;">
                     <label for="inc-bg" style="font-size: 9px; cursor: pointer; text-transform: uppercase; opacity: 0.8; letter-spacing: 0.05em;">Include BG Texture</label>
                 </div>
