@@ -1466,10 +1466,10 @@ else                glyph = '*';        // asterisk</pre>
             <div id="hs-controls">
                 <button id="hs-pause" onclick="PlatenHyperspeed.togglePause()">pause</button>
                 <label>flow
-                    <input type="range" id="hs-flow" min="0" max="200" value="60" step="1"
+                    <input type="range" id="hs-flow" min="0" max="200" value="80" step="1"
                            oninput="PlatenHyperspeed.setFlowMult(this.value)">
                 </label>
-                <label id="hs-col-label">column offset
+                <label id="hs-col-label">spread
                     <input type="range" id="hs-col" min="0" max="20" value="5" step="1"
                            oninput="PlatenHyperspeed.setColSpread(this.value)">
                 </label>
@@ -4141,20 +4141,21 @@ else                glyph = '*';        // asterisk</pre>
 
         // ── Hyperspeed Animation Engine (Canvas 2D) ────────────────────────────────
         var PlatenHyperspeed = (function () {
-            var _active    = {};   // id → boolean
-            var _rafIds    = {};   // id → raf handle
-            var _startTime = {};   // id → DOMHighResTimeStamp
-            var _prepared  = {};   // id → array of draw entries
-            var _params    = {};   // id → seed-locked params
-            var _p2d       = null; // path key → Path2D, built once
-            var _paused     = {};   // id → boolean
-            var _tAccum     = {};   // id → accumulated seconds (stops when paused)
-            var _tLast      = {};   // id → last performance.now() at frame
-            var _flowMult   = 1.0;  // global runtime flow multiplier (slider)
-            var _colSpread  = 5;    // quantized-time offset per flower group (slider)
-            var _fpsFrames  = {};   // id → frame count for fps calc
-            var _fpsTime    = {};   // id → last fps sample time
-            var _GROUP_SIZE = 18;   // flowers per group for column-offset ripple
+            var _active      = {};   // id → boolean
+            var _rafIds      = {};   // id → raf handle
+            var _startTime   = {};   // id → DOMHighResTimeStamp
+            var _baseEntries = {};   // id → array of draw entries for base layer
+            var _animEntries = {};   // id → array of draw entries for animation layer
+            var _baseCanvas  = {};   // id → canvas for frozen base layer
+            var _p2d         = null; // path key → Path2D, built once
+            var _paused      = {};   // id → boolean
+            var _tAccum      = {};   // id → accumulated seconds (stops when paused)
+            var _tLast       = {};   // id → last performance.now() at frame
+            var _flowMult    = 1.0;  // global runtime flow multiplier (slider)
+            var _colSpread   = 5;    // quantized-time offset per flower group (slider)
+            var _fpsFrames   = {};   // id → frame count for fps calc
+            var _fpsTime     = {};   // id → last fps sample time
+            var _GROUP_SIZE  = 18;   // flowers per group for column-offset ripple
 
             // Build Path2D cache from MOTIF_PATHS (defined in platen-core.js)
             function _buildPaths() {
@@ -4165,88 +4166,107 @@ else                glyph = '*';        // asterisk</pre>
                 }
             }
 
-            // Deterministic hyperspeed visibility — same hash as AE seedRandom equivalent
-            function _visible(idx, qtime, prob, grain) {
-                var h = (idx * 374761393 + qtime * 668265263 + grain) ^ 0x9e3779b9;
-                h = (h ^ (h >>> 13)) * 1274126177;
-                return ((h >>> 0) % 100) < prob;
+            function _selectFlowers(id) {
+                var flowers = window._lastFlowers && window._lastFlowers[id];
+                if (!flowers || !flowers.length) return {};
+
+                // Count color occurrences
+                var colorCount = {};
+                for (var i = 0; i < flowers.length; i++) {
+                    var c = flowers[i].c;
+                    colorCount[c] = (colorCount[c] || 0) + 1;
+                }
+                var colorKeys = Object.keys(colorCount).sort(function(a,b){
+                    return colorCount[b] - colorCount[a];
+                });
+
+                var isMonochrome = colorKeys.length <= 1 ||
+                    (colorCount[colorKeys[0]] / flowers.length) > 0.88;
+
+                var animSet = {};  // flower index → true
+
+                if (!isMonochrome && colorKeys.length >= 2) {
+                    // Multicolor: select ALL glyphs of the 2nd most prominent color
+                    var targetColor = colorKeys[1];
+                    for (var i = 0; i < flowers.length; i++) {
+                        if (flowers[i].c === targetColor) animSet[i] = true;
+                    }
+                } else {
+                    // Monochrome: seed-deterministic selection of 150-250 mid-density glyphs
+                    var r = makePRNG((window.RENDER_SEED || 9248) + 8888);
+                    var animCount = 150 + r.rin(0, 100);  // 150-250
+
+                    // Build candidate pool: mid-density glyphs (wt 0.36-0.81)
+                    var candidates = [];
+                    for (var i = 0; i < flowers.length; i++) {
+                        var wt = flowers[i].wt;
+                        if (wt >= 0.36 && wt <= 0.81) candidates.push(i);
+                    }
+                    // Fisher-Yates shuffle (seed-deterministic)
+                    for (var j = candidates.length - 1; j > 0; j--) {
+                        var k = r.rin(0, j);
+                        var tmp = candidates[j];
+                        candidates[j] = candidates[k];
+                        candidates[k] = tmp;
+                    }
+                    var pick = Math.min(animCount, candidates.length);
+                    for (var j = 0; j < pick; j++) animSet[candidates[j]] = true;
+                }
+
+                return animSet;
             }
 
-            // Derive seed-locked params from RENDER_SEED using makePRNG
-            function _deriveParams(seed) {
-                var r = makePRNG(seed + 7777);
-                return {
-                    prob:      Math.floor(35 + r.rfl() * 45),   // 35-80%
-                    fps:       Math.floor(6  + r.rfl() * 16),   // 6-22 quantized fps
-                    ghost:     Math.floor(5  + r.rfl() * 15),   // 5-20% ghost alpha
-                    flowBlend: Math.floor(15 + r.rfl() * 40),   // 15-55 flow amount
-                    flowSpeed: 0.4 + r.rfl() * 1.2,             // 0.4-1.6 cycle speed
-                    grain:     r.rin(0, 99999)                   // hash grain
-                };
-            }
-
-            // Pre-compute per-flower draw entries from _lastFlowers[id].
-            // Replicates the projection math from renderPlaten (index.html ~line 2499-2614).
             function _prepareFlowers(id) {
                 var flowers = window._lastFlowers && window._lastFlowers[id];
                 if (!flowers || !flowers.length) return;
+                
+                var animSet = _selectFlowers(id);
+                var r = makePRNG((window.RENDER_SEED || 9248) + 9999);
 
                 var traits  = window.TRAITS || window.RESOLVED_TRAITS || {};
-                var sizes   = getLayoutSizes(currentLayout);
+                var currentLayout = window.currentLayout || 'default';
+                var sizes   = (typeof getLayoutSizes === 'function') ? getLayoutSizes(currentLayout) : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
+                if (id !== 1 && currentLayout !== 'banner' && currentLayout !== 'banner_sq' && currentLayout !== 'banner_32_40' && currentLayout !== 'banner_39_51' && currentLayout !== 'banner_us_letter' && currentLayout !== 'banner_39_39' && currentLayout !== 'graph_paper_banner' && currentLayout !== 'graph_paper_sq_banner') {
+                    sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes('panel') : sizes;
+                }
                 var w       = sizes.w;
                 var h       = sizes.h;
                 var sizeX   = sizes.sizeX;
                 var sizeY   = sizes.sizeY;
                 var rSize   = sizes.rSize;
+                
                 var svgW    = (w + 8) * sizeX;
                 var svgH    = (h + 8) * sizeY;
                 var margin  = 0;
                 var isTypewriter = (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic');
                 var tyOffset = isTypewriter ? 11 : 0;
+                var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
+                if (isGraphPaper) {
+                    svgW = 1696;
+                    svgH = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner') ? 1707.08 : 2192;
+                }
                 var cx_px   = svgW / 2;
                 var cy_px   = svgH / 2;
 
                 // Scale factors matching renderPlaten
                 var baseScX = (rSize / 20) * (isTypewriter ? 1.25 : 1.0);
                 var baseScY = baseScX;
-                var baseScY = baseScX;
 
-                // Color counting to fallback to 2nd dominant color
-                var colorCounts = {};
-                for (var i = 0; i < flowers.length; i++) {
-                    var c = flowers[i].c;
-                    colorCounts[c] = (colorCounts[c] || 0) + 1;
-                }
-                var colorKeys = Object.keys(colorCounts).sort(function(a, b) { return colorCounts[b] - colorCounts[a]; });
-                var targetColor = colorKeys.length > 1 ? colorKeys[1] : null;
-                var randLimit = 150 + Math.random() * 100;
-                var animatedCount = 0;
+                var baseEntries = [];
+                var animEntries = [];
 
                 for (var i = 0; i < flowers.length; i++) {
                     var f = flowers[i];
-                    var isAnimated = false;
-                    if (targetColor) {
-                        if (f.c === targetColor) isAnimated = true;
-                    } else {
-                        if (Math.random() < (randLimit / flowers.length) && animatedCount < randLimit) {
-                            isAnimated = true;
-                            animatedCount++;
-                        }
-                    }
-                    f._isAnimated = isAnimated; // Mark on original array for SVG background sync
-                }
-
-                var entries = [];
-
-                for (var i = 0; i < flowers.length; i++) {
-                    var f = flowers[i];
-                    if (!f._isAnimated) continue;
 
                     // Base pixel position
                     var px = (f.x + 4 + margin) * sizeX;
                     var py = (f.y + 4 + margin + tyOffset) * sizeY;
+                    if (isGraphPaper) {
+                        px = 9 + f.x * sizeX + sizeX / 2;
+                        py = 38 + (f.y - 1) * sizeY + sizeY / 2;
+                    }
 
-                    // Space projections — mirrors renderPlaten lines ~2513-2560
+                    // Space projections — mirrors renderPlaten
                     var yCoords = [py];
                     var fsc = (f.sc || 1);
 
@@ -4304,34 +4324,114 @@ else                glyph = '*';        // asterisk</pre>
                         pathKey = _gs[lv];
                     }
 
+                    f._isAnimated = !!animSet[i]; // Keep marker for backward compat just in case
+                    var pColor = (typeof getRenderColor === 'function') ? getRenderColor(f.c) : f.c;
+
                     // Build one entry per y coordinate (isometric stacking)
                     for (var yi = 0; yi < yCoords.length; yi++) {
                         var yVal = yCoords[yi];
-                        entries.push({
+                        var entry = {
                             idx:     i,                                // original flower index for hash
                             pathKey: pathKey,
-                            color:   f.c,
+                            color:   pColor,
                             tx:      px + (sizeX - rSize) / 2,
                             ty:      yVal + (sizeY - rSize) / 2,
                             scX:     scX,
                             scY:     scY,
                             flip:    !!f.flip,
                             rot:     f.rot || 0
-                        });
+                        };
+
+                        if (animSet[i]) {
+                            entry.phase      = i * 2.39996;
+                            entry.cycleSpeed = 0.4 + r.rfl() * 0.9;
+                            entry.driftX     = (r.rfl() - 0.5) * 3.0;
+                            entry.driftY     = (r.rfl() - 0.5) * 3.0;
+                            entry.scalePulse = r.rfl() < 0.4;
+                            animEntries.push(entry);
+                        } else {
+                            baseEntries.push(entry);
+                        }
                     }
                 }
 
-                _prepared[id] = entries;
+                _baseEntries[id] = baseEntries;
+                _animEntries[id] = animEntries;
+            }
+
+            function _buildBaseLayer(id) {
+                var src = document.getElementById('c' + id);
+                var srcSvg = document.getElementById('s' + id);
+                var w   = src ? (src.width  || 1376) : 1376;
+                var h   = src ? (src.height || 2496) : 2496;
+
+                var offscreen  = document.createElement('canvas');
+                offscreen.width  = w;
+                offscreen.height = h;
+                var ctx = offscreen.getContext('2d');
+
+                var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(window.currentLayout || 'default') : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
+                var l_w = sizes.w, l_h = sizes.h, sizeX = sizes.sizeX, sizeY = sizes.sizeY;
+                var svgW = (l_w + 8) * sizeX;
+                var svgH = (l_h + 8) * sizeY;
+                var isGraphPaper = (window.currentLayout === 'graph_paper' || window.currentLayout === 'graph_paper_sq' || window.currentLayout === 'graph_paper_banner' || window.currentLayout === 'graph_paper_sq_banner');
+                if (isGraphPaper) {
+                    svgW = 1696;
+                    svgH = (window.currentLayout === 'graph_paper_sq' || window.currentLayout === 'graph_paper_sq_banner') ? 1707.08 : 2192;
+                }
+
+                var scaleX = w / svgW;
+                var scaleY = h / svgH;
+
+                ctx.save();
+                ctx.scale(scaleX, scaleY);
+
+                // Draw header text directly to base canvas
+                if (srcSvg) {
+                    var headerGroup = srcSvg.querySelector('.typewriter-header');
+                    if (headerGroup) {
+                        var texts = headerGroup.querySelectorAll('text');
+                        for (var k = 0; k < texts.length; k++) {
+                            var tEl = texts[k];
+                            var tx = parseFloat(tEl.getAttribute('x'));
+                            var ty = parseFloat(tEl.getAttribute('y'));
+                            ctx.globalAlpha = 0.85; // match css
+                            ctx.font = tEl.getAttribute('font-weight') + " " + tEl.getAttribute('font-size') + " " + (tEl.getAttribute('font-family') || "Courier, 'Courier New', monospace");
+                            ctx.fillStyle = tEl.getAttribute('fill');
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            ctx.fillText(tEl.textContent, tx, ty);
+                        }
+                    }
+                }
+                
+                ctx.globalAlpha = 1.0;
+
+                // Draw base entries once
+                var entries = _baseEntries[id] || [];
+                for (var i = 0; i < entries.length; i++) {
+                    var e   = entries[i];
+                    var p2d = _p2d[e.pathKey];
+                    if (!p2d) continue;
+                    
+                    ctx.fillStyle   = e.color;
+                    ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
+                    if (e.flip) ctx.transform(-1, 0, 0, -1, 20, 20);
+                    if (e.rot)  ctx.rotate(e.rot * Math.PI / 180);
+                    ctx.fill(p2d.path || p2d, 'evenodd');
+                }
+                ctx.restore();
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                _baseCanvas[id] = offscreen;
             }
 
             function _frame(id) {
                 var cvs = document.getElementById('c' + id + '-hs');
                 if (!cvs || !_active[id]) return;
                 var ctx = cvs.getContext('2d');
-                var P   = _params[id];
                 var now = performance.now();
 
-                // Accumulate time only when not paused
+                // Accumulate time
                 if (!_paused[id]) {
                     var dt = (now - (_tLast[id] || now)) / 1000;
                     _tAccum[id] = (_tAccum[id] || 0) + dt * _flowMult;
@@ -4339,7 +4439,7 @@ else                glyph = '*';        // asterisk</pre>
                 _tLast[id] = now;
                 var t = _tAccum[id] || 0;
 
-                // FPS counter
+                // FPS
                 _fpsFrames[id] = (_fpsFrames[id] || 0) + 1;
                 if (!_fpsTime[id]) _fpsTime[id] = now;
                 if (now - _fpsTime[id] > 500) {
@@ -4350,17 +4450,14 @@ else                glyph = '*';        // asterisk</pre>
                     _fpsTime[id]   = now;
                 }
 
-                var qtime = Math.floor(t * P.fps);
-                var entries = _prepared[id] || [];
-
+                // Clear and blit frozen base layer
                 ctx.clearRect(0, 0, cvs.width, cvs.height);
+                if (_baseCanvas[id]) ctx.drawImage(_baseCanvas[id], 0, 0);
 
-                // Platen renders SVG at svgW x svgH, but canvases are targetW x targetH (e.g. 1376x2496).
-                // We must scale the drawing context to precisely map the coordinates and avoid hourglass distortion.
                 var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(window.currentLayout || 'default') : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
-                var w = sizes.w, h = sizes.h, sizeX = sizes.sizeX, sizeY = sizes.sizeY;
-                var svgW = (w + 8) * sizeX;
-                var svgH = (h + 8) * sizeY;
+                var l_w = sizes.w, l_h = sizes.h, sizeX = sizes.sizeX, sizeY = sizes.sizeY;
+                var svgW = (l_w + 8) * sizeX;
+                var svgH = (l_h + 8) * sizeY;
                 var isGraphPaper = (window.currentLayout === 'graph_paper' || window.currentLayout === 'graph_paper_sq' || window.currentLayout === 'graph_paper_banner' || window.currentLayout === 'graph_paper_sq_banner');
                 if (isGraphPaper) {
                     svgW = 1696;
@@ -4373,28 +4470,36 @@ else                glyph = '*';        // asterisk</pre>
                 ctx.save();
                 ctx.scale(scaleX, scaleY);
 
+                // Draw live animation layer
+                var entries = _animEntries[id] || [];
                 for (var i = 0; i < entries.length; i++) {
                     var e = entries[i];
-                    var p2d = _p2d[id] && _p2d[id][e.idx];
-                    if (!p2d) p2d = _p2d[e.pathKey];
+                    var p2d = _p2d[e.pathKey];
                     if (!p2d) continue;
 
-                    // Column offset: offset quantized time per group for ripple effect
-                    var gIdx     = Math.floor(i / _GROUP_SIZE);
-                    var colQtime = qtime + gIdx * _colSpread;
+                    // Group spread replaces the binary column offset
+                    var gIdx   = Math.floor(i / _GROUP_SIZE);
+                    var spread = gIdx * _colSpread * 0.1;
 
-                    var on = _visible(e.idx, colQtime, P.prob, P.grain);
-                    var phase     = e.idx * 2.39996; // golden ratio phase offset
-                    var flowAlpha = (Math.sin(t * P.flowSpeed * _flowMult + phase) * 0.5 + 0.5) * (P.flowBlend / 100);
+                    // Smooth sine wave
+                    var sine = Math.sin((t * e.cycleSpeed) + e.phase + spread);
+                    
+                    // Remap sine (-1 to 1) to opacity (0.08 to 1.0)
+                    ctx.globalAlpha = 0.54 + (sine * 0.46);
 
-                    if (on) {
-                        ctx.globalAlpha = Math.min(1, 0.55 + flowAlpha * 0.45);
-                    } else {
-                        ctx.globalAlpha = P.ghost / 100;
+                    var currentScX = e.scX;
+                    var currentScY = e.scY;
+                    if (e.scalePulse) {
+                        var pulse = 1.0 + (sine * 0.05); // +/- 5% scale
+                        currentScX *= pulse;
+                        currentScY *= pulse;
                     }
 
+                    var currentTx = e.tx + (e.driftX * sine);
+                    var currentTy = e.ty + (e.driftY * sine);
+
                     ctx.fillStyle = e.color;
-                    ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
+                    ctx.setTransform(scaleX * currentScX, 0, 0, scaleY * currentScY, scaleX * currentTx, scaleY * currentTy);
                     if (e.flip) ctx.transform(-1, 0, 0, -1, 20, 20);
                     if (e.rot)  ctx.rotate(e.rot * Math.PI / 180);
                     ctx.fill(p2d.path || p2d, 'evenodd');
@@ -4413,42 +4518,21 @@ else                glyph = '*';        // asterisk</pre>
                 prepare: function (id) {
                     _buildPaths();
                     _prepareFlowers(id);
-                    _params[id] = _deriveParams(window.RENDER_SEED || 9248);
                 },
 
                 start: function (id) {
                     if (_active[id]) return;
-                    if (!_prepared[id]) this.prepare(id);
+                    if (!_baseEntries[id]) this.prepare(id);
                     var cvs = document.getElementById('c' + id + '-hs');
                     var src = document.getElementById('c' + id);
                     if (!cvs || !src) return;
 
-                    // Extract header from SVG to use as static background (no flowers)
-                    var svg = document.getElementById('s' + id);
-                    if (svg) {
-                        var clone = svg.cloneNode(true);
-                        var artworkG = clone.querySelector('g:not(.typewriter-header)');
-                        var flowers = window._lastFlowers && window._lastFlowers[id];
-                        if (artworkG && flowers) {
-                            var nodes = Array.from(artworkG.childNodes);
-                            for (var i = 0; i < nodes.length; i++) {
-                                // Exclude the paths that are currently animated so they don't render twice
-                                if (i < flowers.length && flowers[i]._isAnimated) {
-                                    artworkG.removeChild(nodes[i]);
-                                }
-                            }
-                        }
-                        var str = new XMLSerializer().serializeToString(clone);
-                        var blob = new Blob([str], { type: 'image/svg+xml' });
-                        var url = URL.createObjectURL(blob);
-                        cvs.style.backgroundImage = 'url("' + url + '")';
-                        cvs.style.backgroundSize = '100% 100%';
-                        cvs.dataset.bgUrl = url;
-                    }
-
                     // Match canvas pixel dimensions to the static canvas
                     cvs.width  = src.width  || 1376;
                     cvs.height = src.height || 2496;
+                    
+                    _buildBaseLayer(id);
+                    
                     cvs.style.display = 'block';
                     src.style.visibility = 'hidden';
                     _active[id]    = true;
@@ -4475,6 +4559,7 @@ else                glyph = '*';        // asterisk</pre>
                         }
                     }
                     if (src) src.style.visibility = 'visible';
+                    _baseCanvas[id] = null;
                 },
 
                 toggle: function () {
