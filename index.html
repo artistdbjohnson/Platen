@@ -1339,14 +1339,11 @@ else                glyph = '*';        // asterisk</pre>
                     <button id="btn-curate" onclick="curateArtwork()">Curate</button>
                     <button id="btn-gallery-modal" onclick="toggleGalleryModal()">Gallery</button>
                     <button id="btn-set-seed" onclick="setSeed()">Set Seed</button>
+                    <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()">Hyperspeed</button>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; width: 100%; justify-content: space-between;" onclick="toggleAuto()">
                     <span style="font-size: 9px; text-transform: uppercase; user-select: none; opacity: 0.8; letter-spacing: 0.05em;">auto cycle</span>
                     <div id="btn-auto"></div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; width: 100%; justify-content: space-between;" onclick="toggleKeyAnim()">
-                    <span style="font-size: 9px; text-transform: uppercase; user-select: none; opacity: 0.8; letter-spacing: 0.05em;">hyperspeed</span>
-                    <div id="btn-key-anim"></div>
                 </div>
                 <div id="auto-guide" style="font-size: 8px; color: var(--text); display: none; opacity: 0.5; margin-top: 2px;">(Select Randomize to start)</div>
             </div>
@@ -1382,6 +1379,7 @@ else                glyph = '*';        // asterisk</pre>
                         <div class="platen-face front">
                             <div class="platen-loader">rendering...</div>
                             <canvas id="c1" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                            <canvas id="c1-hs" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;"></canvas>
                             <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
                         </div>
                         <div class="platen-face back">
@@ -1400,6 +1398,7 @@ else                glyph = '*';        // asterisk</pre>
                         <div class="platen-face front">
                             <div class="platen-loader">rendering...</div>
                             <canvas id="c2" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                            <canvas id="c2-hs" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;"></canvas>
                             <svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
                         </div>
                         <div class="platen-face back">
@@ -1418,6 +1417,7 @@ else                glyph = '*';        // asterisk</pre>
                         <div class="platen-face front">
                             <div class="platen-loader">rendering...</div>
                             <canvas id="c3" class="qs" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
+                            <canvas id="c3-hs" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;"></canvas>
                             <svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>
                         </div>
                         <div class="platen-face back">
@@ -2804,6 +2804,13 @@ else                glyph = '*';        // asterisk</pre>
                     WorkerPool.push(worker);
 
                     _lastFlowers[id] = flowers; // Store for heightmap/Z-SVG
+                    if (window.PlatenHyperspeed) {
+                        PlatenHyperspeed.prepare(id);
+                        if (PlatenHyperspeed.isActive()) {
+                            PlatenHyperspeed.stop(id);
+                            PlatenHyperspeed.start(id);
+                        }
+                    }
                     _lastWGen[id] = w_gen;
                     _lastHGen[id] = h_gen;
                     if (document.getElementById('card' + id) && document.getElementById('card' + id).classList.contains('flipped') && document.getElementById('breathing-toggle-' + id) && document.getElementById('breathing-toggle-' + id).checked) {
@@ -4088,283 +4095,249 @@ else                glyph = '*';        // asterisk</pre>
             }
         });
 
-        // ── Animation Controls ─────────────────────────────────────────────────────
-        function toggleAnimate() {
-            var isOn = PlatenKeyAnim.toggle();
-            var btn = document.getElementById('btn-animate');
-            if (btn) {
-                btn.classList.toggle('anim-on', isOn);
-                btn.innerHTML = isOn ? '&#9724; Stop' : '&#9654; Animate';
-            }
-        }
+        // ── Hyperspeed Animation Engine (Canvas 2D) ────────────────────────────────
+        var PlatenHyperspeed = (function () {
+            var _active    = {};   // id → boolean
+            var _rafIds    = {};   // id → raf handle
+            var _startTime = {};   // id → DOMHighResTimeStamp
+            var _prepared  = {};   // id → array of draw entries
+            var _params    = {};   // id → seed-locked params
+            var _p2d       = null; // path key → Path2D, built once
 
-        function onAnimSpeed(v) {
-            PlatenKeyAnim.setSpeed(parseInt(v, 10));
-            var el = document.getElementById('anim-speed-val');
-            if (el) el.textContent = v;
-        }
-
-        function onAnimProb(v) {
-            PlatenKeyAnim.setProbability(parseInt(v, 10));
-            var el = document.getElementById('anim-prob-val');
-            if (el) el.textContent = v;
-        }
-
-        function onAnimThresh(v) {
-            PlatenKeyAnim.setBrightThresh(parseFloat(v) / 100.0);
-            var el = document.getElementById('anim-thresh-val');
-            if (el) el.textContent = v;
-        }
-
-        function toggleRecord() {
-            var speed = PlatenKeyAnim.getSpeed();
-            PlatenRecorder.toggle(speed);
-        }
-
-        // ── Platen Key Animation Engine (AE Hyperspeed) ─────────────────────────────
-        var PlatenKeyAnim = (function() {
-            var isKeyAnimOn = false;
-            var _animatedPaths = [];
-            var _rafId = null;
-            var _cachedSVGs = {};
-            var _animCanvasOverride = null;
-            
-            // Simple fast deterministic hash
-            function hash(seed) {
-                var x = Math.sin(seed * 12.9898) * 43758.5453;
-                return x - Math.floor(x);
-            }
-
-            var _startTime = null;
-            var _fps = 12;
-            var _probability = 50;
-            var _ghostOp = 10;
-            var _flowBlend = 25;
-            var _flowSpeed = 1.0;
-
-            function tick(timestamp) {
-                if (!isKeyAnimOn) return;
-                if (!_startTime) _startTime = timestamp;
-                var time = (timestamp - _startTime) / 1000;
-
-                var masterSeed = (typeof RENDER_SEED !== 'undefined') ? RENDER_SEED : 9248;
-
-                for (var i = 0; i < _animatedPaths.length; i++) {
-                    var item = _animatedPaths[i];
-                    var path = item.path;
-                    
-                    // HYPERSPEED AXIS
-                    var quantizedTime = Math.floor(time * _fps);
-                    var seed = masterSeed * 9999 + i * 999 + quantizedTime;
-                    var randVal = hash(seed) * 100;
-                    var hyperspeedOn = randVal < _probability;
-                    var hyperspeedBase = hyperspeedOn ? 100 : _ghostOp;
-
-                    // FIELD FLOW AXIS
-                    var phaseOffset = i * 2.39996; // 2*PI * golden ratio
-                    var fieldFlow = (Math.sin(time * _flowSpeed + phaseOffset) * 0.5 + 0.5) * _flowBlend;
-
-                    // BLEND
-                    var opacityVal = Math.min(hyperspeedBase + fieldFlow, 100) / 100.0;
-                    path.style.opacity = opacityVal;
+            // Build Path2D cache from MOTIF_PATHS (defined in platen-core.js)
+            function _buildPaths() {
+                if (_p2d) return;
+                _p2d = {};
+                for (var k in MOTIF_PATHS) {
+                    try { _p2d[k] = new Path2D(MOTIF_PATHS[k]); } catch(e) {}
                 }
-
-                _rafId = requestAnimationFrame(tick);
             }
 
-            function applyAnimation() {
-                var panels = activePanels();
-                if (!panels.length) return;
-                
-                stopAnimation();
-                isKeyAnimOn = true;
+            // Deterministic hyperspeed visibility — same hash as AE seedRandom equivalent
+            function _visible(idx, qtime, prob, grain) {
+                var h = (idx * 374761393 + qtime * 668265263 + grain) ^ 0x9e3779b9;
+                h = (h ^ (h >>> 13)) * 1274126177;
+                return ((h >>> 0) % 100) < prob;
+            }
 
-                var isTriptych = (currentLayout === 'banner_16_9' || currentLayout === 'banner_1_1');
+            // Derive seed-locked params from RENDER_SEED using makePRNG
+            function _deriveParams(seed) {
+                var r = makePRNG(seed + 7777);
+                return {
+                    prob:      Math.floor(35 + r.rfl() * 45),   // 35-80%
+                    fps:       Math.floor(6  + r.rfl() * 16),   // 6-22 quantized fps
+                    ghost:     Math.floor(5  + r.rfl() * 15),   // 5-20% ghost alpha
+                    flowBlend: Math.floor(15 + r.rfl() * 40),   // 15-55 flow amount
+                    flowSpeed: 0.4 + r.rfl() * 1.2,             // 0.4-1.6 cycle speed
+                    grain:     r.rin(0, 99999)                   // hash grain
+                };
+            }
 
-                var colorCounts = {};
-                var allPaths = [];
+            // Pre-compute per-flower draw entries from _lastFlowers[id].
+            // Replicates the projection math from renderPlaten (index.html ~line 2499-2614).
+            function _prepareFlowers(id) {
+                var flowers = window._lastFlowers && window._lastFlowers[id];
+                if (!flowers || !flowers.length) return;
 
-                panels.forEach(function(pid) {
-                    var svg = document.getElementById('s' + pid);
-                    if (!svg) return;
-                    
-                    if (isTriptych && !_cachedSVGs[pid]) {
-                        _cachedSVGs[pid] = svg.cloneNode(true);
-                    }
+                var traits  = window.TRAITS || window.RESOLVED_TRAITS || {};
+                var sizes   = getLayoutSizes(currentLayout);
+                var w       = sizes.w;
+                var h       = sizes.h;
+                var sizeX   = sizes.sizeX;
+                var sizeY   = sizes.sizeY;
+                var rSize   = sizes.rSize;
+                var svgW    = (w + 8) * sizeX;
+                var svgH    = (h + 8) * sizeY;
+                var margin  = 0;
+                var isTypewriter = (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic');
+                var tyOffset = isTypewriter ? 11 : 0;
+                var cx_px   = svgW / 2;
+                var cy_px   = svgH / 2;
 
-                    var paths = Array.from(svg.querySelectorAll('path[fill], g.extrusion-col[fill]'));
-                    paths.forEach(function(p) {
-                        var c = p.getAttribute('fill') || '#000000';
-                        if (c === 'none') c = p.getAttribute('stroke') || '#000000';
-                        
-                        if (!colorCounts[c]) colorCounts[c] = { count: 0 };
-                        colorCounts[c].count++;
-                        
-                        allPaths.push({ path: p, color: c, svg: svg, pid: pid });
-                    });
-                });
+                // Scale factors matching renderPlaten
+                var baseScX = (rSize / 20) * (isTypewriter ? 1.25 : 1.0);
+                var baseScY = baseScX;
 
-                if (allPaths.length === 0) {
-                    console.log('[PlatenKeyAnim] No paths found');
-                    return;
-                }
+                var entries = [];
 
-                var colorKeys = Object.keys(colorCounts);
-                colorKeys.sort(function(a, b) {
-                    return colorCounts[b].count - colorCounts[a].count;
-                });
+                for (var i = 0; i < flowers.length; i++) {
+                    var f = flowers[i];
 
-                var targetPaths = [];
+                    // Base pixel position
+                    var px = (f.x + 4 + margin) * sizeX;
+                    var py = (f.y + 4 + margin + tyOffset) * sizeY;
 
-                if (colorKeys.length >= 2) {
-                    var targetColor = colorKeys[1]; // 2nd most dominant
-                    console.log('[PlatenKeyAnim] 2nd most dominant color: ' + targetColor + ' (Count: ' + colorCounts[targetColor].count + ')');
-                    
-                    allPaths.forEach(function(item) {
-                        if (item.color === targetColor) targetPaths.push(item);
-                    });
-                } else {
-                    var rndCap = Math.floor(allPaths.length * 0.33);
-                    console.log('[PlatenKeyAnim] Monochrome. Randomly selecting ' + rndCap + ' motifs across canvas.');
-                    
-                    var isBlack = false;
-                    if (colorKeys[0] && colorKeys[0].startsWith('#')) {
-                        var c = colorKeys[0];
-                        var r = parseInt(c.substr(1,2), 16);
-                        var g = parseInt(c.substr(3,2), 16);
-                        var b = parseInt(c.substr(5,2), 16);
-                        if (r <= 65 && g <= 65 && b <= 65 && Math.abs(r-g) <= 15 && Math.abs(r-b) <= 15) {
-                            isBlack = true;
+                    // Space projections — mirrors renderPlaten lines ~2513-2560
+                    var yCoords = [py];
+                    var fsc = (f.sc || 1);
+
+                    if (traits.space === 'isometric') {
+                        var cos30    = 0.86602540378;
+                        var sin30    = 0.5;
+                        var isoScale = 0.58;
+                        var dx = (px - cx_px) * isoScale;
+                        var dy = (py - cy_px) * isoScale;
+                        var bottom_margin = 50;
+                        var max_base_y    = cy_px + (cx_px + cy_px) * isoScale * sin30;
+                        var base_nudge    = Math.max(120, svgH - bottom_margin - max_base_y) + 50;
+                        px = cx_px + (dx - dy) * cos30 + 60;
+                        var py_base = cy_px + (dx + dy) * sin30 + base_nudge;
+                        var py_header = 530;
+                        var hFactor  = Math.pow(f.wt || 0, 2.0);
+                        var py_top   = py_base - hFactor * (py_base - py_header);
+                        if (hFactor < 0.35) {
+                            var nudgeUp = (0.35 - hFactor) * 120;
+                            py_base -= nudgeUp;
+                            py_top  -= nudgeUp;
                         }
+                        fsc = fsc * isoScale * 1.15;
+                        yCoords = [];
+                        var stepVal = 28 * isoScale;
+                        for (var yv = py_base; yv >= py_top; yv -= stepVal) yCoords.push(yv);
+                        if (!yCoords.length || yCoords[yCoords.length - 1] > py_top) yCoords.push(py_top);
+                    } else if (traits.space === 'polar') {
+                        var polarScale = isTypewriter ? 0.92 : 1.05;
+                        var _r     = (f.y / h) * (Math.min(svgW, svgH) / 2 * polarScale);
+                        var _theta = (f.x / w) * Math.PI * 2 - Math.PI / 2;
+                        px = cx_px + Math.cos(_theta) * _r;
+                        py = cy_px + Math.sin(_theta) * _r + 130;
+                        yCoords = [py];
                     }
-                    
-                    if (isBlack && TRAITS.canvas !== 'tan') {
-                        console.log('[PlatenKeyAnim] Monochrome black detected. Temporarily switching canvas to tan.');
-                        _animCanvasOverride = TRAITS.canvas;
-                        TRAITS.canvas = 'tan';
-                        if (typeof updateCanvasTexture === 'function') updateCanvasTexture();
+
+                    // Scale
+                    var scX = baseScX * fsc;
+                    var scY = baseScY * fsc;
+
+                    // Glyph path key
+                    var pathKey = traits.motif || 'typewriter';
+                    if (isTypewriter) {
+                        var _gs = getTypewriterGlyphs(traits.symmetry, traits.motif);
+                        var lv = 0;
+                        if      (f.wt < 0.20) continue;              // below floor — skip
+                        else if (f.wt < 0.36) lv = 0;
+                        else if (f.wt < 0.51) lv = 1;
+                        else if (f.wt < 0.66) lv = 2;
+                        else if (f.wt < 0.81) lv = 3;
+                        else                  lv = 4;
+                        // Ink variance — deterministic ribbon starvation, matches renderer
+                        var _inkRoll = ((f.x * 17 + f.y * 31) % 100) / 100;
+                        if (_inkRoll < 0.12 && lv > 0) lv--;
+                        pathKey = _gs[lv];
                     }
-                    
-                    var pool = allPaths.slice();
-                    pool.sort(function() { return 0.5 - Math.random(); });
-                    targetPaths = pool.slice(0, Math.min(rndCap, pool.length));
-                }
 
-                var targetSet = new Set(targetPaths.map(function(item) { return item.path; }));
-
-                if (isTriptych) {
-                    panels.forEach(function(pid) {
-                        var svg = document.getElementById('s' + pid);
-                        var staticPaths = allPaths.filter(function(item) { return item.pid == pid && !targetSet.has(item.path); });
-                        
-                        var newSvg = svg.cloneNode(false);
-                        var g = document.createElementNS("http://www.w3.org/2000/svg", 'g');
-                        staticPaths.forEach(function(item) {
-                            g.appendChild(item.path.cloneNode(true));
+                    // Build one entry per y coordinate (isometric stacking)
+                    for (var yi = 0; yi < yCoords.length; yi++) {
+                        var yVal = yCoords[yi];
+                        entries.push({
+                            idx:     i,                                // original flower index for hash
+                            pathKey: pathKey,
+                            color:   f.c,
+                            tx:      px + (sizeX - rSize) / 2,
+                            ty:      yVal + (sizeY - rSize) / 2,
+                            scX:     scX,
+                            scY:     scY,
+                            flip:    !!f.flip,
+                            rot:     f.rot || 0
                         });
-                        newSvg.appendChild(g);
-                        
-                        var str = new XMLSerializer().serializeToString(newSvg);
-                        var blob = new Blob([str], { type: 'image/svg+xml' });
-                        var url = URL.createObjectURL(blob);
-                        
-                        var panelDiv = document.getElementById('panel-' + pid);
-                        if (panelDiv) {
-                            panelDiv.dataset.originalBg = panelDiv.style.backgroundImage || '';
-                            if (panelDiv.style.backgroundImage && panelDiv.style.backgroundImage !== 'none') {
-                                panelDiv.style.backgroundImage = 'url("' + url + '"), ' + panelDiv.style.backgroundImage;
-                            } else {
-                                panelDiv.style.backgroundImage = 'url("' + url + '")';
-                            }
-                            panelDiv.dataset.staticSvgUrl = url;
-                        }
-                        
-                        staticPaths.forEach(function(item) {
-                            if (item.path.parentNode) item.path.parentNode.removeChild(item.path);
-                        });
-                    });
+                    }
                 }
 
-                _animatedPaths = targetPaths.map(function(item) {
-                    var currentClass = item.path.getAttribute('class') || '';
-                    var cleanClass = currentClass.replace(/keyanim-path/g, '').trim();
-                    item.path.setAttribute('class', (cleanClass + ' keyanim-path').trim());
-                    return { path: item.path, originalClass: cleanClass };
-                });
-
-                if (_animatedPaths.length > 0) {
-                    _startTime = null;
-                    _rafId = requestAnimationFrame(tick);
-                }
+                _prepared[id] = entries;
             }
 
-            function stopAnimation() {
-                isKeyAnimOn = false;
-                if (_rafId) {
-                    cancelAnimationFrame(_rafId);
-                    _rafId = null;
-                }
-                
-                if (_animCanvasOverride !== null) {
-                    TRAITS.canvas = _animCanvasOverride;
-                    if (typeof updateCanvasTexture === 'function') updateCanvasTexture();
-                    _animCanvasOverride = null;
-                }
-                
-                for (var i = 0; i < _animatedPaths.length; i++) {
-                    var item = _animatedPaths[i];
-                    if (item.path && item.path.parentNode) {
-                        item.path.setAttribute('class', item.originalClass);
-                        item.path.style.opacity = '';
-                    }
-                }
-                
-                var panels = activePanels();
-                panels.forEach(function(pid) {
-                    var panelDiv = document.getElementById('panel-' + pid);
-                    if (panelDiv && panelDiv.dataset.staticSvgUrl) {
-                        URL.revokeObjectURL(panelDiv.dataset.staticSvgUrl);
-                        panelDiv.style.backgroundImage = panelDiv.dataset.originalBg || '';
-                        panelDiv.dataset.staticSvgUrl = '';
-                    }
-                    
-                    if (_cachedSVGs && _cachedSVGs[pid]) {
-                        var svg = document.getElementById('s' + pid);
-                        if (svg && svg.parentNode) {
-                            svg.parentNode.replaceChild(_cachedSVGs[pid].cloneNode(true), svg);
-                        }
-                    }
-                });
-                _cachedSVGs = {};
-                _animatedPaths = [];
-            }
+            // RAF render loop
+            function _frame(id) {
+                var cvs = document.getElementById('c' + id + '-hs');
+                if (!cvs || !_active[id]) return;
+                var ctx = cvs.getContext('2d');
+                var P   = _params[id];
+                var now = performance.now();
+                var t   = (now - _startTime[id]) / 1000;
+                var qtime = Math.floor(t * P.fps);
+                var entries = _prepared[id] || [];
 
-            return {
-                toggle: function() {
-                    if (isKeyAnimOn) {
-                        stopAnimation();
+                ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+                for (var i = 0; i < entries.length; i++) {
+                    var e = entries[i];
+                    var p2d = _p2d[e.pathKey];
+                    if (!p2d) continue;
+
+                    var on = _visible(e.idx, qtime, P.prob, P.grain);
+                    var phase     = e.idx * 2.39996; // golden ratio phase offset
+                    var flowAlpha = (Math.sin(t * P.flowSpeed + phase) * 0.5 + 0.5) * (P.flowBlend / 100);
+
+                    if (on) {
+                        ctx.globalAlpha = Math.min(1, 0.55 + flowAlpha * 0.45);
                     } else {
-                        applyAnimation();
+                        ctx.globalAlpha = P.ghost / 100;
                     }
-                    return isKeyAnimOn;
+
+                    ctx.fillStyle = e.color;
+                    ctx.setTransform(e.scX, 0, 0, e.scY, e.tx, e.ty);
+                    if (e.flip) ctx.transform(-1, 0, 0, -1, 20, 20);
+                    if (e.rot)  ctx.rotate(e.rot * Math.PI / 180);
+                    ctx.fill(p2d, 'evenodd');
+                }
+
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.globalAlpha = 1;
+
+                _rafIds[id] = requestAnimationFrame(function () { _frame(id); });
+            }
+
+            // Public API
+            return {
+                // Call after _lastFlowers[id] is assigned (line ~2794 in index.html)
+                prepare: function (id) {
+                    _buildPaths();
+                    _prepareFlowers(id);
+                    _params[id] = _deriveParams(window.RENDER_SEED || 9248);
                 },
-                isOn: function() { return isKeyAnimOn; },
-                refresh: function() { if (isKeyAnimOn) applyAnimation(); },
-                onRenderComplete: function() { if (isKeyAnimOn) applyAnimation(); },
-                setSpeed: function(s) { _fps = s; },
-                getSpeed: function() { return _fps; },
-                setProbability: function(p) { _probability = p; },
-                setBrightThresh: function(t) { /* Unused */ }
+
+                start: function (id) {
+                    if (_active[id]) return;
+                    if (!_prepared[id]) this.prepare(id);
+                    var cvs = document.getElementById('c' + id + '-hs');
+                    var src = document.getElementById('c' + id);
+                    if (!cvs || !src) return;
+                    // Match canvas pixel dimensions to the static canvas
+                    cvs.width  = src.width  || 1376;
+                    cvs.height = src.height || 2496;
+                    cvs.style.display = 'block';
+                    src.style.display = 'none';
+                    _active[id]    = true;
+                    _startTime[id] = performance.now();
+                    _frame(id);
+                },
+
+                stop: function (id) {
+                    _active[id] = false;
+                    if (_rafIds[id]) cancelAnimationFrame(_rafIds[id]);
+                    var cvs = document.getElementById('c' + id + '-hs');
+                    var src = document.getElementById('c' + id);
+                    if (cvs) cvs.style.display = 'none';
+                    if (src) src.style.display = 'block';
+                },
+
+                toggle: function () {
+                    // Toggle all active panels (1, 2, 3)
+                    var ids    = [1, 2, 3];
+                    var anyOn  = ids.some(function (id) { return _active[id]; });
+                    var btn    = document.getElementById('btn-hyperspeed');
+                    ids.forEach(function (id) {
+                        if (document.getElementById('c' + id)) {
+                            anyOn ? PlatenHyperspeed.stop(id) : PlatenHyperspeed.start(id);
+                        }
+                    });
+                    if (btn) btn.textContent = anyOn ? 'Hyperspeed' : 'Still';
+                },
+
+                isActive: function () {
+                    return [1, 2, 3].some(function (id) { return _active[id]; });
+                }
             };
         })();
-
-        function toggleKeyAnim() {
-            var isOn = PlatenKeyAnim.toggle();
-            var btn = document.getElementById('btn-key-anim');
-            if (btn) {
-                btn.classList.toggle('active', isOn);
-            }
-        }
 
         // ── Boot ──────────────────────────────────────────────────────────────────────
         // Initial render: start immediately with random art once DOM and resources are ready
