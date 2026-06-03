@@ -2430,12 +2430,9 @@ else                glyph = '*';        // asterisk</pre>
             offscreen.height = h;
             var offCtx = offscreen.getContext('2d');
             
-            var includeBG = document.getElementById('inc-bg') ? document.getElementById('inc-bg').checked : true;
-            
             if (offCtx) {
-                if (backgroundImg && includeBG) {
-                    offCtx.drawImage(backgroundImg, 0, 0, w, h);
-                }
+                // Keep the display canvas transparent so the CSS container background
+                // image is visible underneath. This allows instant background swaps.
                 offCtx.drawImage(foregroundImg, 0, 0);
             }
             
@@ -3776,36 +3773,11 @@ else                glyph = '*';        // asterisk</pre>
                 el.className = 'platen-panel ' + (isBgLoading ? 'loading ' : '') + canvasClass;
             });
 
-            // Re-render WebGL canvases with the new background texture
+            // Update back canvas synchronously to match the new background
             var panels = activePanels();
             panels.forEach(function (id) {
-                var canvas = document.getElementById('c' + id);
-                var svg = document.getElementById('s' + id);
-                var panel = document.getElementById('panel' + id);
-                if (panel && (!window.PlatenHyperspeed || !PlatenHyperspeed.isActive())) panel.classList.add('loading'); // Instantly hide during async bake if not in Motus mode
-                
-                if (canvas && svg) {
-                    var activeBackground = resolveCanvasBackground(window.RESOLVED_TRAITS || TRAITS, RENDER_SEED);
-                    var headerTextColor = (activeBackground === '#0a0a0a' || 
-                      activeBackground === '#000000' ||
-                      activeBackground === 'black')
-                      ? '#e8e4dc' : '#1a1a1a';
-                    var headerTexts = svg.querySelectorAll('.typewriter-header text');
-                    headerTexts.forEach(function(el) {
-                        el.setAttribute('fill', headerTextColor);
-                    });
-                    var svgString = new XMLSerializer().serializeToString(svg);
-                    var svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-                    var url = URL.createObjectURL(svgBlob);
-                    var svgImg = new Image();
-                    svgImg.onload = function() {
-                        drawToWebGL(canvas, svgImg, img);
-                        URL.revokeObjectURL(url);
-                        if (panel) panel.classList.remove('loading'); // Show when finished baking
-                    };
-                    svgImg.src = url;
-                } else {
-                    if (panel) panel.classList.remove('loading');
+                if (window.drawBackCanvas) {
+                    window.drawBackCanvas(id);
                 }
             });
         }
