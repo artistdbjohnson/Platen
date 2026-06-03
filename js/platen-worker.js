@@ -1,8 +1,7 @@
 // PLATEN · by douglxss · github.com/artistdbjohnson/Platen
 // Import the extracted modules for configuration, motifs, and generating parameters
 
-// Added cache-busting for development
-importScripts('platen-core.js?t=' + Date.now(), 'platen-motifs.js?t=' + Date.now(), 'platen-engines.js?t=' + Date.now());
+importScripts('platen-core.js', 'platen-motifs.js', 'platen-engines.js');
 
 onmessage = function (e) {
     var data = e.data;

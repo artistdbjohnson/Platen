@@ -1373,7 +1373,7 @@
     <main class="index-grid">
         <!-- LEFT COLUMN: ABOUT -->
         <section class="col-about">
-            <h2>PLATEN by DLGXSS</h2>
+            <h2>PLATEN by DGLXSS</h2>
             <p>A typewriter shop in West Los Angeles. My son was four, running the shop floor between dead ribbons and open cases while I paid for an Olympia SM3 with one intention. Write a novel no one would ever read. Private. Something to pass down to him one day.</p>
             <p>The novel stayed unfinished. The SM3 never did.</p>
             <p>Then #plottertwitter. Artists feeding algorithms into machines, ink finding paper one mechanical decision at a time. Paul Prudence holding a pen against a platen roller, discovering he had a hand-operated plotter in his studio the whole time. Henri Chopin in 1985 mapping density through a split ribbon, blue and red, building form from the weight of repeated strikes. Ruth Wolf-Rehfeldt typing one word across an entire page until the word became a shape and the shape carried the meaning.</p>
@@ -1445,6 +1445,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
         <section class="col-controls">
             <div class="control-section">
                 <h3>Parameters</h3>
+                <div class="trait"><span class="trait-label">Layout</span><select class="trait-select" id="t-layout" onchange="setLayout(this.value);"></select></div>
                 <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym" onchange="TRAITS.symmetry=this.value; renderAll();"></select></div>
                 <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space" onchange="TRAITS.space=this.value; renderAll();"></select></div>
                 <div class="trait"><span class="trait-label">Motif</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value; renderAll();"></select></div>
@@ -1604,6 +1605,10 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 el.setAttribute('data-theme', 'light');
                 btn.textContent = '☾';
             }
+            updateCanvasTexture();
+            activePanels().forEach(function (id) {
+                if (window.drawBackCanvas) window.drawBackCanvas(id);
+            });
         }
 
         function toggleAbout() {
@@ -1736,6 +1741,20 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             MOTIF_PATHS['platen-flower'] = FLOWER_PATH;
         }
 
+
+        // ── Layout Options ──
+        var LAYOUT_OPTS = ['grid_us_letter', 'panel', 'banner', 'banner_sq', 'square', 'graph_paper', 'graph_paper_banner', 'graph_paper_sq', 'graph_paper_sq_banner'];
+        var LAYOUT_DESCS = {
+            'grid_us_letter': 'Platen 8.5" x 11" US Letter',
+            'panel': 'Panel 9:16 Single',
+            'banner': 'Banner 16:9 Triptych',
+            'banner_sq': 'Banner 1:1 Triptych',
+            'square': 'Square 1:1 Single',
+            'graph_paper': 'Graph Paper Scan',
+            'graph_paper_banner': 'Graph Paper Scan Triptych',
+            'graph_paper_sq': 'Graph Paper 1:1',
+            'graph_paper_sq_banner': 'Graph Paper 1:1 Triptych'
+        };
 
         // ── Traits ────────────────────────────────────────────────────────────────────
         var TRAITS = {
@@ -1915,6 +1934,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         desc = " [" + MOTIF_DESCS[key] + "]";
                     } else if (id === 't-canvas' && typeof CANVAS_DESCS !== 'undefined' && CANVAS_DESCS[key]) {
                         desc = " [" + CANVAS_DESCS[key] + "]";
+                    } else if (id === 't-layout' && typeof LAYOUT_DESCS !== 'undefined' && LAYOUT_DESCS[key]) {
+                        desc = " [" + LAYOUT_DESCS[key] + "]";
                     }
                     var fullText = key + desc;
                     o.value = key;
@@ -1978,6 +1999,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 if ((TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin')) TRAITS.motif = 'platen';
             }
 
+            populateSelect('t-layout', LAYOUT_OPTS, currentLayout);
             populateSelect('t-sym', SYMMETRY_OPTS, TRAITS.symmetry);
             populateSelect('t-space', SPACE_OPTS, TRAITS.space);
             populateSelect('t-motif', MOTIF_OPTS, TRAITS.motif);
@@ -2056,16 +2078,15 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             _renderGeneration++;
             var thisGen = _renderGeneration;
 
-            // Terminate active workers and re-warm the pool to stop old generation processing instantly
+            // Terminate ONLY active workers currently running to release CPU, and replenish them
             ActiveWorkers.forEach(function(w) {
                 try { w.terminate(); } catch (e) {}
+                WorkerPool.push(new Worker('js/platen-worker.js'));
             });
             ActiveWorkers = [];
-            WorkerPool.forEach(function(w) {
-                try { w.terminate(); } catch (e) {}
-            });
-            WorkerPool = [];
-            for (var i = 0; i < MAX_WORKERS; i++) {
+
+            // Ensure the worker pool has at least MAX_WORKERS warmed up
+            while (WorkerPool.length < MAX_WORKERS) {
                 WorkerPool.push(new Worker('js/platen-worker.js'));
             }
 
@@ -2142,7 +2163,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     }
                     if (runTraits.engine === 'random') runTraits.engine = ENGINE_OPTS[Math.floor(Math.random() * (ENGINE_OPTS.length - 1)) + 1];
                     
-                    if (runTraits.canvas !== 'graph_paper') {
+                    if (runTraits.canvas === 'random' || !runTraits.canvas || runTraits.canvas === 'both') {
                         var affinity = (PALETTES[runTraits.chromes] && PALETTES[runTraits.chromes].canvasAffinity) ? PALETTES[runTraits.chromes].canvasAffinity : 'both';
                         if (affinity === 'paper') {
                             runTraits._algoCanvas = 'WHITE';
@@ -2152,6 +2173,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             runTraits._algoCanvas = (RENDER_SEED % 3 === 0) ? 'BLACK' : 'WHITE';
                         }
                         runTraits.canvas = runTraits._algoCanvas.toLowerCase();
+                    } else if (runTraits.canvas !== 'graph_paper') {
+                        runTraits._algoCanvas = runTraits.canvas.toUpperCase();
                     } else {
                         runTraits._algoCanvas = null;
                     }
@@ -2174,7 +2197,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     'btn-panel', 'btn-banner', 'btn-banner-sq', 'btn-square', 
                     'btn-grid-39-51', 'btn-banner-39-51', 'btn-grid-us-letter', 
                     'btn-banner-us-letter', 'btn-grid-39-39', 'btn-banner-39-39', 
-                    'btn-out-svg', 'btn-out-png', 'btn-out-dst', 'btn-out-plot', 
+                    'btn-out-svg', 'btn-out-png', 'btn-out-jpg', 'btn-out-dst', 'btn-out-plot', 
                     'btn-out-cnc', 'btn-out-height', 'btn-out-zsvg'
                 ];
                 btnIds.forEach(function(id) {
@@ -2363,11 +2386,11 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             
             // 1. Title Line
             var title = "";
-            var titleMid = "-  BY DLGXSS  -";
+            var titleMid = "-  BY DGLXSS  -";
             var titleRight = "SEED #" + seed;
             var fullTitle = titleWord + "  " + titleMid + "  " + titleRight;
-            var medTitle = titleWord + "  -  DLGXSS  -  " + titleRight;
-            var compTitle = titleWord + "  -  DLGXSS  -  #" + seed;
+            var medTitle = titleWord + "  -  DGLXSS  -  " + titleRight;
+            var compTitle = titleWord + "  -  DGLXSS  -  #" + seed;
 
             if (w >= fullTitle.length) {
                 // Symmetrically center the middle text titleMid:
@@ -5482,7 +5505,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         var newSvg = doc.documentElement;
                         newSvg.id = 's' + pid;
                         newSvg.className = 'qs';
-                        newSvg.style.display = 'none';
+                        newSvg.style.display = 'block';
                         if (oldSvg) {
                             oldSvg.parentNode.replaceChild(newSvg, oldSvg);
                         } else {
