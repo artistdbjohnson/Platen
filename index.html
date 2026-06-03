@@ -2804,6 +2804,7 @@ else                glyph = '*';        // asterisk</pre>
                     WorkerPool.push(worker);
 
                     _lastFlowers[id] = flowers; // Store for heightmap/Z-SVG
+                    window._lastFlowers[id] = flowers; // Expose for PlatenHyperspeed
                     if (window.PlatenHyperspeed) {
                         PlatenHyperspeed.prepare(id);
                         if (PlatenHyperspeed.isActive()) {
@@ -4301,11 +4302,28 @@ else                glyph = '*';        // asterisk</pre>
                     var cvs = document.getElementById('c' + id + '-hs');
                     var src = document.getElementById('c' + id);
                     if (!cvs || !src) return;
+
+                    // Extract header from SVG to use as static background (no flowers)
+                    var svg = document.getElementById('s' + id);
+                    if (svg) {
+                        var clone = svg.cloneNode(true);
+                        var paths = clone.querySelectorAll('path[fill], g.extrusion-col[fill]');
+                        for (var i = 0; i < paths.length; i++) {
+                            if (paths[i].parentNode) paths[i].parentNode.removeChild(paths[i]);
+                        }
+                        var str = new XMLSerializer().serializeToString(clone);
+                        var blob = new Blob([str], { type: 'image/svg+xml' });
+                        var url = URL.createObjectURL(blob);
+                        cvs.style.backgroundImage = 'url("' + url + '")';
+                        cvs.style.backgroundSize = '100% 100%';
+                        cvs.dataset.bgUrl = url;
+                    }
+
                     // Match canvas pixel dimensions to the static canvas
                     cvs.width  = src.width  || 1376;
                     cvs.height = src.height || 2496;
                     cvs.style.display = 'block';
-                    src.style.display = 'none';
+                    src.style.visibility = 'hidden';
                     _active[id]    = true;
                     _startTime[id] = performance.now();
                     _frame(id);
@@ -4316,8 +4334,15 @@ else                glyph = '*';        // asterisk</pre>
                     if (_rafIds[id]) cancelAnimationFrame(_rafIds[id]);
                     var cvs = document.getElementById('c' + id + '-hs');
                     var src = document.getElementById('c' + id);
-                    if (cvs) cvs.style.display = 'none';
-                    if (src) src.style.display = 'block';
+                    if (cvs) {
+                        cvs.style.display = 'none';
+                        if (cvs.dataset.bgUrl) {
+                            URL.revokeObjectURL(cvs.dataset.bgUrl);
+                            cvs.style.backgroundImage = '';
+                            cvs.dataset.bgUrl = '';
+                        }
+                    }
+                    if (src) src.style.visibility = 'visible';
                 },
 
                 toggle: function () {
