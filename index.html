@@ -1473,15 +1473,15 @@
         /* Float controls overlay */
         .fs-hud {
             position: fixed;
-            bottom: 32px;
+            bottom: 16px;
             left: 50%;
             transform: translateX(-50%) translateY(10px);
             background: rgba(15, 15, 15, 0.7);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 30px;
-            padding: 8px 24px;
+            border-radius: 24px;
+            padding: 4px 18px;
             display: flex;
             align-items: center;
             gap: 16px;
@@ -1507,8 +1507,8 @@
             text-transform: uppercase;
             letter-spacing: 0.15em;
             cursor: pointer;
-            padding: 8px 14px;
-            border-radius: 20px;
+            padding: 5px 12px;
+            border-radius: 16px;
             transition: background 0.2s, color 0.2s;
             opacity: 0.6;
         }
@@ -1563,6 +1563,10 @@
         <button id="fs-btn-stack" onclick="fsToggleStack()">Stack: Off</button>
         <div class="fs-divider"></div>
         <button id="fs-btn-clear" onclick="fsClearStack()">Clear Stack</button>
+        <div class="fs-divider"></div>
+        <button id="fs-btn-motus" onclick="fsToggleMotus()">Motus: Off</button>
+        <div id="fs-motus-divider" class="fs-divider"></div>
+        <button id="fs-btn-motus-mode" onclick="fsCycleMotusMode()">Flow</button>
         <div class="fs-divider"></div>
         <button id="fs-btn-play-pause" onclick="fsTogglePlayPause()">Pause</button>
         <div class="fs-divider"></div>
@@ -2034,11 +2038,27 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             window._stackLayers = prevStack;
         }
 
+        function fsToggleMotus() {
+            if (window.PlatenHyperspeed) {
+                PlatenHyperspeed.toggle();
+                fsUpdateHudUI();
+            }
+        }
+
+        function fsCycleMotusMode() {
+            if (window.PlatenHyperspeed) {
+                PlatenHyperspeed.cycleMode();
+                fsUpdateHudUI();
+            }
+        }
+
         function fsUpdateHudUI() {
             var btnMode = document.getElementById('fs-btn-mode');
             var btnInt = document.getElementById('fs-btn-interval');
             var btnPP = document.getElementById('fs-btn-play-pause');
             var btnStack = document.getElementById('fs-btn-stack');
+            var btnMotus = document.getElementById('fs-btn-motus');
+            var btnMotusMode = document.getElementById('fs-btn-motus-mode');
             
             if (btnMode) {
                 btnMode.textContent = 'Mode: ' + (_autoMode === 'regenerate' ? 'Regenerate' : 'Randomize');
@@ -2051,6 +2071,23 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             if (btnStack) {
                 btnStack.textContent = 'Stack: ' + (window._stackLayers ? 'On' : 'Off');
                 btnStack.classList.toggle('active', window._stackLayers);
+            }
+
+            if (btnMotus && window.PlatenHyperspeed) {
+                var motusActive = PlatenHyperspeed.isActive();
+                btnMotus.textContent = 'Motus: ' + (motusActive ? 'On' : 'Off');
+                btnMotus.classList.toggle('active', motusActive);
+                
+                var divMotus = document.getElementById('fs-motus-divider');
+                if (divMotus) divMotus.style.display = motusActive ? 'block' : 'none';
+                
+                if (btnMotusMode) {
+                    btnMotusMode.style.display = motusActive ? 'inline-block' : 'none';
+                    // Synchronize mode label with PlatenHyperspeed's current state
+                    var activeMode = PlatenHyperspeed.getMode ? PlatenHyperspeed.getMode() : 'flow';
+                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
+                    btnMotusMode.textContent = labels[activeMode] || 'FLOW';
+                }
             }
             
             if (btnPP) {
@@ -2371,6 +2408,44 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             }
             
             sel.value = val;
+            
+            // Update native select option disabled attributes based on current state
+            var isVortexActive = (typeof PlatenHyperspeed !== 'undefined' && PlatenHyperspeed.isActive && PlatenHyperspeed.isActive() && PlatenHyperspeed.getMode() === 'vortex');
+            var restrictTypewriter = ['panel', 'banner', 'square', 'banner_sq', 'graph_paper', 'graph_paper_banner', 'graph_paper_sq', 'graph_paper_sq_banner'].includes(currentLayout);
+
+            for (var i = 0; i < sel.options.length; i++) {
+                var optVal = sel.options[i].value;
+                var isDisabled = false;
+                if (id === 't-space' && isVortexActive) {
+                    if (['isometric', 'hyperbolic', 'planar', 'moire'].indexOf(optVal) !== -1) {
+                        isDisabled = true;
+                    }
+                } else if (id === 't-motif' && optVal === 'typewriter') {
+                    isDisabled = restrictTypewriter;
+                } else if (id === 't-chrome' && optVal.indexOf('typewriter') !== -1) {
+                    isDisabled = restrictTypewriter;
+                }
+                sel.options[i].disabled = isDisabled;
+            }
+
+            // Sync custom dropdown item states (disabled/enabled) with native option elements
+            var customItems = sel.parentNode.querySelectorAll('.cd-item');
+            for (var i = 0; i < sel.options.length; i++) {
+                var nativeOpt = sel.options[i];
+                var customDiv = customItems[i];
+                if (customDiv) {
+                    if (nativeOpt.disabled) {
+                        customDiv.style.opacity = '0.35';
+                        customDiv.style.pointerEvents = 'none';
+                        customDiv.style.cursor = 'default';
+                    } else {
+                        customDiv.style.opacity = '1.0';
+                        customDiv.style.pointerEvents = 'auto';
+                        customDiv.style.cursor = 'pointer';
+                    }
+                }
+            }
+
             var customSelected = sel.parentNode.querySelector('.cd-selected');
             if (customSelected && sel.options[sel.selectedIndex]) {
                 customSelected.textContent = sel.options[sel.selectedIndex].textContent;
@@ -2393,6 +2468,18 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 PlatenHyperspeed.setMode('flow');
             }
 
+            // Force space to polar if vortex is active and currently on a restricted space
+            var isVortexActive = (typeof PlatenHyperspeed !== 'undefined' && PlatenHyperspeed.isActive && PlatenHyperspeed.isActive() && PlatenHyperspeed.getMode() === 'vortex');
+            if (isVortexActive && ['isometric', 'hyperbolic', 'planar', 'moire'].indexOf(TRAITS.space) !== -1) {
+                TRAITS.space = 'polar';
+                if (window.RESOLVED_TRAITS) {
+                    window.RESOLVED_TRAITS.space = 'polar';
+                }
+                setTimeout(function() {
+                    renderAll();
+                }, 0);
+            }
+
             populateSelect('t-sym', SYMMETRY_OPTS, TRAITS.symmetry);
             populateSelect('t-space', SPACE_OPTS, TRAITS.space);
             populateSelect('t-motif', MOTIF_OPTS, TRAITS.motif);
@@ -2400,23 +2487,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             populateSelect('t-engine', ENGINE_OPTS, TRAITS.engine);
             populateSelect('t-canvas', CANVAS_OPTS, TRAITS.canvas);
             
-            var motifSelect = document.getElementById('t-motif');
-            if (motifSelect) {
-                for (var i = 0; i < motifSelect.options.length; i++) {
-                    if (motifSelect.options[i].value === 'typewriter') {
-                        motifSelect.options[i].disabled = restrictTypewriter;
-                    }
-                }
-            }
-            
-            var chromeSelect = document.getElementById('t-chrome');
-            if (chromeSelect) {
-                for (var i = 0; i < chromeSelect.options.length; i++) {
-                    if (chromeSelect.options[i].value.indexOf('typewriter') !== -1) {
-                        chromeSelect.options[i].disabled = restrictTypewriter;
-                    }
-                }
-            }
             var canvasVal = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
             var btnBlack = document.getElementById('btn-canvas-black');
             var btnWhite = document.getElementById('btn-canvas-white');
@@ -5475,6 +5545,9 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     if (btn) btn.textContent = _isGloballyOn ? 'Motus: ON' : 'Motus: OFF';
                     var sel = document.getElementById('motus-dropdown-container');
                     if (sel) sel.style.display = _isGloballyOn ? 'block' : 'none';
+                    if (typeof updateTraitBar === 'function') {
+                        updateTraitBar();
+                    }
                 },
 
                 setMode: function (mode) {
@@ -5497,6 +5570,9 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                                 PlatenHyperspeed.start(id);
                             }
                         });
+                        if (typeof updateTraitBar === 'function') {
+                            updateTraitBar();
+                        }
                     }
                 },
 
@@ -5516,6 +5592,9 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     _animMode = modes[(idx + 1) % modes.length];
                     var btn = document.getElementById('hs-mode-btn');
                     if (btn) btn.textContent = labels[_animMode];
+                    if (typeof updateTraitBar === 'function') {
+                        updateTraitBar();
+                    }
                 },
 
                 setSpeed: function (val) {
