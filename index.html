@@ -592,11 +592,55 @@
         }
 
         #canvas-wrap.banner_32_40 .platen-panel {
-            width: min(calc((100vw - 120px) / 3), calc(100% * 32 / 40));
-            height: min(100%, calc(((100vw - 120px) / 3) * 40 / 32));
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        /* Custom Motus Dropdown */
+        .motus-dropdown {
+            position: relative;
+            flex: 1;
+        }
+        .motus-dropdown-btn {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            text-transform: uppercase;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            width: 100%;
+            text-align: right;
+            padding: 2px 4px;
+        }
+        .motus-dropdown-btn:hover {
+            opacity: 0.8;
+            color: #fff;
+        }
+        .motus-dropdown-content {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            z-index: 100;
+            min-width: 100px;
+        }
+        .motus-dropdown-content div {
+            padding: 6px 12px;
+            text-align: right;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+        .motus-dropdown-content div:hover {
+            background: #222;
+            color: #fff;
+        }
+        .motus-dropdown.open .motus-dropdown-content {
+            display: block;
         }
 
         #canvas-wrap.banner_32_40 .platen-panel svg {
@@ -1475,15 +1519,18 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     <button id="btn-curate" onclick="curateArtwork()">Curate</button>
                     <button id="btn-gallery-modal" onclick="toggleGalleryModal()">Gallery</button>
                     <button id="btn-set-seed" onclick="setSeed()">Set Seed</button>
-                    <div style="display: flex; gap: 6px; align-items: stretch;">
+                    <div style="display: flex; gap: 6px; align-items: stretch; position: relative;">
                         <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()" style="flex: 1;">Motus: OFF</button>
-                        <select id="motus-mode-select" class="trait-select" onchange="PlatenHyperspeed.setMode(this.value)" style="display: none; padding-left: 4px; padding-right: 4px; flex: 1;">
-                            <option value="blend">blend</option>
-                            <option value="flow">flow</option>
-                            <option value="flicker">flicker</option>
-                            <option value="moire">moiré</option>
-                            <option value="iso_col">iso_col</option>
-                        </select>
+                        <div id="motus-dropdown-container" class="motus-dropdown" style="display: none;">
+                            <button id="motus-mode-btn" class="motus-dropdown-btn" onclick="document.getElementById('motus-dropdown-container').classList.toggle('open')">BLEND</button>
+                            <div class="motus-dropdown-content" onclick="document.getElementById('motus-dropdown-container').classList.remove('open')">
+                                <div onclick="PlatenHyperspeed.setMode('blend')">BLEND</div>
+                                <div onclick="PlatenHyperspeed.setMode('flow')">FLOW</div>
+                                <div onclick="PlatenHyperspeed.setMode('flicker')">FLICKER</div>
+                                <div onclick="PlatenHyperspeed.setMode('moire')">MOIRÉ</div>
+                                <div onclick="PlatenHyperspeed.setMode('iso_col')">ISO_COL</div>
+                            </div>
+                        </div>
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <span style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.5; text-transform: lowercase;">canvas:</span>
@@ -4820,14 +4867,25 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                         if (lv === -1) continue;
 
-                        var pKey = (glyphSet && glyphSet[lv]) ? glyphSet[lv] : e.pathKey;
+                        var iso_glyphs = ['comma', 'dot', 'plus', 'x', 'asterisk', 'slash', 'hash', 'dash'];
+                        var gIdx = Math.floor(f * iso_glyphs.length * 0.99);
+                        var pKey = _p2d[iso_glyphs[gIdx]] ? iso_glyphs[gIdx] : e.pathKey;
                         var p2d = _p2d[pKey] || _p2d[e.pathKey];
 
                         var elev = f * 72; // Subtract from ty!
                         var drawTy = e.ty - elev;
                         var drawQuineY = e.quineY - elev;
 
-                        var colColor = (e.tx / svgW < 0.46) ? CORAL_COLORS[lv] : SLATE_COLORS[lv];
+                        var palettes = [
+                            ['#b89cf0','#8b5cf6','#c026d3','#ea580c','#f2b705'], // Moire vibes
+                            ['#fca5a5','#f87171','#ef4444','#dc2626','#b91c1c'], // Coral intense
+                            ['#86efac','#4ade80','#22c55e','#16a34a','#15803d'], // Greens
+                            ['#93c5fd','#60a5fa','#3b82f6','#2563eb','#1d4ed8'], // Blues
+                            ['#fde047','#facc15','#eab308','#ca8a04','#a16207']  // Yellows
+                        ];
+                        var pIdx = Math.floor(e.col * 0.20 + iso_t * 1.5) % palettes.length;
+                        if (pIdx < 0) pIdx += palettes.length;
+                        var colColor = palettes[pIdx][lv];
                         
                         ctx.globalAlpha = 1.0;
                         ctx.fillStyle = colColor;
@@ -4864,21 +4922,27 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         // Original blend/flow/flicker modes
                         var fieldFlow = 0;
                         if (_animMode === 'blend' || _animMode === 'flow') {
-                            var phaseOffset = i * 2.39996; // 2*PI * golden ratio
-                            fieldFlow = (Math.sin(t * _flowSpeed + phaseOffset) * 0.5 + 0.5) * _flowBlend;
+                            var phaseOffset = (e.tx * 0.05) + (e.ty * 0.03); // Spatial wave
+                            fieldFlow = Math.sin(t * 1.5 + phaseOffset) * 0.5 + 0.5;
                         }
 
                         var hyperspeedBase = 1.0;
-                        if (_animMode === 'blend' || _animMode === 'flicker') {
+                        if (_animMode === 'flicker') {
                             var h = (i * 374761393 + qTime * 668265263 + masterSeed) ^ 0x9e3779b9;
                             h = (h ^ (h >>> 13)) * 1274126177;
                             var hyperspeedOn = ((h >>> 0) % 100) < _animProb;
                             hyperspeedBase = hyperspeedOn ? 1.0 : _ghostOp;
                         } else if (_animMode === 'flow') {
-                            hyperspeedBase = _ghostOp;
+                            hyperspeedBase = _ghostOp + fieldFlow * (1.0 - _ghostOp);
+                        } else if (_animMode === 'blend') {
+                            var h = (i * 374761393 + qTime * 668265263 + masterSeed) ^ 0x9e3779b9;
+                            h = (h ^ (h >>> 13)) * 1274126177;
+                            var hyperspeedOn = ((h >>> 0) % 100) < _animProb;
+                            var ambient = _ghostOp + fieldFlow * 0.4;
+                            hyperspeedBase = hyperspeedOn ? 1.0 : ambient;
                         }
 
-                        ctx.globalAlpha = Math.min(hyperspeedBase + fieldFlow, 1.0);
+                        ctx.globalAlpha = Math.min(hyperspeedBase, 1.0);
                         
                         if (e.isQuine) {
                             ctx.save();
@@ -4977,9 +5041,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     }
                     if (svg) svg.classList.remove('motus-active');
                     _baseCanvas[id] = null;
-                    
-                    var sel = document.getElementById('motus-mode-select');
-                    if (sel) sel.style.display = 'none';
 
                     var card = document.getElementById('card' + id);
                     if (card && card.classList.contains('flipped')) {
@@ -4999,14 +5060,17 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     });
                     
                     if (btn) btn.textContent = anyOn ? 'Motus: OFF' : 'Motus: ON';
-                    var sel = document.getElementById('motus-mode-select');
+                    var sel = document.getElementById('motus-dropdown-container');
                     if (sel) sel.style.display = anyOn ? 'none' : 'block';
                 },
 
                 setMode: function (mode) {
                     var modes = ['blend', 'flow', 'flicker', 'moire', 'iso_col'];
+                    var labels = { 'blend': 'BLEND', 'flow': 'FLOW', 'flicker': 'FLICKER', 'moire': 'MOIRÉ', 'iso_col': 'ISO_COL' };
                     if (modes.indexOf(mode) > -1) {
                         _animMode = mode;
+                        var btn = document.getElementById('motus-mode-btn');
+                        if (btn) btn.textContent = labels[mode];
                     }
                 },
 
