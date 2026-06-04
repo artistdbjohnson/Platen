@@ -2031,6 +2031,13 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         ctx2d.clearRect(0, 0, canvas.width, canvas.height);
                     }
                 }
+                var canvasHS = document.getElementById('c' + id + '-hs');
+                if (canvasHS) {
+                    var ctxHS = canvasHS.getContext('2d');
+                    if (ctxHS) {
+                        ctxHS.clearRect(0, 0, canvasHS.width, canvasHS.height);
+                    }
+                }
             });
             
             _lastRenderState = null;
@@ -5186,7 +5193,12 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 // Clear and blit frozen base layer
                 ctx.clearRect(0, 0, cvs.width, cvs.height);
-                if (_baseCanvas[id]) ctx.drawImage(_baseCanvas[id], 0, 0);
+                var staticCanvas = document.getElementById('c' + id);
+                if (window._stackLayers && staticCanvas) {
+                    ctx.drawImage(staticCanvas, 0, 0);
+                } else if (_baseCanvas[id]) {
+                    ctx.drawImage(_baseCanvas[id], 0, 0);
+                }
 
                 var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(window.currentLayout || 'default') : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
                 var l_w = sizes.w, l_h = sizes.h, sizeX = sizes.sizeX, sizeY = sizes.sizeY;
