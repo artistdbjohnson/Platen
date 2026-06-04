@@ -4646,7 +4646,14 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             fontSize: rSize * 1.35
                         };
 
-                        if (animSet[i]) {
+                        var isAnim = false;
+                        if (_animMode === 'flicker') {
+                            isAnim = !!animSet[i];
+                        } else {
+                            isAnim = true; // All other modes animate everything
+                        }
+
+                        if (isAnim) {
                             entry.phase      = i * 2.39996;
                             entry.cycleSpeed = 0.4 + r.rfl() * 0.9;
                             entry.driftX     = (r.rfl() - 0.5) * 3.0;
@@ -5071,6 +5078,15 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         _animMode = mode;
                         var btn = document.getElementById('motus-mode-btn');
                         if (btn) btn.textContent = labels[mode];
+                        
+                        var ids = [1, 2, 3];
+                        ids.forEach(function (id) {
+                            if (_active[id]) {
+                                PlatenHyperspeed.stop(id);
+                                PlatenHyperspeed.prepare(id);
+                                PlatenHyperspeed.start(id);
+                            }
+                        });
                     }
                 },
 
