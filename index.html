@@ -1432,7 +1432,7 @@
         <section class="col-about">
             <h2>PLATEN by DGLXSS</h2>
             <p>2017. A typewriter shop in West Los Angeles. My son was four, running the shop floor between dead ribbons and open cases while I paid for an Olympia SM3 with one intention. Write a novel no one would ever read. Private. Something to pass down to him one day.</p>
-            <p>The novel remains unfinished. And the typewriter never left.</p>
+            <p>The novel remains unfinished. And the typewriter has been following along ever since.</p>
             <p>Then #plottertwitter. Artists feeding algorithms into machines, ink finding paper one mechanical decision at a time. Paul Prudence holding a pen against a platen roller, discovering he had a hand-operated plotter in his studio the whole time. Henri Chopin in 1985 mapping density through a split ribbon, blue and red, building form from the weight of repeated strikes. Ruth Wolf-Rehfeldt typing one word across an entire page until the word became a shape and the shape carried the meaning.</p>
             <p>The SM3 in the corner looked different after that. A constraint system that had known how to translate a mathematical instruction into a physical mark since 1952.</p>
             <p>PLATEN starts in mathematics. A closed-form calculation runs across every cell on a mechanical grid, geometric tests, sine-wave phase comparisons, lattice arithmetic. Each cell returns one number measuring how strongly that coordinate activates under the current pattern. No pixels, no image lookup, no rasterization anywhere in the chain. The number normalizes to a scalar between zero and one.</p>
@@ -1522,12 +1522,12 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     <div style="display: flex; gap: 6px; align-items: stretch; position: relative;">
                         <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()" style="flex: 1;">Motus: OFF</button>
                         <div id="motus-dropdown-container" class="motus-dropdown" style="display: none;">
-                            <button id="motus-mode-btn" class="motus-dropdown-btn" onclick="document.getElementById('motus-dropdown-container').classList.toggle('open')">FLOW</button>
+                            <button id="motus-mode-btn" class="motus-dropdown-btn" onclick="var ts = window.RESOLVED_TRAITS || window.TRAITS || {}; var isoOpt = document.getElementById('motus-mode-iso'); if(isoOpt) { if(ts.space === 'isometric') { isoOpt.style.opacity = '1.0'; isoOpt.style.pointerEvents = 'auto'; } else { isoOpt.style.opacity = '0.4'; isoOpt.style.pointerEvents = 'none'; } } document.getElementById('motus-dropdown-container').classList.toggle('open')">FLOW</button>
                             <div class="motus-dropdown-content" onclick="document.getElementById('motus-dropdown-container').classList.remove('open')">
                                 <div onclick="PlatenHyperspeed.setMode('flow')">FLOW</div>
                                 <div onclick="PlatenHyperspeed.setMode('flicker')">FLICKER</div>
                                 <div onclick="PlatenHyperspeed.setMode('moire')">MOIRÉ</div>
-                                <div onclick="PlatenHyperspeed.setMode('iso_col')">ISO_COL</div>
+                                <div id="motus-mode-iso" onclick="PlatenHyperspeed.setMode('iso_col')">ISO_COL</div>
                             </div>
                         </div>
                     </div>
@@ -4798,159 +4798,94 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 for (var i = 0; i < entries.length; i++) {
                     var e = entries[i];
                     
+                    var _activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : (window.TRAITS && window.TRAITS.canvas ? window.TRAITS.canvas : 'white');
+                    var bgColor = (_activeCanvas === 'white') ? '#f2efeb' : '#0a0a0a';
+                    var baseAlpha = 1.0;
+
                     if (_animMode === 'moire') {
                         var u = (e.tx - halfW) / halfW;
                         var v = (e.ty - midY) / halfW;
                         var r2 = Math.sqrt(u * u + v * v);
                         var ang = Math.atan2(v, u);
-                        var f = 0.5 + 0.5 * (
+                        var wave = 0.5 + 0.5 * (
                             0.42 * Math.sin(7 * u + t) +
                             0.30 * Math.sin(9 * v - t * 0.7) +
                             0.42 * Math.sin(18 * r2 - t * 1.25) +
                             0.18 * Math.sin(5 * ang + t * 0.4)
                         );
-                        f += (fieldHash(e.col, e.row) - 0.5) * 0.05;
-                        if (f < 0) f = 0; if (f > 1) f = 1;
                         
                         var h = (i * 374761393 + qTime * 668265263 + masterSeed) ^ 0x9e3779b9;
                         h = (h ^ (h >>> 13)) * 1274126177;
                         var visible = ((h >>> 0) % 100) < _animProb;
-
-                        var p2d = _p2d[e.pathKey];
-
-                        ctx.globalAlpha = visible ? f : (_ghostOp * f);
-                        ctx.fillStyle = e.color;
-                        
-                        if (e.isQuine) {
-                            ctx.save();
-                            ctx.font = 'bold ' + (e.fontSize) + 'px Courier, \'Courier New\', monospace';
-                            ctx.textAlign = 'left';
-                            ctx.textBaseline = 'alphabetic';
-                            ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * e.quineX, scaleY * e.quineY);
-                            if (e.rot) {
-                                ctx.translate(e.fontSize / 2, -e.fontSize / 2);
-                                ctx.rotate(e.rot * Math.PI / 180);
-                                ctx.translate(-e.fontSize / 2, e.fontSize / 2);
-                            }
-                            ctx.fillText(e.char, 0, 0);
-                            ctx.restore();
-                        } else {
-                            if (!p2d) continue;
-                            ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
-                            if (e.flip) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(Math.PI);
-                                ctx.translate(-10, -10);
-                            }
-                            if (e.rot) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(e.rot * Math.PI / 180);
-                                ctx.translate(-10, -10);
-                            }
-                            ctx.fill(p2d.path || p2d, 'evenodd');
-                        }
+                        baseAlpha = visible ? 1.0 : (_ghostOp + wave * (1.0 - _ghostOp));
 
                     } else if (_animMode === 'iso_col') {
                         var ph = e.col * stag;
                         var base = 0.5 + 0.5 * Math.sin(e.row * 0.40 - iso_t * 1.1 + ph);
                         var env = 0.5 + 0.5 * Math.sin(e.col * 0.45 + iso_t * 0.22);
-                        
-                        var u = (e.tx - halfW) / halfW;
-                        var v = (e.ty - midY) / halfW;
-                        var rr = Math.hypot(u, v) * 2;
-                        var fade = Math.max(0, 1 - rr * 0.72);
-                        
-                        var f = (0.30 + 0.70 * base) * (0.45 + 0.55 * env) * fade;
-                        f += (fieldHash(e.col, e.row) - 0.5) * 0.04;
-                        if (f < 0) f = 0; if (f > 1) f = 1;
+                        var wave = (0.30 + 0.70 * base) * (0.45 + 0.55 * env);
+                        baseAlpha = _ghostOp + wave * (1.0 - _ghostOp);
 
-                        var p2d = _p2d[e.pathKey];
+                    } else if (_animMode === 'flow') {
+                        var phaseOffset = (e.col * 0.2) + (e.row * 0.2); // Grid-aligned spatial wave
+                        var flowWave = 0.5 + 0.5 * Math.sin(t * 3.0 + phaseOffset);
+                        baseAlpha = _ghostOp + (flowWave * 0.8);
 
-                        ctx.globalAlpha = f;
+                    } else if (_animMode === 'flicker') {
+                        var slowBreath = 0.5 + 0.5 * Math.sin(e.phase + t * e.cycleSpeed * 1.2);
+                        var h = (i * 374761393 + qTime * 668265263 + masterSeed) ^ 0x9e3779b9;
+                        h = (h ^ (h >>> 13)) * 1274126177;
+                        var flickerFlash = ((h >>> 0) % 100) < 12; // 12% chance for a sharp peak
+                        baseAlpha = flickerFlash ? 1.0 : (_ghostOp + (slowBreath * 0.5));
+                    }
+
+                    baseAlpha = Math.max(0, Math.min(baseAlpha, 1.0));
+
+                    if (e.isQuine) {
+                        ctx.save();
+                        ctx.font = 'bold ' + (e.fontSize) + 'px Courier, \'Courier New\', monospace';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'alphabetic';
+                        ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * e.quineX, scaleY * e.quineY);
+                        if (e.rot) {
+                            ctx.translate(e.fontSize / 2, -e.fontSize / 2);
+                            ctx.rotate(e.rot * Math.PI / 180);
+                            ctx.translate(-e.fontSize / 2, e.fontSize / 2);
+                        }
+                        
+                        ctx.globalAlpha = 1.0;
                         ctx.fillStyle = e.color;
-
-                        if (e.isQuine) {
-                            ctx.save();
-                            ctx.font = 'bold ' + (e.fontSize) + 'px Courier, \'Courier New\', monospace';
-                            ctx.textAlign = 'left';
-                            ctx.textBaseline = 'alphabetic';
-                            ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * e.quineX, scaleY * e.quineY);
-                            if (e.rot) {
-                                ctx.translate(e.fontSize / 2, -e.fontSize / 2);
-                                ctx.rotate(e.rot * Math.PI / 180);
-                                ctx.translate(-e.fontSize / 2, e.fontSize / 2);
-                            }
-                            ctx.fillText(e.char, 0, 0);
-                            ctx.restore();
-                        } else {
-                            if (!p2d) continue;
-                            ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
-                            if (e.flip) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(Math.PI);
-                                ctx.translate(-10, -10);
-                            }
-                            if (e.rot) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(e.rot * Math.PI / 180);
-                                ctx.translate(-10, -10);
-                            }
-                            ctx.fill(p2d.path || p2d, 'evenodd');
-                        }
-                    } else {
-                        // Original flow/flicker modes
-                        var hyperspeedBase = 1.0;
-                        if (_animMode === 'flow') {
-                            var phaseOffset = (e.col * 0.2) + (e.row * 0.2); // Grid-aligned spatial wave
-                            var flowWave = 0.5 + 0.5 * Math.sin(t * 3.0 + phaseOffset);
-                            hyperspeedBase = _ghostOp + (flowWave * 0.8);
-                        } else if (_animMode === 'flicker') {
-                            // High-value curated blend + flicker:
-                            var slowBreath = 0.5 + 0.5 * Math.sin(e.phase + t * e.cycleSpeed * 1.2);
-                            var h = (i * 374761393 + qTime * 668265263 + masterSeed) ^ 0x9e3779b9;
-                            h = (h ^ (h >>> 13)) * 1274126177;
-                            var flickerFlash = ((h >>> 0) % 100) < 12; // 12% chance for a sharp peak
-                            
-                            if (flickerFlash) {
-                                hyperspeedBase = 1.0;
-                            } else {
-                                // Baseline breathing opacity between _ghostOp (0.1) and ~0.6
-                                hyperspeedBase = _ghostOp + (slowBreath * 0.5); 
-                            }
-                        }
-
-                        ctx.globalAlpha = Math.min(hyperspeedBase, 1.0);
+                        ctx.fillText(e.char, 0, 0);
                         
-                        if (e.isQuine) {
-                            ctx.save();
-                            ctx.fillStyle = e.color;
-                            ctx.font = 'bold ' + (e.fontSize) + 'px Courier, \'Courier New\', monospace';
-                            ctx.textAlign = 'left';
-                            ctx.textBaseline = 'alphabetic';
-                            ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * e.quineX, scaleY * e.quineY);
-                            if (e.rot) {
-                                ctx.translate(e.fontSize / 2, -e.fontSize / 2);
-                                ctx.rotate(e.rot * Math.PI / 180);
-                                ctx.translate(-e.fontSize / 2, e.fontSize / 2);
-                            }
+                        if (baseAlpha < 1.0) {
+                            ctx.globalAlpha = 1.0 - baseAlpha;
+                            ctx.fillStyle = bgColor;
                             ctx.fillText(e.char, 0, 0);
-                            ctx.restore();
-                        } else {
-                            var p2d = _p2d[e.pathKey];
-                            if (!p2d) continue;
+                        }
+                        ctx.restore();
+                    } else {
+                        var p2d = _p2d[e.pathKey];
+                        if (!p2d) continue;
 
-                            ctx.fillStyle = e.color;
-                            ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
-                            if (e.flip) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(Math.PI);
-                                ctx.translate(-10, -10);
-                            }
-                            if (e.rot) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(e.rot * Math.PI / 180);
-                                ctx.translate(-10, -10);
-                            }
+                        ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
+                        if (e.flip) {
+                            ctx.translate(10, 10);
+                            ctx.rotate(Math.PI);
+                            ctx.translate(-10, -10);
+                        }
+                        if (e.rot) {
+                            ctx.translate(10, 10);
+                            ctx.rotate(e.rot * Math.PI / 180);
+                            ctx.translate(-10, -10);
+                        }
+                        
+                        ctx.globalAlpha = 1.0;
+                        ctx.fillStyle = e.color;
+                        ctx.fill(p2d.path || p2d, 'evenodd');
+
+                        if (baseAlpha < 1.0) {
+                            ctx.globalAlpha = 1.0 - baseAlpha;
+                            ctx.fillStyle = bgColor;
                             ctx.fill(p2d.path || p2d, 'evenodd');
                         }
                     }
@@ -5042,6 +4977,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 },
 
                 setMode: function (mode) {
+                    var traits = window.RESOLVED_TRAITS || window.TRAITS || {};
+                    if (mode === 'iso_col' && traits.space !== 'isometric') return;
                     var modes = ['flow', 'flicker', 'moire', 'iso_col'];
                     var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'moire': 'MOIRÉ', 'iso_col': 'ISO_COL' };
                     if (modes.indexOf(mode) > -1) {
@@ -5065,9 +5002,12 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 },
 
                 cycleMode: function () {
-                    var modes = ['flow', 'flicker', 'moire', 'iso_col'];
+                    var traits = window.RESOLVED_TRAITS || window.TRAITS || {};
+                    var modes = ['flow', 'flicker', 'moire'];
+                    if (traits.space === 'isometric') modes.push('iso_col');
                     var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'moire': 'MOIRÉ', 'iso_col': 'ISO_COL' };
                     var idx = modes.indexOf(_animMode);
+                    if (idx === -1) idx = 0;
                     _animMode = modes[(idx + 1) % modes.length];
                     var btn = document.getElementById('hs-mode-btn');
                     if (btn) btn.textContent = labels[_animMode];
