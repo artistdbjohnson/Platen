@@ -4771,7 +4771,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     if (_animMode === 'vortex') {
                         var v = Math.sin(_tAccum[id] * Math.PI / 10.0);
                         var speedFactor = Math.sign(v) * Math.pow(Math.abs(v), 0.15);
-                        var maxSpeed = 104.72; // ~1000 RPM in rad/sec (1000 * 2 * Math.PI / 60)
+                        var maxSpeed = 628.32; // ~6000 RPM (redline) in rad/sec (6000 * 2 * Math.PI / 60)
                         _spinAccum[id] = (_spinAccum[id] || 0) + speedFactor * maxSpeed * dt * _flowMult;
                     }
                 }
