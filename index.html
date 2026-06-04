@@ -5252,6 +5252,12 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                         if (lv === -1) continue;
 
+                        // Physical Moiré interferential grid shifts & rotational twist
+                        var shiftAmt = (f - 0.5) * 8.0;
+                        var shiftX = Math.cos(ang) * shiftAmt;
+                        var shiftY = Math.sin(ang) * shiftAmt;
+                        var twist = (f - 0.5) * 0.22; // subtle angular ripple
+
                         var h = (i * 374761393 + qTime * 668265263 + masterSeed) ^ 0x9e3779b9;
                         h = (h ^ (h >>> 13)) * 1274126177;
                         var visible = ((h >>> 0) % 100) < _animProb;
@@ -5263,29 +5269,35 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         ctx.fillStyle = visible ? e.color : '#7a7068';
                         
                         if (e.isQuine) {
+                            var drawQuineX = e.quineX + shiftX;
+                            var drawQuineY = e.quineY + shiftY;
                             ctx.save();
                             ctx.font = 'bold ' + (e.fontSize) + 'px Courier, \'Courier New\', monospace';
                             ctx.textAlign = 'left';
                             ctx.textBaseline = 'alphabetic';
-                            ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * e.quineX, scaleY * e.quineY);
-                            if (e.rot) {
+                            ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * drawQuineX, scaleY * drawQuineY);
+                            var totalRot = (e.rot || 0) * Math.PI / 180 + twist;
+                            if (totalRot) {
                                 ctx.translate(e.fontSize / 2, -e.fontSize / 2);
-                                ctx.rotate(e.rot * Math.PI / 180);
+                                ctx.rotate(totalRot);
                                 ctx.translate(-e.fontSize / 2, e.fontSize / 2);
                             }
                             ctx.fillText(e.char, 0, 0);
                             ctx.restore();
                         } else {
                             if (!p2d) continue;
-                            ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
+                            var drawTx = e.tx + shiftX;
+                            var drawTy = e.ty + shiftY;
+                            ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * drawTx, scaleY * drawTy);
                             if (e.flip) {
                                 ctx.translate(10, 10);
                                 ctx.rotate(Math.PI);
                                 ctx.translate(-10, -10);
                             }
-                            if (e.rot) {
+                            var totalRot = (e.rot || 0) * Math.PI / 180 + twist;
+                            if (totalRot) {
                                 ctx.translate(10, 10);
-                                ctx.rotate(e.rot * Math.PI / 180);
+                                ctx.rotate(totalRot);
                                 ctx.translate(-10, -10);
                             }
                             ctx.fill(p2d.path || p2d, 'evenodd');
