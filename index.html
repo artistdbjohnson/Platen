@@ -1387,7 +1387,7 @@
         <!-- LEFT COLUMN: ABOUT -->
         <section class="col-about">
             <h2>PLATEN by DGLXSS</h2>
-            <p>A typewriter shop in West Los Angeles. My son was four, running the shop floor between dead ribbons and open cases while I paid for an Olympia SM3 with one intention. Write a novel no one would ever read. Private. Something to pass down to him one day.</p>
+            <p>2017. A typewriter shop in West Los Angeles. My son was four, running the shop floor between dead ribbons and open cases while I paid for an Olympia SM3 with one intention. Write a novel no one would ever read. Private. Something to pass down to him one day.</p>
             <p>The novel stayed unfinished. The SM3 never did.</p>
             <p>Then #plottertwitter. Artists feeding algorithms into machines, ink finding paper one mechanical decision at a time. Paul Prudence holding a pen against a platen roller, discovering he had a hand-operated plotter in his studio the whole time. Henri Chopin in 1985 mapping density through a split ribbon, blue and red, building form from the weight of repeated strikes. Ruth Wolf-Rehfeldt typing one word across an entire page until the word became a shape and the shape carried the meaning.</p>
             <p>The SM3 in the corner looked different after that. A constraint system that had known how to translate a mathematical instruction into a physical mark since 1952.</p>
@@ -1476,7 +1476,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     <button id="btn-gallery-modal" onclick="toggleGalleryModal()">Gallery</button>
                     <button id="btn-set-seed" onclick="setSeed()">Set Seed</button>
                     <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()">Motus: OFF</button>
-                    <button id="hs-mode" onclick="PlatenHyperspeed.toggleMode()">wave</button>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <span style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.5; text-transform: lowercase;">canvas:</span>
                         <button id="btn-canvas-black" class="canvas-toggle-btn" onclick="setCanvasBackground('black')">black</button>
@@ -4306,7 +4305,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             var _GROUP_SIZE  = 18;   // flowers per group for column-offset ripple
 
             // AE Math parameters
-            var _animMode = 'blend'; // blend, flow, flicker
+            var _animMode = 'blend'; // blend, flow, flicker, moire, iso_col
             var _animSpeed = 12;     // FPS for flicker (1-50)
             var _animProb = 50;      // Probability (10-100)
             var _ghostOp = 0.10;
@@ -4314,9 +4313,17 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             var _flowSpeed = 1.0;
             var _animSeed = null;
 
-            var _mode = 'motus';
+            var MOIRE_COLORS = ['#b89cf0','#8b5cf6','#c026d3','#ea580c','#f2b705'];
+            var CORAL_COLORS = ['#7a3326','#a8432e','#d6553a','#e8694a','#f5805f'];
+            var SLATE_COLORS = ['#33485a','#456079','#5a7d9c','#6f93b3','#88abc9'];
+
+            function fieldHash(i, j) {
+                var h = (Math.round(i) * 374761393 + Math.round(j) * 668265263) ^ 0x9e3779b9;
+                h = (h ^ (h >>> 13)) * 1274126177;
+                return ((h >>> 0) % 100000) / 100000;
+            }
+
             var _glyphSets = {};
-            var _params = {};
 
             // Build Path2D cache from MOTIF_PATHS (defined in platen-core.js)
             function _buildPaths() {
@@ -4550,6 +4557,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                         var entry = {
                             idx:     i,                                // original flower index for hash
+                            col:     f.x,
+                            row:     f.y,
                             pathKey: pathKey,
                             color:   pColor,
                             tx:      finalTx,
@@ -4564,23 +4573,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             quineY:  yVal + sizeY * 0.78,
                             fontSize: rSize * 1.35
                         };
-
-                        entry.baseLevel = typeof lv !== 'undefined' ? lv : 0;
-                        var P = _params[id];
-                        var centerX = svgW / 2, centerY = svgH / 2;
-                        var maxR = Math.hypot(centerX, centerY) || 1;
-                        if (P) {
-                            if (P.waveDir === 0) {
-                                entry.wavePhase = (entry.tx / (svgW || 1)) * P.waveFreq * Math.PI * 2;
-                            } else if (P.waveDir === 1) {
-                                entry.wavePhase = (entry.ty / (svgH || 1)) * P.waveFreq * Math.PI * 2;
-                            } else {
-                                entry.wavePhase = Math.hypot(entry.tx - centerX, entry.ty - centerY)
-                                                  / maxR * P.waveFreq * Math.PI * 2;
-                            }
-                        } else {
-                            entry.wavePhase = 0;
-                        }
 
                         if (animSet[i]) {
                             entry.phase      = i * 2.39996;
@@ -4705,15 +4697,146 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 ctx.save();
                 ctx.scale(scaleX, scaleY);
 
-                if (_mode === 'motus') {
-                    // AE Dual-Axis Blending logic
-                    var entries = _animEntries[id] || [];
-                    var qTime = Math.floor(t * _animSpeed);
-                    var masterSeed = (_animSeed || window.RENDER_SEED || 9248);
+                var entries = _animEntries[id] || [];
+                var qTime = Math.floor(t * _animSpeed);
+                var masterSeed = (_animSeed || window.RENDER_SEED || 9248);
+                var halfW = svgW / 2;
+                var midY = svgH / 2;
+                var glyphSet = _glyphSets[id];
 
-                    for (var i = 0; i < entries.length; i++) {
-                        var e = entries[i];
+                var stag = 0.50;
+                var iso_t = t * 0.55;
 
+                for (var i = 0; i < entries.length; i++) {
+                    var e = entries[i];
+                    
+                    if (_animMode === 'moire') {
+                        var u = (e.tx - halfW) / halfW;
+                        var v = (e.ty - midY) / halfW;
+                        var r2 = Math.sqrt(u * u + v * v);
+                        var ang = Math.atan2(v, u);
+                        var f = 0.5 + 0.5 * (
+                            0.42 * Math.sin(7 * u + t) +
+                            0.30 * Math.sin(9 * v - t * 0.7) +
+                            0.42 * Math.sin(18 * r2 - t * 1.25) +
+                            0.18 * Math.sin(5 * ang + t * 0.4)
+                        );
+                        f += (fieldHash(e.col, e.row) - 0.5) * 0.05;
+                        if (f < 0) f = 0; if (f > 1) f = 1;
+                        
+                        var lv = -1;
+                        if (f >= 0.20 && f < 0.36) lv = 0;
+                        else if (f >= 0.36 && f < 0.51) lv = 1;
+                        else if (f >= 0.51 && f < 0.66) lv = 2;
+                        else if (f >= 0.66 && f < 0.81) lv = 3;
+                        else if (f >= 0.81) lv = 4;
+
+                        if (lv === -1) continue;
+
+                        var h = (i * 374761393 + qTime * 668265263 + masterSeed) ^ 0x9e3779b9;
+                        h = (h ^ (h >>> 13)) * 1274126177;
+                        var visible = ((h >>> 0) % 100) < _animProb;
+
+                        var pKey = (glyphSet && glyphSet[lv]) ? glyphSet[lv] : e.pathKey;
+                        var p2d = _p2d[pKey] || _p2d[e.pathKey];
+
+                        ctx.globalAlpha = visible ? 1.0 : _ghostOp;
+                        ctx.fillStyle = visible ? MOIRE_COLORS[lv] : '#7a7068';
+                        
+                        if (e.isQuine) {
+                            ctx.save();
+                            ctx.font = 'bold ' + (e.fontSize) + 'px Courier, \'Courier New\', monospace';
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'alphabetic';
+                            ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * e.quineX, scaleY * e.quineY);
+                            if (e.rot) {
+                                ctx.translate(e.fontSize / 2, -e.fontSize / 2);
+                                ctx.rotate(e.rot * Math.PI / 180);
+                                ctx.translate(-e.fontSize / 2, e.fontSize / 2);
+                            }
+                            ctx.fillText(e.char, 0, 0);
+                            ctx.restore();
+                        } else {
+                            if (!p2d) continue;
+                            ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
+                            if (e.flip) {
+                                ctx.translate(10, 10);
+                                ctx.rotate(Math.PI);
+                                ctx.translate(-10, -10);
+                            }
+                            if (e.rot) {
+                                ctx.translate(10, 10);
+                                ctx.rotate(e.rot * Math.PI / 180);
+                                ctx.translate(-10, -10);
+                            }
+                            ctx.fill(p2d.path || p2d, 'evenodd');
+                        }
+
+                    } else if (_animMode === 'iso_col') {
+                        var ph = e.col * stag;
+                        var base = 0.5 + 0.5 * Math.sin(e.row * 0.40 - iso_t * 1.1 + ph);
+                        var env = 0.5 + 0.5 * Math.sin(e.col * 0.45 + iso_t * 0.22);
+                        
+                        var u = (e.tx - halfW) / halfW;
+                        var v = (e.ty - midY) / halfW;
+                        var rr = Math.hypot(u, v) * 2;
+                        var fade = Math.max(0, 1 - rr * 0.72);
+                        
+                        var f = (0.30 + 0.70 * base) * (0.45 + 0.55 * env) * fade;
+                        f += (fieldHash(e.col, e.row) - 0.5) * 0.04;
+                        if (f < 0) f = 0; if (f > 1) f = 1;
+
+                        var lv = -1;
+                        if (f >= 0.20 && f < 0.36) lv = 0;
+                        else if (f >= 0.36 && f < 0.51) lv = 1;
+                        else if (f >= 0.51 && f < 0.66) lv = 2;
+                        else if (f >= 0.66 && f < 0.81) lv = 3;
+                        else if (f >= 0.81) lv = 4;
+
+                        if (lv === -1) continue;
+
+                        var pKey = (glyphSet && glyphSet[lv]) ? glyphSet[lv] : e.pathKey;
+                        var p2d = _p2d[pKey] || _p2d[e.pathKey];
+
+                        var elev = f * 72; // Subtract from ty!
+                        var drawTy = e.ty - elev;
+                        var drawQuineY = e.quineY - elev;
+
+                        var colColor = (e.tx / svgW < 0.46) ? CORAL_COLORS[lv] : SLATE_COLORS[lv];
+                        
+                        ctx.globalAlpha = 1.0;
+                        ctx.fillStyle = colColor;
+
+                        if (e.isQuine) {
+                            ctx.save();
+                            ctx.font = 'bold ' + (e.fontSize) + 'px Courier, \'Courier New\', monospace';
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'alphabetic';
+                            ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * e.quineX, scaleY * drawQuineY);
+                            if (e.rot) {
+                                ctx.translate(e.fontSize / 2, -e.fontSize / 2);
+                                ctx.rotate(e.rot * Math.PI / 180);
+                                ctx.translate(-e.fontSize / 2, e.fontSize / 2);
+                            }
+                            ctx.fillText(e.char, 0, 0);
+                            ctx.restore();
+                        } else {
+                            if (!p2d) continue;
+                            ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * drawTy);
+                            if (e.flip) {
+                                ctx.translate(10, 10);
+                                ctx.rotate(Math.PI);
+                                ctx.translate(-10, -10);
+                            }
+                            if (e.rot) {
+                                ctx.translate(10, 10);
+                                ctx.rotate(e.rot * Math.PI / 180);
+                                ctx.translate(-10, -10);
+                            }
+                            ctx.fill(p2d.path || p2d, 'evenodd');
+                        }
+                    } else {
+                        // Original blend/flow/flicker modes
                         var fieldFlow = 0;
                         if (_animMode === 'blend' || _animMode === 'flow') {
                             var phaseOffset = i * 2.39996; // 2*PI * golden ratio
@@ -4722,16 +4845,14 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                         var hyperspeedBase = 1.0;
                         if (_animMode === 'blend' || _animMode === 'flicker') {
-                            // Mulberry32-style hash replacement
                             var h = (i * 374761393 + qTime * 668265263 + masterSeed) ^ 0x9e3779b9;
                             h = (h ^ (h >>> 13)) * 1274126177;
                             var hyperspeedOn = ((h >>> 0) % 100) < _animProb;
                             hyperspeedBase = hyperspeedOn ? 1.0 : _ghostOp;
                         } else if (_animMode === 'flow') {
-                            hyperspeedBase = _ghostOp; // Base is ghost, flow pushes it up
+                            hyperspeedBase = _ghostOp;
                         }
 
-                        // Strict shape retention (no scaling/pulsing)
                         ctx.globalAlpha = Math.min(hyperspeedBase + fieldFlow, 1.0);
                         
                         if (e.isQuine) {
@@ -4767,60 +4888,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             ctx.fill(p2d.path || p2d, 'evenodd');
                         }
                     }
-                } else {
-                    // WAVE MODE — density cascade
-                    var glyphSet  = _glyphSets[id];
-                    var P         = _params[id];
-                    var entries = _animEntries[id] || [];
-
-                    for (var i = 0; i < entries.length; i++) {
-                        var e = entries[i];
-
-                        var spreadPhase = e.wavePhase * (1.0 + _colSpread * 0.04);
-                        var sineVal = Math.sin(t * (P ? P.waveSpeed : 1.0) - spreadPhase) * 0.5 + 0.5;
-
-                        // Level morph: the glyph itself changes as the wave passes
-                        var levelShift = Math.round((sineVal - 0.5) * 1.5);  // -1, 0, or +1
-                        var lv = Math.max(0, Math.min(4, (e.baseLevel || 0) + levelShift));
-
-                        var pathKey = (glyphSet && glyphSet[lv]) ? glyphSet[lv] : e.pathKey;
-                        var p2d = _p2d[pathKey] || _p2d[e.pathKey];
-
-                        if (e.isQuine) {
-                            ctx.globalAlpha = 0.25 + 0.75 * sineVal;
-                            ctx.save();
-                            ctx.fillStyle = e.color;
-                            ctx.font = 'bold ' + (e.fontSize) + 'px Courier, \'Courier New\', monospace';
-                            ctx.textAlign = 'left';
-                            ctx.textBaseline = 'alphabetic';
-                            ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * e.quineX, scaleY * e.quineY);
-                            if (e.rot) {
-                                ctx.translate(e.fontSize / 2, -e.fontSize / 2);
-                                ctx.rotate(e.rot * Math.PI / 180);
-                                ctx.translate(-e.fontSize / 2, e.fontSize / 2);
-                            }
-                            ctx.fillText(e.char, 0, 0);
-                            ctx.restore();
-                        } else {
-                            if (!p2d) continue;
-
-                            // Opacity dims at trough but glyph change is the primary effect
-                            ctx.globalAlpha = 0.25 + 0.75 * sineVal;
-                            ctx.fillStyle   = e.color;
-                            ctx.setTransform(scaleX * e.scX, 0, 0, scaleY * e.scY, scaleX * e.tx, scaleY * e.ty);
-                            if (e.flip) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(Math.PI);
-                                ctx.translate(-10, -10);
-                            }
-                            if (e.rot) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(e.rot * Math.PI / 180);
-                                ctx.translate(-10, -10);
-                            }
-                            ctx.fill(p2d.path || p2d, 'evenodd');
-                        }
-                    }
                 }
 
                 ctx.restore();
@@ -4840,12 +4907,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 // Call after _lastFlowers[id] is assigned (line ~2794 in index.html)
                 prepare: function (id) {
                     _buildPaths();
-                    var r = makePRNG(window.RENDER_SEED || 9248);
-                    _params[id] = {
-                        waveSpeed: 0.8 + r.rfl() * 1.2,
-                        waveFreq: 1 + r.rin(0, 2),
-                        waveDir: r.rin(0, 2)
-                    };
                     _prepareFlowers(id);
                 },
 
@@ -4891,9 +4952,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     }
                     if (svg) svg.classList.remove('motus-active');
                     _baseCanvas[id] = null;
-                    _mode = 'motus';
-                    var mbtn = document.getElementById('hs-mode');
-                    if (mbtn) mbtn.textContent = 'wave';
 
                     var card = document.getElementById('card' + id);
                     if (card && card.classList.contains('flipped')) {
@@ -4913,14 +4971,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     });
                     
                     if (btn) btn.textContent = anyOn ? 'Motus: OFF' : 'Motus: ON';
-                    var mbtn = document.getElementById('hs-mode');
-                    if (mbtn && anyOn) mbtn.textContent = 'wave';
-                },
-
-                toggleMode: function () {
-                    _mode = (_mode === 'motus') ? 'wave' : 'motus';
-                    var btn = document.getElementById('hs-mode');
-                    if (btn) btn.textContent = (_mode === 'motus') ? 'wave' : 'motus';
                 },
 
                 isActive: function () {
@@ -4928,8 +4978,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 },
 
                 cycleMode: function () {
-                    var modes = ['blend', 'flow', 'flicker'];
-                    var labels = { 'blend': 'BLEND', 'flow': 'FLOW', 'flicker': 'FLICKER' };
+                    var modes = ['blend', 'flow', 'flicker', 'moire', 'iso_col'];
+                    var labels = { 'blend': 'BLEND', 'flow': 'FLOW', 'flicker': 'FLICKER', 'moire': 'MOIRE', 'iso_col': 'ISO_COL' };
                     var idx = modes.indexOf(_animMode);
                     _animMode = modes[(idx + 1) % modes.length];
                     var btn = document.getElementById('hs-mode-btn');
