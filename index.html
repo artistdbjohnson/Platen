@@ -5332,21 +5332,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         
                         ctx.globalAlpha = 1.0;
 
-                        // Draw a vertical ground-connector / shadow anchor to enhance 3D depth perception
-                        if (elev > 2) {
-                            ctx.save();
-                            ctx.beginPath();
-                            // Line from ground to center of the elevated motif
-                            var cx = e.tx + 10 * e.scX;
-                            ctx.moveTo(scaleX * cx, scaleY * e.ty + scaleY * (10 * e.scY));
-                            ctx.lineTo(scaleX * cx, scaleY * drawTy + scaleY * (10 * e.scY));
-                            ctx.strokeStyle = 'rgba(130, 120, 110, 0.2)';
-                            ctx.lineWidth = scaleX * e.scX * 2.0;
-                            ctx.lineCap = 'round';
-                            ctx.stroke();
-                            ctx.restore();
-                        }
-
                         // Perspective scale modifier (higher objects appear slightly closer/larger)
                         var scaleMod = 1.0 + f * 0.15;
                         var drawScX = e.scX * scaleMod;
@@ -5355,6 +5340,20 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         ctx.fillStyle = colColor;
 
                         if (e.isQuine) {
+                            // Draw ground connector for valid Quine
+                            if (elev > 2) {
+                                ctx.save();
+                                ctx.beginPath();
+                                var cx = e.tx + 10 * e.scX;
+                                ctx.moveTo(scaleX * cx, scaleY * e.ty + scaleY * (10 * e.scY));
+                                ctx.lineTo(scaleX * cx, scaleY * drawTy + scaleY * (10 * e.scY));
+                                ctx.strokeStyle = 'rgba(130, 120, 110, 0.2)';
+                                ctx.lineWidth = scaleX * e.scX * 2.0;
+                                ctx.lineCap = 'round';
+                                ctx.stroke();
+                                ctx.restore();
+                            }
+
                             ctx.save();
                             ctx.font = 'bold ' + (e.fontSize * scaleMod) + 'px Courier, \'Courier New\', monospace';
                             ctx.textAlign = 'left';
@@ -5368,7 +5367,23 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             ctx.fillText(e.char, 0, 0);
                             ctx.restore();
                         } else {
+                            var p2d = _p2d[e.pathKey];
                             if (!p2d) continue;
+
+                            // Draw ground connector for valid resolved motif path
+                            if (elev > 2) {
+                                ctx.save();
+                                ctx.beginPath();
+                                var cx = e.tx + 10 * e.scX;
+                                ctx.moveTo(scaleX * cx, scaleY * e.ty + scaleY * (10 * e.scY));
+                                ctx.lineTo(scaleX * cx, scaleY * drawTy + scaleY * (10 * e.scY));
+                                ctx.strokeStyle = 'rgba(130, 120, 110, 0.2)';
+                                ctx.lineWidth = scaleX * e.scX * 2.0;
+                                ctx.lineCap = 'round';
+                                ctx.stroke();
+                                ctx.restore();
+                            }
+
                             ctx.setTransform(scaleX * drawScX, 0, 0, scaleY * drawScY, scaleX * e.tx, scaleY * drawTy);
                             if (e.flip) {
                                 ctx.translate(10, 10);
