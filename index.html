@@ -4853,14 +4853,20 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             ctx.translate(-e.fontSize / 2, e.fontSize / 2);
                         }
                         
-                        ctx.globalAlpha = 1.0;
-                        ctx.fillStyle = e.color;
-                        ctx.fillText(e.char, 0, 0);
-                        
-                        if (baseAlpha < 1.0) {
-                            ctx.globalAlpha = 1.0 - baseAlpha;
-                            ctx.fillStyle = bgColor;
+                        if (_animMode === 'iso_col') {
+                            ctx.globalAlpha = baseAlpha;
+                            ctx.fillStyle = e.color;
                             ctx.fillText(e.char, 0, 0);
+                        } else {
+                            ctx.globalAlpha = 1.0;
+                            ctx.fillStyle = e.color;
+                            ctx.fillText(e.char, 0, 0);
+                            
+                            if (baseAlpha < 1.0) {
+                                ctx.globalAlpha = 1.0 - baseAlpha;
+                                ctx.fillStyle = bgColor;
+                                ctx.fillText(e.char, 0, 0);
+                            }
                         }
                         ctx.restore();
                     } else {
@@ -4879,14 +4885,20 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             ctx.translate(-10, -10);
                         }
                         
-                        ctx.globalAlpha = 1.0;
-                        ctx.fillStyle = e.color;
-                        ctx.fill(p2d.path || p2d, 'evenodd');
-
-                        if (baseAlpha < 1.0) {
-                            ctx.globalAlpha = 1.0 - baseAlpha;
-                            ctx.fillStyle = bgColor;
+                        if (_animMode === 'iso_col') {
+                            ctx.globalAlpha = baseAlpha;
+                            ctx.fillStyle = e.color;
                             ctx.fill(p2d.path || p2d, 'evenodd');
+                        } else {
+                            ctx.globalAlpha = 1.0;
+                            ctx.fillStyle = e.color;
+                            ctx.fill(p2d.path || p2d, 'evenodd');
+
+                            if (baseAlpha < 1.0) {
+                                ctx.globalAlpha = 1.0 - baseAlpha;
+                                ctx.fillStyle = bgColor;
+                                ctx.fill(p2d.path || p2d, 'evenodd');
+                            }
                         }
                     }
                 }
