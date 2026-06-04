@@ -1475,7 +1475,16 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     <button id="btn-curate" onclick="curateArtwork()">Curate</button>
                     <button id="btn-gallery-modal" onclick="toggleGalleryModal()">Gallery</button>
                     <button id="btn-set-seed" onclick="setSeed()">Set Seed</button>
-                    <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()">Motus: OFF</button>
+                    <div style="display: flex; gap: 6px; align-items: stretch;">
+                        <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()" style="flex: 1;">Motus: OFF</button>
+                        <select id="motus-mode-select" class="trait-select" onchange="PlatenHyperspeed.setMode(this.value)" style="display: none; padding-left: 4px; padding-right: 4px; flex: 1;">
+                            <option value="blend">blend</option>
+                            <option value="flow">flow</option>
+                            <option value="flicker">flicker</option>
+                            <option value="moire">moiré</option>
+                            <option value="iso_col">iso_col</option>
+                        </select>
+                    </div>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <span style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.5; text-transform: lowercase;">canvas:</span>
                         <button id="btn-canvas-black" class="canvas-toggle-btn" onclick="setCanvasBackground('black')">black</button>
@@ -4952,6 +4961,9 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     }
                     if (svg) svg.classList.remove('motus-active');
                     _baseCanvas[id] = null;
+                    
+                    var sel = document.getElementById('motus-mode-select');
+                    if (sel) sel.style.display = 'none';
 
                     var card = document.getElementById('card' + id);
                     if (card && card.classList.contains('flipped')) {
@@ -4971,6 +4983,15 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     });
                     
                     if (btn) btn.textContent = anyOn ? 'Motus: OFF' : 'Motus: ON';
+                    var sel = document.getElementById('motus-mode-select');
+                    if (sel) sel.style.display = anyOn ? 'none' : 'block';
+                },
+
+                setMode: function (mode) {
+                    var modes = ['blend', 'flow', 'flicker', 'moire', 'iso_col'];
+                    if (modes.indexOf(mode) > -1) {
+                        _animMode = mode;
+                    }
                 },
 
                 isActive: function () {
