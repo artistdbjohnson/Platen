@@ -3048,6 +3048,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     svg.setAttribute("height", svgH);
                     svg.setAttribute("viewBox", "0 0 " + svgW + " " + svgH);
                     svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+                    svg.parentElement.style.aspectRatio = svgW + " / " + svgH;
 
                     // Append the new fragment instantly
                     svg.appendChild(frag);
