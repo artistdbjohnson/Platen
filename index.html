@@ -3080,8 +3080,24 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
 
         function svgToString(svgEl) {
-            var s = new XMLSerializer();
-            return s.serializeToString(svgEl);
+            if (!svgEl.querySelector('style.export-style')) {
+                var styleDef = document.createElementNS("http://www.w3.org/2000/svg", "style");
+                styleDef.setAttribute('class', 'export-style');
+                if (_activeCanvasClass === 'canvas-white') {
+                    styleDef.textContent = ".typewriter-header text, .typewriter-header tspan { fill: #1a1a1a !important; } .grid-numbers text, .grid-numbers tspan { fill: #1a1a1a !important; }";
+                } else if (_activeCanvasClass === 'canvas-tan') {
+                    styleDef.textContent = ".typewriter-header text, .typewriter-header tspan { fill: #2c251e !important; } .grid-numbers text, .grid-numbers tspan { fill: #2c251e !important; }";
+                } else if (_activeCanvasClass === 'canvas-olive') {
+                    styleDef.textContent = ".typewriter-header text, .typewriter-header tspan { fill: #1b211a !important; } .grid-numbers text, .grid-numbers tspan { fill: #1b211a !important; }";
+                } else {
+                    styleDef.textContent = ".typewriter-header text, .typewriter-header tspan { fill: #e8e4dc !important; } .grid-numbers text, .grid-numbers tspan { fill: #e8e4dc !important; }";
+                }
+                svgEl.insertBefore(styleDef, svgEl.firstChild);
+            }
+            var s = new XMLSerializer().serializeToString(svgEl);
+            var addedStyle = svgEl.querySelector('style.export-style');
+            if (addedStyle) addedStyle.parentNode.removeChild(addedStyle);
+            return s;
         }
 
         function downloadBlob(blob, filename) {
