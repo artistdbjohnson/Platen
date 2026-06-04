@@ -4866,23 +4866,16 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         var base = 0.5 + 0.5 * Math.sin(e.row * 0.40 - iso_t * 1.1 + ph);
                         var env = 0.5 + 0.5 * Math.sin(e.col * 0.45 + iso_t * 0.22);
                         
-                        var u = (e.tx - halfW) / halfW;
-                        var v = (e.ty - midY) / halfW;
-                        var rr = Math.hypot(u, v) * 2;
-                        var fade = Math.max(0, 1 - rr * 0.72);
-                        
-                        var f = (0.30 + 0.70 * base) * (0.45 + 0.55 * env) * fade;
+                        var f = (0.30 + 0.70 * base) * (0.45 + 0.55 * env);
                         f += (fieldHash(e.col, e.row) - 0.5) * 0.04;
                         if (f < 0) f = 0; if (f > 1) f = 1;
 
-                        var lv = -1;
+                        var lv = 0;
                         if (f >= 0.20 && f < 0.36) lv = 0;
                         else if (f >= 0.36 && f < 0.51) lv = 1;
                         else if (f >= 0.51 && f < 0.66) lv = 2;
                         else if (f >= 0.66 && f < 0.81) lv = 3;
                         else if (f >= 0.81) lv = 4;
-
-                        if (lv === -1) continue;
 
                         var iso_glyphs = ['comma', 'dot', 'plus', 'x', 'asterisk', 'slash', 'hash', 'dash'];
                         var gIdx = Math.floor(f * iso_glyphs.length * 0.99);
@@ -5070,7 +5063,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     var traits = window.RESOLVED_TRAITS || window.TRAITS || {};
                     if (mode === 'iso_col' && traits.space !== 'isometric') return;
                     var modes = ['flow', 'flicker', 'moire', 'iso_col'];
-                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'moire': 'MOIRÉ', 'iso_col': 'ISO_COL' };
+                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE' };
                     if (modes.indexOf(mode) > -1) {
                         _animMode = mode;
                         var btn = document.getElementById('motus-mode-btn');
@@ -5095,7 +5088,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     var traits = window.RESOLVED_TRAITS || window.TRAITS || {};
                     var modes = ['flow', 'flicker', 'moire'];
                     if (traits.space === 'isometric') modes.push('iso_col');
-                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'moire': 'MOIRÉ', 'iso_col': 'ISO_COL' };
+                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE' };
                     var idx = modes.indexOf(_animMode);
                     if (idx === -1) idx = 0;
                     _animMode = modes[(idx + 1) % modes.length];
