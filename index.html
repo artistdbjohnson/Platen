@@ -1679,6 +1679,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             </div>
                         </div>
                     </div>
+                    <button id="btn-stack" onclick="toggleStack()">Stack: OFF</button>
+                    <button id="btn-clear-stack" onclick="clearStack()">Clear Stack</button>
                     <div style="display: flex; gap: 6px; align-items: center;">
                         <span style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.5; text-transform: lowercase;">canvas:</span>
                         <button id="btn-canvas-black" class="canvas-toggle-btn" onclick="setCanvasBackground('black')">black</button>
@@ -2013,12 +2015,21 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             fsUpdateHudUI();
         }
 
-        function fsToggleStack() {
-            window._stackLayers = !window._stackLayers;
+        function updateStackUI() {
+            var btnStack = document.getElementById('btn-stack');
+            if (btnStack) {
+                btnStack.textContent = 'Stack: ' + (window._stackLayers ? 'ON' : 'OFF');
+                btnStack.classList.toggle('active', window._stackLayers);
+            }
             fsUpdateHudUI();
         }
 
-        function fsClearStack() {
+        function toggleStack() {
+            window._stackLayers = !window._stackLayers;
+            updateStackUI();
+        }
+
+        function clearStack() {
             var prevStack = window._stackLayers;
             window._stackLayers = false;
             
@@ -2043,6 +2054,15 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             _lastRenderState = null;
             renderAll(true);
             window._stackLayers = prevStack;
+            updateStackUI();
+        }
+
+        function fsToggleStack() {
+            toggleStack();
+        }
+
+        function fsClearStack() {
+            clearStack();
         }
 
         function fsToggleMotus() {
@@ -5694,6 +5714,9 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             // Short timeout to ensure custom fonts or external CSS establish layout bounds
             setTimeout(function() {
                 setLayout(currentLayout);
+                if (typeof updateStackUI === 'function') {
+                    updateStackUI();
+                }
             }, 50);
         });
         var curatedGallery = [];
