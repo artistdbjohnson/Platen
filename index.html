@@ -5002,6 +5002,24 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
             var _glyphSets = {};
 
+            var _colorRgbCache = {};
+            function getRgbaString(hex, alpha) {
+                if (!hex) return 'rgba(0,0,0,0)';
+                if (hex.indexOf('rgb') === 0) {
+                    return hex.replace('rgb(', 'rgba(').replace(')', ',' + alpha + ')');
+                }
+                if (!_colorRgbCache[hex]) {
+                    var c = hex.substring(1);
+                    if (c.length === 3) c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+                    var r = parseInt(c.substring(0, 2), 16) || 0;
+                    var g = parseInt(c.substring(2, 4), 16) || 0;
+                    var b = parseInt(c.substring(4, 6), 16) || 0;
+                    _colorRgbCache[hex] = {r: r, g: g, b: b};
+                }
+                var rgb = _colorRgbCache[hex];
+                return 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b + ',' + alpha + ')';
+            }
+
             // Build Path2D cache from MOTIF_PATHS (defined in platen-core.js)
             function _buildPaths() {
                 if (_p2d) return;
@@ -5223,6 +5241,9 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     var pColor = (typeof getRenderColor === 'function') ? getRenderColor(f.c) : f.c;
 
                     // Build one entry per y coordinate (isometric stacking)
+                    var vortexCx = svgW / 2;
+                    var vortexCy = (svgH / 2) + 130;
+
                     for (var yi = 0; yi < yCoords.length; yi++) {
                         var yVal = yCoords[yi];
                         var finalTx = px + (sizeX - rSize) / 2;
@@ -5231,6 +5252,18 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             finalTx = px;
                             finalTy = yVal;
                         }
+
+                        var dx = finalTx - vortexCx;
+                        var dy = finalTy - vortexCy;
+                        var qdy = (yVal + sizeY * 0.78) - vortexCy;
+
+                        var mu = (finalTx - vortexCx) / vortexCx;
+                        var mv = (finalTy - (svgH / 2)) / vortexCx;
+
+                        var flowAngle = Math.sin(f.x * 0.1) * Math.cos(f.y * 0.1) * Math.PI * 2;
+                        var flowPhase = f.x * 0.15 + f.y * 0.15;
+                        var flickerFreq = 6.0 + (fieldHash(f.x, f.y) * 12.0);
+                        var fHash = fieldHash(f.x, f.y);
 
                         var entry = {
                             idx:     i,                                // original flower index for hash
@@ -5248,7 +5281,23 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             char:    char,
                             quineX:  finalTx,
                             quineY:  yVal + sizeY * 0.78,
-                            fontSize: rSize * 1.35
+                            fontSize: rSize * 1.35,
+                            isBottom: yi === 0,
+                            vortexR: Math.sqrt(dx * dx + dy * dy),
+                            vortexAng: Math.atan2(dy, dx),
+                            qVortexR: Math.sqrt(dx * dx + qdy * qdy),
+                            qVortexAng: Math.atan2(qdy, dx),
+                            moireU: mu,
+                            moireV: mv,
+                            moireR: Math.sqrt(mu * mu + mv * mv),
+                            moireAng: Math.atan2(mv, mu),
+                            flowAngle: flowAngle,
+                            flowCos: Math.cos(flowAngle),
+                            flowSin: Math.sin(flowAngle),
+                            flowPhase: flowPhase,
+                            flickerFreq: flickerFreq,
+                            moireHashOffset: (fHash - 0.5) * 0.05,
+                            isoHashOffset: (fHash - 0.5) * 0.04
                         };
 
                         var isAnim = false;
@@ -5413,21 +5462,38 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 var stag = 0.50;
                 var iso_t = t * 0.55;
 
+                var vortexSpeedFactor = 0;
+                var spinAngleBase = (_spinAccum[id] || 0);
+                var vortexCx = halfW;
+                var vortexCy = midY + 130;
+                if (_animMode === 'vortex') {
+                    var cycleTime = t % 20.0;
+                    var localTime = cycleTime % 10.0;
+                    var sstep = function(e0, e1, x) {
+                        var n = Math.max(0, Math.min(1, (x - e0) / (e1 - e0)));
+                        return n * n * n * (n * (n * 6 - 15) + 10);
+                    };
+                    if (localTime < 2.0) vortexSpeedFactor = sstep(0.0, 2.0, localTime);
+                    else if (localTime < 8.0) vortexSpeedFactor = 1.0;
+                    else vortexSpeedFactor = 1.0 - sstep(8.0, 10.0, localTime);
+                    if (cycleTime >= 10.0) vortexSpeedFactor = -vortexSpeedFactor;
+                }
+
                 for (var i = 0; i < entries.length; i++) {
                     var e = entries[i];
                     
                     if (_animMode === 'moire') {
-                        var u = (e.tx - halfW) / halfW;
-                        var v = (e.ty - midY) / halfW;
-                        var r2 = Math.sqrt(u * u + v * v);
-                        var ang = Math.atan2(v, u);
+                        var u = e.moireU;
+                        var v = e.moireV;
+                        var r2 = e.moireR;
+                        var ang = e.moireAng;
                         var f = 0.5 + 0.5 * (
                             0.42 * Math.sin(7 * u + t) +
                             0.30 * Math.sin(9 * v - t * 0.7) +
                             0.42 * Math.sin(18 * r2 - t * 1.25) +
                             0.18 * Math.sin(5 * ang + t * 0.4)
                         );
-                        f += (fieldHash(e.col, e.row) - 0.5) * 0.05;
+                        f += e.moireHashOffset;
                         if (f < 0) f = 0; if (f > 1) f = 1;
                         
                         var lv = -1;
@@ -5496,7 +5562,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         var env = 0.5 + 0.5 * Math.sin(e.col * 0.45 + iso_t * 0.22);
                         
                         var f = (0.30 + 0.70 * base) * (0.45 + 0.55 * env);
-                        f += (fieldHash(e.col, e.row) - 0.5) * 0.04;
+                        f += e.isoHashOffset;
                         if (f < 0) f = 0; if (f > 1) f = 1;
 
                         var lv = 0;
@@ -5527,9 +5593,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         ctx.fillStyle = colColor;
 
                         if (e.isQuine) {
-                            // Draw ground connector for valid Quine
-                            if (elev > 2) {
-                                ctx.save();
+                            // Draw ground connector only for the base of the column to avoid visual clutter/overlapping lines
+                            if (e.isBottom && elev > 2) {
                                 ctx.beginPath();
                                 var cx = e.tx + 10 * e.scX;
                                 ctx.moveTo(cx, e.ty + (10 * e.scY));
@@ -5540,19 +5605,10 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                                 var lineAlpha = 0.02 + 0.15 * factor;
                                 var lineWidth = e.scX * (0.3 + 1.2 * factor);
                                 
-                                ctx.strokeStyle = (function(hex, a) {
-                                    var c = hex.substring(1);
-                                    if (c.length === 3) c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
-                                    var r = parseInt(c.substring(0, 2), 16);
-                                    var g = parseInt(c.substring(2, 4), 16);
-                                    var b = parseInt(c.substring(4, 6), 16);
-                                    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
-                                })(colColor, lineAlpha);
-                                
+                                ctx.strokeStyle = getRgbaString(colColor, lineAlpha);
                                 ctx.lineWidth = lineWidth;
                                 ctx.lineCap = 'round';
                                 ctx.stroke();
-                                ctx.restore();
                             }
 
                             ctx.save();
@@ -5568,12 +5624,10 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             ctx.fillText(e.char, 0, 0);
                             ctx.restore();
                         } else {
-                            var p2d = _p2d[e.pathKey];
                             if (!p2d) continue;
 
-                            // Draw ground connector for valid resolved motif path
-                            if (elev > 2) {
-                                ctx.save();
+                            // Draw ground connector only for the base of the column to avoid visual clutter/overlapping lines
+                            if (e.isBottom && elev > 2) {
                                 ctx.beginPath();
                                 var cx = e.tx + 10 * e.scX;
                                 ctx.moveTo(cx, e.ty + (10 * e.scY));
@@ -5584,19 +5638,10 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                                 var lineAlpha = 0.02 + 0.15 * factor;
                                 var lineWidth = e.scX * (0.3 + 1.2 * factor);
                                 
-                                ctx.strokeStyle = (function(hex, a) {
-                                    var c = hex.substring(1);
-                                    if (c.length === 3) c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
-                                    var r = parseInt(c.substring(0, 2), 16);
-                                    var g = parseInt(c.substring(2, 4), 16);
-                                    var b = parseInt(c.substring(4, 6), 16);
-                                    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
-                                })(colColor, lineAlpha);
-                                
+                                ctx.strokeStyle = getRgbaString(colColor, lineAlpha);
                                 ctx.lineWidth = lineWidth;
                                 ctx.lineCap = 'round';
                                 ctx.stroke();
-                                ctx.restore();
                             }
 
                             ctx.setTransform(scaleX * drawScX, 0, 0, scaleY * drawScY, scaleX * e.tx, scaleY * drawTy);
@@ -5613,43 +5658,21 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             ctx.fill(p2d.path || p2d, 'evenodd');
                         }
                     } else if (_animMode === 'vortex') {
-                        var cx = halfW;
-                        var cy = midY + 130;
-                        var dx = e.tx - cx;
-                        var dy = e.ty - cy;
-                        var r2 = Math.sqrt(dx * dx + dy * dy);
-                        var ang = Math.atan2(dy, dx);
+                        var r2 = e.vortexR;
+                        var ang = e.vortexAng;
+                        var spinAngle = spinAngleBase - r2 * 0.0025 * vortexSpeedFactor;
                         
-                        var spinAngle = (_spinAccum[id] || 0);
-                        
-                        var cycleTime = t % 20.0;
-                        var localTime = cycleTime % 10.0;
-                        var speedFactor = 0;
-                        var sstep = function(e0, e1, x) {
-                            var n = Math.max(0, Math.min(1, (x - e0) / (e1 - e0)));
-                            return n * n * n * (n * (n * 6 - 15) + 10);
-                        };
-                        if (localTime < 2.0) speedFactor = sstep(0.0, 2.0, localTime);
-                        else if (localTime < 8.0) speedFactor = 1.0;
-                        else speedFactor = 1.0 - sstep(8.0, 10.0, localTime);
-                        if (cycleTime >= 10.0) speedFactor = -speedFactor;
-                        
-                        var lag = r2 * 0.0025 * speedFactor;
-                        spinAngle -= lag;
-                        
-                        var drawTx = cx + Math.cos(ang + spinAngle) * r2;
-                        var drawTy = cy + Math.sin(ang + spinAngle) * r2;
+                        var drawTx = vortexCx + Math.cos(ang + spinAngle) * r2;
+                        var drawTy = vortexCy + Math.sin(ang + spinAngle) * r2;
                         
                         ctx.globalAlpha = 1.0;
                         ctx.fillStyle = e.color;
                         
                         if (e.isQuine) {
-                            var qdx = e.quineX - cx;
-                            var qdy = e.quineY - cy;
-                            var qr2 = Math.sqrt(qdx * qdx + qdy * qdy);
-                            var qang = Math.atan2(qdy, qdx);
-                            var drawQuineX = cx + Math.cos(qang + spinAngle) * qr2;
-                            var drawQuineY = cy + Math.sin(qang + spinAngle) * qr2;
+                            var qr2 = e.qVortexR;
+                            var qang = e.qVortexAng;
+                            var drawQuineX = vortexCx + Math.cos(qang + spinAngle) * qr2;
+                            var drawQuineY = vortexCy + Math.sin(qang + spinAngle) * qr2;
 
                             ctx.save();
                             ctx.font = 'bold ' + (e.fontSize) + 'px Courier, \'Courier New\', monospace';
@@ -5688,22 +5711,20 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         var hyperspeedBase = 1.0;
 
                         if (_animMode === 'flow') {
-                            var flowAngle = Math.sin(e.col * 0.1) * Math.cos(e.row * 0.1) * Math.PI * 2;
-                            var wave = Math.sin(t * 2.5 + (e.col * 0.15 + e.row * 0.15));
-                            flowX = Math.cos(flowAngle) * wave * 10.0;
-                            flowY = Math.sin(flowAngle) * wave * 10.0;
+                            var wave = Math.sin(t * 2.5 + e.flowPhase);
+                            flowX = e.flowCos * wave * 10.0;
+                            flowY = e.flowSin * wave * 10.0;
                         } else if (_animMode === 'flicker') {
-                            var phase = e.phase || (i * 2.39996);
-                            var motifFreq = 6.0 + (fieldHash(e.col, e.row) * 12.0); // 6-18 Hz shimmer
+                            var phase = e.phase;
+                            var freq = e.flickerFreq;
                             var glowVal = 0.5 + 
-                                Math.sin(t * motifFreq + phase) * 0.4 + 
-                                Math.sin(t * (motifFreq * 0.37) + phase * 2.1) * 0.15 +
-                                Math.sin(t * 35.0 + phase * 5.0) * 0.1; // microscopic high-speed neon noise
+                                Math.sin(t * freq + phase) * 0.4 + 
+                                Math.sin(t * (freq * 0.37) + phase * 2.1) * 0.15 +
+                                Math.sin(t * 35.0 + phase * 5.0) * 0.1;
                             
                             glowVal = Math.max(0, Math.min(1, glowVal));
                             hyperspeedBase = _ghostOp + (1.0 - _ghostOp) * glowVal;
                             
-                            // Mechanical vibration hum (0.35px max)
                             flowX = Math.sin(t * 50.0 + phase) * 0.35;
                             flowY = Math.cos(t * 50.0 + phase * 1.3) * 0.35;
                         }
