@@ -1674,6 +1674,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                                 <div onclick="PlatenHyperspeed.setMode('flow')">FLOW</div>
                                 <div onclick="PlatenHyperspeed.setMode('flicker')">FLICKER</div>
                                 <div onclick="PlatenHyperspeed.setMode('flux')">FLUX</div>
+                                <div onclick="PlatenHyperspeed.setMode('ascent')">ASCENT</div>
                                 <div id="motus-mode-moire" onclick="PlatenHyperspeed.setMode('moire')">MOIRÉ</div>
                                 <div id="motus-mode-iso" onclick="PlatenHyperspeed.setMode('iso_col')">ELEVATE</div>
                                 <div id="motus-mode-polar" onclick="PlatenHyperspeed.setMode('vortex')">VORTEX</div>
@@ -2126,7 +2127,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     btnMotusMode.style.display = motusActive ? 'inline-block' : 'none';
                     // Synchronize mode label with PlatenHyperspeed's current state
                     var activeMode = PlatenHyperspeed.getMode ? PlatenHyperspeed.getMode() : 'flow';
-                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
+                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'flux': 'FLUX', 'ascent': 'ASCENT', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
                     btnMotusMode.textContent = labels[activeMode] || 'FLOW';
                 }
             }
@@ -5658,6 +5659,102 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             }
                             ctx.fill(p2d.path || p2d, 'evenodd');
                         }
+                    } else if (_animMode === 'ascent') {
+                        var ph = e.col * stag;
+                        var base = 0.5 + 0.5 * Math.sin(e.row * 0.40 - iso_t * 1.1 + ph);
+                        var env = 0.5 + 0.5 * Math.sin(e.col * 0.45 + iso_t * 0.22);
+                        
+                        var f = (0.30 + 0.70 * base) * (0.45 + 0.55 * env);
+                        f += e.isoHashOffset;
+                        if (f < 0) f = 0; if (f > 1) f = 1;
+
+                        var elev = f * 60; // Upward elevation
+                        var wave = Math.sin(t * 2.5 + e.flowPhase);
+                        var phase = e.phase;
+                        var freq = e.flickerFreq;
+                        
+                        var glowVal = 0.5 + 
+                            Math.sin(t * freq + phase) * 0.4 + 
+                            Math.sin(t * (freq * 0.37) + phase * 2.1) * 0.15 +
+                            Math.sin(t * 35.0 + phase * 5.0) * 0.1;
+                        
+                        glowVal = Math.max(0, Math.min(1, glowVal));
+                        var hyperspeedBase = _ghostOp + (1.0 - _ghostOp) * glowVal;
+
+                        var flowX = e.flowCos * wave * 10.0;
+                        var flowY = e.flowSin * wave * 10.0;
+                        var vibX = Math.sin(t * 50.0 + phase) * 0.35;
+                        var vibY = Math.cos(t * 50.0 + phase * 1.3) * 0.35;
+
+                        var drawTx = e.tx + flowX + vibX;
+                        var drawTy = e.ty - elev + flowY + vibY;
+                        
+                        var scaleMod = 1.0 + f * 0.15;
+                        var drawScX = e.scX * scaleMod;
+                        var drawScY = e.scY * scaleMod;
+
+                        var colColor = e.color;
+                        ctx.fillStyle = colColor;
+                        ctx.globalAlpha = Math.min(hyperspeedBase, 1.0);
+
+                        // Draw ground connector line for floating effect (only for base of column to prevent visual mess)
+                        if (e.isBottom && elev > 2) {
+                            ctx.beginPath();
+                            var cx = e.tx + flowX + 10 * e.scX;
+                            var gy = e.ty + flowY + 10 * e.scY;
+                            var ey = e.ty - elev + flowY + 10 * e.scY;
+                            ctx.moveTo(cx, gy);
+                            ctx.lineTo(cx, ey);
+                            
+                            var factor = (f - 0.2) / 0.8;
+                            if (factor < 0) factor = 0;
+                            var lineAlpha = 0.02 + 0.12 * factor;
+                            var lineWidth = e.scX * (0.3 + 1.0 * factor);
+                            
+                            ctx.strokeStyle = getRgbaString(colColor, lineAlpha);
+                            ctx.lineWidth = lineWidth;
+                            ctx.lineCap = 'round';
+                            ctx.stroke();
+                        }
+
+                        if (e.isQuine) {
+                            var drawQuineY = e.quineY - elev + flowY + vibY;
+                            ctx.save();
+                            ctx.font = 'bold ' + (e.fontSize * scaleMod) + 'px Courier, \'Courier New\', monospace';
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'alphabetic';
+                            var qx = e.quineX + flowX + vibX;
+                            ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * qx, scaleY * drawQuineY);
+                            if (e.rot) {
+                                ctx.translate(e.fontSize / 2, -e.fontSize / 2);
+                                ctx.rotate(e.rot * Math.PI / 180);
+                                ctx.translate(-e.fontSize / 2, e.fontSize / 2);
+                            }
+                            ctx.fillText(e.char, 0, 0);
+                            ctx.restore();
+                        } else {
+                            var pKey = e.pathKey;
+                            if (traits.space === 'isometric') {
+                                var iso_glyphs = ['comma', 'dot', 'plus', 'x', 'asterisk', 'slash', 'hash', 'dash'];
+                                var gIdx = Math.floor(f * iso_glyphs.length * 0.99);
+                                pKey = _p2d[iso_glyphs[gIdx]] ? iso_glyphs[gIdx] : e.pathKey;
+                            }
+                            var p2d = _p2d[pKey] || _p2d[e.pathKey];
+                            if (p2d) {
+                                ctx.setTransform(scaleX * drawScX, 0, 0, scaleY * drawScY, scaleX * drawTx, scaleY * drawTy);
+                                if (e.flip) {
+                                    ctx.translate(10, 10);
+                                    ctx.rotate(Math.PI);
+                                    ctx.translate(-10, -10);
+                                }
+                                if (e.rot) {
+                                    ctx.translate(10, 10);
+                                    ctx.rotate(e.rot * Math.PI / 180);
+                                    ctx.translate(-10, -10);
+                                }
+                                ctx.fill(p2d.path || p2d, 'evenodd');
+                            }
+                        }
                     } else if (_animMode === 'vortex') {
                         var r2 = e.vortexR;
                         var ang = e.vortexAng;
@@ -5879,8 +5976,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     if (mode === 'iso_col' && traits.space !== 'isometric') return;
                     if (mode === 'vortex' && traits.space !== 'polar' && traits.space !== 'moire') return;
                     if (mode === 'moire' && traits.space === 'isometric') return;
-                    var modes = ['flow', 'flicker', 'flux', 'moire', 'iso_col', 'vortex'];
-                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
+                    var modes = ['flow', 'flicker', 'flux', 'ascent', 'moire', 'iso_col', 'vortex'];
+                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'flux': 'FLUX', 'ascent': 'ASCENT', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
                     if (modes.indexOf(mode) > -1) {
                         _animMode = mode;
                         var btn = document.getElementById('motus-mode-btn');
@@ -5906,11 +6003,11 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 cycleMode: function () {
                     var traits = window.RESOLVED_TRAITS || window.TRAITS || {};
-                    var modes = ['flow', 'flicker', 'flux'];
+                    var modes = ['flow', 'flicker', 'flux', 'ascent'];
                     if (traits.space !== 'isometric') modes.push('moire');
                     if (traits.space === 'isometric') modes.push('iso_col');
                     if (traits.space === 'polar' || traits.space === 'moire') modes.push('vortex');
-                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
+                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'flux': 'FLUX', 'ascent': 'ASCENT', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
                     var idx = modes.indexOf(_animMode);
                     if (idx === -1) idx = 0;
                     _animMode = modes[(idx + 1) % modes.length];
