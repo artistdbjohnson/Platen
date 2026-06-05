@@ -1703,6 +1703,10 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     <button id="btn-out-svg" onclick="saveSVG('full')">Download SVG</button>
                 </div>
                 
+                <div id="stack-export-note" style="font-size: 8px; opacity: 0.6; text-transform: uppercase; margin-top: 8px; display: none; letter-spacing: 0.05em; color: #8b5cf6;">
+                    Stack Mode Active: Downloads will export all accumulated layers.
+                </div>
+                
                 <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
                     <input type="checkbox" id="inc-bg" checked onchange="renderAll()" style="cursor: pointer; accent-color: #000;">
                     <label for="inc-bg" style="font-size: 9px; cursor: pointer; text-transform: uppercase; opacity: 0.8; letter-spacing: 0.05em;">Include BG Texture</label>
@@ -2020,6 +2024,10 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             if (btnStack) {
                 btnStack.textContent = 'Stack: ' + (window._stackLayers ? 'ON' : 'OFF');
                 btnStack.classList.toggle('active', window._stackLayers);
+            }
+            var note = document.getElementById('stack-export-note');
+            if (note) {
+                note.style.display = window._stackLayers ? 'block' : 'none';
             }
             fsUpdateHudUI();
         }
@@ -3469,16 +3477,36 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     
 
 
-                    // Once the new elements are fully generated in memory, wipe the old SVG
-                    while (svg.firstChild) svg.removeChild(svg.firstChild);
+                    // Once the new elements are generated, update the SVG element.
+                    // If stackLayers is active, preserve all previous artwork layers.
                     svg.setAttribute("width", svgW);
                     svg.setAttribute("height", svgH);
                     svg.setAttribute("viewBox", "0 0 " + svgW + " " + svgH);
                     svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
                     svg.parentElement.style.aspectRatio = svgW + " / " + svgH;
 
-                    // Append the new fragment instantly
-                    svg.appendChild(frag);
+                    if (window._stackLayers) {
+                        var artworkGroups = Array.from(svg.querySelectorAll('.platen-artwork'));
+                        while (svg.firstChild) svg.removeChild(svg.firstChild);
+                        
+                        // Append background rect
+                        svg.appendChild(bg);
+                        
+                        // Re-append existing artwork groups
+                        artworkGroups.forEach(function (g) {
+                            svg.appendChild(g);
+                        });
+                        
+                        // Append the new artwork group
+                        svg.appendChild(gEl);
+                        
+                        // Append new typewriter header if it exists
+                        var headerG = frag.querySelector('.typewriter-header');
+                        if (headerG) svg.appendChild(headerG);
+                    } else {
+                        while (svg.firstChild) svg.removeChild(svg.firstChild);
+                        svg.appendChild(frag);
+                    }
 
                     // Render SVG to WebGL Canvas for pure hardware-acceleration
                     var canvas = document.getElementById('c' + id);
