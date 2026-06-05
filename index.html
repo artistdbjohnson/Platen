@@ -1703,8 +1703,13 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     <button id="btn-out-svg" onclick="saveSVG('full')">Download SVG</button>
                 </div>
                 
-                <div id="stack-export-note" style="font-size: 8px; opacity: 0.6; text-transform: uppercase; margin-top: 8px; display: none; letter-spacing: 0.05em; color: #8b5cf6;">
+                <div id="stack-export-note" style="font-size: 8px; opacity: 0.8; text-transform: uppercase; margin-top: 8px; display: none; letter-spacing: 0.05em; color: #8b5cf6; line-height: 1.5;">
                     Stack Mode Active: Downloads will export all accumulated layers.
+                    <div style="margin-top: 6px; display: flex; gap: 8px; align-items: center;">
+                        <a href="#" onclick="saveStackedLayers('svg', event)" style="color: #8b5cf6; text-decoration: underline; font-weight: 600; cursor: pointer;">Export Layers as SVGs</a>
+                        <span style="opacity: 0.4;">|</span>
+                        <a href="#" onclick="saveStackedLayers('png', event)" style="color: #8b5cf6; text-decoration: underline; font-weight: 600; cursor: pointer;">Export Layers as PNGs</a>
+                    </div>
                 </div>
                 
                 <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
@@ -3611,49 +3616,181 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
         }
 
-        function saveSVG(forceMode) {
-            var mode = forceMode || 'full';
+        function saveStackedLayers(format, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
             var panels = activePanels();
+            var downloadCount = 0;
+            
             panels.forEach(function (id) {
                 var svg = document.getElementById('s' + id);
                 if (!svg) return;
                 
-                var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
-                var baseName = 'platen-' + RENDER_SEED + '-v' + id + tStr;
-
-                if (mode === 'separate') {
-                    // Group paths by color
-                    var paths = Array.from(svg.querySelectorAll('path'));
-                    var groups = {};
-                    paths.forEach(function (p) {
-                        var fill = p.getAttribute('fill') || '#000000';
-                        if (!groups[fill]) groups[fill] = [];
-                        groups[fill].push(p.cloneNode(true));
-                    });
-
-                    Object.keys(groups).forEach(function (color) {
-                        var newSvg = svg.cloneNode(false);
-                        var g = document.createElementNS("http://www.w3.org/2000/svg", 'g');
-                        groups[color].forEach(function(p) { g.appendChild(p); });
-                        newSvg.appendChild(g);
-                        
-                        var srcTEl = svg.querySelector('text');
-                        if (srcTEl) newSvg.appendChild(srcTEl.cloneNode(true));
-                        
-                        var str = svgToString(newSvg);
-                        var blob = new Blob([str], { type: 'image/svg+xml' });
-                        
-                        // Try to find the actual pen/color name
-                        var hex = color.toUpperCase();
-                        var penName = (typeof PEN_MAP !== 'undefined' && PEN_MAP[hex]) ? PEN_MAP[hex].replace(/[^a-zA-Z0-9_-]/g, '_') : color.replace('#', '');
-                        
-                        downloadBlob(blob, baseName + '-' + penName + '.svg');
-                    });
-                } else {
-                    var str = svgToString(svg);
-                    var blob = new Blob([str], { type: 'image/svg+xml' });
-                    downloadBlob(blob, baseName + '.svg');
+                var artworkGroups = Array.from(svg.querySelectorAll('.platen-artwork'));
+                if (artworkGroups.length === 0) {
+                    console.warn('[Platen] No individual stacked layers found in panel', id);
+                    return;
                 }
+                
+                artworkGroups.forEach(function (gEl, layerIdx) {
+                    var currentIdx = downloadCount++;
+                    setTimeout(function () {
+                        var svgW = parseInt(svg.getAttribute('width')) || 800;
+                        var svgH = parseInt(svg.getAttribute('height')) || 1200;
+                        
+                        var tempSvg = svg.cloneNode(false);
+                        tempSvg.setAttribute("width", svgW);
+                        tempSvg.setAttribute("height", svgH);
+                        tempSvg.setAttribute("viewBox", svg.getAttribute("viewBox") || ("0 0 " + svgW + " " + svgH));
+                        
+                        var bgRect = svg.querySelector('rect');
+                        if (bgRect) {
+                            tempSvg.appendChild(bgRect.cloneNode(true));
+                        }
+                        
+                        tempSvg.appendChild(gEl.cloneNode(true));
+                        
+                        var headerG = svg.querySelector('.typewriter-header');
+                        if (headerG) {
+                            tempSvg.appendChild(headerG.cloneNode(true));
+                        }
+                        
+                        var rt = window.RESOLVED_TRAITS || TRAITS;
+                        var tStr = "-sym_" + rt.symmetry + "-space_" + rt.space + "-motif_" + rt.motif + "-chrome_" + rt.chromes + "-engine_" + rt.engine;
+                        var baseName = 'platen-' + RENDER_SEED + '-v' + id + '-layer-' + (layerIdx + 1) + tStr;
+                        
+                        if (format === 'svg') {
+                            var str = svgToString(tempSvg);
+                            var blob = new Blob([str], { type: 'image/svg+xml' });
+                            downloadBlob(blob, baseName + '.svg');
+                        } else if (format === 'png') {
+                            var aspect = svgW / svgH;
+                            var outW, outH;
+                            if (Math.abs(aspect - (9 / 16)) < 0.01) {
+                                outW = 1440; outH = 2560;
+                            } else if (Math.abs(aspect - 1.0) < 0.01) {
+                                outW = 2560; outH = 2560;
+                            } else if (Math.abs(aspect - (16 / 9)) < 0.01) {
+                                outW = 2560; outH = 1440;
+                            } else {
+                                if (aspect < 1.0) {
+                                    outH = 2560; outW = Math.round(outH * aspect);
+                                } else {
+                                    outW = 2560; outH = Math.round(outW / aspect);
+                                }
+                            }
+                            
+                            var svgClone = tempSvg.cloneNode(true);
+                            var shiftG = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                            shiftG.setAttribute("transform", "translate(0, 16)");
+                            while (svgClone.firstChild) {
+                                shiftG.appendChild(svgClone.firstChild);
+                            }
+                            svgClone.appendChild(shiftG);
+                            
+                            var str = svgToString(svgClone);
+                            var blob = new Blob([str], { type: 'image/svg+xml' });
+                            var svgUrl = URL.createObjectURL(blob);
+                            
+                            var svgImg = new Image();
+                            svgImg.onload = function () {
+                                function doComposite(texImg) {
+                                    var canvas = document.createElement('canvas');
+                                    canvas.width = outW; canvas.height = outH;
+                                    var ctx = canvas.getContext('2d');
+                                    var includeBG = document.getElementById('inc-bg').checked;
+                                    
+                                    if (includeBG) {
+                                        if (texImg) {
+                                            var imgW = texImg.width, imgH = texImg.height;
+                                            var tScale = Math.max(outW / imgW, outH / imgH);
+                                            if (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter') tScale *= 1.06;
+                                            var newW = imgW * tScale;
+                                            var newH = imgH * tScale;
+                                            var dx = (outW - newW) / 2;
+                                            var dy = (outH - newH) / 2;
+                                            if (TRAITS.canvas && TRAITS.canvas.indexOf('graph_paper') === 0) {
+                                                dy = 0;
+                                            }
+                                            ctx.drawImage(texImg, 0, 0, imgW, imgH, dx, dy, newW, newH);
+                                        } else {
+                                            var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
+                                            ctx.fillStyle = activeCanvas === 'black' ? '#0a0a0a' : '#f5f0e8';
+                                            ctx.fillRect(0, 0, outW, outH);
+                                        }
+                                    }
+                                    
+                                    ctx.drawImage(svgImg, 0, 0, outW, outH);
+                                    
+                                    canvas.toBlob(function (imgBlob) {
+                                        downloadBlob(imgBlob, baseName + '.png');
+                                        URL.revokeObjectURL(svgUrl);
+                                    }, 'image/png');
+                                }
+                                
+                                if (_activeCanvasImg) {
+                                    doComposite(_activeCanvasImg);
+                                } else {
+                                    doComposite(null);
+                                }
+                            };
+                            svgImg.src = svgUrl;
+                        }
+                    }, currentIdx * 450);
+                });
+            });
+            console.log('[Platen] Initiated stacked layers individual exports for format:', format);
+        }
+
+        function saveSVG(forceMode) {
+            var mode = forceMode || 'full';
+            var panels = activePanels();
+            panels.forEach(function (id, idx) {
+                setTimeout(function () {
+                    var svg = document.getElementById('s' + id);
+                    if (!svg) return;
+                    
+                    var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
+                    var baseName = 'platen-' + RENDER_SEED + '-v' + id + tStr;
+
+                    if (mode === 'separate') {
+                        // Group paths by color
+                        var paths = Array.from(svg.querySelectorAll('path'));
+                        var groups = {};
+                        paths.forEach(function (p) {
+                            var fill = p.getAttribute('fill') || '#000000';
+                            if (!groups[fill]) groups[fill] = [];
+                            groups[fill].push(p.cloneNode(true));
+                        });
+
+                        Object.keys(groups).forEach(function (color, cidx) {
+                            setTimeout(function () {
+                                var newSvg = svg.cloneNode(false);
+                                var g = document.createElementNS("http://www.w3.org/2000/svg", 'g');
+                                groups[color].forEach(function(p) { g.appendChild(p); });
+                                newSvg.appendChild(g);
+                                
+                                var srcTEl = svg.querySelector('text');
+                                if (srcTEl) newSvg.appendChild(srcTEl.cloneNode(true));
+                                
+                                var str = svgToString(newSvg);
+                                var blob = new Blob([str], { type: 'image/svg+xml' });
+                                
+                                // Try to find the actual pen/color name
+                                var hex = color.toUpperCase();
+                                var penName = (typeof PEN_MAP !== 'undefined' && PEN_MAP[hex]) ? PEN_MAP[hex].replace(/[^a-zA-Z0-9_-]/g, '_') : color.replace('#', '');
+                                
+                                downloadBlob(blob, baseName + '-' + penName + '.svg');
+                            }, cidx * 200);
+                        });
+                    } else {
+                        var str = svgToString(svg);
+                        var blob = new Blob([str], { type: 'image/svg+xml' });
+                        downloadBlob(blob, baseName + '.svg');
+                    }
+                }, idx * 400);
             });
             console.log('[Platen] Saved SVG(s) for panels:', panels);
         }
@@ -4466,110 +4603,112 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
         function saveAsImage(format) {
             var panels = activePanels();
-            panels.forEach(function (id) {
-                var svg = document.getElementById('s' + id);
-                if (!svg) return;
-                var svgW = parseInt(svg.getAttribute('width'));
-                var svgH = parseInt(svg.getAttribute('height'));
+            panels.forEach(function (id, idx) {
+                setTimeout(function () {
+                    var svg = document.getElementById('s' + id);
+                    if (!svg) return;
+                    var svgW = parseInt(svg.getAttribute('width'));
+                    var svgH = parseInt(svg.getAttribute('height'));
 
-                // Smart Aspect Ratio Logic based on actual SVG content
-                var aspect = svgW / svgH;
-                var outW, outH;
-                if (Math.abs(aspect - (9 / 16)) < 0.01) {
-                    outW = 1440; outH = 2560;
-                } else if (Math.abs(aspect - 1.0) < 0.01) {
-                    outW = 2560; outH = 2560;
-                } else if (Math.abs(aspect - (16 / 9)) < 0.01) {
-                    outW = 2560; outH = 1440;
-                } else {
-                    // Custom aspect ratio (e.g. 39:51)
-                    // Anchor to 2560px on the longest dimension
-                    if (aspect < 1.0) {
-                        outH = 2560;
-                        outW = Math.round(outH * aspect);
+                    // Smart Aspect Ratio Logic based on actual SVG content
+                    var aspect = svgW / svgH;
+                    var outW, outH;
+                    if (Math.abs(aspect - (9 / 16)) < 0.01) {
+                        outW = 1440; outH = 2560;
+                    } else if (Math.abs(aspect - 1.0) < 0.01) {
+                        outW = 2560; outH = 2560;
+                    } else if (Math.abs(aspect - (16 / 9)) < 0.01) {
+                        outW = 2560; outH = 1440;
                     } else {
-                        outW = 2560;
-                        outH = Math.round(outW / aspect);
+                        // Custom aspect ratio (e.g. 39:51)
+                        // Anchor to 2560px on the longest dimension
+                        if (aspect < 1.0) {
+                            outH = 2560;
+                            outW = Math.round(outH * aspect);
+                        } else {
+                            outW = 2560;
+                            outH = Math.round(outW / aspect);
+                        }
                     }
-                }
 
-                var scaleX = outW / svgW, scaleY = outH / svgH;
+                    var scaleX = outW / svgW, scaleY = outH / svgH;
 
-                // Clone the SVG and shift elements down by 16px to prevent top text clipping
-                var svgClone = svg.cloneNode(true);
-                var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                g.setAttribute("transform", "translate(0, 16)");
-                while (svgClone.firstChild) {
-                    g.appendChild(svgClone.firstChild);
-                }
-                svgClone.appendChild(g);
+                    // Clone the SVG and shift elements down by 16px to prevent top text clipping
+                    var svgClone = svg.cloneNode(true);
+                    var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                    g.setAttribute("transform", "translate(0, 16)");
+                    while (svgClone.firstChild) {
+                        g.appendChild(svgClone.firstChild);
+                    }
+                    svgClone.appendChild(g);
 
-                // Serialize SVG with transparent background
-                var str = svgToString(svgClone);
-                var blob = new Blob([str], { type: 'image/svg+xml' });
-                var svgUrl = URL.createObjectURL(blob);
+                    // Serialize SVG with transparent background
+                    var str = svgToString(svgClone);
+                    var blob = new Blob([str], { type: 'image/svg+xml' });
+                    var svgUrl = URL.createObjectURL(blob);
 
-                var svgImg = new Image();
-                svgImg.onload = function () {
-                    // Load texture from data URL (avoids tainted canvas)
-                    function doComposite(texImg) {
-                        var canvas = document.createElement('canvas');
-                        canvas.width = outW; canvas.height = outH;
-                        var ctx = canvas.getContext('2d');
+                    var svgImg = new Image();
+                    svgImg.onload = function () {
+                        // Load texture from data URL (avoids tainted canvas)
+                        function doComposite(texImg) {
+                            var canvas = document.createElement('canvas');
+                            canvas.width = outW; canvas.height = outH;
+                            var ctx = canvas.getContext('2d');
 
-                        var includeBG = document.getElementById('inc-bg').checked;
+                            var includeBG = document.getElementById('inc-bg').checked;
 
-                        // Layer 1: canvas texture (full res) or fallback background color fill for JPEG
-                        if (includeBG) {
-                            if (texImg) {
-                                var imgW = texImg.width, imgH = texImg.height;
-                                var tScale = Math.max(outW / imgW, outH / imgH);
-                                if (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter') tScale *= 1.06;
-                                var newW = imgW * tScale;
-                                var newH = imgH * tScale;
-                                var dx = (outW - newW) / 2;
-                                var dy = (outH - newH) / 2;
-                                if (TRAITS.canvas && TRAITS.canvas.indexOf('graph_paper') === 0) {
-                                    dy = 0; // background-position: center top
+                            // Layer 1: canvas texture (full res) or fallback background color fill for JPEG
+                            if (includeBG) {
+                                if (texImg) {
+                                    var imgW = texImg.width, imgH = texImg.height;
+                                    var tScale = Math.max(outW / imgW, outH / imgH);
+                                    if (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter') tScale *= 1.06;
+                                    var newW = imgW * tScale;
+                                    var newH = imgH * tScale;
+                                    var dx = (outW - newW) / 2;
+                                    var dy = (outH - newH) / 2;
+                                    if (TRAITS.canvas && TRAITS.canvas.indexOf('graph_paper') === 0) {
+                                        dy = 0; // background-position: center top
+                                    }
+                                    ctx.drawImage(texImg, 0, 0, imgW, imgH, dx, dy, newW, newH);
+                                } else {
+                                    var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
+                                    ctx.fillStyle = activeCanvas === 'black' ? '#0a0a0a' : '#f5f0e8';
+                                    ctx.fillRect(0, 0, outW, outH);
                                 }
-                                ctx.drawImage(texImg, 0, 0, imgW, imgH, dx, dy, newW, newH);
-                            } else {
+                            } else if (format === 'jpg') {
+                                // JPEGs must have a solid background color if BG texture is not included
                                 var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
                                 ctx.fillStyle = activeCanvas === 'black' ? '#0a0a0a' : '#f5f0e8';
                                 ctx.fillRect(0, 0, outW, outH);
                             }
-                        } else if (format === 'jpg') {
-                            // JPEGs must have a solid background color if BG texture is not included
-                            var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
-                            ctx.fillStyle = activeCanvas === 'black' ? '#0a0a0a' : '#f5f0e8';
-                            ctx.fillRect(0, 0, outW, outH);
+
+                            // Layer 2: SVG pattern scaled to fill
+                            ctx.save();
+                            ctx.globalAlpha = 1.0;
+                            ctx.drawImage(svgImg, 0, 0, outW, outH);
+                            ctx.restore();
+
+                            var mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+                            var quality = format === 'png' ? undefined : 0.95;
+
+                            canvas.toBlob(function (imgBlob) {
+                                var rt = RESOLVED_TRAITS || TRAITS;
+                                var tStr = "-sym_" + rt.symmetry + "-space_" + rt.space + "-motif_" + rt.motif + "-chrome_" + rt.chromes + "-engine_" + rt.engine;
+                                var name = 'platen-' + RENDER_SEED + '-v' + id + tStr + '.' + format;
+                                downloadBlob(imgBlob, name);
+                                console.log('[Platen] Saved ' + format.toUpperCase() + ': ' + name + ' (' + outW + 'x' + outH + ')');
+                            }, mimeType, quality);
                         }
 
-                        // Layer 2: SVG pattern scaled to fill
-                        ctx.save();
-                        ctx.globalAlpha = 1.0;
-                        ctx.drawImage(svgImg, 0, 0, outW, outH);
-                        ctx.restore();
-
-                        var mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
-                        var quality = format === 'png' ? undefined : 0.95;
-
-                        canvas.toBlob(function (imgBlob) {
-                            var rt = RESOLVED_TRAITS || TRAITS;
-                            var tStr = "-sym_" + rt.symmetry + "-space_" + rt.space + "-motif_" + rt.motif + "-chrome_" + rt.chromes + "-engine_" + rt.engine;
-                            var name = 'platen-' + RENDER_SEED + '-v' + id + tStr + '.' + format;
-                            downloadBlob(imgBlob, name);
-                            console.log('[Platen] Saved ' + format.toUpperCase() + ': ' + name + ' (' + outW + 'x' + outH + ')');
-                        }, mimeType, quality);
-                    }
-
-                    if (_activeCanvasImg) {
-                        doComposite(_activeCanvasImg);
-                    } else {
-                        doComposite(null);
-                    }
-                };
-                svgImg.src = svgUrl;
+                        if (_activeCanvasImg) {
+                            doComposite(_activeCanvasImg);
+                        } else {
+                            doComposite(null);
+                        }
+                    };
+                    svgImg.src = svgUrl;
+                }, idx * 450);
             });
         }
 
