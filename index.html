@@ -5393,13 +5393,13 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                                 ctx.save();
                                 ctx.beginPath();
                                 var cx = e.tx + 10 * e.scX;
-                                ctx.moveTo(scaleX * cx, scaleY * e.ty + scaleY * (10 * e.scY));
-                                ctx.lineTo(scaleX * cx, scaleY * drawTy + scaleY * (10 * e.scY));
+                                ctx.moveTo(cx, e.ty + (10 * e.scY));
+                                ctx.lineTo(cx, drawTy + (10 * e.scY));
                                 
                                 var factor = (f - 0.2) / 0.8;
                                 if (factor < 0) factor = 0;
                                 var lineAlpha = 0.02 + 0.15 * factor;
-                                var lineWidth = scaleX * e.scX * (0.3 + 1.2 * factor);
+                                var lineWidth = e.scX * (0.3 + 1.2 * factor);
                                 
                                 ctx.strokeStyle = (function(hex, a) {
                                     var c = hex.substring(1);
@@ -5437,13 +5437,13 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                                 ctx.save();
                                 ctx.beginPath();
                                 var cx = e.tx + 10 * e.scX;
-                                ctx.moveTo(scaleX * cx, scaleY * e.ty + scaleY * (10 * e.scY));
-                                ctx.lineTo(scaleX * cx, scaleY * drawTy + scaleY * (10 * e.scY));
+                                ctx.moveTo(cx, e.ty + (10 * e.scY));
+                                ctx.lineTo(cx, drawTy + (10 * e.scY));
                                 
                                 var factor = (f - 0.2) / 0.8;
                                 if (factor < 0) factor = 0;
                                 var lineAlpha = 0.02 + 0.15 * factor;
-                                var lineWidth = scaleX * e.scX * (0.3 + 1.2 * factor);
+                                var lineWidth = e.scX * (0.3 + 1.2 * factor);
                                 
                                 ctx.strokeStyle = (function(hex, a) {
                                     var c = hex.substring(1);
