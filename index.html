@@ -1669,10 +1669,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     <div style="display: flex; gap: 6px; align-items: stretch; position: relative;">
                         <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()" style="flex: 1;">Motus: OFF</button>
                         <div id="motus-dropdown-container" class="motus-dropdown" style="display: none;">
-                            <button id="motus-mode-btn" class="motus-dropdown-btn" onclick="var ts = window.RESOLVED_TRAITS || window.TRAITS || {}; var isoOpt = document.getElementById('motus-mode-iso'); if(isoOpt) { if(ts.space === 'isometric') { isoOpt.style.opacity = '1.0'; isoOpt.style.pointerEvents = 'auto'; } else { isoOpt.style.opacity = '0.4'; isoOpt.style.pointerEvents = 'none'; } } var polOpt = document.getElementById('motus-mode-polar'); if(polOpt) { if(ts.space === 'polar' || ts.space === 'moire') { polOpt.style.opacity = '1.0'; polOpt.style.pointerEvents = 'auto'; } else { polOpt.style.opacity = '0.4'; polOpt.style.pointerEvents = 'none'; } } var moireOpt = document.getElementById('motus-mode-moire'); if(moireOpt) { if(ts.space === 'isometric') { moireOpt.style.opacity = '0.4'; moireOpt.style.pointerEvents = 'none'; } else { moireOpt.style.opacity = '1.0'; moireOpt.style.pointerEvents = 'auto'; } } document.getElementById('motus-dropdown-container').classList.toggle('open')">FLOW</button>
+                            <button id="motus-mode-btn" class="motus-dropdown-btn" onclick="var ts = window.RESOLVED_TRAITS || window.TRAITS || {}; var isoOpt = document.getElementById('motus-mode-iso'); if(isoOpt) { if(ts.space === 'isometric') { isoOpt.style.opacity = '1.0'; isoOpt.style.pointerEvents = 'auto'; } else { isoOpt.style.opacity = '0.4'; isoOpt.style.pointerEvents = 'none'; } } var polOpt = document.getElementById('motus-mode-polar'); if(polOpt) { if(ts.space === 'polar' || ts.space === 'moire') { polOpt.style.opacity = '1.0'; polOpt.style.pointerEvents = 'auto'; } else { polOpt.style.opacity = '0.4'; polOpt.style.pointerEvents = 'none'; } } var moireOpt = document.getElementById('motus-mode-moire'); if(moireOpt) { if(ts.space === 'isometric') { moireOpt.style.opacity = '0.4'; moireOpt.style.pointerEvents = 'none'; } else { moireOpt.style.opacity = '1.0'; moireOpt.style.pointerEvents = 'auto'; } } document.getElementById('motus-dropdown-container').classList.toggle('open')">ASCENT</button>
                             <div class="motus-dropdown-content" onclick="document.getElementById('motus-dropdown-container').classList.remove('open')">
-                                <div onclick="PlatenHyperspeed.setMode('flow')">FLOW</div>
-                                <div onclick="PlatenHyperspeed.setMode('flicker')">FLICKER</div>
                                 <div onclick="PlatenHyperspeed.setMode('flux')">FLUX</div>
                                 <div onclick="PlatenHyperspeed.setMode('ascent')">ASCENT</div>
                                 <div id="motus-mode-moire" onclick="PlatenHyperspeed.setMode('moire')">MOIRÉ</div>
@@ -2126,9 +2124,9 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 if (btnMotusMode) {
                     btnMotusMode.style.display = motusActive ? 'inline-block' : 'none';
                     // Synchronize mode label with PlatenHyperspeed's current state
-                    var activeMode = PlatenHyperspeed.getMode ? PlatenHyperspeed.getMode() : 'flow';
-                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'flux': 'FLUX', 'ascent': 'ASCENT', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
-                    btnMotusMode.textContent = labels[activeMode] || 'FLOW';
+                    var activeMode = PlatenHyperspeed.getMode ? PlatenHyperspeed.getMode() : 'ascent';
+                    var labels = { 'flux': 'FLUX', 'ascent': 'ASCENT', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
+                    btnMotusMode.textContent = labels[activeMode] || 'ASCENT';
                 }
             }
             
@@ -4985,7 +4983,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             var _GROUP_SIZE  = 18;   // flowers per group for column-offset ripple
 
             // AE Math parameters
-            var _animMode = 'flow'; // flow, flicker, flux, moire, iso_col, vortex
+            var _animMode = 'ascent'; // flux, ascent, moire, iso_col, vortex
             var _animSpeed = 12;     // FPS for flicker (1-50)
             var _animProb = 50;      // Probability (10-100)
             var _ghostOp = 0.10;
@@ -5402,6 +5400,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 if (!cvs || !_active[id]) return;
                 var ctx = cvs.getContext('2d');
                 var now = performance.now();
+                var traits = window.RESOLVED_TRAITS || window.TRAITS || {};
 
                 // Accumulate time
                 if (!_paused[id]) {
@@ -5976,8 +5975,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     if (mode === 'iso_col' && traits.space !== 'isometric') return;
                     if (mode === 'vortex' && traits.space !== 'polar' && traits.space !== 'moire') return;
                     if (mode === 'moire' && traits.space === 'isometric') return;
-                    var modes = ['flow', 'flicker', 'flux', 'ascent', 'moire', 'iso_col', 'vortex'];
-                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'flux': 'FLUX', 'ascent': 'ASCENT', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
+                    var modes = ['flux', 'ascent', 'moire', 'iso_col', 'vortex'];
+                    var labels = { 'flux': 'FLUX', 'ascent': 'ASCENT', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
                     if (modes.indexOf(mode) > -1) {
                         _animMode = mode;
                         var btn = document.getElementById('motus-mode-btn');
@@ -6003,11 +6002,11 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 cycleMode: function () {
                     var traits = window.RESOLVED_TRAITS || window.TRAITS || {};
-                    var modes = ['flow', 'flicker', 'flux', 'ascent'];
+                    var modes = ['flux', 'ascent'];
                     if (traits.space !== 'isometric') modes.push('moire');
                     if (traits.space === 'isometric') modes.push('iso_col');
                     if (traits.space === 'polar' || traits.space === 'moire') modes.push('vortex');
-                    var labels = { 'flow': 'FLOW', 'flicker': 'FLICKER', 'flux': 'FLUX', 'ascent': 'ASCENT', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
+                    var labels = { 'flux': 'FLUX', 'ascent': 'ASCENT', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'vortex': 'VORTEX' };
                     var idx = modes.indexOf(_animMode);
                     if (idx === -1) idx = 0;
                     _animMode = modes[(idx + 1) % modes.length];
