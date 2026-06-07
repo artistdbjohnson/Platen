@@ -2454,11 +2454,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             for (var i = 0; i < sel.options.length; i++) {
                 var optVal = sel.options[i].value;
                 var isDisabled = false;
-                if (id === 't-space' && isVortexActive) {
-                    if (['isometric', 'hyperbolic', 'planar', 'moire'].indexOf(optVal) !== -1) {
-                        isDisabled = true;
-                    }
-                } else if (id === 't-motif' && optVal === 'typewriter') {
+                if (id === 't-motif' && optVal === 'typewriter') {
                     isDisabled = restrictTypewriter;
                 } else if (id === 't-chrome' && optVal.indexOf('typewriter') !== -1) {
                     isDisabled = restrictTypewriter;
