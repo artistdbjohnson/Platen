@@ -3648,18 +3648,19 @@ else</span>                     level = <span class="code-num">4</span>;   <span
         }
 
 
-        function svgToString(svgEl) {
+        function svgToString(svgEl, overrideCanvasClass) {
             if (!svgEl.querySelector('style.export-style')) {
                 var styleDef = document.createElementNS("http://www.w3.org/2000/svg", "style");
                 styleDef.setAttribute('class', 'export-style');
-                if (_activeCanvasClass === 'canvas-white') {
+                var activeClass = overrideCanvasClass || _activeCanvasClass;
+                if (activeClass === 'canvas-white' || activeClass === 'white') {
                     styleDef.textContent = ".typewriter-header text, .typewriter-header tspan { fill: #1a1a1a !important; } .grid-numbers text, .grid-numbers tspan { fill: #1a1a1a !important; }";
-                } else if (_activeCanvasClass === 'canvas-tan') {
+                } else if (activeClass === 'canvas-tan' || activeClass === 'tan') {
                     styleDef.textContent = ".typewriter-header text, .typewriter-header tspan { fill: #2c251e !important; } .grid-numbers text, .grid-numbers tspan { fill: #2c251e !important; }";
-                } else if (_activeCanvasClass === 'canvas-olive') {
+                } else if (activeClass === 'canvas-olive' || activeClass === 'olive') {
                     styleDef.textContent = ".typewriter-header text, .typewriter-header tspan { fill: #1b211a !important; } .grid-numbers text, .grid-numbers tspan { fill: #1b211a !important; }";
                 } else {
-                    styleDef.textContent = ".typewriter-header text, .typewriter-header tspan { fill: #e8e4dc !important; } .grid-numbers text, .grid-numbers tspan { fill: #e8e4dc !important; }";
+                    styleDef.textContent = ".typewriter-header text, .typewriter-header tspan { fill: #ffffff !important; } .grid-numbers text, .grid-numbers tspan { fill: #ffffff !important; }";
                 }
                 svgEl.insertBefore(styleDef, svgEl.firstChild);
             }
@@ -6651,7 +6652,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             
             art.svgs.forEach(function(svgStr, idx) {
                 var panel = document.createElement('div');
-                panel.className = 'platen-panel';
+                var canvasCls = 'canvas-' + (art.traits.canvas || 'black');
+                panel.className = 'platen-panel ' + canvasCls;
                 var bgStyle = getCanvasBackgroundStyle(art);
                 panel.style.backgroundImage = bgStyle.backgroundImage;
                 panel.style.backgroundColor = bgStyle.backgroundColor;
@@ -6762,7 +6764,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 while (svgClone.firstChild) { g.appendChild(svgClone.firstChild); }
                 svgClone.appendChild(g);
                 
-                var str = svgToString(svgClone);
+                var str = svgToString(svgClone, art.traits.canvas);
                 var blob = new Blob([str], { type: 'image/svg+xml' });
                 var svgUrl = URL.createObjectURL(blob);
                 
