@@ -3596,15 +3596,16 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                         svgImg.onload = function() {
                             var activeBgImg = typeof _activeCanvasImg !== 'undefined' ? _activeCanvasImg : null;
-                            if (window._plotterBuildMode && window.PlatenHyperspeed && !window.PlatenHyperspeed.isActive()) {
+                            if (window._plotterBuildMode && window.PlatenHyperspeed) {
                                 canvas.style.opacity = '0'; // Hide webgl canvas during build
+                                // Stop any active hyperspeed for this panel to prevent canvas conflict
+                                window.PlatenHyperspeed.stop(id);
                                 window.PlatenHyperspeed.buildPlotterAnimation(id, canvas, function() {
                                     drawToWebGL(canvas, svgImg, activeBgImg);
                                     canvas.style.opacity = '1';
                                     if (panel) panel.classList.remove('loading');
-                                    // if Hyperspeed was toggled ON globally during build, start it
+                                    // if Hyperspeed is globally ON, start it
                                     if (window.PlatenHyperspeed.isActive()) {
-                                        window.PlatenHyperspeed.stop(id);
                                         window.PlatenHyperspeed.start(id);
                                     }
                                 });
