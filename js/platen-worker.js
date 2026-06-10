@@ -175,6 +175,7 @@ onmessage = function (e) {
         if (traits.space === 'moire') return 400;
         if (traits.space === 'planar' || traits.space === 'polar' || traits.space === 'hyperbolic') return 200;
         var series = (typeof ENGINE_METADATA !== 'undefined' && ENGINE_METADATA[traits.engine]) ? ENGINE_METADATA[traits.engine].series : 'FIELD';
+        if (series === 'SCENE') return 80;
         if (series === 'SCATTER') return 400;
         if (series === 'FIELD') return 1200;
         if (series === 'SOLID') return 1000;
@@ -184,6 +185,7 @@ onmessage = function (e) {
     function getMinZones(traits) {
         if (traits.space === 'moire') return 0;
         var series = (typeof ENGINE_METADATA !== 'undefined' && ENGINE_METADATA[traits.engine]) ? ENGINE_METADATA[traits.engine].series : 'FIELD';
+        if (series === 'SCENE') return 0;
         if (series === 'SCATTER') return 4;
         if (series === 'FIELD') return 10;
         if (series === 'SOLID') return 8;
@@ -780,21 +782,16 @@ onmessage = function (e) {
 
         // Track best result
         var curDist = 0;
-        var minGlyphs = (traits.space === 'moire' || 
-                         traits.space === 'planar' ||
-                         traits.space === 'polar' ||
-                         traits.space === 'hyperbolic') 
-                         ? 80 : 600;
-        var minPenalty = (traits.space === 'moire' || 
-                          traits.space === 'planar' ||
-                          traits.space === 'polar' ||
-                          traits.space === 'hyperbolic') 
-                          ? 200 : 1200;
+        var series = (typeof ENGINE_METADATA !== 'undefined' && ENGINE_METADATA[traits.engine]) ? ENGINE_METADATA[traits.engine].series : 'FIELD';
+        var isSparse = (traits.space === 'moire' || 
+                        traits.space === 'planar' ||
+                        traits.space === 'polar' ||
+                        traits.space === 'hyperbolic' ||
+                        series === 'SCENE');
+        var minGlyphs = isSparse ? 80 : 600;
+        var minPenalty = isSparse ? 200 : 1200;
         var maxGlyphs = (traits.space === 'moire') ? 150000 : 
-                        (traits.space === 'planar' || 
-                         traits.space === 'polar' ||
-                         traits.space === 'hyperbolic') 
-                         ? 20000 : 8000;
+                        isSparse ? 20000 : 8000;
         
         if (isFlat) {
             curDist = 10000;
