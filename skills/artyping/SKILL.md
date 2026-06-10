@@ -1,27 +1,27 @@
 # Artyping (Mechanical Typewriter Art Technique)
 
-This skill encodes the concrete, mechanical procedures of typewriter-based ornamental rendering as documented in Julius Nelson's *Artyping* (1940) and related manuals. It translates secretarial vernacular constraints into programmatic rendering operations.
+This skill encodes the concrete, mechanical procedures of typewriter-based ornamental rendering as documented in Julius Nelson's *Artyping* (1940) and Edgar A. Flanagan's *A Treatise on Ornamental Typewriting* (1938, Gregg Publishing). It translates secretarial vernacular constraints into programmatic rendering operations.
 
 ---
 
-## 1. Density Through Overstriking (Additive Compositing)
+## 1. Density Through Overstriking (Blended / Multi-Lettered Layering)
 
 ### Mechanical Procedure
-Overstriking builds tonal ramps by striking the same cell multiple times, either with the same glyph or with a sequence of differing glyphs, without advancing the carriage (using the backspace key). 
-- In physical typing: Strike first character ➔ backspace ➔ strike second character ➔ backspace ➔ strike third character.
-- The ink layers additively to increase the stroke weight and visual density of the cell, closing open counter-spaces in the characters.
+Overstriking builds tonal ramps and composite decorative motifs by striking different glyphs sequentially in the same cell (without carriage advance) to create "blended" units.
+- In physical typing: Strike character A ➔ backspace ➔ strike character B.
+- First documented overlay: The hyphen-period border, represented as formula `- .` (strike a line of hyphens, return carriage without line feed, strike periods over them).
 
 ### Sequence & Glyph Mappings
-Tonal ramps are constructed from specific glyph sets based on their ink coverage and counter-space preservation:
+Tonal ramps and border units are constructed from specific overlays:
 
-| Target Density | Composition Sequence | Cumulative Glyphs | Visual Result |
+| Target Density / Ornament | Composition Sequence | Cumulative Glyphs | Mechanical Formula |
 | :--- | :--- | :--- | :--- |
 | **0 (Background)** | ` ` | (none) | Clean paper |
-| **1 (Light)** | `.` | `.` | Fine stipple |
-| **2 (Light-Medium)**| `,` ➔ `-` | `,` + `-` | Faux colon / textured dash |
-| **3 (Medium)** | `i` ➔ `u` | `i` + `u` | Vertical/horizontal box cross |
-| **4 (Medium-Heavy)**| `u` ➔ `i` ➔ `x` | `u` + `i` + `x` | Blocky lattice fill |
-| **5 (Heavy/Solid)** | `m` ➔ `w` ➔ `o` ➔ `I` | `m` + `w` + `o` + `I` | Near-solid carbon black block |
+| **1 (Light)** | `.` | `.` | `.` |
+| **2 (Blended Light)** | `-` ➔ `.` | `-` + `.` | `- .` (Hyphen-Period) |
+| **3 (Diagonal Textured)**| `_` ➔ `/` | `_` + `/` | `_ /` (Underscore-Slash) |
+| **4 (Medium Lattice)** | `i` ➔ `u` | `i` + `u` | `i u` |
+| **5 (Solid Block)** | `m` ➔ `w` ➔ `o` ➔ `I` | `m` + `w` + `o` + `I` | `m w o I` |
 
 ### Rendering Engine Mapping
 - **WebGL/SVG Layer:** Map to multiple `<path>` elements layered within the same cell coordinates.
@@ -79,18 +79,18 @@ Building variable spatial density of characters across a region so that the view
 
 ---
 
-## 5. Border, Ornament, and Lettering Construction
+## 5. Composition Layout & Typographic Display Rules
 
-### Border and Ornament Construction
-Repeating sequences of character primitives to construct geometric enclosing boxes, page borders, and decorative dividers:
-- **Horizontal Borders:** E.g., `mwmwmw`, `o-o-o-o`, `/ \ / \ / \`.
-- **Vertical Borders:** E.g., repeating `I`, `x` overtyped with `o`, or `H` stacked vertically.
-- **Diagonal Corners:** Emulated using diagonal strokes `/` or `\` offset by half-spacing.
+### The Optical Center Principle
+- Any centered matter on the page must rest slightly above the mathematical center (placed at the **optical center**), otherwise it will visually appear to be too low.
+- Vertical offset: Shift centered blocks upward by approximately $5\%$ of total page height.
 
-### Cut-Out/Silhouette Technique
-Creating shapes by typing character sequences that form sharp outlines, then filling the interior using high-density overstrikes, leaving the negative space completely blank.
+### Typographic Indentions
+The four classical styles of ornamental layout indention:
+1. **Hanging Indention:** First line full width, subsequent lines indented at left.
+2. **Squared Indention:** Block margins completely square.
+3. **Diagonal Indention:** Each sequential line indented further than the previous line.
+4. **Half Diamond Indention (Inverted Pyramid):** Lines centered and progressively narrower.
 
-### Lettering Systems (Vernacular Alphabets)
-Building large display letterforms out of standard monospace keys:
-- **Block Letters:** Built using grids of capital `M`, `H`, or `W`.
-- **Serif Imitations:** Adding dashes `-` or underscores `_` at the top and bottom terminations of block structures built of vertical bars `I` or `l`.
+### Boxed Side Headings
+- Headings placed inline with text blocks, enclosed with a border box (e.g., repeating asterisks `*` or colons `:`), maintaining vertical column alignment with the body margin.
