@@ -6852,27 +6852,34 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
 
 
+        // ── Singleton offscreen canvas — reused every render to avoid browser context limits ──
+        var _offscreenCanvas = null;
+        var _offscreenCtx = null;
+
+        function _getOffscreenCtx(w, h) {
+            if (!_offscreenCanvas) {
+                _offscreenCanvas = document.createElement('canvas');
+            }
+            if (_offscreenCanvas.width !== w) _offscreenCanvas.width = w;
+            if (_offscreenCanvas.height !== h) _offscreenCanvas.height = h;
+            if (!_offscreenCtx) {
+                _offscreenCtx = _offscreenCanvas.getContext('2d');
+            }
+            return _offscreenCtx;
+        }
+
         function drawToWebGL(canvas, foregroundImg, backgroundImg) {
 
             var w = foregroundImg.naturalWidth || foregroundImg.width || 800;
 
             var h = foregroundImg.naturalHeight || foregroundImg.height || 1200;
 
-            
-
-            // Create an offscreen canvas to perform double-buffering
-
-            var offscreen = document.createElement('canvas');
-
-            offscreen.width = w;
-
-            offscreen.height = h;
-
-            var offCtx = offscreen.getContext('2d');
-
-            
+            // Reuse the singleton offscreen canvas to avoid exhausting browser canvas context limits
+            var offCtx = _getOffscreenCtx(w, h);
 
             if (offCtx) {
+
+                offCtx.clearRect(0, 0, w, h);
 
                 // Keep the display canvas transparent so the CSS container background
 
@@ -6881,8 +6888,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 offCtx.drawImage(foregroundImg, 0, 0);
 
             }
-
-            
 
             // Atomic copy of the offscreen canvas to the visible display canvas
 
@@ -6904,7 +6909,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 }
 
-                ctx2d.drawImage(offscreen, 0, 0);
+                ctx2d.drawImage(_offscreenCanvas, 0, 0);
 
             }
 
@@ -14682,6 +14687,29 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
             var art = curatedGallery[index];
 
+            // Compute panel dimensions from first SVG's aspect ratio
+            var _firstSvgEl = (function() {
+                var tmp = document.createElement('div');
+                tmp.innerHTML = art.svgs[0] || '';
+                return tmp.querySelector('svg');
+            })();
+            var _svgAspect = 0.75; // default portrait fallback
+            if (_firstSvgEl) {
+                var _sw = parseFloat(_firstSvgEl.getAttribute('width') || _firstSvgEl.viewBox && _firstSvgEl.viewBox.baseVal && _firstSvgEl.viewBox.baseVal.width || 800);
+                var _sh = parseFloat(_firstSvgEl.getAttribute('height') || _firstSvgEl.viewBox && _firstSvgEl.viewBox.baseVal && _firstSvgEl.viewBox.baseVal.height || 1200);
+                if (_sw > 0 && _sh > 0) _svgAspect = _sw / _sh;
+            }
+
+            var _panelCount = art.svgs.length || 1;
+            // Available viewport height minus topbar
+            var _vhAvail = Math.floor(window.innerHeight * 0.80) - 60;
+            var _gapTotal = (_panelCount - 1) * 20;
+            // Try fitting by height first, then by width
+            var _panelH = _vhAvail;
+            var _panelW = Math.floor(_panelH * _svgAspect);
+            var _maxW = Math.floor((window.innerWidth - 80 - _gapTotal) / _panelCount);
+            if (_panelW > _maxW) { _panelW = _maxW; _panelH = Math.floor(_panelW / _svgAspect); }
+
             var wrap = document.createElement('div');
 
             wrap.className = art.layout;
@@ -14690,13 +14718,11 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
             wrap.style.gap = '20px';
 
-            wrap.style.height = '80vh';
+            wrap.style.height = '100%';
 
             wrap.style.alignItems = 'center';
 
             wrap.style.justifyContent = 'center';
-
-            
 
             art.svgs.forEach(function(svgStr, idx) {
 
@@ -14708,23 +14734,25 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
                 var bgStyle = getCanvasBackgroundStyle(art);
 
+                // Set explicit dimensions so child .platen-face elements have a reference size
+                panel.style.width = _panelW + 'px';
+                panel.style.height = _panelH + 'px';
+                panel.style.flexShrink = '0';
                 panel.style.backgroundImage = bgStyle.backgroundImage;
-
                 panel.style.backgroundColor = bgStyle.backgroundColor;
-
                 panel.style.backgroundSize = 'cover';
-
-                
 
                 var card = document.createElement('div');
 
                 card.className = 'platen-card';
 
-                
-
                 var front = document.createElement('div');
 
                 front.className = 'platen-face front';
+
+                // Apply background texture to front face as well
+                front.style.backgroundImage = bgStyle.backgroundImage;
+                front.style.backgroundSize = 'cover';
 
                 front.innerHTML = svgStr;
 
@@ -14742,19 +14770,13 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
                 }
 
-                
-
                 var back = document.createElement('div');
 
                 back.className = 'platen-face back';
 
-                
-
                 var wrapper = document.createElement('div');
 
                 wrapper.className = 'back-card-wrapper';
-
-                
 
                 var canvasBack = document.createElement('canvas');
 
@@ -14767,8 +14789,6 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
                 canvasBack.style.display = 'block';
 
                 wrapper.appendChild(canvasBack);
-
-                
 
                 var backBtnFlip = document.createElement('button');
 
@@ -14784,13 +14804,9 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
                 wrapper.appendChild(backBtnFlip);
 
-                
-
                 var backDownloadLinks = document.createElement('div');
 
                 backDownloadLinks.className = 'back-download-links';
-
-                
 
                 var dlPng = document.createElement('a');
 
@@ -14806,8 +14822,6 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
                 backDownloadLinks.appendChild(dlPng);
 
-                
-
                 var dlJpg = document.createElement('a');
 
                 dlJpg.textContent = 'jpg';
@@ -14822,21 +14836,15 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
                 backDownloadLinks.appendChild(dlJpg);
 
-                
-
                 wrapper.appendChild(backDownloadLinks);
 
                 back.appendChild(wrapper);
-
-                
 
                 card.appendChild(front);
 
                 card.appendChild(back);
 
                 panel.appendChild(card);
-
-                
 
                 var btnFlip = document.createElement('button');
 
@@ -14851,8 +14859,6 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
                 });
 
                 panel.appendChild(btnFlip);
-
-                
 
                 wrap.appendChild(panel);
 
@@ -16254,25 +16260,23 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
         <div class="gallery-topbar" style="width:100%; box-sizing:border-box; display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid var(--border);">
 
-            <div id="title" style="font-size: 11px; letter-spacing: 0.2em; text-transform: lowercase;">gallery viewer</div>
+            <div style="display: flex; align-items: center; gap: 24px;">
 
-            <div class="btn-group" style="display: flex; gap: 10px; margin-left: 20px;">
+                <button onclick="closeGalleryDetail()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px; letter-spacing: 0.08em; opacity: 0.6;">&larr; back</button>
 
-                <button onclick="closeGalleryDetail()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">&larr; back</button>
+                <span style="font-size: 11px; letter-spacing: 0.2em; text-transform: lowercase; opacity: 0.35;">gallery viewer</span>
 
             </div>
 
-            <div class="btn-group" style="display: flex; gap: 10px; margin-left: auto;">
+            <div class="btn-group" style="display: flex; gap: 20px; align-items: center;">
 
-                <button onclick="downloadGallerySVG()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">download svg</button>
+                <button onclick="downloadGallerySVG()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px; opacity: 0.6;">svg</button>
 
-                <button onclick="downloadGalleryPNG()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">download png</button>
+                <button onclick="downloadGalleryPNG()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px; opacity: 0.6;">png</button>
 
-                <button id="btn-gallery-rec" onclick="startGalleryRecording()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">record loop</button>
+                <button id="btn-gallery-rec" onclick="startGalleryRecording()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px; opacity: 0.6;">record</button>
 
-                <button id="btn-gallery-anim" onclick="toggleGalleryAnimation()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">motus</button>
-
-                <button onclick="loadCuratedIntoMain()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px; text-decoration: underline;">load to main</button>
+                <button id="btn-gallery-anim" onclick="toggleGalleryAnimation()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px; opacity: 0.6;">motus</button>
 
             </div>
 
