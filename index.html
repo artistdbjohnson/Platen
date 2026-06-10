@@ -7172,7 +7172,19 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 label.style.textTransform = 'uppercase';
                 label.style.letterSpacing = '0.12em';
                 
-                label.innerHTML = 'Layout: ' + art.layout + '<br>Engine: ' + art.traits.engine + '<br>Colors: ' + art.traits.chromes;
+                var GALLERY_LAYOUT_LABELS = {
+                    'grid_us_letter': 'A4 [ ISO 216 ]',
+                    'panel': 'Panel',
+                    'banner': 'Banner',
+                    'banner_sq': 'Banner Sq',
+                    'square': 'Square',
+                    'graph_paper': 'Graph Paper',
+                    'graph_paper_banner': 'Graph Paper Banner',
+                    'graph_paper_sq': 'Graph Paper Sq',
+                    'graph_paper_sq_banner': 'Graph Paper Sq Banner'
+                };
+                var layoutLabel = GALLERY_LAYOUT_LABELS[art.layout] || art.layout;
+                label.innerHTML = 'Layout: ' + layoutLabel + '<br>Engine: ' + art.traits.engine + '<br>Colors: ' + art.traits.chromes;
                 div.appendChild(label);
                 
                 div.onclick = function() { openGalleryDetail(index); };
