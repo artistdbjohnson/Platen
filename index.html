@@ -14733,12 +14733,6 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
                 var bgStyle = getCanvasBackgroundStyle(art);
 
-                panel.style.backgroundImage = bgStyle.backgroundImage;
-
-                panel.style.backgroundColor = bgStyle.backgroundColor;
-
-                panel.style.backgroundSize = 'cover';
-
                 
 
                 var card = document.createElement('div');
@@ -14750,6 +14744,30 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
                 var front = document.createElement('div');
 
                 front.className = 'platen-face front';
+
+                // Apply paper texture background to the front face exactly as is done on the main screen
+
+                front.style.backgroundImage = bgStyle.backgroundImage;
+
+                var isUsLetter = (art.layout === 'grid_us_letter' || art.layout === 'banner_us_letter');
+
+                if (isUsLetter) {
+
+                    front.style.backgroundSize = '106%';
+
+                } else {
+
+                    front.style.backgroundSize = 'cover';
+
+                }
+
+                front.style.backgroundColor = bgStyle.backgroundColor || 'transparent';
+
+                front.style.backgroundPosition = 'center';
+
+                front.style.backgroundRepeat = 'no-repeat';
+
+                
 
                 front.innerHTML = svgStr;
 
