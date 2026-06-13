@@ -910,19 +910,42 @@ var SHAPE_TYPES = ['circle','semicircle-up','semicircle-down','triangle-up','tri
 
 function buildShapeHints(params, prng) {
   var rects = params.rects || [];
+  var isMondrian = currentEngine === 'mondrian';
+  
+  // High-fidelity De Stijl distribution pool
+  var colorPool = ['red', 'blue', 'yellow', 'black', 'white', 'white', 'white', 'white', 'white'];
+  
+  // Fisher-Yates shuffle colors with sketch PRNG
+  for (var k = colorPool.length - 1; k > 0; k--) {
+    var j = prng.rin(0, k);
+    var temp = colorPool[k];
+    colorPool[k] = colorPool[j];
+    colorPool[j] = temp;
+  }
+  
+  var colorIdx = 0;
   for (var i = 0; i < rects.length; i++) {
     var r = rects[i];
-    var isMondrian = currentEngine === 'mondrian';
     var isEmpty = isMondrian ? (r.fillWt === 0 || r.fillWt < 1) : true;
     if (!isEmpty) continue;
-    if (r.w < 6 || r.h < 5) continue;              // too small to paint
-    if (prng.rfl() > 0.65) continue;               // ~65% get a shape
+    if (r.w < 6 || r.h < 5) continue;
+    if (prng.rfl() > 0.65) continue;
     var type = SHAPE_TYPES[prng.rin(0, SHAPE_TYPES.length - 1)];
     var pad = 1.5;
+    
+    var color = 'white';
+    if (isMondrian) {
+      color = colorPool[colorIdx % colorPool.length];
+      colorIdx++;
+    } else {
+      color = prng.rfl() > 0.5 ? 'black' : 'white';
+    }
+    
     shapeHints.push({
       gx: r.x + pad, gy: r.y + pad,
       gw: r.w - pad*2, gh: r.h - pad*2,
-      type: type
+      type: type,
+      color: color
     });
   }
 }
@@ -931,10 +954,9 @@ function drawShapeHints() {
   if (!shapeHints.length) return;
   var ctx = drawingContext;
   ctx.save();
-  ctx.strokeStyle = 'rgba(30,25,20,0.22)';
-  ctx.lineWidth = 0.9;
-  ctx.setLineDash([4, 3]);
-  ctx.fillStyle = 'rgba(30,25,20,0.04)';
+  ctx.strokeStyle = '#1a1715';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([]);
 
   for (var i = 0; i < shapeHints.length; i++) {
     var h = shapeHints[i];
@@ -948,45 +970,42 @@ function drawShapeHints() {
     ctx.beginPath();
     if (h.type === 'circle') {
       ctx.arc(cx, cy, rx * 0.88, 0, Math.PI * 2);
-
     } else if (h.type === 'semicircle-up') {
       ctx.arc(cx, y1 + rh, rw * 0.42, Math.PI, 0);
       ctx.closePath();
-
     } else if (h.type === 'semicircle-down') {
       ctx.arc(cx, y1, rw * 0.42, 0, Math.PI);
       ctx.closePath();
-
     } else if (h.type === 'triangle-up') {
       ctx.moveTo(cx, y1 + rh * 0.08);
       ctx.lineTo(x1 + rw * 0.92, y1 + rh * 0.92);
       ctx.lineTo(x1 + rw * 0.08, y1 + rh * 0.92);
       ctx.closePath();
-
     } else if (h.type === 'triangle-down') {
       ctx.moveTo(cx, y1 + rh * 0.92);
       ctx.lineTo(x1 + rw * 0.08, y1 + rh * 0.08);
       ctx.lineTo(x1 + rw * 0.92, y1 + rh * 0.08);
       ctx.closePath();
-
     } else if (h.type === 'triangle-left') {
       ctx.moveTo(x1 + rw * 0.08, cy);
       ctx.lineTo(x1 + rw * 0.92, y1 + rh * 0.08);
       ctx.lineTo(x1 + rw * 0.92, y1 + rh * 0.92);
       ctx.closePath();
-
     } else if (h.type === 'triangle-right') {
       ctx.moveTo(x1 + rw * 0.92, cy);
       ctx.lineTo(x1 + rw * 0.08, y1 + rh * 0.08);
       ctx.lineTo(x1 + rw * 0.08, y1 + rh * 0.92);
       ctx.closePath();
-
-    } else { // rect-inset
+    } else {
       var inset = Math.min(rw, rh) * 0.12;
       ctx.rect(x1 + inset, y1 + inset, rw - inset*2, rh - inset*2);
     }
 
+    ctx.globalAlpha = 0.88;
+    ctx.fillStyle = PALETTE[h.color] || '#f3ece0';
     ctx.fill();
+    
+    ctx.globalAlpha = 1.0;
     ctx.stroke();
   }
   ctx.restore();
