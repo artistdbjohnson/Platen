@@ -3322,6 +3322,9 @@
 
 <body>
 
+    <!-- Minimal UI Data Readout -->
+    <div id="ui-readout" style="position: fixed; bottom: 25px; left: 25px; background: rgba(10, 10, 10, 0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid var(--border); padding: 12px 16px; font-family: monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 0.1em; line-height: 1.6; text-transform: uppercase; z-index: 9999; pointer-events: none; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: none;"></div>
+
     <!-- Fullscreen Autocycle HUD -->
 
     <div id="fs-hud" class="fs-hud">
@@ -5509,6 +5512,9 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             } finally {
 
                 _updatingTraits = false;
+                if (typeof updateUiReadout === 'function') {
+                    updateUiReadout();
+                }
 
             }
 
@@ -10493,7 +10499,9 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                     e.preventDefault(); // prevent page scroll
 
-                    regenerate();
+                    if (document.getElementById('gallery-detail-modal').style.display !== 'flex') {
+                        randomize();
+                    }
 
                 } else if (e.code === 'KeyR') {
 
@@ -14726,6 +14734,10 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
             c.appendChild(wrap);
 
+            if (typeof updateUiReadout === 'function') {
+                updateUiReadout();
+            }
+
         }
 
 
@@ -15918,7 +15930,46 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             }
 
             activeGalleryIndex = -1;
+            if (typeof updateUiReadout === 'function') {
+                updateUiReadout();
+            }
 
+        }
+
+        function updateUiReadout() {
+            var el = document.getElementById('ui-readout');
+            if (!el) return;
+
+            var ts, seed, layout, prefix;
+            var isGallery = (document.getElementById('gallery-detail-modal').style.display === 'flex');
+            if (isGallery) {
+                var art = curatedGallery[activeGalleryIndex];
+                if (!art) {
+                    el.style.display = 'none';
+                    return;
+                }
+                ts = art.traits;
+                seed = art.seed;
+                layout = art.layout;
+                prefix = "<div style='color:var(--purple); margin-bottom: 6px; font-weight:bold;'>[gallery viewer]</div>";
+            } else {
+                ts = window.RESOLVED_TRAITS || window.TRAITS || {};
+                seed = window.RENDER_SEED;
+                layout = window.currentLayout;
+                prefix = "";
+            }
+
+            var html = prefix +
+                "seed: <span style='color:var(--text); font-weight:bold;'>" + seed + "</span><br>" +
+                "engine: <span style='color:var(--text); font-weight:bold;'>" + (ts.engine || 'none') + "</span><br>" +
+                "space: <span style='color:var(--text); font-weight:bold;'>" + (ts.space || 'none') + "</span><br>" +
+                "symmetry: <span style='color:var(--text); font-weight:bold;'>" + (ts.symmetry || 'none') + "</span><br>" +
+                "ink: <span style='color:var(--text); font-weight:bold;'>" + (ts.chromes || 'none') + "</span><br>" +
+                "solid: <span style='color:var(--text); font-weight:bold;'>" + (ts.solid ? 'yes' : 'no') + "</span><br>" +
+                "layout: <span style='color:var(--text); font-weight:bold;'>" + (layout || 'default') + "</span>";
+
+            el.innerHTML = html;
+            el.style.display = 'block';
         }
 
 
