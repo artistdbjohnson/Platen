@@ -168,119 +168,116 @@ function generateLandscapeParams(type, lseed) {
   var W = CW, H = CH;
 
   if (type === 'mountain_range') {
-    // 4-7 ridgelines, back to front
+    // Multi-peak ridgelines back to front. Sum-of-Gaussians = sharp varied peaks.
     P.ridges = [];
-    var nRidges = p.ri(4, 7);
+    var nRidges = p.ri(6, 9);
+
+    function ridgeYfn(t, pks, bY) {
+      var y = bY;
+      for (var pk = 0; pk < pks.length; pk++) {
+        var dt = t - pks[pk].t;
+        y -= H * pks[pk].amp * Math.exp(-dt*dt / (2.0 * pks[pk].w * pks[pk].w));
+      }
+      return Math.max(H * 0.04, y);
+    }
+
     for (var ri2 = 0; ri2 < nRidges; ri2++) {
-      var depth = ri2 / (nRidges - 1);          // 0=far, 1=near
-      var baseY = p.rf(H * 0.55, H * 0.82) * (1 - depth * 0.25);
-      var nPts  = p.ri(10, 22);
-      var pts   = [];
-      var y     = baseY;
-      for (var pi3 = 0; pi3 <= nPts; pi3++) {
-        var t  = pi3 / nPts;
-        var px3 = -20 + t * (W + 40);
-        // Jagged peaks: alternating rise/fall with a dominant central peak
-        var peakPull = Math.exp(-Math.pow((t - 0.5) * 3.2, 2)) * H * 0.28;
-        var localJag  = (p.rfl() - 0.5) * H * 0.10;
-        y = baseY - peakPull - localJag * (1 - depth);
-        y = Math.max(H * 0.05, y);
-        pts.push([px3, y]);
+      var depth  = ri2 / (nRidges - 1);
+      var baseY  = p.rf(H * 0.55, H * 0.88) * (1.0 - depth * 0.18);
+
+      var nPeaks = p.ri(3, 6);
+      var peaks  = [];
+      for (var pk2 = 0; pk2 < nPeaks; pk2++) {
+        peaks.push({ t: p.rf(0.06, 0.94), amp: p.rf(0.12, 0.42) * (1.0 - depth * 0.22), w: p.rf(0.04, 0.14) });
       }
-      // Close ridge down to baseline on both sides
-      pts.unshift([-20, baseY + 10]);
-      pts.push([W + 20, baseY + 10]);
-      // Hatching lines on face
-      var hatch = [];
-      var hStep = p.rf(4, 9);
-      for (var hi3 = 0; hi3 < pts.length - 2; hi3++) {
-        var lx = pts[hi3 + 1][0], ly = pts[hi3 + 1][1];
-        var nH2 = Math.floor((baseY - ly) / hStep);
-        for (var hj = 1; hj < nH2; hj++) {
-          var hy3 = ly + hj * hStep;
-          var hlen = p.rf(2, 10) * (1 - depth * 0.5);
-          hatch.push([lx - hlen * 0.3, hy3, lx + hlen * 0.1, hy3 + p.rf(1,3)]);
-        }
+      peaks.push({ t: p.rf(0.25, 0.75), amp: p.rf(0.28, 0.45) * (1.0 - depth * 0.15), w: p.rf(0.06, 0.12) });
+
+      var nPts2 = 40, pts = [];
+      for (var pi3 = 0; pi3 <= nPts2; pi3++) {
+        var tR = pi3 / nPts2;
+        pts.push([-10 + tR * (W + 20), ridgeYfn(tR, peaks, baseY)]);
       }
-      P.ridges.push({ pts: pts, baseY: baseY, depth: depth, hatch: hatch, nOff: p.rf(0, 500) });
+      pts.unshift([-10, baseY + 8]);
+      pts.push([W + 10, baseY + 8]);
+
+      var hatch = [], hSpacing = p.rf(3.0, 5.5), maxHatchLen = p.rf(0.45, 0.82);
+      for (var hx2 = 0; hx2 < W; hx2 += hSpacing) {
+        var tH = hx2 / W, ry = ridgeYfn(tH, peaks, baseY), faceH = baseY - ry;
+        if (faceH < 6) continue;
+        var hTop = ry + p.rf(1, 3), hBot = hTop + faceH * maxHatchLen * p.rf(0.5, 1.0), lean = p.rf(-1.5, 1.5);
+        hatch.push([hx2, hTop, hx2 + lean, hBot]);
+      }
+      P.ridges.push({ pts: pts, baseY: baseY, depth: depth, hatch: hatch, nOff: p.rf(0, 500), peaks: peaks });
     }
-    // Sky hatch lines (horizontal parallel above peaks)
+
     P.skyHatch = [];
-    var skyBase = H * 0.08;
-    var sPitch  = p.rf(5, 9);
-    for (var si2 = 0; si2 < 18; si2++) {
-      P.skyHatch.push(skyBase + si2 * sPitch);
-    }
+    var skyFloor = p.rf(H * 0.06, H * 0.10), sPitch = p.rf(5, 9), sAngle = p.rf(0.08, 0.18);
+    for (var si2 = 0; si2 < 22; si2++) P.skyHatch.push({ y: skyFloor + si2 * sPitch, angle: sAngle });
 
   } else if (type === 'douro_valley') {
-    // Rolling terraced vineyard hills
+    var hBaseY = p.rf(H * 0.28, H * 0.38);
+
+    P.farHills = [];
+    for (var fhi3 = 0; fhi3 < 3; fhi3++) {
+      var fPts = [], fBase = p.rf(H * 0.08, H * 0.22) * (1 + fhi3 * 0.08), nfpR = p.ri(14, 22);
+      for (var fpi2 = 0; fpi2 <= nfpR; fpi2++) {
+        var ft = fpi2 / nfpR;
+        fPts.push([-10 + ft*(W+20), fBase + (p.rfl()-0.5)*H*0.10]);
+      }
+      P.farHills.push({ pts: fPts, nOff: p.rf(0, 500) });
+    }
+
     P.horizon = [];
-    var nHPts = p.ri(12, 20);
-    var hBaseY = p.rf(H * 0.22, H * 0.32);
+    var nHPts = p.ri(16, 24);
     for (var hpi2 = 0; hpi2 <= nHPts; hpi2++) {
       var t2 = hpi2 / nHPts;
-      P.horizon.push([-10 + t2 * (W + 20),
-                      hBaseY + (p.rfl() - 0.5) * H * 0.06]);
+      P.horizon.push([-10 + t2*(W+20), hBaseY + (p.rfl()-0.5)*H*0.04]);
     }
-    // Far hills (2 rows behind horizon)
-    P.farHills = [];
-    for (var fhi3 = 0; fhi3 < 2; fhi3++) {
-      var fPts = [], fBase = p.rf(H * 0.10, H * 0.20);
-      var nfp  = p.ri(8, 14);
-      for (var fpi2 = 0; fpi2 <= nfp; fpi2++) {
-        var t3 = fpi2 / nfp;
-        fPts.push([-10 + t3*(W+20), fBase + (p.rfl()-0.5)*H*0.08]);
-      }
-      P.farHills.push({ pts: fPts, nOff: p.rf(0,500) });
-    }
-    // Terraces: curved contour bands sweeping across
-    P.terraces = [];
-    var nTerraces = p.ri(10, 18);
-    for (var ti2 = 0; ti2 < nTerraces; ti2++) {
-      var tBase2 = hBaseY + 20 + ti2 * p.rf(18, 32);
-      if (tBase2 > H - 60) break;
-      var ntp = p.ri(14, 24);
-      var tPts = [];
+
+    P.terraces = []; var tY = hBaseY + p.rf(8, 18), nTerrMax = p.ri(22, 30);
+    for (var ti2 = 0; ti2 < nTerrMax; ti2++) {
+      var tDepthRatio = ti2 / nTerrMax;
+      tY += p.rf(8, 14) * (1 + tDepthRatio * 0.9);
+      if (tY > H - 30) break;
+      var ntp = p.ri(18, 28), tPts = [], tPhase = p.rf(0, Math.PI*2);
+      var tAmp = p.rf(8, 28)*(1+tDepthRatio*0.5), tFreq = p.rf(1.8, 3.2);
       for (var tpi2 = 0; tpi2 <= ntp; tpi2++) {
         var tt = tpi2 / ntp;
-        var ty = tBase2 + Math.sin(tt * Math.PI * 2.2 + p.rf(0,1)) * p.rf(10, 35);
-        tPts.push([-10 + tt*(W+20), ty]);
+        tPts.push([-10 + tt*(W+20), tY + Math.sin(tt*Math.PI*tFreq+tPhase)*tAmp]);
       }
-      P.terraces.push({ pts: tPts, nOff: p.rf(0, 900) });
+      P.terraces.push({ pts: tPts, nOff: p.rf(0, 900), depth: tDepthRatio });
     }
-    // Vine rows: short diagonal parallel lines on terrace bands
-    P.vineRows = [];
-    var vSpacingX = p.rf(12, 20), vSpacingY = p.rf(20, 30);
-    for (var vyi2 = 0; vyi2 < Math.floor((H * 0.6) / vSpacingY); vyi2++) {
-      for (var vxi2 = 0; vxi2 < Math.floor(W / vSpacingX); vxi2++) {
-        var vx2 = p.rf(40, W - 40) + vxi2 * vSpacingX * 0.3;
-        var vy2 = hBaseY + 35 + vyi2 * vSpacingY + p.rf(-3, 3);
-        if (vy2 > H - 50) continue;
-        P.vineRows.push([vx2, vy2]);
-      }
-    }
-    // Cypress trees: simple elongated silhouettes
-    P.cypress = [];
-    var nCyp = p.ri(6, 14);
-    for (var ci3 = 0; ci3 < nCyp; ci3++) {
-      P.cypress.push({
-        x: p.rf(W * 0.08, W * 0.92),
-        y: p.rf(hBaseY + 5, hBaseY + 60),
-        h: p.rf(28, 55),
-        w: p.rf(6, 12),
-        nOff: p.rf(0, 900)
-      });
-    }
-    // Winding path/river in lower third
-    P.path = [];
-    var pPts = [], pathY0 = p.rf(H * 0.55, H * 0.65);
-    var npp = p.ri(8, 14);
-    for (var ppi2 = 0; ppi2 <= npp; ppi2++) {
-      var pt2 = ppi2 / npp;
-      pPts.push([-10 + pt2*(W+20), pathY0 + Math.sin(pt2*Math.PI*3+p.rf(0,2))*p.rf(15,35)]);
-    }
-    P.path = pPts;
 
+    P.vineBands = [];
+    for (var vbi2 = 0; vbi2 < p.ri(5, 9); vbi2++) {
+      var vBandY = hBaseY + 20 + vbi2 * p.rf(45, 70);
+      if (vBandY > H - 40) break;
+      var vBandH = p.rf(22, 40), vAngle = p.rf(-0.35, -0.15), vSpacing = p.rf(5, 9), vlines = [];
+      for (var vli2 = 0; vli2 < Math.floor(vBandH/vSpacing); vli2++) {
+        var vy0 = vBandY + vli2 * vSpacing;
+        vlines.push({ y0: vy0, y1: vy0 + (W+20)*Math.tan(vAngle) });
+      }
+      P.vineBands.push({ lines: vlines, nOff: p.rf(0, 800) });
+    }
+
+    P.cypress = [];
+    for (var ci3 = 0; ci3 < p.ri(12, 22); ci3++) {
+      P.cypress.push({ x: p.rf(W*0.05,W*0.92), y: p.rf(hBaseY-20,hBaseY+80), h: p.rf(40,90), w: p.rf(7,14), nOff: p.rf(0,900) });
+    }
+
+    P.roundTrees = [];
+    for (var rti2 = 0; rti2 < p.ri(8, 18); rti2++) {
+      P.roundTrees.push({ x: p.rf(W*0.04,W*0.96), y: p.rf(hBaseY-10,hBaseY+100), r: p.rf(8,22), trunkH: p.rf(6,14), nOff: p.rf(0,700) });
+    }
+
+    var pathY0 = p.rf(H*0.52, H*0.68), nppR = p.ri(10, 18), pPts2 = [];
+    for (var ppi2 = 0; ppi2 <= nppR; ppi2++) {
+      var pt2 = ppi2 / nppR;
+      pPts2.push([-10+pt2*(W+20), pathY0+Math.sin(pt2*Math.PI*3.5+p.rf(0,2))*p.rf(18,42)]);
+    }
+    P.path = pPts2;
+
+  
   } else if (type === 'mesa_vista') {
     // Single large mesa/butte formation
     var mW = p.rf(W * 0.45, W * 0.72);
@@ -429,12 +426,13 @@ function drawLandscapeOverlay(P) {
         penLine(ht[0], ht[1], ht[2], ht[3], 4, 0.5, rdg.nOff + hi4 * 3);
       }
     }
-    // Horizontal sky hatch
+    // Sky hatching: diagonal lines
     strokeWeight(PEN_SW * 0.5);
     stroke(26, 23, 21, 45);
     for (var si3 = 0; si3 < P.skyHatch.length; si3++) {
-      var sy = P.skyHatch[si3];
-      penLine(ORIGIN_X, sy, CW - ORIGIN_X, sy, 10, 0.6, si3 * 17);
+      var sk = P.skyHatch[si3];
+      var sdx = (CW - ORIGIN_X * 2) * sk.angle;
+      penLine(ORIGIN_X, sk.y, CW - ORIGIN_X, sk.y + sdx, 10, 0.6, si3 * 17);
     }
 
   } else if (P.type === 'douro_valley') {
@@ -456,19 +454,29 @@ function drawLandscapeOverlay(P) {
       strokeWeight(PEN_SW * map(tDepth, 0, 1, 0.6, 1.1));
       penSpline(P.terraces[ti3].pts, 0.9, P.terraces[ti3].nOff);
     }
-    // Vine row marks (short diagonal strokes)
-    strokeWeight(PEN_SW * 0.5);
-    stroke(26, 23, 21, 80);
-    for (var vri3 = 0; vri3 < P.vineRows.length; vri3++) {
-      var vx3 = P.vineRows[vri3][0], vy3 = P.vineRows[vri3][1];
-      penLine(vx3 - 4, vy3 + 4, vx3 + 4, vy3 - 4, 3, 0.4, vri3 * 7);
+    // Vine bands: parallel diagonal sweeps (vineyard rows)
+    strokeWeight(PEN_SW * 0.45);
+    stroke(26, 23, 21, 75);
+    for (var vbi3 = 0; vbi3 < P.vineBands.length; vbi3++) {
+      var vb = P.vineBands[vbi3];
+      for (var vli3 = 0; vli3 < vb.lines.length; vli3++) {
+        var vln = vb.lines[vli3];
+        penLine(-10, vln.y0, CW + 10, vln.y1, 10, 0.5, vb.nOff + vli3 * 9);
+      }
     }
     // Cypress trees
-    strokeWeight(PEN_SW * 0.8);
-    stroke(26, 23, 21, 170);
+    strokeWeight(PEN_SW * 0.85);
+    stroke(26, 23, 21, 175);
     for (var ci4 = 0; ci4 < P.cypress.length; ci4++) {
       var cy2 = P.cypress[ci4];
       drawCypressTree(cy2.x, cy2.y, cy2.h, cy2.w, cy2.nOff);
+    }
+    // Round-canopy trees (oak/olive)
+    strokeWeight(PEN_SW * 0.75);
+    stroke(26, 23, 21, 155);
+    for (var rti3 = 0; rti3 < P.roundTrees.length; rti3++) {
+      var rt = P.roundTrees[rti3];
+      drawRoundTree(rt.x, rt.y, rt.r, rt.trunkH, rt.nOff);
     }
     // Winding path
     strokeWeight(PEN_SW * 0.7);
@@ -565,6 +573,31 @@ function drawCypressTree(x, y, h, w, nOff) {
     pts.push([x + (txR - x), ty2]);
   }
   penSpline(pts, 0.7, nOff);
+}
+
+// ── Round-canopy tree (oak/olive silhouette) ─────────────────────────────
+function drawRoundTree(x, y, r, trunkH, nOff) {
+  // Trunk
+  penLine(x - 1.5, y, x - 1.5, y + trunkH, 3, 0.4, nOff);
+  penLine(x + 1.5, y, x + 1.5, y + trunkH, 3, 0.4, nOff + 50);
+  // Canopy circle (organic)
+  var cPts = [];
+  var nArcC = 18;
+  for (var aic = 0; aic <= nArcC; aic++) {
+    var angc = (aic / nArcC) * Math.PI * 2;
+    cPts.push([
+      x + Math.cos(angc) * r + jit(x + nOff + aic * 4, y, 0.9, 0.04),
+      (y - r * 0.5) + Math.sin(angc) * r * 0.78 + jit(x + nOff, y + aic * 3, 0.9, 0.04)
+    ]);
+  }
+  cPts.push(cPts[0]);
+  penSpline(cPts, 0.6, nOff);
+  // Interior branch stubs
+  for (var sic = 0; sic < 3; sic++) {
+    var sAng = (sic / 3) * Math.PI + nOff * 0.01;
+    var sy1 = y - r * 0.25;
+    penLine(x, sy1, x + Math.cos(sAng)*r*0.55, sy1 + Math.sin(sAng)*r*0.45, 4, 0.5, nOff+sic*70);
+  }
 }
 
 // ── Cloud arc cluster ──────────────────────────────────────────────
@@ -746,7 +779,8 @@ function buildSVGLines(P) {
       }
     }
     for (var si4 = 0; si4 < P.skyHatch.length; si4++) {
-      jitteredLine(ORIGIN_X, P.skyHatch[si4], CW-ORIGIN_X, P.skyHatch[si4], 10, 0.6, si4*17, '#1a1715', PEN_SW*0.5);
+      var sk2 = P.skyHatch[si4]; var sdx2 = (CW - ORIGIN_X * 2) * sk2.angle;
+      jitteredLine(ORIGIN_X, sk2.y, CW-ORIGIN_X, sk2.y + sdx2, 10, 0.6, si4*17, '#1a1715', PEN_SW*0.5);
     }
   } else if (P.type === 'douro_valley') {
     for (var fhi5 = 0; fhi5 < P.farHills.length; fhi5++) {
