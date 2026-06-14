@@ -52,6 +52,8 @@
 
             --panel: #151515;
 
+            --dropdown-bg: #000000;
+
             --border: #2a2c2e;
 
             --purple: #7d858c;
@@ -89,6 +91,8 @@
             --bg: #f5f5f5;
 
             --panel: #f5f5f5;
+
+            --dropdown-bg: #ffffff;
 
             --border: #000000;
 
@@ -637,6 +641,8 @@
             perspective: 900px;
 
             position: relative;
+
+            z-index: 10;
 
         }
 
@@ -1576,7 +1582,7 @@
 
             right: 0;
 
-            background: var(--bg);
+            background: var(--dropdown-bg, var(--bg));
 
             border: 1px solid var(--border);
 
@@ -2591,6 +2597,130 @@
 
 
         #close-seed-modal:hover {
+
+            opacity: 1;
+
+        }
+
+
+
+        /* ── Info Modal ── */
+
+        #modal-info {
+
+            position: fixed;
+
+            top: 0;
+
+            left: 0;
+
+            width: 100%;
+
+            height: 100%;
+
+            background: rgba(0, 0, 0, 0.85);
+
+            backdrop-filter: blur(10px);
+
+            z-index: 10001;
+
+            display: none;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 40px;
+
+        }
+
+
+
+        #modal-info.active {
+
+            display: flex;
+
+        }
+
+
+
+        #info-modal-content {
+
+            background: var(--panel);
+
+            border: 1px solid var(--border);
+
+            max-width: 350px;
+
+            width: 100%;
+
+            padding: 30px;
+
+            position: relative;
+
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+
+            font-family: inherit;
+
+        }
+
+
+
+        #info-modal-content h2 {
+
+            font-size: 12px;
+
+            letter-spacing: 0.2em;
+
+            text-transform: uppercase;
+
+            color: var(--purple);
+
+            margin-bottom: 15px;
+
+            border-bottom: 1px solid var(--border);
+
+            padding-bottom: 10px;
+
+        }
+
+
+
+        #info-modal-content p {
+
+            font-size: 11px;
+
+            line-height: 1.6;
+
+            margin-bottom: 15px;
+
+            color: var(--text);
+
+        }
+
+
+
+        #close-info-modal {
+
+            position: absolute;
+
+            top: 15px;
+
+            right: 15px;
+
+            cursor: pointer;
+
+            font-size: 16px;
+
+            opacity: 0.5;
+
+            transition: opacity 0.2s;
+
+        }
+
+
+
+        #close-info-modal:hover {
 
             opacity: 1;
 
@@ -4088,6 +4218,28 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
 
 
+    <div id="modal-info" onclick="toggleInfoModal()">
+
+        <div id="info-modal-content" onclick="event.stopPropagation()">
+
+            <div id="close-info-modal" onclick="toggleInfoModal()">×</div>
+
+            <h2 id="info-modal-title">Attention</h2>
+
+            <p id="info-modal-text">This artwork has already been curated.</p>
+
+            <div style="text-align: right; margin-top: 20px;">
+
+                <button onclick="toggleInfoModal()" style="padding: 6px 16px; background: var(--text); color: var(--bg); border: none; font-family: inherit; font-size: 10px; cursor: pointer; text-transform: lowercase;">ok</button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
     <script src="js/platen-core.js?v=chopin"></script>
 
     <script src="js/platen-motifs.js"></script>
@@ -4181,6 +4333,22 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 setTimeout(function () { input.focus(); input.select(); }, 50);
 
             }
+
+        }
+
+
+
+        function toggleInfoModal(title, text) {
+
+            var modal = document.getElementById('modal-info');
+
+            if (!modal) return;
+
+            if (title) document.getElementById('info-modal-title').textContent = title;
+
+            if (text) document.getElementById('info-modal-text').textContent = text;
+
+            modal.classList.toggle('active');
 
         }
 
@@ -5386,7 +5554,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 optionsContainer.style.right = '0';
 
-                optionsContainer.style.background = 'var(--panel)';
+                optionsContainer.style.background = 'var(--dropdown-bg, var(--panel))';
 
                 optionsContainer.style.border = '1px solid var(--border)';
 
@@ -14349,6 +14517,22 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
             if (locks[key] && locks[key].owner !== 'You') {
 
                 alert("This composition structure is exclusively locked by " + locks[key].owner + ".");
+
+                return;
+
+            }
+
+
+
+            var alreadyCurated = curatedGallery.some(function(item) {
+
+                return item.seed === RENDER_SEED && JSON.stringify(item.traits) === JSON.stringify(RESOLVED_TRAITS || TRAITS);
+
+            });
+
+            if (alreadyCurated) {
+
+                toggleInfoModal("Already Curated", "this artwork configuration has already been curated into your gallery.");
 
                 return;
 
