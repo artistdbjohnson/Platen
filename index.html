@@ -14695,7 +14695,7 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
                         var thumbStyle = document.createElementNS('http://www.w3.org/2000/svg', 'style');
                         thumbStyle.setAttribute('class', 'gallery-thumb-style');
                         var thumbCanvas = art.traits.canvas || 'black';
-                        var thumbFill = (thumbCanvas === 'white' || thumbCanvas === 'tan' || thumbCanvas === 'olive') ? '#1a1a1a' : '#ffffff';
+                        var thumbFill = (thumbCanvas.indexOf('black') !== -1) ? '#ffffff' : '#1a1a1a';
                         thumbStyle.textContent = '.typewriter-header text, .typewriter-header tspan { fill: ' + thumbFill + ' !important; } .grid-numbers text, .grid-numbers tspan { fill: ' + thumbFill + ' !important; }';
                         svgEl.insertBefore(thumbStyle, svgEl.firstChild);
                     }
