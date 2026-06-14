@@ -1,3 +1,16 @@
+(function() {
+  var s = document.createElement('script');
+  s.src = 'vtracer_standalone.js';
+  s.onload = function() {
+    if (window.vtracer && window.vtracer.initVTracer) {
+      window.vtracer.initVTracer().then(function() {
+        console.log("VTracer initialized in Platen");
+      });
+    }
+  };
+  document.head.appendChild(s);
+})();
+
 // ╭────────────────────────────────────────────────────────────────╮
 // │  PLATEN ARTYPING ENGINE  v3.0                                  │
 // │  Olympia SM3 · US Letter · 10cpi / 6lpi                       │
@@ -50,11 +63,11 @@ var BORDER_KEYS = ['none','t*x','8*','I*','ms','OW','**'];
 
 // ── Color Palette ────────────────────────────────────────────────
 var PALETTE = {
-  red: '#d1462f',
-  blue: '#2d5a8c',
-  yellow: '#e0a92e',
-  black: '#1a1715',
-  white: '#f3ece0'
+  red: '#C81B22',
+  blue: '#004B90',
+  yellow: '#F4B700',
+  black: '#151515',
+  white: '#F5F4F0'
 };
 
 
@@ -88,6 +101,11 @@ var svgOverlayScale  = 1.0;     // 0.5-2.0
 var svgOverlayX     = 0;        // pixel offset from centre
 var svgOverlayY     = 0;
 var svgOverlayBlend = "multiply"; // CSS mix-blend-mode
+
+var isFluxMode = false;
+var fluxStartTime = 0;
+var fluxAmplitude = 5.0;
+var _ghostOp = 0.15;
 
 var borderKey = 't*x';
 var gain = 0.85;
@@ -2026,36 +2044,46 @@ function setup() {
     'html,body{margin:0;padding:0;background:#151210;overflow:hidden;width:100vw;height:100vh;display:block;position:relative;}',
     '#canvas-wrap{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;position:absolute;top:0;left:0;z-index:1;}',
     'canvas{display:block;flex-shrink:0;}',
-    '#panel{position:absolute;top:16px;left:16px;z-index:1000;width:230px;max-height:calc(100vh - 32px);overflow-y:auto;overflow-x:hidden;',
-    'background:rgba(26,24,22,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);',
-    'color:#c8c0b4;font:11px/1.4 "Courier New",monospace;padding:14px 12px;box-sizing:border-box;',
-    'border:1px solid rgba(46,44,42,0.8);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,0.5);',
-    'transition:opacity 0.25s, transform 0.25s, background-color 0.25s, border-radius 0.25s;}',
-    '#panel.collapsed{width:40px;height:40px;padding:0;overflow:hidden;border-radius:50%;background:rgba(26,24,22,0.9);box-shadow:0 4px 12px rgba(0,0,0,0.4);}',
-    '#panel-toggle{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:#f3ece0;user-select:none;position:absolute;top:0;left:0;z-index:1001;}',
+    '#panel{position:absolute;top:16px;left:16px;z-index:1000;width:440px;max-height:calc(100vh - 32px);overflow:hidden;',
+    'background:rgba(30,30,30,0.4);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);',
+    'color:#e0e0e0;font:11px/1.4 system-ui,-apple-system,sans-serif;padding:16px;box-sizing:border-box;',
+    'border:1px solid rgba(255,255,255,0.15);border-radius:0px;',
+    'transition:opacity 0.25s, transform 0.25s, background-color 0.25s;}',
+    '#panel.collapsed{width:32px;height:32px;padding:0;overflow:hidden;border-radius:50%;background:rgba(30,30,30,0.6);box-shadow:0 4px 12px rgba(0,0,0,0.4);}',
+    '#panel-toggle{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;color:#fff;user-select:none;position:absolute;top:0;left:0;z-index:1001;}',
     '#panel.collapsed #panel-toggle{width:100%;height:100%;}',
-    '#panel-content{margin-top:28px;transition:opacity 0.2s ease;}',
+    '#panel-content{margin-top:12px;transition:opacity 0.2s ease;}',
     '#panel.collapsed #panel-content{opacity:0;pointer-events:none;}',
-    '#panel h2{font-size:11px;color:#f3ece0;margin:0 0 2px;letter-spacing:2px;}',
-    '#panel .sub{font-size:8px;color:#5a5450;margin-bottom:10px;}',
-    '#panel .seed{font-size:13px;color:#f3ece0;margin:2px 0 4px;}',
-    '#panel .eng{font-size:9px;color:#8a8070;margin:0 0 8px;letter-spacing:.5px;}',
-    '#panel label{display:block;margin:10px 0 3px;color:#8a8378;font-size:9px;text-transform:uppercase;letter-spacing:1px;}',
-    '#panel select,#panel input[type=range]{width:100%;background:#1a1816;color:#c8c0b4;',
-    'border:1px solid #3a3835;padding:6px 4px;font:bold 13px "IBM Plex Mono","Courier New",monospace;border-radius:2px;outline:none;appearance:auto;}',
-    '#panel select option{background:#1a1816;color:#c8c0b4;font:bold 13px "IBM Plex Mono","Courier New",monospace;}',
-    '#panel select:focus,#panel input:focus{border-color:#5a5450;}',
-    '#panel button{width:100%;padding:7px 0;margin:3px 0;background:#2a2826;',
-    'color:#c8c0b4;border:1px solid #3a3835;font:11px "Courier New";cursor:pointer;border-radius:2px;}',
-    '#panel button:hover{background:#3a3835;}',
-    '#panel button.primary{background:#3d3a34;border-color:#5a5450;color:#f3ece0;}',
-    '#panel .info{font-size:8px;color:#4a4845;margin-top:6px;line-height:1.5;}',
-    '#panel hr{border:none;border-top:1px solid #2e2c2a;margin:10px 0;}',
+    '.panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}',
+    '#panel h2{font-size:11px;font-weight:600;color:#fff;margin:0 0 2px;letter-spacing:1px;}',
+    '#panel .sub{font-size:9px;color:#a0a0a0;margin-bottom:12px;}',
+    '#panel .seed{font-size:12px;font-weight:600;color:#fff;margin:4px 0 2px;font-family:"Courier New",monospace;}',
+    '#panel .eng{font-size:9px;color:#8a8070;margin:0 0 10px;text-transform:uppercase;letter-spacing:1px;}',
+    '.panel-section{margin-bottom: 0px; padding-bottom: 0px; border-bottom: none;}',
+    '.section-title{font-size:9px; font-weight:600; color:#8a8070; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;}',
+    '#panel label{display:block;margin:8px 0 4px;color:#a0a0a0;font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;}',
+    '#panel select,#panel input[type=range]{width:100%;background:rgba(0,0,0,0.3);color:#fff;',
+    'border:1px solid rgba(255,255,255,0.1);padding:6px;font:11px system-ui,-apple-system,sans-serif;border-radius:4px;outline:none;appearance:none;cursor:pointer;transition:border-color 0.2s;}',
+    '#panel select option{background:#2c2c2c;color:#fff;}',
+    '#panel select:hover,#panel input:hover{border-color:rgba(255,255,255,0.3);}',
+    '#panel select:focus,#panel input:focus{border-color:rgba(255,255,255,0.5);}',
+    '#panel input[type=range]{height:4px;padding:0;border:none;background:rgba(255,255,255,0.15);}',
+    '#panel input[type=range]::-webkit-slider-thumb{appearance:none;width:10px;height:10px;background:#fff;border-radius:50%;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.5);}',
+    '#panel button{width:100%;padding:6px;margin:4px 0;background:rgba(255,255,255,0.05);',
+    'color:#fff;border:1px solid rgba(255,255,255,0.1);font:500 11px system-ui,-apple-system,sans-serif;cursor:pointer;border-radius:4px;transition:all 0.2s;backdrop-filter:blur(4px);}',
+    '#panel button:hover{background:rgba(255,255,255,0.1);transform:translateY(-1px);}',
+    '#panel button:active{transform:translateY(0);}',
+    '#panel button.primary{background:rgba(24,160,251,0.8);border:none;color:#fff;box-shadow:0 2px 8px rgba(24,160,251,0.3);}',
+    '#panel button.primary:hover{background:rgba(24,160,251,1);}',
+    '#panel .info{font-size:9px;color:#8a8a8a;margin-top:6px;line-height:1.5;}',
     '#panel .row{display:flex;align-items:center;gap:6px;margin:6px 0;}',
-    '#panel .row input[type=checkbox]{width:auto;margin:0;}',
+    '#panel .row input[type=checkbox]{width:12px;height:12px;margin:0;accent-color:#18a0fb;cursor:pointer;}',
     '#panel input[type=file]{display:none;}',
-    '#panel .svg-import-info{font-size:8px;color:#4a8a5a;margin:4px 0;word-break:break-all;line-height:1.4;}',
-    '#panel .svg-controls{display:flex;flex-direction:column;gap:4px;margin:6px 0;}',
+    '#panel .svg-import-info{font-size:9px;color:#4a8a5a;margin:6px 0;word-break:break-all;line-height:1.4;}',
+    '#panel .svg-controls{display:flex;flex-direction:column;gap:6px;margin:8px 0;}',
+    '.drag-handle{width:40px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto;cursor:grab;transition:background 0.2s;}',
+    '.drag-handle:hover{background:rgba(255,255,255,0.4);}',
+    '.drag-handle:active{cursor:grabbing;}',
     '#overlay-hint{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(26,24,22,0.85);color:#8a8378;font:10px Courier New,monospace;padding:6px 12px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity 0.3s;z-index:2000;}'
   ].join('');
   document.head.appendChild(css);
@@ -2097,6 +2125,46 @@ function buildPanel() {
   panel.id('panel');
   document.body.insertBefore(panel.elt, document.getElementById('canvas-wrap'));
 
+  // The sleek Figma drag handle at the very top
+  var header = createElement('div', '');
+  header.class('drag-handle');
+  header.style('margin-bottom', '12px');
+  panel.elt.appendChild(header.elt);
+
+  var isDragging = false, dragX = 0, dragY = 0;
+  var targetLeft = 0, targetTop = 0;
+  var ticking = false;
+
+  header.elt.onmousedown = function(e) {
+    e.preventDefault();
+    isDragging = true;
+    dragX = e.clientX - panel.elt.offsetLeft;
+    dragY = e.clientY - panel.elt.offsetTop;
+    panel.elt.style.transition = 'none';
+  };
+  window.addEventListener('mousemove', function(e) {
+    if (isDragging) {
+      targetLeft = e.clientX - dragX;
+      targetTop = e.clientY - dragY;
+      if (!ticking) {
+        window.requestAnimationFrame(function() {
+          if (isDragging) {
+            panel.elt.style.left = targetLeft + 'px';
+            panel.elt.style.top = targetTop + 'px';
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }
+  });
+  window.addEventListener('mouseup', function() {
+    if (isDragging) {
+      isDragging = false;
+      panel.elt.style.transition = 'opacity 0.25s, transform 0.25s, background-color 0.25s, border-radius 0.25s';
+    }
+  });
+
   // Toggle button for collapsing panel on mobile / viewport
   var toggleBtn = createElement('div', '☰');
   toggleBtn.id('panel-toggle');
@@ -2132,14 +2200,23 @@ function buildPanel() {
   lblSeed = createElement('div',''); lblSeed.class('seed'); lblSeed.parent(content);
   lblEngine = createElement('div',''); lblEngine.class('eng'); lblEngine.parent(content);
 
+  var gridWrapper = createElement('div', '');
+  gridWrapper.class('panel-grid');
+  gridWrapper.parent(content);
+
+  var col1 = createElement('div', ''); col1.parent(gridWrapper);
+  var col2 = createElement('div', ''); col2.parent(gridWrapper);
+
+  // --- GENERATOR SECTION ---
+  var secGen = createElement('div', ''); secGen.class('panel-section'); secGen.parent(col1);
+  var genTitle = createElement('div', 'GENERATOR'); genTitle.class('section-title'); genTitle.parent(secGen);
+
   btnRegen = createButton('REGENERATE');
-  btnRegen.class('primary'); btnRegen.parent(content);
+  btnRegen.class('primary'); btnRegen.parent(secGen);
   btnRegen.mousePressed(freshSeed);
 
-  createElement('hr','').parent(content);
-
-  createElement('label','Engine').parent(content);
-  selEngine = createSelect(); selEngine.parent(content);
+  createElement('label','Engine').parent(secGen);
+  selEngine = createSelect(); selEngine.parent(secGen);
   selEngine.option('random', 'random');
   for (var i=0; i<ENGINE_LIST.length; i++) selEngine.option(ENGINE_LIST[i], ENGINE_LIST[i]);
   selEngine.selected('random');
@@ -2149,125 +2226,63 @@ function buildPanel() {
     else freshSeed();
   });
 
-  createElement('label','Border').parent(content);
-  selBorder = createSelect(); selBorder.parent(content);
+  createElement('label','Border').parent(secGen);
+  selBorder = createSelect(); selBorder.parent(secGen);
   for (var j=0; j<BORDER_KEYS.length; j++) selBorder.option(BORDER_KEYS[j], BORDER_KEYS[j]);
   selBorder.selected('t*x');
   selBorder.changed(function(){ borderKey=selBorder.value(); regenerate(); });
 
-  createElement('label','Ink Density').parent(content);
-  sldGain = createSlider(30,140,85,1); sldGain.parent(content);
+  createElement('label','Ink Density').parent(secGen);
+  sldGain = createSlider(30,140,85,1); sldGain.parent(secGen);
   sldGain.input(function(){ gain=sldGain.value()/100; regenerate(); });
 
-  var chkRow = createElement('div',''); chkRow.class('row'); chkRow.parent(content);
+  var chkRow = createElement('div',''); chkRow.class('row'); chkRow.parent(secGen);
   chkPalms = createCheckbox(' Palm trees', true); chkPalms.parent(chkRow);
   chkPalms.changed(function(){ showPalms=chkPalms.checked(); regenerate(); });
 
-  createElement('hr','').parent(content);
-
-  btnSave = createButton('SAVE PNG'); btnSave.parent(content);
-  btnSave.mousePressed(function(){ saveCanvas('platen_'+currentEngine+'_'+seed,'png'); });
-
-  btnSaveSVG = createButton('SAVE SVG (PLOT)'); btnSaveSVG.parent(content);
-  btnSaveSVG.mousePressed(exportLandscapeSVG);
-
-  // ── SVG Import section ───────────────────────────────────────────────────
-  createElement('hr','').parent(content);
-  createElement('label', 'SVG Overlay (Import)').parent(content);
-
-  // Hidden file input
-  var svgFileInput = document.createElement('input');
-  svgFileInput.type = 'file';
-  svgFileInput.accept = '.svg,image/svg+xml';
-  svgFileInput.id = 'svg-file-input';
-  content.elt.appendChild(svgFileInput);
-
-  // Import button triggers the hidden input
-  var btnImportSVG = createButton('IMPORT SVG'); btnImportSVG.parent(content);
-  btnImportSVG.mousePressed(function() { svgFileInput.click(); });
-
-  // Status label
-  var svgStatusEl = createElement('div', 'No SVG loaded');
-  svgStatusEl.class('svg-import-info');
-  svgStatusEl.parent(content);
-
-  // File read handler
-  svgFileInput.addEventListener('change', function(e) {
-    var file = e.target.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function(ev) {
-      importedSVGContent = ev.target.result;
-      svgStatusEl.html('✓ ' + file.name);
-      createSVGOverlay(importedSVGContent);
-    };
-    reader.readAsText(file);
-    // Reset so same file can be re-imported
-    svgFileInput.value = '';
+  // Space logic moved into generator section
+  createElement('label','Space').parent(secGen);
+  var selSpace = createSelect(); selSpace.parent(secGen);
+  var SPACE_LIST = ['none', 'isometric', 'isometric (vertical)', 'polar', 'hyperbolic', 'planar', 'planar (abstract)', 'moire', 'moire (dazzler)'];
+  for (var i=0; i<SPACE_LIST.length; i++) selSpace.option(SPACE_LIST[i], SPACE_LIST[i]);
+  selSpace.selected('none');
+  selSpace.changed(function(){
+    currentSpace = selSpace.value();
+    regenerate();
   });
 
-  // Opacity slider
-  createElement('label', 'Opacity').parent(content);
-  var sldSVGOpacity = createSlider(0, 100, Math.round(svgOverlayOpacity * 100), 1);
-  sldSVGOpacity.parent(content);
-  sldSVGOpacity.input(function() {
-    svgOverlayOpacity = sldSVGOpacity.value() / 100;
-    if (svgOverlayEl) svgOverlayEl.style.opacity = svgOverlayOpacity;
+  // --- EFFECTS SECTION ---
+  var secFx = createElement('div', ''); secFx.class('panel-section'); secFx.parent(col1);
+  var fxTitle = createElement('div', 'EFFECTS'); fxTitle.class('section-title'); fxTitle.parent(secFx);
+
+  var btnFlux = createButton('► TOGGLE FLUX MODE'); btnFlux.parent(secFx);
+  btnFlux.id('btn-flux');
+  btnFlux.mousePressed(function() {
+    isFluxMode = !isFluxMode;
+    if (isFluxMode) {
+      btnFlux.html('■ STOP FLUX MODE');
+      btnFlux.class('primary');
+      fluxStartTime = millis();
+      loop();
+    } else {
+      btnFlux.html('► TOGGLE FLUX MODE');
+      btnFlux.removeClass('primary');
+      noLoop();
+      redraw();
+    }
   });
+  
+  createElement('label', 'Flux Amplitude').parent(secFx);
+  var sldFluxAmp = createSlider(0, 20, 5, 0.5);
+  sldFluxAmp.parent(secFx);
+  sldFluxAmp.input(function() { fluxAmplitude = sldFluxAmp.value(); });
 
-  // Scale slider
-  createElement('label', 'Scale').parent(content);
-  var sldSVGScale = createSlider(40, 200, 100, 1);
-  sldSVGScale.parent(content);
-  sldSVGScale.input(function() {
-    svgOverlayScale = sldSVGScale.value() / 100;
-    updateSVGOverlayPosition();
-  });
+  // --- OVERLAY SECTION ---
+  var secOvl = createElement('div', ''); secOvl.class('panel-section'); secOvl.parent(col2);
+  var ovlTitle = createElement('div', 'OVERLAY & VTRACER'); ovlTitle.class('section-title'); ovlTitle.parent(secOvl);
 
-  // Blend mode
-  createElement('label', 'Blend Mode').parent(content);
-  var selBlend = createSelect(); selBlend.parent(content);
-  ['multiply','screen','overlay','darken','soft-light','normal'].forEach(function(m) {
-    selBlend.option(m, m);
-  });
-  selBlend.selected('multiply');
-  selBlend.changed(function() {
-    svgOverlayBlend = selBlend.value();
-    if (svgOverlayEl) svgOverlayEl.style.mixBlendMode = svgOverlayBlend;
-  });
-
-  // Remove overlay button
-  var btnRemoveSVG = createButton('REMOVE SVG'); btnRemoveSVG.parent(content);
-  btnRemoveSVG.mousePressed(function() {
-    removeSVGOverlay();
-    importedSVGContent = null;
-    svgStatusEl.html('No SVG loaded');
-  });
-
-  // Combined export
-  var btnCombinedSVG = createButton('SAVE COMBINED SVG'); btnCombinedSVG.parent(content);
-  btnCombinedSVG.mousePressed(exportCombinedSVG);
-
-  // Alt+drag hint
-  var hintEl = document.createElement('div');
-  hintEl.id = 'overlay-hint';
-  hintEl.textContent = 'Alt + drag to reposition overlay';
-  document.body.appendChild(hintEl);
-  // Show hint on alt key press
-  document.addEventListener('keydown', function(e) {
-    if (e.altKey && importedSVGContent) { hintEl.style.opacity = '1'; }
-  });
-  document.addEventListener('keyup', function() { hintEl.style.opacity = '0'; });
-
-
-
-  btnScore = createButton('EXPORT TXT'); btnScore.parent(content);
-  btnScore.mousePressed(dumpScore);
-
-  createElement('hr','').parent(content);
-
-  createElement('label','Landscape').parent(content);
-  selLandscape = createSelect(); selLandscape.parent(content);
+  createElement('label','Landscape').parent(secOvl);
+  selLandscape = createSelect(); selLandscape.parent(secOvl);
   var LANDSCAPE_LIST = ['none','mountain_range','douro_valley','mesa_vista','modernist_marks','random'];
   for (var il=0; il<LANDSCAPE_LIST.length; il++) selLandscape.option(LANDSCAPE_LIST[il], LANDSCAPE_LIST[il]);
   selLandscape.selected('none');
@@ -2280,49 +2295,297 @@ function buildPanel() {
     redraw();
   });
 
-  createElement('hr','').parent(content);
-    createElement('label','Space').parent(content);
-  var selSpace = createSelect(); selSpace.parent(content);
-  var SPACE_LIST = ['none', 'isometric', 'isometric (vertical)', 'polar', 'hyperbolic', 'planar', 'planar (abstract)', 'moire', 'moire (dazzler)'];
-  for (var i=0; i<SPACE_LIST.length; i++) selSpace.option(SPACE_LIST[i], SPACE_LIST[i]);
-  selSpace.selected('none');
-  selSpace.changed(function(){
-    currentSpace = selSpace.value();
-    regenerate();
+  // Hidden file input
+  var svgFileInput = document.createElement('input');
+  svgFileInput.type = 'file';
+  svgFileInput.accept = '.svg,image/svg+xml,.png,.jpg,.jpeg,.webp';
+  svgFileInput.id = 'svg-file-input';
+  content.elt.appendChild(svgFileInput);
+
+  // Import button triggers the hidden input
+  var btnImportSVG = createButton('IMPORT IMAGE / SVG'); btnImportSVG.parent(secOvl);
+  btnImportSVG.mousePressed(function() { svgFileInput.click(); });
+
+  // Status label
+  var svgStatusEl = createElement('div', 'No overlay loaded');
+  svgStatusEl.class('svg-import-info');
+  svgStatusEl.parent(secOvl);
+
+  // VTracer Controls (Hidden until raster is loaded)
+  var vtracerControls = createElement('div', '').parent(secOvl);
+  vtracerControls.style('display', 'none');
+  vtracerControls.style('margin-top', '10px');
+  vtracerControls.style('padding-left', '10px');
+  vtracerControls.style('border-left', '2px solid rgba(255,255,255,0.1)');
+  
+  createElement('label', 'Vector Detail').parent(vtracerControls);
+  var sldVTracerDetail = createSlider(0, 16, 4, 1);
+  sldVTracerDetail.parent(vtracerControls);
+  
+  createElement('label', 'Speckle Filter').parent(vtracerControls);
+  var sldVTracerSpeckle = createSlider(0, 16, 4, 1);
+  sldVTracerSpeckle.parent(vtracerControls);
+
+  var vtracerRawImage = null;
+  var activeVTracerTask = null; // tracking the current task object to allow cancellation
+
+  function runVTracer() {
+    if (!vtracerRawImage || !window.vtracer) return;
+    
+    // 1. Cancel previous trace task if one exists
+    if (activeVTracerTask) {
+      activeVTracerTask.cancel = true;
+    }
+
+    // Proportional downscaling to max 1024px to prevent heavy memory/CPU lockup
+    var maxDim = 1024;
+    var targetWidth = vtracerRawImage.width;
+    var targetHeight = vtracerRawImage.height;
+    if (targetWidth > maxDim || targetHeight > maxDim) {
+      if (targetWidth > targetHeight) {
+        targetHeight = Math.round((targetHeight * maxDim) / targetWidth);
+        targetWidth = maxDim;
+      } else {
+        targetWidth = Math.round((targetWidth * maxDim) / targetHeight);
+        targetHeight = maxDim;
+      }
+      console.log("Scaling image down to " + targetWidth + "x" + targetHeight + " for VTracer to prevent browser freezes");
+    }
+
+    // Create an offscreen canvas to extract ImageData
+    var cvs = document.createElement('canvas');
+    cvs.width = targetWidth;
+    cvs.height = targetHeight;
+    var cctx = cvs.getContext('2d');
+    cctx.drawImage(vtracerRawImage, 0, 0, targetWidth, targetHeight);
+    
+    // Set canvas ID and attach to DOM (VTracer wasm looks for it via document.getElementById)
+    cvs.id = "vtracer-temp-canvas-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+    cvs.style.display = 'none';
+    document.body.appendChild(cvs);
+    
+    // Let VTracer modify a temporary offscreen SVG
+    var tempSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    tempSvg.id = "vtracer-temp-svg-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+    tempSvg.style.display = 'none';
+    document.body.appendChild(tempSvg);
+
+    var color_precision = 8 - Math.floor(sldVTracerDetail.value() / 2); // invert scale
+    var filter_speckle = sldVTracerSpeckle.value();
+    
+    var params = JSON.stringify({
+        mode: 'spline',
+        clustering_mode: 'binary', // Since it's micron pen, we use binary
+        hierarchical: 'stacked',
+        color_precision: color_precision,
+        layer_difference: 16,
+        corner_threshold: 60,
+        length_threshold: 4,
+        splice_threshold: 45,
+        path_precision: 8,
+        filter_speckle: filter_speckle,
+        canvas_id: cvs.id,
+        svg_id: tempSvg.id
+    });
+
+    var runConverter = null;
+    try {
+        runConverter = window.vtracer.ColorImageConverter.new_with_string(params);
+        runConverter.init();
+        
+        var thisTask = { cancel: false };
+        activeVTracerTask = thisTask;
+
+        svgStatusEl.html('Tracing...');
+
+        // Asynchronously run to completion so UI doesn't freeze
+        function processTick() {
+            if (thisTask.cancel) {
+                cleanup();
+                return;
+            }
+            
+            try {
+                var done = false;
+                var startTick = performance.now();
+                // Budget 12ms per tick to prevent layout/UI frames from dropping
+                while (!(done = runConverter.tick()) && (performance.now() - startTick) < 12) {
+                    if (thisTask.cancel) {
+                        cleanup();
+                        return;
+                    }
+                }
+                
+                if (!done) {
+                    var progress = runConverter.progress();
+                    svgStatusEl.html('Tracing... ' + progress + '%');
+                    setTimeout(processTick, 1);
+                } else {
+                    importedSVGContent = tempSvg.outerHTML;
+                    createSVGOverlay(importedSVGContent);
+                    svgStatusEl.html('✓ Vectorized');
+                    
+                    if (activeVTracerTask === thisTask) {
+                        activeVTracerTask = null;
+                    }
+                    cleanup();
+                }
+            } catch (tickErr) {
+                console.error("VTracer Tick Error:", tickErr);
+                svgStatusEl.html('Error during tracing');
+                if (activeVTracerTask === thisTask) {
+                    activeVTracerTask = null;
+                }
+                cleanup();
+            }
+        }
+
+        function cleanup() {
+            try {
+                if (tempSvg && tempSvg.parentNode) {
+                    tempSvg.parentNode.removeChild(tempSvg);
+                }
+            } catch (e) {}
+            try {
+                if (cvs && cvs.parentNode) {
+                    cvs.parentNode.removeChild(cvs);
+                }
+            } catch (e) {}
+            try {
+                if (runConverter) {
+                    runConverter.free();
+                    runConverter = null;
+                }
+            } catch (e) {}
+        }
+
+        processTick();
+    } catch(e) {
+        console.error("VTracer Init Error:", e);
+        svgStatusEl.html('Error converting image');
+        if (activeVTracerTask && activeVTracerTask.cancel === false) {
+            activeVTracerTask = null;
+        }
+        // Fallback cleanup if init itself fails
+        try {
+            if (tempSvg && tempSvg.parentNode) tempSvg.parentNode.removeChild(tempSvg);
+        } catch (err) {}
+        try {
+            if (cvs && cvs.parentNode) cvs.parentNode.removeChild(cvs);
+        } catch (err) {}
+        try {
+            if (runConverter) runConverter.free();
+        } catch (err) {}
+    }
+  }
+
+  sldVTracerDetail.input(runVTracer);
+  sldVTracerSpeckle.input(runVTracer);
+
+  // File read handler
+  svgFileInput.addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    
+    var isRaster = file.type.startsWith('image/') && file.type !== 'image/svg+xml';
+    
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      svgStatusEl.html('✓ ' + file.name);
+      
+      if (isRaster) {
+          vtracerControls.style('display', 'block');
+          vtracerRawImage = new Image();
+          vtracerRawImage.onload = function() {
+              svgStatusEl.html('Tracing...');
+              setTimeout(runVTracer, 50); // allow UI to update
+          };
+          vtracerRawImage.src = ev.target.result;
+      } else {
+          vtracerControls.style('display', 'none');
+          vtracerRawImage = null;
+          importedSVGContent = ev.target.result;
+          createSVGOverlay(importedSVGContent);
+      }
+    };
+    
+    if (isRaster) {
+        reader.readAsDataURL(file);
+    } else {
+        reader.readAsText(file);
+    }
+    
+    // Reset so same file can be re-imported
+    svgFileInput.value = '';
   });
+
+  // Opacity slider
+  createElement('label', 'Opacity').parent(secOvl);
+  var sldSVGOpacity = createSlider(0, 100, Math.round(svgOverlayOpacity * 100), 1);
+  sldSVGOpacity.parent(secOvl);
+  sldSVGOpacity.input(function() {
+    svgOverlayOpacity = sldSVGOpacity.value() / 100;
+    if (svgOverlayEl) svgOverlayEl.style.opacity = svgOverlayOpacity;
+  });
+
+  // Scale slider
+  createElement('label', 'Scale').parent(secOvl);
+  var sldSVGScale = createSlider(40, 200, 100, 1);
+  sldSVGScale.parent(secOvl);
+  sldSVGScale.input(function() {
+    svgOverlayScale = sldSVGScale.value() / 100;
+    updateSVGOverlayPosition();
+  });
+
+  // Blend mode
+  createElement('label', 'Blend Mode').parent(secOvl);
+  var selBlend = createSelect(); selBlend.parent(secOvl);
+  ['multiply','screen','overlay','darken','soft-light','normal'].forEach(function(m) {
+    selBlend.option(m, m);
+  });
+  selBlend.selected('multiply');
+  selBlend.changed(function() {
+    svgOverlayBlend = selBlend.value();
+    if (svgOverlayEl) svgOverlayEl.style.mixBlendMode = svgOverlayBlend;
+  });
+
+  // Remove overlay button
+  var btnRemoveSVG = createButton('REMOVE SVG'); btnRemoveSVG.parent(secOvl);
+  btnRemoveSVG.mousePressed(function() {
+    removeSVGOverlay();
+    importedSVGContent = null;
+    svgStatusEl.html('No SVG loaded');
+  });
+
+  // Combined export
+  var btnCombinedSVG = createButton('SAVE COMBINED SVG'); btnCombinedSVG.parent(secOvl);
+  btnCombinedSVG.mousePressed(exportCombinedSVG);
+
+  // --- EXPORT SECTION ---
+  var secExp = createElement('div', ''); secExp.class('panel-section'); secExp.parent(col2);
+  var expTitle = createElement('div', 'EXPORT'); expTitle.class('section-title'); expTitle.parent(secExp);
+
+  btnSave = createButton('SAVE PNG'); btnSave.parent(secExp);
+  btnSave.mousePressed(function(){ saveCanvas('platen_'+currentEngine+'_'+seed,'png'); });
+
+  btnSaveSVG = createButton('SAVE SVG (PLOT)'); btnSaveSVG.parent(secExp);
+  btnSaveSVG.mousePressed(exportLandscapeSVG);
+
+  btnScore = createButton('EXPORT TXT'); btnScore.parent(secExp);
+  btnScore.mousePressed(dumpScore);
 
   lblInfo = createElement('div',''); lblInfo.class('info'); lblInfo.parent(content);
 
-  // Draggable panel logic
-  var isDragging = false, dragX = 0, dragY = 0;
-  var header = createElement('div', '⋮⋮⋮');
-  header.style('width', '100%'); header.style('height', '16px');
-  header.style('cursor', 'grab'); header.style('text-align', 'center');
-  header.style('color', '#5a5450'); header.style('font-size', '10px');
-  header.style('line-height', '16px');
-  panel.elt.insertBefore(header.elt, panel.elt.firstChild);
-
-  header.elt.onmousedown = function(e) {
-    e.preventDefault();
-    isDragging = true;
-    dragX = e.clientX - panel.elt.offsetLeft;
-    dragY = e.clientY - panel.elt.offsetTop;
-    header.style('cursor', 'grabbing');
-    panel.elt.style.transition = 'none';
-  };
-  window.addEventListener('mousemove', function(e) {
-    if (isDragging) {
-      panel.elt.style.left = (e.clientX - dragX) + 'px';
-      panel.elt.style.top = (e.clientY - dragY) + 'px';
-    }
+  // Alt+drag hint
+  var hintEl = document.createElement('div');
+  hintEl.id = 'overlay-hint';
+  hintEl.textContent = 'Alt + drag to reposition overlay';
+  document.body.appendChild(hintEl);
+  // Show hint on alt key press
+  document.addEventListener('keydown', function(e) {
+    if (e.altKey && importedSVGContent) { hintEl.style.opacity = '1'; }
   });
-  window.addEventListener('mouseup', function() {
-    if (isDragging) {
-      isDragging = false;
-      header.style('cursor', 'grab');
-      panel.elt.style.transition = 'opacity 0.25s, transform 0.25s, background-color 0.25s, border-radius 0.25s';
-    }
-  });
+  document.addEventListener('keyup', function() { hintEl.style.opacity = '0'; });
 
   // Tap artwork to regenerate
   document.getElementById('canvas-wrap').onclick = function(e) {
@@ -2370,7 +2633,11 @@ function drawArt() {
   }
   textAlign(CENTER, CENTER);
   textSize(CELL_W / 0.6);
-  fill('#23211c'); noStroke();
+  if (!isFluxMode) { fill('#23211c'); }
+  noStroke();
+  
+  var t = isFluxMode ? (millis() - fluxStartTime) / 1000.0 : 0;
+
   for (var r=0; r<ROWS; r++) {
     var y = ORIGIN_Y + r*CELL_H + CELL_H/2;
     for (var c=0; c<COLS; c++) {
@@ -2491,8 +2758,36 @@ function drawArt() {
       var renderYs = (currentSpace === 'isometric (vertical)' && yCoords) ? yCoords : [y];
       for (var sIdx = 0; sIdx < renderYs.length; sIdx++) {
         var currY = renderYs[sIdx];
+        
+        var flowX = 0, flowY = 0, opacity = 1.0;
+        if (isFluxMode) {
+            var pseudo = (r * COLS + c) * 1.37; 
+            var angle = (pseudo % (Math.PI * 2));
+            var flowPhase = (pseudo * 0.7 % (Math.PI * 2));
+            var flowCos = Math.cos(angle);
+            var flowSin = Math.sin(angle);
+            var phase = (pseudo * 1.1 % (Math.PI * 2));
+            var flickerFreq = 8.0 + (pseudo % 12.0);
+
+            var wave = Math.sin(t * 1.5 + flowPhase);
+            var glowVal = 0.5 + 
+                Math.sin(t * flickerFreq + phase) * 0.4 + 
+                Math.sin(t * (flickerFreq * 0.37) + phase * 2.1) * 0.15 +
+                Math.sin(t * 35.0 + phase * 5.0) * 0.1;
+            
+            glowVal = Math.max(0, Math.min(1, glowVal));
+            var tightGhostOp = 0.6; // Reduced ghosting (higher min opacity)
+            opacity = tightGhostOp + (1.0 - tightGhostOp) * glowVal;
+            
+            var wave = Math.sin(t * 1.5 + flowPhase);
+            flowX = flowCos * wave * fluxAmplitude + Math.sin(t * 30.0 + phase) * 0.15;
+            flowY = flowSin * wave * fluxAmplitude + Math.cos(t * 30.0 + phase * 1.3) * 0.15;
+            
+            fill('rgba(35, 33, 28, ' + opacity + ')'); // Original black color (#23211c) with flicker opacity
+        }
+
         for (var i=0; i<stack.length; i++) {
-          text(stack[i], x+(i%2===0?0:0.3), currY+(i===2?0.3:0));
+          text(stack[i], x+flowX+(i%2===0?0:0.3), currY+flowY+(i===2?0.3:0));
         }
       }
       if (currentSpace === 'isometric (vertical)') {
@@ -2501,8 +2796,10 @@ function drawArt() {
       y = oy;
     }
   }
-  drawShapeHints();
-  drawBoldShapes();
+  if (!isFluxMode) {
+    drawShapeHints();
+    drawBoldShapes();
+  }
   drawLandscapeOverlay(landscapeParams);
 }
 
@@ -2558,4 +2855,13 @@ function dumpScore() {
 function keyPressed() {
   if (key===' ')           { freshSeed(); }
   else if (key==='s'||key==='S') { saveCanvas('platen_'+currentEngine+'_'+seed,'png'); }
+  else if (key==='f'||key==='F') { 
+    var btn = document.getElementById('btn-flux');
+    if (btn) btn.click();
+    else {
+      isFluxMode = !isFluxMode;
+      if (isFluxMode) { fluxStartTime = millis(); loop(); }
+      else { noLoop(); redraw(); }
+    }
+  }
 }
