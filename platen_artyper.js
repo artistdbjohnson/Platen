@@ -806,7 +806,9 @@ function buildGrid() {
       if (norm < 0.07) { g[r2][c2] = null; continue; }
       var lvl = Math.round(norm * MAXLVL * gain);
       lvl = Math.max(1, Math.min(MAXLVL, lvl));
-      g[r2][c2] = RAMP[lvl].slice();
+      var stack = RAMP[lvl].slice();
+      stack.wt = norm;
+      g[r2][c2] = stack;
     }
   }
 
@@ -1338,6 +1340,7 @@ function drawArt() {
       var stack = grid[r][c]; if (!stack) continue;
       var x = ORIGIN_X + c*CELL_W + CELL_W/2;
       var oy = y; // backup original y
+      var yCoords = null;
       if (currentSpace === 'isometric') {
         var isoX = (c - r) * CELL_W * 0.866;
         var isoY = (c + r) * CELL_H * 0.5;
@@ -1368,13 +1371,42 @@ function drawArt() {
         x = CW/2 + (px * Math.min(CW,CH)*1.5) / pz;
         y = CH/2 + (py * Math.min(CW,CH)) / pz - CH*0.2;
       } else if (currentSpace === 'isometric (vertical)') {
-        var isoX = (c - r) * CELL_W * 0.866;
-        var isoY = (c + r) * CELL_H * 0.5;
-        var hSeed = (c * 37 + r * 73 + seed) % 1009;
-        var rfl = (hSeed / 1009.0);
-        var extrude = (rfl * 0.6 + 0.2) * 150; 
-        x = Math.floor(CW/2) + isoX;
-        y = Math.floor(CH*0.35) + isoY - extrude;
+        var _px = x;
+        var _py = y;
+        var cx_px = CW / 2;
+        var cy_px = CH / 2;
+        var cos30 = 0.86602540378;
+        var sin30 = 0.5;
+        var isoScale = 0.58;
+        var dx = (_px - cx_px) * isoScale;
+        var dy = (_py - cy_px) * isoScale;
+        
+        var bottom_margin = 12.5;
+        var max_base_y = cy_px + (cx_px + cy_px) * isoScale * sin30;
+        var base_nudge = Math.max(30, CH - bottom_margin - max_base_y) + 12.5;
+        
+        x = cx_px + (dx - dy) * cos30 + 15;
+        var py_base = cy_px + (dx + dy) * sin30 + base_nudge;
+        
+        var hFactor = Math.pow(stack.wt || 0, 2.0);
+        var py_header = 132.5;
+        var py_top = py_base - hFactor * (py_base - py_header);
+        
+        if (hFactor < 0.35) {
+          var nudgeUp = (0.35 - hFactor) * 30;
+          py_base -= nudgeUp;
+          py_top -= nudgeUp;
+        }
+        
+        var py_steps = [];
+        var stepVal = 7 * isoScale;
+        for (var yVal = py_base; yVal >= py_top; yVal -= stepVal) {
+          py_steps.push(yVal);
+        }
+        if (py_steps.length === 0 || py_steps[py_steps.length - 1] > py_top) {
+          py_steps.push(py_top);
+        }
+        yCoords = py_steps;
       } else if (currentSpace === 'planar (abstract)') {
         var p = [c, r], d;
         var qq = [c + 16, r + 16];
@@ -1412,7 +1444,21 @@ function drawArt() {
          x = cx2 + dx + offX + (dy * moireDriftRate * 50) + ripple;
          y = cy2 + dy + offY + Math.sin(c*0.1 + r*0.1) * 10;
       }
-      for (var i=0; i<stack.length; i++) text(stack[i], x+(i%2===0?0:0.3), y+(i===2?0.3:0));
+      
+      var originalTextSize = CELL_W / 0.6;
+      if (currentSpace === 'isometric (vertical)') {
+        textSize(originalTextSize * 0.58 * 1.15);
+      }
+      var renderYs = (currentSpace === 'isometric (vertical)' && yCoords) ? yCoords : [y];
+      for (var sIdx = 0; sIdx < renderYs.length; sIdx++) {
+        var currY = renderYs[sIdx];
+        for (var i=0; i<stack.length; i++) {
+          text(stack[i], x+(i%2===0?0:0.3), currY+(i===2?0.3:0));
+        }
+      }
+      if (currentSpace === 'isometric (vertical)') {
+        textSize(originalTextSize);
+      }
       y = oy;
     }
   }
