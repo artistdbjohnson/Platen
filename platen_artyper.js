@@ -2755,12 +2755,12 @@ function drawArt() {
          var mv = dy / cx2;
          var r2 = Math.sqrt(mu*mu + mv*mv);
          var ang = Math.atan2(mv, mu);
-         var t = (seed * 0.05) % (Math.PI * 2);
+         var tMoire = (seed * 0.05) % (Math.PI * 2);
          var valf = 0.5 + 0.5 * (
-             0.42 * Math.sin(7 * mu + t) +
-             0.30 * Math.sin(9 * mv - t * 0.7) +
-             0.42 * Math.sin(18 * r2 - t * 1.25) +
-             0.18 * Math.sin(5 * ang + t * 0.4)
+             0.42 * Math.sin(7 * mu + tMoire) +
+             0.30 * Math.sin(9 * mv - tMoire * 0.7) +
+             0.42 * Math.sin(18 * r2 - tMoire * 1.25) +
+             0.18 * Math.sin(5 * ang + tMoire * 0.4)
          );
          var shiftAmt = (valf - 0.5) * 35.0;
          x += Math.cos(ang) * shiftAmt;
