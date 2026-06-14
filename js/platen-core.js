@@ -1215,7 +1215,7 @@ var SYMMETRY_OPTS = ['random', 'both', 'diagonal', 'glide', 'horizontal', 'kalei
 var SPACE_OPTS = ['random', 'isometric', 'polar', 'hyperbolic', 'planar', 'moire'];
 var MOTIF_OPTS = ['random', 'typewriter', 'typewriter_quine'];
 var CHROME_OPTS = ['random', 'typewriter_black', 'typewriter_black_red', 'typewriter_ribbon_multicolored', 'adama', 'adire', 'afarsek', 'aizome', 'alentejo', 'alon', 'argaman', 'azulejo_classico', 'bahir', 'barzel', 'bedouin_night', 'bleached', 'blueprint_cyan', 'bogolan', 'bricolage', 'burntwater', 'castelo_branco', 'cherokee', 'chinle', 'collage', 'concrete', 'crystal', 'cyber_mesh', 'erev', 'flow', 'flow_deep', 'gan', 'ganado', 'gaza_dusk', 'gehelet', 'glitch_acid', 'glitch_heat', 'glitch_void', 'kabuki', 'kagetoh', 'kakiishibu', 'karkom', 'kaspi', 'katan', 'kelme', 'kente', 'kinjiki', 'kinpak', 'kokkos', 'kuba', 'lissitzky', 'madder', 'manueline', 'matcha', 'matsuri', 'memphis', 'miami_basel', 'micron_plotter', 'minho', 'moki', 'mondrian', 'murex', 'nana', 'navajo', 'negev_gold', 'neshef', 'oil_pastel', 'olive_grove', 'orak', 'palestine_dawn', 'panar', 'pepel', 'pombalino', 'porphyra', 'primaries', 'railyard', 'rodchenko', 'ruach', 'rutsya', 'sakura', 'savonnerie', 'seigaiha', 'shahar', 'shemen', 'shibui', 'shiprock', 'shoshan', 'simcha', 'sintra', 'spectrum', 'stars_and_stripes', 'stolz', 'structural', 'sumi', 'suprematism', 'tarshish', 'teec_nos_pos', 'tekhelet', 'tukmo', 'two_grey_hills', 'uguisu', 'verena', 'viana', 'viride', 'wari', 'woodcut', 'yam', 'zahav'];
-var ENGINE_OPTS = ['random', 'adama', 'adire', 'argyle', 'arraiolos', 'art_deco', 'asanoha', 'axonometric', 'azulejo', 'blueprint', 'blueprint_cyan', 'bogolan', 'bricolage', 'brutalist', 'castelo_branco', 'cherokee', 'chiefs', 'chipaz', 'circuit', 'collage', 'cubist', 'current', 'cypress_hills', 'dazzler', 'flow', 'flowing_contours', 'framed_vista', 'fret_bands', 'glitch', 'interlace', 'kagome', 'kanzemizu', 'kente', 'kepe', 'kikkou', 'kishtima', 'kolya', 'kshtir', 'kuba', 'kudo', 'malevich', 'mastor', 'matsukawa', 'maximalism', 'metropolis', 'mondrian', 'narmuny', 'navajo', 'optical_box', 'orak', 'pakshats', 'panks', 'panoramic_dunes', 'pre_columbian', 'pulay', 'railyard', 'river_flow', 'rolling_hills', 'seigaiha', 'serape_net', 'sermat', 'sermat-kudo', 'shippo', 'shiprock', 'sierra_sunset', 'spider_cross', 'stolz', 'structural', 'tangents', 'tol', 'ved', 'verena', 'viana', 'virma', 'wari', 'woodcut', 'yagasuri', 'yoshiwara', 'artyping_landscape', 'artyping_flower', 'artyping_abstract'];
+var ENGINE_OPTS = ['random', 'adama', 'adire', 'argyle', 'arraiolos', 'art_deco', 'asanoha', 'axonometric', 'azulejo', 'blueprint', 'blueprint_cyan', 'bogolan', 'bricolage', 'brutalist', 'castelo_branco', 'cherokee', 'chiefs', 'chipaz', 'circuit', 'collage', 'cubist', 'current', 'cypress_hills', 'dazzler', 'flow', 'flowing_contours', 'framed_vista', 'fret_bands', 'glitch', 'interlace', 'kagome', 'kanzemizu', 'kente', 'kepe', 'kikkou', 'kishtima', 'kolya', 'kshtir', 'kuba', 'kudo', 'malevich', 'mastor', 'matsukawa', 'maximalism', 'metropolis', 'mondrian', 'narmuny', 'navajo', 'optical_box', 'orak', 'pakshats', 'panks', 'panoramic_dunes', 'pre_columbian', 'pulay', 'railyard', 'river_flow', 'rolling_hills', 'seigaiha', 'serape_net', 'sermat', 'sermat-kudo', 'shippo', 'shiprock', 'sierra_sunset', 'spider_cross', 'stolz', 'structural', 'tangents', 'tol', 'ved', 'verena', 'viana', 'virma', 'wari', 'woodcut', 'yagasuri', 'yoshiwara'];
 
 var CANVAS_OPTS = ['white', 'black'];
 var CANVAS_DESCS = {
@@ -1439,10 +1439,7 @@ var ENGINE_DESCS = {
     'wari': 'Patchwork Checks',
     'woodcut': 'Chiseled / Woodblock Carving',
     'yagasuri': 'Arrow Feathers',
-    'yoshiwara': 'Interlocking Chains',
-    'artyping_landscape': 'Artyping Landscape',
-    'artyping_flower': 'Artyping Flower',
-    'artyping_abstract': 'Artyping Abstract'
+    'yoshiwara': 'Interlocking Chains'
 };
 
 // ── PRNG (Park-Miller LCG) ────────────────────────────────────────────────────

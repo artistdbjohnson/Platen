@@ -243,11 +243,8 @@ onmessage = function (e) {
 
     // ── TASK 1: DENSITY SPACING FLOOR ──
     // Enforce spacing globally: clear cells within a Chebyshev distance of 1 of higher-weight cells.
-    // ARTYPING BYPASS: ornamental typewriting requires dense overlapping cells — skip this entirely.
     var candidates = [];
-    var _artypingMode = (traits.engine === 'artyping_landscape' || traits.engine === 'artyping_flower' || traits.engine === 'artyping_abstract');
-    if (!_artypingMode &&
-        traits.space !== 'moire' && 
+    if (traits.space !== 'moire' && 
         traits.space !== 'planar' && 
         traits.space !== 'polar' &&
         traits.space !== 'hyperbolic') {
