@@ -14685,6 +14685,16 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
                     svgEl.style.height = 'auto';
 
+                    // Inject inline style so header text colour renders correctly in SVG thumbnails
+                    if (!svgEl.querySelector('style.gallery-thumb-style')) {
+                        var thumbStyle = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                        thumbStyle.setAttribute('class', 'gallery-thumb-style');
+                        var thumbCanvas = art.traits.canvas || 'black';
+                        var thumbFill = (thumbCanvas === 'white' || thumbCanvas === 'tan' || thumbCanvas === 'olive') ? '#1a1a1a' : '#ffffff';
+                        thumbStyle.textContent = '.typewriter-header text, .typewriter-header tspan { fill: ' + thumbFill + ' !important; } .grid-numbers text, .grid-numbers tspan { fill: ' + thumbFill + ' !important; }';
+                        svgEl.insertBefore(thumbStyle, svgEl.firstChild);
+                    }
+
                 }
 
                 
@@ -14759,69 +14769,149 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
             canvasBack.height = size;
 
-            
+            var activeCanvas = art.traits.canvas || 'black';
 
-            var isNightMode = document.documentElement.getAttribute('data-theme') !== 'light';
-
-            var activeCanvas = art.traits.canvas;
-
-            var paperColor = '#f5f0e8';
-
-            if (isNightMode || activeCanvas === 'black') {
-
-                paperColor = '#0a0a0a';
-
-            } else if (activeCanvas === 'white') {
-
+            // Paper background color
+            var paperColor = '#0a0a0a';
+            if (activeCanvas === 'white' || activeCanvas === 'tan' || activeCanvas === 'olive') {
                 paperColor = '#f5f0e8';
-
             }
-
-            
 
             ctx.fillStyle = paperColor;
-
             ctx.fillRect(0, 0, size, size);
 
-            
+            // Draw canvas texture
+            var bgStyle = getCanvasBackgroundStyle(art);
+            var texSrc = bgStyle.backgroundImage;
+            var urlMatch = texSrc && texSrc.match(/^url\(['"]?(.*?)['"]?\)$/);
 
-            var activeBgImg = typeof _activeCanvasImg !== 'undefined' ? _activeCanvasImg : null;
+            function renderVersoArtwork(texImg) {
 
-            if (activeBgImg && activeBgImg.complete && activeBgImg.naturalWidth > 0) {
+                if (texImg && texImg.complete && texImg.naturalWidth > 0) {
+                    ctx.drawImage(texImg, 0, 0, size, size);
+                }
 
-                ctx.drawImage(activeBgImg, 0, 0, size, size);
+                // Build a clone of the SVG for rendering artwork area only
+                var svgClone = svgElement.cloneNode(true);
+
+                // Inject colour style so header text is visible when rasterised
+                var versoFill = (activeCanvas === 'white' || activeCanvas === 'tan' || activeCanvas === 'olive') ? '#1a1a1a' : '#ffffff';
+                if (!svgClone.querySelector('style.verso-style')) {
+                    var vs = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                    vs.setAttribute('class', 'verso-style');
+                    vs.textContent = '.typewriter-header text, .typewriter-header tspan { fill: ' + versoFill + ' !important; } .grid-numbers text, .grid-numbers tspan { fill: ' + versoFill + ' !important; }';
+                    svgClone.insertBefore(vs, svgClone.firstChild);
+                }
+
+                // Keep artwork visible, hide header (header will be drawn on top via canvas text later)
+                var headerG = svgClone.querySelector('.typewriter-header');
+                if (headerG) headerG.setAttribute('visibility', 'hidden');
+
+                var svgW = parseInt(svgClone.getAttribute('width')) || 1248;
+                var svgH = parseInt(svgClone.getAttribute('height')) || 2368;
+
+                var svgString = new XMLSerializer().serializeToString(svgClone);
+                var svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+                var svgUrl = URL.createObjectURL(svgBlob);
+
+                var svgImg = new Image();
+
+                svgImg.onload = function() {
+
+                    // Render SVG to an offscreen canvas at native resolution
+                    var offW = svgW;
+                    var offH = svgH;
+                    var offCanvas = document.createElement('canvas');
+                    offCanvas.width = offW;
+                    offCanvas.height = offH;
+                    var offCtx = offCanvas.getContext('2d');
+                    offCtx.drawImage(svgImg, 0, 0, offW, offH);
+                    URL.revokeObjectURL(svgUrl);
+
+                    // Determine header rows to skip (same logic as drawBackCanvas)
+                    var artLayout = art.layout || 'panel';
+                    var artMotif = art.traits.motif || '';
+                    var isGraphPaper = (artLayout.indexOf('graph_paper') === 0);
+
+                    var sx, sy, cropSize;
+
+                    if (isGraphPaper) {
+                        cropSize = Math.min(offW, offH);
+                        sx = (offW - cropSize) / 2;
+                        sy = (offH - cropSize) / 2;
+                    } else {
+                        var sizes = getLayoutSizes(artLayout);
+                        var sizeX = sizes.sizeX;
+                        var sizeY = sizes.sizeY;
+                        var w = sizes.w;
+                        var h = sizes.h;
+                        var hasHeader = (artLayout !== 'square' && artLayout !== 'grid_39_39' &&
+                            (artMotif === 'typewriter' || artMotif === 'chopin' || artMotif === 'typewriter_classic' || artMotif === 'typewriter_quine'));
+                        var headerRows = hasHeader ? 11 : 0;
+                        var W = w * sizeX;
+                        var H = (h - headerRows) * sizeY;
+                        cropSize = Math.min(W, H);
+                        sx = 4 * sizeX + (W - cropSize) / 2;
+                        sy = (4 + headerRows) * sizeY + (H - cropSize) / 2;
+                    }
+
+                    // Draw cropped artwork centred in back canvas with padding
+                    var padding = 120;
+                    var destSize = size - 2 * padding;
+                    ctx.drawImage(offCanvas, sx, sy, cropSize, cropSize, padding, padding, destSize, destSize);
+
+                    // Now draw the header SVG on top
+                    renderVersoHeader();
+
+                };
+
+                svgImg.src = svgUrl;
 
             }
 
-            
+            function renderVersoHeader() {
 
-            var svgClone = svgElement.cloneNode(true);
-            var artworkG = svgClone.querySelector('.platen-artwork');
-            if (artworkG) artworkG.style.display = 'none';
-            var headerG = svgClone.querySelector('.typewriter-header');
-            if (headerG) headerG.style.display = 'block';
+                var svgClone2 = svgElement.cloneNode(true);
 
-            var svgString = new XMLSerializer().serializeToString(svgClone);
-            var svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
-            var url = URL.createObjectURL(svgBlob);
+                // Inject fill colour
+                var versoFill2 = (activeCanvas === 'white' || activeCanvas === 'tan' || activeCanvas === 'olive') ? '#1a1a1a' : '#ffffff';
+                var vs2 = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                vs2.textContent = '.typewriter-header text, .typewriter-header tspan { fill: ' + versoFill2 + ' !important; } .grid-numbers text, .grid-numbers tspan { fill: ' + versoFill2 + ' !important; }';
+                svgClone2.insertBefore(vs2, svgClone2.firstChild);
 
-            
+                // Hide artwork, show header only
+                var artworkG2 = svgClone2.querySelector('.platen-artwork');
+                if (artworkG2) artworkG2.setAttribute('visibility', 'hidden');
 
-            var img = new Image();
+                var headerG2 = svgClone2.querySelector('.typewriter-header');
+                if (!headerG2) return; // No header on this artwork, done
+                headerG2.setAttribute('visibility', 'visible');
 
-            img.onload = function() {
+                var svgW2 = parseInt(svgClone2.getAttribute('width')) || 1248;
+                var svgH2 = parseInt(svgClone2.getAttribute('height')) || 2368;
 
-                var padding = 120;
+                var str2 = new XMLSerializer().serializeToString(svgClone2);
+                var blob2 = new Blob([str2], {type: 'image/svg+xml;charset=utf-8'});
+                var url2 = URL.createObjectURL(blob2);
 
-                var destSize = size - 2 * padding;
+                var hImg = new Image();
+                hImg.onload = function() {
+                    // Draw header at the same scale as the artwork (full SVG fills canvas)
+                    ctx.drawImage(hImg, 0, 0, svgW2, svgH2, 0, 0, size, size);
+                    URL.revokeObjectURL(url2);
+                };
+                hImg.src = url2;
 
-                ctx.drawImage(img, padding, padding, destSize, destSize);
+            }
 
-                URL.revokeObjectURL(url);
-
-            };
-
-            img.src = url;
+            if (urlMatch && urlMatch[1]) {
+                var texImg = new Image();
+                texImg.onload = function() { renderVersoArtwork(texImg); };
+                texImg.onerror = function() { renderVersoArtwork(null); };
+                texImg.src = urlMatch[1];
+            } else {
+                renderVersoArtwork(null);
+            }
 
         }
 
