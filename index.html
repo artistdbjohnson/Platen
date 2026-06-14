@@ -13979,8 +13979,27 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
                 if (chromeSelect) chromeSelect.disabled = true;
 
+                if (btnCurate) {
+                    btnCurate.disabled = true;
+                    btnCurate.innerHTML = "🔒 curation closed";
+                }
+
                 return;
 
+            }
+
+            // Sync Curate button state
+            if (btnCurate && btnCurate.innerHTML !== "Curating...") {
+                var isCurated = curatedGallery.some(function(item) {
+                    return item.seed === RENDER_SEED && JSON.stringify(item.traits) === JSON.stringify(RESOLVED_TRAITS || TRAITS);
+                });
+                if (isCurated) {
+                    btnCurate.innerHTML = "&#10003; Curated";
+                    btnCurate.disabled = true;
+                } else {
+                    btnCurate.innerHTML = "Curate";
+                    btnCurate.disabled = false;
+                }
             }
 
             
@@ -14612,11 +14631,9 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
             setTimeout(function() {
 
-                btn.innerHTML = "&#10003; Curated";
+                updateLockStatus();
 
-                setTimeout(function() { btn.innerHTML = oldText; }, 1500);
-
-            }, 500);
+            }, 800);
 
             
 
