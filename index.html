@@ -14677,6 +14677,10 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
                 var div = document.createElement('div');
 
+                var canvasCls = 'canvas-' + (art.traits.canvas || 'black');
+
+                div.className = 'gallery-item ' + canvasCls;
+
                 var bgStyle = getCanvasBackgroundStyle(art);
 
                 div.style.backgroundImage = bgStyle.backgroundImage;
