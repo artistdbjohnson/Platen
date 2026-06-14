@@ -60,15 +60,19 @@ var PALETTE = {
 
 // ── Larkspur engine list ──────────────────────────────────────────
 var ENGINE_LIST = [
-  'kagome','asanoha','seigaiha','shippo','kikkou',
-  'kente','bogolan','navajo','dazzler',
-  'glitch','mondrian','flow','stolz',
-  'tol','mastor','virma','ved','kepe','kolya',
-  'sermat','chipaz','azulejo','arraiolos','viana',
-  'verena','cypress_hills','sierra_sunset','panoramic_dunes',
-  'adama','argyle','art_deco','adire','panks',
-  'collage','brutalist','current','kudo','sermat-kudo',
-  'suprematist','mondrian_geo','kandinsky_comp','canyonlands'
+  'adama','adire','argyle','arraiolos','art_deco','asanoha','azulejo',
+  'bogolan','brutalist',
+  'canyonlands','chipaz','collage','current','cypress_hills',
+  'dazzler',
+  'flow',
+  'glitch',
+  'kagome','kandinsky_comp','kepe','kente','kikkou','kolya','kudo',
+  'mastor','mondrian','mondrian_geo',
+  'navajo',
+  'panoramic_dunes','panks',
+  'seigaiha','sermat','sermat-kudo','shippo','sierra_sunset','stolz','suprematist',
+  'tol',
+  'ved','verena','viana','virma'
 ];
 
 // ── State ─────────────────────────────────────────────────────────
