@@ -2048,7 +2048,8 @@ function setup() {
     'background:rgba(30,30,30,0.4);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);',
     'color:#e0e0e0;font:11px/1.4 system-ui,-apple-system,sans-serif;padding:16px;box-sizing:border-box;',
     'border:1px solid rgba(255,255,255,0.15);border-radius:0px;',
-    'transition:opacity 0.25s, transform 0.25s, background-color 0.25s;}',
+    'cursor:grab;transition:opacity 0.25s, transform 0.25s, background-color 0.25s;}',
+    '#panel.dragging{cursor:grabbing;}',
     '#panel.collapsed{width:32px;height:32px;padding:0;overflow:hidden;border-radius:50%;background:rgba(30,30,30,0.6);box-shadow:0 4px 12px rgba(0,0,0,0.4);}',
     '#panel-toggle{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;color:#fff;user-select:none;position:absolute;top:0;left:0;z-index:1001;}',
     '#panel.collapsed #panel-toggle{width:100%;height:100%;}',
@@ -2135,12 +2136,26 @@ function buildPanel() {
   var targetLeft = 0, targetTop = 0;
   var ticking = false;
 
-  header.elt.onmousedown = function(e) {
+  panel.elt.onmousedown = function(e) {
+    var target = e.target;
+    var isInteractive = target.tagName === 'INPUT' || 
+                        target.tagName === 'SELECT' || 
+                        target.tagName === 'BUTTON' || 
+                        target.tagName === 'LABEL' ||
+                        target.tagName === 'A' ||
+                        target.tagName === 'OPTION' ||
+                        target.id === 'panel-toggle' ||
+                        target.closest('button') ||
+                        target.closest('select') ||
+                        target.closest('input');
+    if (isInteractive) return;
+
     e.preventDefault();
     isDragging = true;
     dragX = e.clientX - panel.elt.offsetLeft;
     dragY = e.clientY - panel.elt.offsetTop;
     panel.elt.style.transition = 'none';
+    panel.addClass('dragging');
   };
   window.addEventListener('mousemove', function(e) {
     if (isDragging) {
@@ -2161,6 +2176,7 @@ function buildPanel() {
   window.addEventListener('mouseup', function() {
     if (isDragging) {
       isDragging = false;
+      panel.removeClass('dragging');
       panel.elt.style.transition = 'opacity 0.25s, transform 0.25s, background-color 0.25s, border-radius 0.25s';
     }
   });
