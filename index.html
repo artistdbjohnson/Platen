@@ -9154,11 +9154,9 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
                     var motifPathString = MOTIF_PATHS[TRAITS.motif];
 
                     if (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic') {
-
-                        if (f.wt < 0.20) {
-
+                        var _skipThreshold = (TRAITS.space === 'moire') ? 0.05 : 0.20;
+                        if (f.wt < _skipThreshold) {
                             return; // skip low density cells
-
                         }
 
                         var _glyphSet = getTypewriterGlyphs(TRAITS.symmetry, TRAITS.motif);
@@ -11506,12 +11504,10 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
                     var pathKey = traits.motif || 'typewriter';
 
                     if (isTypewriter) {
-
                         var _gs = getTypewriterGlyphs(traits.symmetry, traits.motif);
-
                         var lv = 0;
-
-                        if      (f.wt < 0.20) continue;              // below floor — skip
+                        var _skipThreshold = (traits.space === 'moire') ? 0.05 : 0.20;
+                        if      (f.wt < _skipThreshold) continue;              // below floor — skip
 
                         else if (f.wt < 0.36) lv = 0;
 
