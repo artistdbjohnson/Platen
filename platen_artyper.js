@@ -81,6 +81,14 @@ var currentEngine = '';
 var currentSpace = 'none';
 var currentLandscape = 'none';
 var landscapeParams = null;
+var importedSVGContent = null;  // raw SVG text from user file import
+var svgOverlayEl = null;        // the overlay div element
+var svgOverlayOpacity = 0.72;   // 0-1
+var svgOverlayScale  = 1.0;     // 0.5-2.0
+var svgOverlayX     = 0;        // pixel offset from centre
+var svgOverlayY     = 0;
+var svgOverlayBlend = "multiply"; // CSS mix-blend-mode
+
 var borderKey = 't*x';
 var gain = 0.85;
 var showPalms = true;
@@ -1825,6 +1833,183 @@ function drawBoldShapes() {
     ctx.restore();
   }
 }
+
+// ── SVG Overlay: create/update the overlay div ────────────────────────────────
+function createSVGOverlay(svgText) {
+  // Remove any existing overlay
+  removeSVGOverlay();
+
+  var wrap = document.getElementById('canvas-wrap');
+  var canvas = wrap.querySelector('canvas');
+  if (!canvas) return;
+
+  // Create overlay div that sits exactly over the canvas
+  svgOverlayEl = document.createElement('div');
+  svgOverlayEl.id = 'svg-overlay';
+  svgOverlayEl.style.cssText = [
+    'position:absolute',
+    'pointer-events:none',
+    'z-index:10',
+    'mix-blend-mode:' + svgOverlayBlend,
+    'opacity:' + svgOverlayOpacity,
+    'transform-origin:center center',
+    'display:flex',
+    'align-items:center',
+    'justify-content:center',
+    'overflow:visible'
+  ].join(';');
+
+  // Inject the SVG — strip XML declaration to allow inline embedding
+  var cleanSVG = svgText
+    .replace(/<?xml[^?]*?>/gi, '')
+    .replace(/<!DOCTYPE[^>]*>/gi, '');
+
+  // Parse to get viewBox / natural dimensions
+  var parser = new DOMParser();
+  var svgDoc = parser.parseFromString(cleanSVG, 'image/svg+xml');
+  var svgRoot = svgDoc.documentElement;
+
+  // Force the SVG to fill the canvas size while preserving aspect
+  svgRoot.setAttribute('width',  canvas.offsetWidth  + 'px');
+  svgRoot.setAttribute('height', canvas.offsetHeight + 'px');
+  if (!svgRoot.getAttribute('viewBox') && svgRoot.getAttribute('width') && svgRoot.getAttribute('height')) {
+    var vw = parseFloat(svgRoot.getAttribute('width'))  || canvas.offsetWidth;
+    var vh = parseFloat(svgRoot.getAttribute('height')) || canvas.offsetHeight;
+    svgRoot.setAttribute('viewBox', '0 0 ' + vw + ' ' + vh);
+    svgRoot.setAttribute('width',  canvas.offsetWidth  + 'px');
+    svgRoot.setAttribute('height', canvas.offsetHeight + 'px');
+  }
+  svgRoot.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+  svgOverlayEl.innerHTML = svgRoot.outerHTML;
+  svgOverlayEl.style.width  = canvas.offsetWidth  + 'px';
+  svgOverlayEl.style.height = canvas.offsetHeight + 'px';
+
+  updateSVGOverlayPosition(canvas);
+  wrap.appendChild(svgOverlayEl);
+  makeSVGOverlayDraggable(svgOverlayEl);
+}
+
+function updateSVGOverlayPosition(canvas) {
+  if (!svgOverlayEl) return;
+  if (!canvas) {
+    var wrap = document.getElementById('canvas-wrap');
+    canvas = wrap ? wrap.querySelector('canvas') : null;
+  }
+  if (!canvas) return;
+
+  var cr = canvas.getBoundingClientRect();
+  var wr = canvas.parentElement.getBoundingClientRect();
+
+  svgOverlayEl.style.left = (cr.left - wr.left + svgOverlayX) + 'px';
+  svgOverlayEl.style.top  = (cr.top  - wr.top  + svgOverlayY) + 'px';
+  svgOverlayEl.style.transform = 'scale(' + svgOverlayScale + ')';
+}
+
+function removeSVGOverlay() {
+  var old = document.getElementById('svg-overlay');
+  if (old) old.parentNode.removeChild(old);
+  svgOverlayEl = null;
+  svgOverlayX = 0;
+  svgOverlayY = 0;
+}
+
+function makeSVGOverlayDraggable(el) {
+  // Allow the overlay to be dragged while holding Alt key
+  var dragging = false, startX, startY;
+  el.style.pointerEvents = 'auto';
+  el.style.cursor = 'default';
+  el.addEventListener('mousedown', function(e) {
+    if (!e.altKey) return;
+    e.preventDefault();
+    dragging = true;
+    startX = e.clientX - svgOverlayX;
+    startY = e.clientY - svgOverlayY;
+    el.style.cursor = 'move';
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    svgOverlayX = e.clientX - startX;
+    svgOverlayY = e.clientY - startY;
+    updateSVGOverlayPosition();
+  });
+  window.addEventListener('mouseup', function() {
+    if (dragging) { dragging = false; el.style.cursor = 'default'; }
+  });
+}
+
+// ── Combined SVG export: Platen canvas (as embedded PNG) + imported SVG paths ─
+// The result is a single SVG that Inkscape can open, separate the layers,
+// and send each to AxiDraw as an independent pen pass.
+function exportCombinedSVG() {
+  if (!importedSVGContent) {
+    alert('No SVG imported. Use IMPORT SVG first.');
+    return;
+  }
+
+  var canvas = document.getElementById('canvas-wrap').querySelector('canvas');
+  if (!canvas) { alert('Canvas not found.'); return; }
+
+  // Capture current canvas as PNG data URL
+  var pngDataURL = canvas.toDataURL('image/png');
+
+  // Parse imported SVG to extract inner content
+  var parser = new DOMParser();
+  var svgDoc = parser.parseFromString(importedSVGContent, 'image/svg+xml');
+  var importedRoot = svgDoc.documentElement;
+
+  // Get imported SVG viewBox / dimensions
+  var iVB = importedRoot.getAttribute('viewBox');
+  var iW  = parseFloat(importedRoot.getAttribute('width'))  || CW;
+  var iH  = parseFloat(importedRoot.getAttribute('height')) || CH;
+  if (iVB) {
+    var parts = iVB.split(/[s,]+/);
+    if (parts.length >= 4) { iW = parseFloat(parts[2]); iH = parseFloat(parts[3]); }
+  }
+
+  // Scale transform to map imported SVG coordinate space to Platen canvas space
+  var scaleX = CW / iW;
+  var scaleY = CH / iH;
+
+  // Extract all child elements from imported SVG
+  var importedInner = Array.from(importedRoot.childNodes)
+    .map(function(n) { return n.nodeType === 1 ? n.outerHTML : ''; })
+    .join('\n    ');
+
+  // Build the combined SVG
+  // Physical paper size: 8.5" x 11" at 72ppi
+  var svgW_mm = (CW / 72 * 25.4).toFixed(2);
+  var svgH_mm = (CH / 72 * 25.4).toFixed(2);
+
+  var svgLines = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"',
+    '  width="' + svgW_mm + 'mm" height="' + svgH_mm + 'mm"',
+    '  viewBox="0 0 ' + CW + ' ' + CH + '">',
+    '',
+    '  <!-- ═══ Layer 1: Platen typewriter art (reference / non-plotting) ═══ -->',
+    '  <g id="platen-art" inkscape:label="Platen Art" inkscape:groupmode="layer">',
+    '    <image x="0" y="0" width="' + CW + '" height="' + CH + '"',
+    '      xlink:href="' + pngDataURL + '"',
+    '      preserveAspectRatio="xMidYMid meet" />',
+    '  </g>',
+    '',
+    '  <!-- ═══ Layer 2: Imported landscape SVG (AxiDraw pen plotting layer) ═══ -->',
+    '  <g id="landscape-import" inkscape:label="Landscape (Plot)" inkscape:groupmode="layer"',
+    '     opacity="' + svgOverlayOpacity.toFixed(2) + '"',
+    '     style="mix-blend-mode:multiply"',
+    '     transform="scale(' + scaleX.toFixed(6) + ',' + scaleY.toFixed(6) + ')">',
+    '    ' + importedInner,
+    '  </g>',
+    '',
+    '</svg>'
+  ];
+
+  var fname = 'platen_combined_' + currentEngine + '_' + seed;
+  saveStrings(svgLines, fname, 'svg');
+}
+
+
 function preload() {
   paperImg = loadImage('platen_white_c.jpg');
 }
@@ -1867,7 +2052,11 @@ function setup() {
     '#panel .info{font-size:8px;color:#4a4845;margin-top:6px;line-height:1.5;}',
     '#panel hr{border:none;border-top:1px solid #2e2c2a;margin:10px 0;}',
     '#panel .row{display:flex;align-items:center;gap:6px;margin:6px 0;}',
-    '#panel .row input[type=checkbox]{width:auto;margin:0;}'
+    '#panel .row input[type=checkbox]{width:auto;margin:0;}',
+    '#panel input[type=file]{display:none;}',
+    '#panel .svg-import-info{font-size:8px;color:#4a8a5a;margin:4px 0;word-break:break-all;line-height:1.4;}',
+    '#panel .svg-controls{display:flex;flex-direction:column;gap:4px;margin:6px 0;}',
+    '#overlay-hint{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(26,24,22,0.85);color:#8a8378;font:10px Courier New,monospace;padding:6px 12px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity 0.3s;z-index:2000;}'
   ].join('');
   document.head.appendChild(css);
 
@@ -1981,6 +2170,96 @@ function buildPanel() {
 
   btnSaveSVG = createButton('SAVE SVG (PLOT)'); btnSaveSVG.parent(content);
   btnSaveSVG.mousePressed(exportLandscapeSVG);
+
+  // ── SVG Import section ───────────────────────────────────────────────────
+  createElement('hr','').parent(content);
+  createElement('label', 'SVG Overlay (Import)').parent(content);
+
+  // Hidden file input
+  var svgFileInput = document.createElement('input');
+  svgFileInput.type = 'file';
+  svgFileInput.accept = '.svg,image/svg+xml';
+  svgFileInput.id = 'svg-file-input';
+  content.elt.appendChild(svgFileInput);
+
+  // Import button triggers the hidden input
+  var btnImportSVG = createButton('IMPORT SVG'); btnImportSVG.parent(content);
+  btnImportSVG.mousePressed(function() { svgFileInput.click(); });
+
+  // Status label
+  var svgStatusEl = createElement('div', 'No SVG loaded');
+  svgStatusEl.class('svg-import-info');
+  svgStatusEl.parent(content);
+
+  // File read handler
+  svgFileInput.addEventListener('change', function(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      importedSVGContent = ev.target.result;
+      svgStatusEl.html('✓ ' + file.name);
+      createSVGOverlay(importedSVGContent);
+    };
+    reader.readAsText(file);
+    // Reset so same file can be re-imported
+    svgFileInput.value = '';
+  });
+
+  // Opacity slider
+  createElement('label', 'Opacity').parent(content);
+  var sldSVGOpacity = createSlider(0, 100, Math.round(svgOverlayOpacity * 100), 1);
+  sldSVGOpacity.parent(content);
+  sldSVGOpacity.input(function() {
+    svgOverlayOpacity = sldSVGOpacity.value() / 100;
+    if (svgOverlayEl) svgOverlayEl.style.opacity = svgOverlayOpacity;
+  });
+
+  // Scale slider
+  createElement('label', 'Scale').parent(content);
+  var sldSVGScale = createSlider(40, 200, 100, 1);
+  sldSVGScale.parent(content);
+  sldSVGScale.input(function() {
+    svgOverlayScale = sldSVGScale.value() / 100;
+    updateSVGOverlayPosition();
+  });
+
+  // Blend mode
+  createElement('label', 'Blend Mode').parent(content);
+  var selBlend = createSelect(); selBlend.parent(content);
+  ['multiply','screen','overlay','darken','soft-light','normal'].forEach(function(m) {
+    selBlend.option(m, m);
+  });
+  selBlend.selected('multiply');
+  selBlend.changed(function() {
+    svgOverlayBlend = selBlend.value();
+    if (svgOverlayEl) svgOverlayEl.style.mixBlendMode = svgOverlayBlend;
+  });
+
+  // Remove overlay button
+  var btnRemoveSVG = createButton('REMOVE SVG'); btnRemoveSVG.parent(content);
+  btnRemoveSVG.mousePressed(function() {
+    removeSVGOverlay();
+    importedSVGContent = null;
+    svgStatusEl.html('No SVG loaded');
+  });
+
+  // Combined export
+  var btnCombinedSVG = createButton('SAVE COMBINED SVG'); btnCombinedSVG.parent(content);
+  btnCombinedSVG.mousePressed(exportCombinedSVG);
+
+  // Alt+drag hint
+  var hintEl = document.createElement('div');
+  hintEl.id = 'overlay-hint';
+  hintEl.textContent = 'Alt + drag to reposition overlay';
+  document.body.appendChild(hintEl);
+  // Show hint on alt key press
+  document.addEventListener('keydown', function(e) {
+    if (e.altKey && importedSVGContent) { hintEl.style.opacity = '1'; }
+  });
+  document.addEventListener('keyup', function() { hintEl.style.opacity = '0'; });
+
+
 
   btnScore = createButton('EXPORT TXT'); btnScore.parent(content);
   btnScore.mousePressed(dumpScore);
