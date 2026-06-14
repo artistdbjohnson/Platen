@@ -1108,11 +1108,11 @@ function setup() {
     'html,body{margin:0;padding:0;background:#151210;overflow:hidden;width:100vw;height:100vh;display:block;position:relative;}',
     '#canvas-wrap{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;position:absolute;top:0;left:0;z-index:1;}',
     'canvas{display:block;flex-shrink:0;}',
-    '#panel{position:absolute;top:16px;left:16px;z-index:1000;width:200px;max-height:calc(100vh - 32px);overflow-y:auto;overflow-x:hidden;',
+    '#panel{position:absolute;top:16px;left:16px;z-index:1000;width:230px;max-height:calc(100vh - 32px);overflow-y:auto;overflow-x:hidden;',
     'background:rgba(26,24,22,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);',
     'color:#c8c0b4;font:11px/1.4 "Courier New",monospace;padding:14px 12px;box-sizing:border-box;',
     'border:1px solid rgba(46,44,42,0.8);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,0.5);',
-    'transition:all 0.25s cubic-bezier(0.4, 0, 0.2, 1);}',
+    'transition:opacity 0.25s, transform 0.25s, background-color 0.25s, border-radius 0.25s;}',
     '#panel.collapsed{width:40px;height:40px;padding:0;overflow:hidden;border-radius:50%;background:rgba(26,24,22,0.9);box-shadow:0 4px 12px rgba(0,0,0,0.4);}',
     '#panel-toggle{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:#f3ece0;user-select:none;position:absolute;top:0;left:0;z-index:1001;}',
     '#panel.collapsed #panel-toggle{width:100%;height:100%;}',
@@ -1272,20 +1272,25 @@ function buildPanel() {
   panel.elt.insertBefore(header.elt, panel.elt.firstChild);
 
   header.elt.onmousedown = function(e) {
+    e.preventDefault();
     isDragging = true;
     dragX = e.clientX - panel.elt.offsetLeft;
     dragY = e.clientY - panel.elt.offsetTop;
     header.style('cursor', 'grabbing');
+    panel.elt.style.transition = 'none';
   };
   window.addEventListener('mousemove', function(e) {
-    if(isDragging) {
+    if (isDragging) {
       panel.elt.style.left = (e.clientX - dragX) + 'px';
       panel.elt.style.top = (e.clientY - dragY) + 'px';
     }
   });
   window.addEventListener('mouseup', function() {
-    isDragging = false;
-    header.style('cursor', 'grab');
+    if (isDragging) {
+      isDragging = false;
+      header.style('cursor', 'grab');
+      panel.elt.style.transition = 'opacity 0.25s, transform 0.25s, background-color 0.25s, border-radius 0.25s';
+    }
   });
 
   // Tap artwork to regenerate
