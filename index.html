@@ -14641,6 +14641,14 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
             renderGalleryGrid();
 
+            // Reset button text to give visual feedback and restore it
+            setTimeout(function() {
+                btn.innerHTML = "✓ Curated";
+                setTimeout(function() {
+                    btn.innerHTML = oldText;
+                }, 1500);
+            }, 300);
+
         }
 
 
