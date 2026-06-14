@@ -1356,8 +1356,8 @@ function drawArt() {
         var dx = x - cx2, dy = y - cy2;
         var d = Math.sqrt(dx*dx + dy*dy);
         var f = 1 + Math.pow(d / (Math.min(CW,CH)*0.5), 1.5);
-        x = cx2 + dx / f;
-        y = cy2 + dy / f;
+        x = cx2 + (dx / f) * 2.0;
+        y = cy2 + (dy / f) * 2.0;
       } else if (currentSpace === 'moire') {
         var cx2 = CW/2, cy2 = CH/2;
         var dx = x - cx2, dy = y - cy2;
