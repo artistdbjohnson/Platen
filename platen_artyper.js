@@ -466,100 +466,68 @@ function calcMotifWeight(x,y,w,h,eng,P){
 // ── Generate pattern params (Larkspur) ────────────────────────────
 
 // ── Zone Composition Helper ──────────────────────────────────────
+// ── Rigorous Zone Composition Helper ─────────────────────────────
 function composeZone(zx, zy, zw, zh, prng) {
   var shapes = [];
   var rf = function(a,b){return prng.rfl(a,b);};
   var ri = function(a,b){return prng.rin(a,b);};
-  
-  var type = ri(0, 2); // 3 templates
   var colors = ['red', 'blue', 'yellow', 'black', 'white'];
-  var numShapes = ri(2, 4);
   
-  if (type === 0) {
-    // Template 0: Overlapping rectangles (2-4 shapes)
-    for (var i = 0; i < numShapes; i++) {
-      var w = Math.max(3, Math.round(zw * rf(0.4, 0.85)));
-      var h = Math.max(2, Math.round(zh * rf(0.4, 0.85)));
-      var x = zx + ri(0, Math.max(1, zw - w));
-      var y = zy + ri(0, Math.max(1, zh - h));
-      shapes.push({
-        type: 'rect',
-        x: x, y: y, w: w, h: h,
-        color: colors[ri(0, 4)]
-      });
-    }
-  } else if (type === 1) {
-    // Template 1: Rect + Circle + Bar
-    var w = Math.max(3, Math.round(zw * rf(0.4, 0.8)));
-    var h = Math.max(2, Math.round(zh * rf(0.4, 0.8)));
-    var x = zx + ri(0, Math.max(1, zw - w));
-    var y = zy + ri(0, Math.max(1, zh - h));
-    shapes.push({
-      type: 'rect',
-      x: x, y: y, w: w, h: h,
-      color: colors[ri(0, 4)]
-    });
-    
-    var r = Math.max(1.5, Math.min(zw, zh) * rf(0.2, 0.4));
-    var cx = zx + zw/2 + ri(-zw*0.1, zw*0.1);
-    var cy = zy + zh/2 + ri(-zh*0.1, zh*0.1);
-    shapes.push({
-      type: 'circle',
-      cx: cx, cy: cy, r: r,
-      color: colors[ri(0, 4)]
-    });
-    
-    if (numShapes > 2) {
-      var barW = ri(2, 4);
-      var barH = Math.max(3, Math.round(zh * rf(0.7, 0.9)));
-      var barX = zx + ri(0, Math.max(1, zw - barW));
-      var barY = zy + ri(0, Math.max(1, zh - barH));
-      shapes.push({
-        type: 'bar',
-        x: barX, y: barY, w: barW, h: barH,
-        color: colors[ri(0, 4)]
-      });
+  if (currentEngine === 'mondrian_geo') {
+    var q = [[zx, zy, zw, zh, 0]];
+    while(q.length) {
+      var c = q.shift();
+      if (c[4] > ri(1,3) || c[2] < 10 || c[3] < 10 || rf() < 0.2) {
+        shapes.push({
+          type: 'rect', x: c[0], y: c[1], w: c[2], h: c[3],
+          color: (rf() > 0.7) ? colors[ri(0,3)] : 'white'
+        });
+      } else {
+        if (rf() < 0.5) { 
+          var s = ri(mfloor(c[2]*0.3), mfloor(c[2]*0.7));
+          q.push([c[0], c[1], s, c[3], c[4]+1]);
+          q.push([c[0]+s, c[1], c[2]-s, c[3], c[4]+1]);
+        } else {
+          var s = ri(mfloor(c[3]*0.3), mfloor(c[3]*0.7));
+          q.push([c[0], c[1], c[2], s, c[4]+1]);
+          q.push([c[0], c[1]+s, c[2], c[3]-s, c[4]+1]);
+        }
+      }
     }
   } else {
-    // Template 2: Semicircle + Triangle + Rect
-    var w = Math.max(3, Math.round(zw * rf(0.35, 0.65)));
-    var h = Math.max(2, Math.round(zh * rf(0.35, 0.65)));
-    shapes.push({
-      type: 'rect',
-      x: zx + ri(0, Math.max(1, zw - w)), y: zy + ri(0, Math.max(1, zh - h)), w: w, h: h,
-      color: colors[ri(0, 4)]
-    });
-    
-    var r = Math.max(1.5, Math.min(zw, zh) * rf(0.25, 0.45));
-    shapes.push({
-      type: 'semicircle',
-      cx: zx + zw/2, cy: zy + zh/2, r: r,
-      dir: ['up', 'down', 'left', 'right'][ri(0, 3)],
-      color: colors[ri(0, 4)]
-    });
-    
-    if (numShapes > 2) {
-      var tw = Math.max(3, Math.round(zw * rf(0.35, 0.65)));
-      var th = Math.max(2, Math.round(zh * rf(0.35, 0.65)));
-      shapes.push({
-        type: 'triangle',
-        x: zx + ri(0, Math.max(1, zw - tw)), y: zy + ri(0, Math.max(1, zh - th)), w: tw, h: th,
-        dir: ['up', 'down', 'left', 'right'][ri(0, 3)],
-        color: colors[ri(0, 4)]
-      });
+    var cx = zx + zw/2, cy = zy + zh/2;
+    var domR = Math.min(zw, zh) * rf(0.2, 0.4);
+    var domType = rf() < 0.5 ? 'circle' : 'rect';
+    if (domType === 'circle') {
+      shapes.push({type: 'circle', cx: cx + rf(-domR, domR), cy: cy + rf(-domR, domR), r: domR, color: colors[ri(0,4)]});
+    } else {
+      var dw = domR*ri(1,3), dh = domR*ri(1,3);
+      shapes.push({type: 'rect', x: cx - dw/2 + rf(-dw,dw), y: cy - dh/2 + rf(-dh,dh), w: dw, h: dh, color: colors[ri(0,4)]});
+    }
+    for(var i=0; i<ri(1,3); i++) {
+      var isV = rf() < 0.5;
+      var bw = isV ? ri(2,5) : ri(15, zw);
+      var bh = isV ? ri(15, zh) : ri(2,5);
+      shapes.push({type: 'bar', x: zx + ri(0, Math.max(1, zw-bw)), y: zy + ri(0, Math.max(1, zh-bh)), w: bw, h: bh, color: 'black'});
+    }
+    for(var i=0; i<ri(1,3); i++) {
+      var at = ri(0,3);
+      var ar = domR * rf(0.2, 0.5);
+      var ax = cx + rf(-zw*0.4, zw*0.4), ay = cy + rf(-zh*0.4, zh*0.4);
+      if(at===0) shapes.push({type:'circle', cx:ax, cy:ay, r:ar, color: colors[ri(0,4)]});
+      else if(at===1) shapes.push({type:'rect', x:ax-ar, y:ay-ar, w:ar*2, h:ar*2, color: colors[ri(0,4)]});
+      else shapes.push({type:'triangle', x:ax-ar, y:ay-ar, w:ar*2, h:ar*2, dir:['up','down','left','right'][ri(0,3)], color: colors[ri(0,4)]});
     }
   }
-  
-  var colorSig = {
-    white: 0.06, yellow: 0.18, red: 0.52, blue: 0.38, black: 0.88
-  };
+
+  var colorSig = {white: 0.06, yellow: 0.18, red: 0.52, blue: 0.38, black: 0.88};
   shapes.forEach(function(s) {
     if (!s.color) s.color = 'white';
     s.innerDensity = colorSig[s.color];
   });
-  
   return shapes;
 }
+
 
 function generatePatternParams(eng,prng,w,h){
   var P={},rf=function(a,b){return prng.rfl(a,b);},ri=function(a,b){return prng.rin(a,b);};
