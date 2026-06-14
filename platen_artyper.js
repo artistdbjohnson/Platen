@@ -115,7 +115,7 @@ var grid = [];
 
 // UI handles
 var panel, lblSeed, lblInfo, lblEngine;
-var selBorder, selEngine, selLandscape, sldGain, chkPalms, btnRegen, btnSave, btnSaveSVG, btnScore;
+var selBorder, selEngine, selSpace, selLandscape, sldGain, chkPalms, btnRegen, btnSave, btnSaveSVG, btnScore;
 var paperImg;
 var shapeHints = [];   // faint dashed hints for old mondrian/brutalist engines
 var boldShapes = [];   // full composition shapes for suprematist/mondrian_geo/kandinsky_comp
@@ -2085,7 +2085,9 @@ function setup() {
     '.drag-handle{width:40px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto;cursor:grab;transition:background 0.2s;}',
     '.drag-handle:hover{background:rgba(255,255,255,0.4);}',
     '.drag-handle:active{cursor:grabbing;}',
-    '#overlay-hint{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(26,24,22,0.85);color:#8a8378;font:10px Courier New,monospace;padding:6px 12px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity 0.3s;z-index:2000;}'
+    '#overlay-hint{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(26,24,22,0.85);color:#8a8378;font:10px Courier New,monospace;padding:6px 12px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity 0.3s;z-index:2000;}',
+    '#data-readout{position:fixed;bottom:16px;left:16px;z-index:999;background:rgba(30,30,30,0.45);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.15);color:#8a8a8a;font:9px/1.4 \"Courier New\",monospace;padding:10px 14px;pointer-events:none;}',
+    '#data-readout span{color:#fff;font-weight:600;}'
   ].join('');
   document.head.appendChild(css);
 
@@ -2258,7 +2260,7 @@ function buildPanel() {
 
   // Space logic moved into generator section
   createElement('label','Space').parent(secGen);
-  var selSpace = createSelect(); selSpace.parent(secGen);
+  selSpace = createSelect(); selSpace.parent(secGen);
   var SPACE_LIST = ['none', 'isometric', 'isometric (vertical)', 'polar', 'hyperbolic', 'planar', 'planar (abstract)', 'moire', 'moire (dazzler)'];
   for (var i=0; i<SPACE_LIST.length; i++) selSpace.option(SPACE_LIST[i], SPACE_LIST[i]);
   selSpace.selected('none');
@@ -2603,12 +2605,43 @@ function buildPanel() {
   });
   document.addEventListener('keyup', function() { hintEl.style.opacity = '0'; });
 
+  // Minimal UI data readout
+  var readout = createElement('div', '');
+  readout.id('data-readout');
+  document.body.appendChild(readout.elt);
+
   // Tap artwork to regenerate
   document.getElementById('canvas-wrap').onclick = function(e) {
     if (e.target.tagName.toLowerCase() === 'canvas') {
-      freshSeed();
+      randomReRoll();
     }
   };
+}
+
+function randomReRoll() {
+  seed = Math.floor(Math.random() * 999999);
+  
+  var randomEngine = ENGINE_LIST[Math.floor(Math.random() * ENGINE_LIST.length)];
+  currentEngine = randomEngine;
+  if (selEngine) selEngine.selected(randomEngine);
+  
+  var SPACE_LIST = ['none', 'isometric', 'isometric (vertical)', 'polar', 'hyperbolic', 'planar', 'planar (abstract)', 'moire', 'moire (dazzler)'];
+  var randomSpace = SPACE_LIST[Math.floor(Math.random() * SPACE_LIST.length)];
+  currentSpace = randomSpace;
+  if (selSpace) selSpace.selected(randomSpace);
+  
+  var randomBorder = BORDER_KEYS[Math.floor(Math.random() * BORDER_KEYS.length)];
+  borderKey = randomBorder;
+  if (selBorder) selBorder.selected(randomBorder);
+  
+  var randomGainPct = Math.floor(random(40, 120));
+  gain = randomGainPct / 100;
+  if (sldGain) sldGain.value(randomGainPct);
+  
+  showPalms = Math.random() > 0.5;
+  if (chkPalms) chkPalms.checked(showPalms);
+  
+  regenerate();
 }
 
 function freshSeed() {
@@ -2633,6 +2666,20 @@ function regenerate() {
     for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){var s=grid[r][c];if(s){ne++;if(s.length>1)ov++;}}
     lblInfo.html(COLS+'×'+ROWS+' · '+ne+' cells · '+ov+' overstrikes');
   }
+
+  var readout = document.getElementById('data-readout');
+  if (readout) {
+    readout.innerHTML = [
+      'ENGINE: <span>' + currentEngine.toUpperCase() + '</span>',
+      'SPACE: <span>' + currentSpace.toUpperCase() + '</span>',
+      'SEED: <span>' + seed + '</span>',
+      'INK DENSITY: <span>' + Math.round(gain * 100) + '%</span>',
+      'BORDER: <span>' + borderKey + '</span>',
+      'PALMS: <span>' + (showPalms ? 'YES' : 'NO') + '</span>',
+      'FLUX: <span>' + (isFluxMode ? 'ACTIVE (AMP ' + fluxAmplitude.toFixed(1) + ')' : 'INACTIVE') + '</span>'
+    ].join('<br>');
+  }
+
   redraw();
 }
 
@@ -2869,7 +2916,7 @@ function dumpScore() {
 
 // ── Input ─────────────────────────────────────────────────────────
 function keyPressed() {
-  if (key===' ')           { freshSeed(); }
+  if (key===' ')           { randomReRoll(); }
   else if (key==='s'||key==='S') { saveCanvas('platen_'+currentEngine+'_'+seed,'png'); }
   else if (key==='f'||key==='F') { 
     var btn = document.getElementById('btn-flux');
@@ -2881,3 +2928,13 @@ function keyPressed() {
     }
   }
 }
+
+window.addEventListener('keydown', function(e) {
+  if (e.key === ' ' || e.code === 'Space') {
+    var activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+    if (activeTag !== 'input' && activeTag !== 'textarea') {
+      e.preventDefault();
+      randomReRoll();
+    }
+  }
+});
