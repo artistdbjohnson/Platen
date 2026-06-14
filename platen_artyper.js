@@ -1253,7 +1253,7 @@ function buildPanel() {
   for (var i=0; i<SPACE_LIST.length; i++) selSpace.option(SPACE_LIST[i], SPACE_LIST[i]);
   selSpace.selected('none');
   selSpace.changed(function(){
-    window.currentSpace = selSpace.value();
+    currentSpace = selSpace.value();
     regenerate();
   });
 
@@ -1337,44 +1337,44 @@ function drawArt() {
       var stack = grid[r][c]; if (!stack) continue;
       var x = ORIGIN_X + c*CELL_W + CELL_W/2;
       var oy = y; // backup original y
-      if (window.currentSpace === 'isometric') {
+      if (currentSpace === 'isometric') {
         var isoX = (c - r) * CELL_W * 0.866;
         var isoY = (c + r) * CELL_H * 0.5;
         x = Math.floor(CW/2) + isoX;
         y = Math.floor(CH*0.15) + isoY;
-      } else if (window.currentSpace === 'polar') {
+      } else if (currentSpace === 'polar') {
         var a = (c / COLS) * Math.PI * 2;
         var rad = (r / ROWS) * (Math.min(CW, CH) * 0.45);
         x = CW/2 + Math.cos(a) * rad;
         y = CH/2 + Math.sin(a) * rad;
-      } else if (window.currentSpace === 'hyperbolic') {
+      } else if (currentSpace === 'hyperbolic') {
         var cx2 = CW/2, cy2 = CH/2;
         var dx = x - cx2, dy = y - cy2;
         var d = Math.sqrt(dx*dx + dy*dy);
         var f = 1 + Math.pow(d / (Math.min(CW,CH)*0.5), 1.5);
         x = cx2 + dx / f;
         y = cy2 + dy / f;
-      } else if (window.currentSpace === 'moire') {
+      } else if (currentSpace === 'moire') {
         var cx2 = CW/2, cy2 = CH/2;
         var dx = x - cx2, dy = y - cy2;
         var ang = Math.sqrt(dx*dx + dy*dy) * 0.002;
         x = cx2 + dx*Math.cos(ang) - dy*Math.sin(ang);
         y = cy2 + dx*Math.sin(ang) + dy*Math.cos(ang);
-      } else if (window.currentSpace === 'planar') {
+      } else if (currentSpace === 'planar') {
         var py = r / ROWS;
         var pz = 1 + (1 - py) * 2;
         var px = (c / COLS - 0.5);
         x = CW/2 + (px * Math.min(CW,CH)*1.5) / pz;
         y = CH/2 + (py * Math.min(CW,CH)) / pz - CH*0.2;
-      } else if (window.currentSpace === 'isometric (vertical)') {
+      } else if (currentSpace === 'isometric (vertical)') {
         var isoX = (c - r) * CELL_W * 0.866;
         var isoY = (c + r) * CELL_H * 0.5;
-        var hSeed = (c * 37 + r * 73 + window.SEED) % 1009;
+        var hSeed = (c * 37 + r * 73 + seed) % 1009;
         var rfl = (hSeed / 1009.0);
         var extrude = (rfl * 0.6 + 0.2) * 150; 
         x = Math.floor(CW/2) + isoX;
         y = Math.floor(CH*0.35) + isoY - extrude;
-      } else if (window.currentSpace === 'planar (abstract)') {
+      } else if (currentSpace === 'planar (abstract)') {
         var p = [c, r], d;
         var qq = [c + 16, r + 16];
         var pls = [
@@ -1395,18 +1395,18 @@ function drawArt() {
         var pz = 1 + (1 - py) * 2;
         x = CW/2 + (px * Math.min(CW,CH)*1.5) / pz;
         y = CH/2 + (py * Math.min(CW,CH)) / pz - CH*0.2;
-      } else if (window.currentSpace === 'moire (dazzler)') {
+      } else if (currentSpace === 'moire (dazzler)') {
          var edgeN = function(cx, cy, si) {
-             var n = ((cx * 7331 + cy * 5003 + si * 1999 + window.SEED) % 1000) / 1000;
+             var n = ((cx * 7331 + cy * 5003 + si * 1999 + seed) % 1000) / 1000;
              return (n - 0.5) * 2.5;
          };
          var cx2 = CW/2, cy2 = CH/2;
          var dx = x - cx2, dy = y - cy2;
-         var angle = (window.SEED % 1000) / 1000 * Math.PI;
-         var magnitude = 1.0 + ((window.SEED * 131) % 100) / 100 * 5.5;
+         var angle = (seed % 1000) / 1000 * Math.PI;
+         var magnitude = 1.0 + ((seed * 131) % 100) / 100 * 5.5;
          var offX = Math.cos(angle) * magnitude;
          var offY = Math.sin(angle) * magnitude;
-         var moireDriftRate = 0.0008 + (window.SEED % 500) / 500 * 0.0015;
+         var moireDriftRate = 0.0008 + (seed % 500) / 500 * 0.0015;
          var ripple = edgeN(c, r, 1) * 15;
          x = cx2 + dx + offX + (dy * moireDriftRate * 50) + ripple;
          y = cy2 + dy + offY + Math.sin(c*0.1 + r*0.1) * 10;
