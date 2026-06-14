@@ -983,85 +983,68 @@ function drawShapeHints() {
 function drawBoldShapes() {
   var ctx = drawingContext;
 
-  // Mondrian_geo: draw the De Stijl grid dividers first
+  // Mondrian_geo: draw the De Stijl grid dividers + color zone labels
   if (currentEngine === 'mondrian_geo' && grid._params) {
     var P = grid._params;
     ctx.save();
-    for (var ci = 0; ci < P.cells.length; ci++) {
-      var cl = P.cells[ci];
-      if (cl.color !== 'white') {
-        ctx.fillStyle = PALETTE[cl.color] || '#ffffff';
-        ctx.globalAlpha = 0.12;
-        ctx.fillRect(ORIGIN_X + cl.x * CELL_W, ORIGIN_Y + cl.y * CELL_H, cl.w * CELL_W, cl.h * CELL_H);
-      }
-    }
-    ctx.globalAlpha = 1.0;
-    ctx.strokeStyle = '#1a1715';
-    ctx.lineWidth = 3.0;
-    ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(20,15,10,0.88)';
+    ctx.lineWidth = 2.5; ctx.setLineDash([]);
+    // Horizontal dividers
     for(var dh=0;dh<P.divH.length;dh++){
       var dy=ORIGIN_Y+P.divH[dh]*CELL_H;
       ctx.beginPath(); ctx.moveTo(ORIGIN_X,dy); ctx.lineTo(ORIGIN_X+COLS*CELL_W,dy); ctx.stroke();
     }
+    // Vertical dividers
     for(var dv=0;dv<P.divV.length;dv++){
       var dx=ORIGIN_X+P.divV[dv]*CELL_W;
       ctx.beginPath(); ctx.moveTo(dx,ORIGIN_Y); ctx.lineTo(dx,ORIGIN_Y+ROWS*CELL_H); ctx.stroke();
     }
-    ctx.restore();
-  }
-
-  // Draw bold shapes for modernist engines (solid color fills + black stroke)
-  if ((currentEngine === 'suprematist' || currentEngine === 'kandinsky_comp' || currentEngine === 'mondrian_geo') && boldShapes.length) {
-    ctx.save();
-    ctx.strokeStyle = '#1a1715';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([]);
-
-    for (var i = 0; i < boldShapes.length; i++) {
-      var s = boldShapes[i];
-      ctx.beginPath();
-      
-      var sx, sy, sw, sh, scx, scy, sr;
-      if (s.type === 'rect' || s.type === 'bar') {
-        sx = ORIGIN_X + s.x * CELL_W;
-        sy = ORIGIN_Y + s.y * CELL_H;
-        sw = s.w * CELL_W;
-        sh = s.h * CELL_H;
-        ctx.rect(sx, sy, sw, sh);
-      } else if (s.type === 'circle') {
-        scx = ORIGIN_X + s.cx * CELL_W;
-        scy = ORIGIN_Y + s.cy * CELL_H;
-        sr = s.r * CELL_W;
-        ctx.arc(scx, scy, sr, 0, Math.PI * 2);
-      } else if (s.type === 'semicircle') {
-        scx = ORIGIN_X + s.cx * CELL_W;
-        scy = ORIGIN_Y + s.cy * CELL_H;
-        sr = s.r * CELL_W;
-        if (s.dir === 'up')        { ctx.arc(scx, scy, sr, Math.PI, 0); ctx.closePath(); }
-        else if (s.dir === 'down') { ctx.arc(scx, scy, sr, 0, Math.PI); ctx.closePath(); }
-        else if (s.dir === 'left') { ctx.arc(scx, scy, sr, Math.PI / 2, -Math.PI / 2); ctx.closePath(); }
-        else                       { ctx.arc(scx, scy, sr, -Math.PI / 2, Math.PI / 2); ctx.closePath(); }
-      } else if (s.type === 'triangle') {
-        var tx1 = ORIGIN_X + s.x * CELL_W;
-        var ty1 = ORIGIN_Y + s.y * CELL_H;
-        var tw = s.w * CELL_W;
-        var th = s.h * CELL_H;
-        if (s.dir === 'up')        { ctx.moveTo(tx1 + tw / 2, ty1); ctx.lineTo(tx1 + tw, ty1 + th); ctx.lineTo(tx1, ty1 + th); }
-        else if (s.dir === 'down') { ctx.moveTo(tx1, ty1); ctx.lineTo(tx1 + tw, ty1); ctx.lineTo(tx1 + tw / 2, ty1 + th); }
-        else if (s.dir === 'right'){ ctx.moveTo(tx1 + tw, ty1 + th / 2); ctx.lineTo(tx1, ty1); ctx.lineTo(tx1, ty1 + th); }
-        else                       { ctx.moveTo(tx1, ty1 + th / 2); ctx.lineTo(tx1 + tw, ty1); ctx.lineTo(tx1 + tw, ty1 + th); }
-        ctx.closePath();
-      }
-      
-      ctx.globalAlpha = 0.88;
-      ctx.fillStyle = PALETTE[s.color] || '#f3ece0';
-      ctx.fill();
-      
-      ctx.globalAlpha = 1.0;
-      ctx.stroke();
+    // Color zone labels (small text in each cell center)
+    ctx.font = '6px Courier New';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    var cLabels={white:'W',red:'R',blue:'B',yellow:'Y',black:'K'};
+    var cAlpha={white:0.25,red:0.55,blue:0.55,yellow:0.45,black:0.20};
+    for(var ci=0;ci<P.cells.length;ci++){
+      var cl=P.cells[ci]; if(cl.color==='white') continue;
+      ctx.fillStyle='rgba(20,15,10,'+cAlpha[cl.color]+')';
+      var lx=ORIGIN_X+(cl.x+cl.w/2)*CELL_W, ly=ORIGIN_Y+(cl.y+cl.h/2)*CELL_H;
+      ctx.fillText(cLabels[cl.color], lx, ly);
     }
     ctx.restore();
+    return;
   }
+
+  // Suprematist / Kandinsky: draw bold shape outlines
+  if (!boldShapes.length) return;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(20,15,10,0.80)';
+  ctx.lineWidth = 1.8; ctx.setLineDash([]);
+
+  for (var i = 0; i < boldShapes.length; i++) {
+    var s = boldShapes[i];
+    ctx.beginPath();
+    if (s.type === 'rect' || s.type === 'bar') {
+      ctx.rect(ORIGIN_X+s.x*CELL_W, ORIGIN_Y+s.y*CELL_H, s.w*CELL_W, s.h*CELL_H);
+    } else if (s.type === 'circle') {
+      ctx.arc(ORIGIN_X+s.cx*CELL_W, ORIGIN_Y+s.cy*CELL_H, s.r*CELL_W, 0, Math.PI*2);
+    } else if (s.type === 'semicircle') {
+      var pcx=ORIGIN_X+s.cx*CELL_W, pcy=ORIGIN_Y+s.cy*CELL_H, pr=s.r*CELL_W;
+      if(s.dir==='up')   {ctx.arc(pcx,pcy,pr,Math.PI,0);ctx.closePath();}
+      else if(s.dir==='down') {ctx.arc(pcx,pcy,pr,0,Math.PI);ctx.closePath();}
+      else if(s.dir==='left') {ctx.arc(pcx,pcy,pr,Math.PI/2,-Math.PI/2);ctx.closePath();}
+      else                    {ctx.arc(pcx,pcy,pr,-Math.PI/2,Math.PI/2);ctx.closePath();}
+    } else if (s.type === 'triangle') {
+      var tx1=ORIGIN_X+s.x*CELL_W,ty1=ORIGIN_Y+s.y*CELL_H,tw=s.w*CELL_W,th=s.h*CELL_H;
+      if(s.dir==='up')        {ctx.moveTo(tx1+tw/2,ty1);ctx.lineTo(tx1+tw,ty1+th);ctx.lineTo(tx1,ty1+th);}
+      else if(s.dir==='down') {ctx.moveTo(tx1,ty1);ctx.lineTo(tx1+tw,ty1);ctx.lineTo(tx1+tw/2,ty1+th);}
+      else if(s.dir==='right'){ctx.moveTo(tx1+tw,ty1+th/2);ctx.lineTo(tx1,ty1);ctx.lineTo(tx1,ty1+th);}
+      else                    {ctx.moveTo(tx1,ty1+th/2);ctx.lineTo(tx1+tw,ty1);ctx.lineTo(tx1+tw,ty1+th);}
+      ctx.closePath();
+    }
+    ctx.fillStyle = 'rgba(20,15,10,0.03)';
+    ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
 }
 
 // ── Preload ───────────────────────────────────────────────────────
@@ -1223,7 +1206,50 @@ function buildPanel() {
   btnScore.mousePressed(dumpScore);
 
   createElement('hr','').parent(content);
+    createElement('label','Space').parent(content);
+  var selSpace = createSelect(); selSpace.parent(content);
+  var SPACE_LIST = ['none', 'isometric', 'polar', 'hyperbolic', 'planar', 'moire'];
+  for (var i=0; i<SPACE_LIST.length; i++) selSpace.option(SPACE_LIST[i], SPACE_LIST[i]);
+  selSpace.selected('none');
+  selSpace.changed(function(){
+    window.currentSpace = selSpace.value();
+    regenerate();
+  });
+
   lblInfo = createElement('div',''); lblInfo.class('info'); lblInfo.parent(content);
+
+  // Draggable panel logic
+  var isDragging = false, dragX = 0, dragY = 0;
+  var header = createElement('div', '⋮⋮⋮');
+  header.style('width', '100%'); header.style('height', '16px');
+  header.style('cursor', 'grab'); header.style('text-align', 'center');
+  header.style('color', '#5a5450'); header.style('font-size', '10px');
+  header.style('line-height', '16px');
+  panel.elt.insertBefore(header.elt, panel.elt.firstChild);
+
+  header.elt.onmousedown = function(e) {
+    isDragging = true;
+    dragX = e.clientX - panel.elt.offsetLeft;
+    dragY = e.clientY - panel.elt.offsetTop;
+    header.style('cursor', 'grabbing');
+  };
+  window.addEventListener('mousemove', function(e) {
+    if(isDragging) {
+      panel.elt.style.left = (e.clientX - dragX) + 'px';
+      panel.elt.style.top = (e.clientY - dragY) + 'px';
+    }
+  });
+  window.addEventListener('mouseup', function() {
+    isDragging = false;
+    header.style('cursor', 'grab');
+  });
+
+  // Tap artwork to regenerate
+  document.getElementById('canvas-wrap').onclick = function(e) {
+    if (e.target.tagName.toLowerCase() === 'canvas') {
+      freshSeed();
+    }
+  };
 }
 
 function freshSeed() {
@@ -1269,7 +1295,39 @@ function drawArt() {
     for (var c=0; c<COLS; c++) {
       var stack = grid[r][c]; if (!stack) continue;
       var x = ORIGIN_X + c*CELL_W + CELL_W/2;
+      var oy = y; // backup original y
+      if (window.currentSpace === 'isometric') {
+        var isoX = (c - r) * CELL_W * 0.866;
+        var isoY = (c + r) * CELL_H * 0.5;
+        x = Math.floor(CW/2) + isoX;
+        y = Math.floor(CH*0.15) + isoY;
+      } else if (window.currentSpace === 'polar') {
+        var a = (c / COLS) * Math.PI * 2;
+        var rad = (r / ROWS) * (Math.min(CW, CH) * 0.45);
+        x = CW/2 + Math.cos(a) * rad;
+        y = CH/2 + Math.sin(a) * rad;
+      } else if (window.currentSpace === 'hyperbolic') {
+        var cx2 = CW/2, cy2 = CH/2;
+        var dx = x - cx2, dy = y - cy2;
+        var d = Math.sqrt(dx*dx + dy*dy);
+        var f = 1 + Math.pow(d / (Math.min(CW,CH)*0.5), 1.5);
+        x = cx2 + dx / f;
+        y = cy2 + dy / f;
+      } else if (window.currentSpace === 'moire') {
+        var cx2 = CW/2, cy2 = CH/2;
+        var dx = x - cx2, dy = y - cy2;
+        var ang = Math.sqrt(dx*dx + dy*dy) * 0.002;
+        x = cx2 + dx*Math.cos(ang) - dy*Math.sin(ang);
+        y = cy2 + dx*Math.sin(ang) + dy*Math.cos(ang);
+      } else if (window.currentSpace === 'planar') {
+        var py = r / ROWS;
+        var pz = 1 + (1 - py) * 2;
+        var px = (c / COLS - 0.5);
+        x = CW/2 + (px * Math.min(CW,CH)*1.5) / pz;
+        y = CH/2 + (py * Math.min(CW,CH)) / pz - CH*0.2;
+      }
       for (var i=0; i<stack.length; i++) text(stack[i], x+(i%2===0?0:0.3), y+(i===2?0.3:0));
+      y = oy;
     }
   }
   drawShapeHints();
