@@ -14852,14 +14852,18 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
                         var sizeY = sizes.sizeY;
                         var w = sizes.w;
                         var h = sizes.h;
+                        var logicalW = (w + 8) * sizeX;
+                        var logicalH = (h + 8) * sizeY;
+                        var scaleX = offW / logicalW;
+                        var scaleY = offH / logicalH;
                         var hasHeader = (artLayout !== 'square' && artLayout !== 'grid_39_39' &&
                             (artMotif === 'typewriter' || artMotif === 'chopin' || artMotif === 'typewriter_classic' || artMotif === 'typewriter_quine'));
                         var headerRows = hasHeader ? 11 : 0;
-                        var W = w * sizeX;
-                        var H = (h - headerRows) * sizeY;
+                        var W = w * sizeX * scaleX;
+                        var H = (h - headerRows) * sizeY * scaleY;
                         cropSize = Math.min(W, H);
-                        sx = 4 * sizeX + (W - cropSize) / 2;
-                        sy = (4 + headerRows) * sizeY + (H - cropSize) / 2;
+                        sx = 4 * sizeX * scaleX + (W - cropSize) / 2;
+                        sy = (4 + headerRows) * sizeY * scaleY + (H - cropSize) / 2;
                     }
 
                     // Draw cropped artwork centred in back canvas with padding
@@ -16377,25 +16381,27 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
                     var h = sizes.h;
 
-                    
+                    var logicalW = (w + 8) * sizeX;
+
+                    var logicalH = (h + 8) * sizeY;
+
+                    var scaleX = fw / logicalW;
+
+                    var scaleY = fh / logicalH;
 
                     var hasHeader = (currentLayout !== 'square' && currentLayout !== 'grid_39_39' && (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic' || TRAITS.motif === 'typewriter_quine'));
 
                     var headerRows = hasHeader ? 11 : 0;
 
-                    
+                    var W = w * sizeX * scaleX;
 
-                    var W = w * sizeX;
-
-                    var H = (h - headerRows) * sizeY;
-
-                    
+                    var H = (h - headerRows) * sizeY * scaleY;
 
                     cropSize = Math.min(W, H);
 
-                    sx = 4 * sizeX + (W - cropSize) / 2;
+                    sx = 4 * sizeX * scaleX + (W - cropSize) / 2;
 
-                    sy = (4 + headerRows) * sizeY + (H - cropSize) / 2;
+                    sy = (4 + headerRows) * sizeY * scaleY + (H - cropSize) / 2;
 
                 }
 
