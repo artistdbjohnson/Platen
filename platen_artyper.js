@@ -1355,9 +1355,9 @@ function drawArt() {
         var cx2 = CW/2, cy2 = CH/2;
         var dx = x - cx2, dy = y - cy2;
         var d = Math.sqrt(dx*dx + dy*dy);
-        var f = 1 + Math.pow(d / (Math.min(CW,CH)*0.5), 1.5);
-        x = cx2 + (dx / f) * 2.0;
-        y = cy2 + (dy / f) * 2.0;
+        var f = 1 + Math.pow(d / (Math.min(CW,CH)*0.95), 1.5);
+        x = cx2 + dx / f;
+        y = cy2 + dy / f;
       } else if (currentSpace === 'moire') {
         var cx2 = CW/2, cy2 = CH/2;
         var dx = x - cx2, dy = y - cy2;
@@ -1399,7 +1399,7 @@ function drawArt() {
         }
         
         var py_steps = [];
-        var stepVal = 7 * isoScale;
+        var stepVal = 28 * isoScale;
         for (var yVal = py_base; yVal >= py_top; yVal -= stepVal) {
           py_steps.push(yVal);
         }
@@ -1429,20 +1429,22 @@ function drawArt() {
         x = CW/2 + (px * Math.min(CW,CH)*1.5) / pz;
         y = CH/2 + (py * Math.min(CW,CH)) / pz - CH*0.2;
       } else if (currentSpace === 'moire (dazzler)') {
-         var edgeN = function(cx, cy, si) {
-             var n = ((cx * 7331 + cy * 5003 + si * 1999 + seed) % 1000) / 1000;
-             return (n - 0.5) * 2.5;
-         };
          var cx2 = CW/2, cy2 = CH/2;
          var dx = x - cx2, dy = y - cy2;
-         var angle = (seed % 1000) / 1000 * Math.PI;
-         var magnitude = 1.0 + ((seed * 131) % 100) / 100 * 5.5;
-         var offX = Math.cos(angle) * magnitude;
-         var offY = Math.sin(angle) * magnitude;
-         var moireDriftRate = 0.0008 + (seed % 500) / 500 * 0.0015;
-         var ripple = edgeN(c, r, 1) * 15;
-         x = cx2 + dx + offX + (dy * moireDriftRate * 50) + ripple;
-         y = cy2 + dy + offY + Math.sin(c*0.1 + r*0.1) * 10;
+         var mu = dx / cx2;
+         var mv = dy / cx2;
+         var r2 = Math.sqrt(mu*mu + mv*mv);
+         var ang = Math.atan2(mv, mu);
+         var t = (seed * 0.05) % (Math.PI * 2);
+         var valf = 0.5 + 0.5 * (
+             0.42 * Math.sin(7 * mu + t) +
+             0.30 * Math.sin(9 * mv - t * 0.7) +
+             0.42 * Math.sin(18 * r2 - t * 1.25) +
+             0.18 * Math.sin(5 * ang + t * 0.4)
+         );
+         var shiftAmt = (valf - 0.5) * 35.0;
+         x += Math.cos(ang) * shiftAmt;
+         y += Math.sin(ang) * shiftAmt;
       }
       
       var originalTextSize = CELL_W / 0.6;
