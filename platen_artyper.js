@@ -74,6 +74,7 @@ var ENGINE_LIST = [
 // ── State ─────────────────────────────────────────────────────────
 var seed = 0;
 var currentEngine = '';
+var currentSpace = 'none';
 var borderKey = 't*x';
 var gain = 0.85;
 var showPalms = true;
