@@ -75,6 +75,8 @@ var ENGINE_LIST = [
 var seed = 0;
 var currentEngine = '';
 var currentSpace = 'none';
+var currentLandscape = 'none';
+var landscapeParams = null;
 var borderKey = 't*x';
 var gain = 0.85;
 var showPalms = true;
@@ -83,11 +85,704 @@ var grid = [];
 
 // UI handles
 var panel, lblSeed, lblInfo, lblEngine;
-var selBorder, selEngine, sldGain, chkPalms, btnRegen, btnSave, btnScore;
+var selBorder, selEngine, selLandscape, sldGain, chkPalms, btnRegen, btnSave, btnSaveSVG, btnScore;
 var paperImg;
 var shapeHints = [];   // faint dashed hints for old mondrian/brutalist engines
 var boldShapes = [];   // full composition shapes for suprematist/mondrian_geo/kandinsky_comp
 var selectedEngine = 'random';
+
+// ── Landscape PRNG helper (independent seeding from main engine) ──
+function makeLandPRNG(s) {
+  var st = s ^ 0xdeadbeef;
+  return {
+    rfl: function() {
+      st ^= st << 13; st ^= st >> 17; st ^= st << 5;
+      return ((st >>> 0) / 4294967296);
+    },
+    ri: function(a, b) { return a + Math.floor(this.rfl() * (b - a + 1)); },
+    rf: function(a, b) {
+      if (a === undefined) return this.rfl();
+      return a + this.rfl() * (b - a);
+    }
+  };
+}
+
+// ── Perlin-noise jitter for hand-drawn feel ────────────────────────
+// Returns a small pixel offset using p5's noise() — gives organic wobble
+// to what would otherwise be perfect geometric lines.
+function jit(x, y, amp, freq) {
+  amp  = amp  || 1.2;
+  freq = freq || 0.018;
+  return (noise(x * freq, y * freq) - 0.5) * 2 * amp;
+}
+
+// ── Smooth jittered line via curveVertex ──────────────────────────
+// Subdivides a straight line into nSeg segments, displacing each
+// control point with Perlin noise. This is what makes lines look
+// like they were drawn with a real pen held in a human hand.
+function penLine(x1, y1, x2, y2, nSeg, amp, nOff) {
+  nSeg = nSeg || 8;
+  amp  = amp  || 1.5;
+  nOff = nOff || 0;
+  beginShape();
+  for (var i = 0; i <= nSeg; i++) {
+    var t  = i / nSeg;
+    var px = x1 + (x2 - x1) * t;
+    var py = y1 + (y2 - y1) * t;
+    var nx = jit(px + nOff, py + nOff * 1.3, amp, 0.02);
+    var ny = jit(px + nOff * 0.7, py + nOff + 50, amp, 0.02);
+    curveVertex(px + nx, py + ny);
+  }
+  endShape();
+}
+
+// ── Smooth jittered spline through a point array ──────────────────
+function penSpline(pts, amp, nOff) {
+  amp  = amp  || 1.5;
+  nOff = nOff || 0;
+  if (pts.length < 2) return;
+  beginShape();
+  // Duplicate first and last for curveVertex tension
+  curveVertex(pts[0][0] + jit(pts[0][0]+nOff, pts[0][1]+nOff, amp, 0.02),
+              pts[0][1] + jit(pts[0][0]+nOff+10, pts[0][1]+nOff, amp, 0.02));
+  for (var i = 0; i < pts.length; i++) {
+    var px = pts[i][0] + jit(pts[i][0]+nOff, pts[i][1]+nOff, amp, 0.02);
+    var py = pts[i][1] + jit(pts[i][0]+nOff+7, pts[i][1]+nOff, amp, 0.02);
+    curveVertex(px, py);
+  }
+  var lp = pts[pts.length - 1];
+  curveVertex(lp[0] + jit(lp[0]+nOff, lp[1]+nOff, amp, 0.02),
+              lp[1] + jit(lp[0]+nOff+3, lp[1]+nOff, amp, 0.02));
+  endShape();
+}
+
+// ── Generate landscape overlay parameters (seeded) ─────────────────
+function generateLandscapeParams(type, lseed) {
+  if (!type || type === 'none') return null;
+  var p = makeLandPRNG(lseed);
+  var P = { type: type };
+  var W = CW, H = CH;
+
+  if (type === 'mountain_range') {
+    // 4-7 ridgelines, back to front
+    P.ridges = [];
+    var nRidges = p.ri(4, 7);
+    for (var ri2 = 0; ri2 < nRidges; ri2++) {
+      var depth = ri2 / (nRidges - 1);          // 0=far, 1=near
+      var baseY = p.rf(H * 0.55, H * 0.82) * (1 - depth * 0.25);
+      var nPts  = p.ri(10, 22);
+      var pts   = [];
+      var y     = baseY;
+      for (var pi3 = 0; pi3 <= nPts; pi3++) {
+        var t  = pi3 / nPts;
+        var px3 = -20 + t * (W + 40);
+        // Jagged peaks: alternating rise/fall with a dominant central peak
+        var peakPull = Math.exp(-Math.pow((t - 0.5) * 3.2, 2)) * H * 0.28;
+        var localJag  = (p.rfl() - 0.5) * H * 0.10;
+        y = baseY - peakPull - localJag * (1 - depth);
+        y = Math.max(H * 0.05, y);
+        pts.push([px3, y]);
+      }
+      // Close ridge down to baseline on both sides
+      pts.unshift([-20, baseY + 10]);
+      pts.push([W + 20, baseY + 10]);
+      // Hatching lines on face
+      var hatch = [];
+      var hStep = p.rf(4, 9);
+      for (var hi3 = 0; hi3 < pts.length - 2; hi3++) {
+        var lx = pts[hi3 + 1][0], ly = pts[hi3 + 1][1];
+        var nH2 = Math.floor((baseY - ly) / hStep);
+        for (var hj = 1; hj < nH2; hj++) {
+          var hy3 = ly + hj * hStep;
+          var hlen = p.rf(2, 10) * (1 - depth * 0.5);
+          hatch.push([lx - hlen * 0.3, hy3, lx + hlen * 0.1, hy3 + p.rf(1,3)]);
+        }
+      }
+      P.ridges.push({ pts: pts, baseY: baseY, depth: depth, hatch: hatch, nOff: p.rf(0, 500) });
+    }
+    // Sky hatch lines (horizontal parallel above peaks)
+    P.skyHatch = [];
+    var skyBase = H * 0.08;
+    var sPitch  = p.rf(5, 9);
+    for (var si2 = 0; si2 < 18; si2++) {
+      P.skyHatch.push(skyBase + si2 * sPitch);
+    }
+
+  } else if (type === 'douro_valley') {
+    // Rolling terraced vineyard hills
+    P.horizon = [];
+    var nHPts = p.ri(12, 20);
+    var hBaseY = p.rf(H * 0.22, H * 0.32);
+    for (var hpi2 = 0; hpi2 <= nHPts; hpi2++) {
+      var t2 = hpi2 / nHPts;
+      P.horizon.push([-10 + t2 * (W + 20),
+                      hBaseY + (p.rfl() - 0.5) * H * 0.06]);
+    }
+    // Far hills (2 rows behind horizon)
+    P.farHills = [];
+    for (var fhi3 = 0; fhi3 < 2; fhi3++) {
+      var fPts = [], fBase = p.rf(H * 0.10, H * 0.20);
+      var nfp  = p.ri(8, 14);
+      for (var fpi2 = 0; fpi2 <= nfp; fpi2++) {
+        var t3 = fpi2 / nfp;
+        fPts.push([-10 + t3*(W+20), fBase + (p.rfl()-0.5)*H*0.08]);
+      }
+      P.farHills.push({ pts: fPts, nOff: p.rf(0,500) });
+    }
+    // Terraces: curved contour bands sweeping across
+    P.terraces = [];
+    var nTerraces = p.ri(10, 18);
+    for (var ti2 = 0; ti2 < nTerraces; ti2++) {
+      var tBase2 = hBaseY + 20 + ti2 * p.rf(18, 32);
+      if (tBase2 > H - 60) break;
+      var ntp = p.ri(14, 24);
+      var tPts = [];
+      for (var tpi2 = 0; tpi2 <= ntp; tpi2++) {
+        var tt = tpi2 / ntp;
+        var ty = tBase2 + Math.sin(tt * Math.PI * 2.2 + p.rf(0,1)) * p.rf(10, 35);
+        tPts.push([-10 + tt*(W+20), ty]);
+      }
+      P.terraces.push({ pts: tPts, nOff: p.rf(0, 900) });
+    }
+    // Vine rows: short diagonal parallel lines on terrace bands
+    P.vineRows = [];
+    var vSpacingX = p.rf(12, 20), vSpacingY = p.rf(20, 30);
+    for (var vyi2 = 0; vyi2 < Math.floor((H * 0.6) / vSpacingY); vyi2++) {
+      for (var vxi2 = 0; vxi2 < Math.floor(W / vSpacingX); vxi2++) {
+        var vx2 = p.rf(40, W - 40) + vxi2 * vSpacingX * 0.3;
+        var vy2 = hBaseY + 35 + vyi2 * vSpacingY + p.rf(-3, 3);
+        if (vy2 > H - 50) continue;
+        P.vineRows.push([vx2, vy2]);
+      }
+    }
+    // Cypress trees: simple elongated silhouettes
+    P.cypress = [];
+    var nCyp = p.ri(6, 14);
+    for (var ci3 = 0; ci3 < nCyp; ci3++) {
+      P.cypress.push({
+        x: p.rf(W * 0.08, W * 0.92),
+        y: p.rf(hBaseY + 5, hBaseY + 60),
+        h: p.rf(28, 55),
+        w: p.rf(6, 12),
+        nOff: p.rf(0, 900)
+      });
+    }
+    // Winding path/river in lower third
+    P.path = [];
+    var pPts = [], pathY0 = p.rf(H * 0.55, H * 0.65);
+    var npp = p.ri(8, 14);
+    for (var ppi2 = 0; ppi2 <= npp; ppi2++) {
+      var pt2 = ppi2 / npp;
+      pPts.push([-10 + pt2*(W+20), pathY0 + Math.sin(pt2*Math.PI*3+p.rf(0,2))*p.rf(15,35)]);
+    }
+    P.path = pPts;
+
+  } else if (type === 'mesa_vista') {
+    // Single large mesa/butte formation
+    var mW = p.rf(W * 0.45, W * 0.72);
+    var mX = p.rf(W * 0.12, W * 0.38);
+    var mTop = p.rf(H * 0.25, H * 0.38);
+    var mBase = p.rf(H * 0.62, H * 0.72);
+    P.mesa = { x: mX, w: mW, top: mTop, base: mBase, nOff: p.rf(0,500) };
+    // Cliff profile: slightly eroded stepped silhouette
+    P.leftCliff = [];
+    var lcSteps = p.ri(4, 8);
+    var lcY = mTop, lcX = mX;
+    for (var lci3 = 0; lci3 < lcSteps; lci3++) {
+      var stepH3 = (mBase - mTop) / lcSteps + p.rf(-8, 8);
+      var stepW3 = p.rf(-18, 4);
+      P.leftCliff.push([lcX, lcY]);
+      lcY += stepH3; lcX += stepW3;
+      P.leftCliff.push([lcX, lcY]);
+    }
+    P.leftCliff.push([lcX - p.rf(5,20), mBase]);
+    P.rightCliff = [];
+    var rcY = mTop, rcX = mX + mW;
+    for (var rci3 = 0; rci3 < lcSteps; rci3++) {
+      var rStepH = (mBase - mTop) / lcSteps + p.rf(-8, 8);
+      var rStepW = p.rf(-4, 18);
+      P.rightCliff.push([rcX, rcY]);
+      rcY += rStepH; rcX += rStepW;
+      P.rightCliff.push([rcX, rcY]);
+    }
+    P.rightCliff.push([rcX + p.rf(5,20), mBase]);
+    // Mesa top hatching (vertical lines)
+    P.mesaHatch = [];
+    var hxStep = p.rf(5, 9);
+    for (var mhi3 = mX + 5; mhi3 < mX + mW - 5; mhi3 += hxStep) {
+      P.mesaHatch.push([mhi3, mTop + p.rf(2, 6), mhi3 + p.rf(-2,2), mTop + p.rf(10, 25)]);
+    }
+    // Cliff face hatching (diagonal)
+    P.cliffHatch = [];
+    var chStep = p.rf(4, 7);
+    for (var chy3 = mTop + 10; chy3 < mBase; chy3 += chStep) {
+      var hx1 = mX - p.rf(0,6);
+      var hx2 = mX - p.rf(12, 30);
+      P.cliffHatch.push([hx1, chy3, hx2, chy3 + p.rf(3,8)]);
+      var rhx1 = mX + mW + p.rf(0,6);
+      var rhx2 = mX + mW + p.rf(12,30);
+      P.cliffHatch.push([rhx1, chy3, rhx2, chy3 + p.rf(3,8)]);
+    }
+    // Background distant mountain ridges
+    P.bgRidges = [];
+    var nBG = p.ri(2, 4);
+    for (var bgi3 = 0; bgi3 < nBG; bgi3++) {
+      var bBase = p.rf(H * 0.08, mTop - 20);
+      var bPts  = [];
+      var nBP   = p.ri(8, 14);
+      for (var bpi3 = 0; bpi3 <= nBP; bpi3++) {
+        var bt = bpi3 / nBP;
+        bPts.push([-10 + bt*(W+20), bBase + (p.rfl()-0.5)*H*0.08]);
+      }
+      P.bgRidges.push({ pts: bPts, nOff: p.rf(0,500) });
+    }
+    // Clouds: arc clusters
+    P.clouds = [];
+    var nClouds = p.ri(3, 7);
+    for (var cli3 = 0; cli3 < nClouds; cli3++) {
+      P.clouds.push({
+        x: p.rf(W * 0.05, W * 0.95),
+        y: p.rf(H * 0.04, mTop - 30),
+        w: p.rf(30, 90),
+        nOff: p.rf(0, 600)
+      });
+    }
+
+  } else if (type === 'modernist_marks') {
+    // Abstract gestural marks — colored registration circles,
+    // dashed construction lines, cross-hair targets
+    P.circles = [];
+    var nCirc = p.ri(5, 12);
+    for (var cir3 = 0; cir3 < nCirc; cir3++) {
+      P.circles.push({
+        x: p.rf(W*0.05, W*0.95), y: p.rf(H*0.04, H*0.96),
+        r: p.rf(12, 55),
+        col: ['#d1462f','#2d5a8c','#e0a92e','#1a1715'][Math.floor(p.rfl()*4)],
+        style: p.ri(0,2), // 0=circle, 1=crosshair+circle, 2=concentric
+        nOff: p.rf(0,700)
+      });
+    }
+    P.dashLines = [];
+    var nDash = p.ri(8, 18);
+    for (var di3 = 0; di3 < nDash; di3++) {
+      var dHoriz = p.rfl() > 0.5;
+      var dPos   = p.rf(0.05, 0.95);
+      var dA = p.rf(0.05, 0.40), dB = p.rf(0.60, 0.95);
+      P.dashLines.push({
+        horiz: dHoriz, pos: dPos, a: dA, b: dB,
+        col: ['#d1462f','#2d5a8c','#e0a92e','#1a1715'][Math.floor(p.rfl()*4)],
+        dashLen: p.rf(4, 14), gapLen: p.rf(3, 8)
+      });
+    }
+    P.gestural = [];
+    var nGest = p.ri(4, 10);
+    for (var gi3 = 0; gi3 < nGest; gi3++) {
+      var gPts = [];
+      var gX0 = p.rf(W*0.05, W*0.85), gY0 = p.rf(H*0.05, H*0.85);
+      var gLen = p.rf(40, 140);
+      var gAng = p.rf(0, Math.PI * 2);
+      var nGP  = p.ri(3, 8);
+      for (var gpi3 = 0; gpi3 <= nGP; gpi3++) {
+        var gt = gpi3 / nGP;
+        gPts.push([
+          gX0 + Math.cos(gAng + p.rf(-0.4, 0.4)) * gLen * gt,
+          gY0 + Math.sin(gAng + p.rf(-0.4, 0.4)) * gLen * gt
+        ]);
+      }
+      P.gestural.push({
+        pts: gPts,
+        col: ['#d1462f','#2d5a8c','#e0a92e','#1a1715'][Math.floor(p.rfl()*4)],
+        nOff: p.rf(0, 700)
+      });
+    }
+  }
+  return P;
+}
+
+// ── Draw landscape overlay ────────────────────────────────────────
+// All strokes are thin vector lines suitable for AxiDraw pen plotting.
+// The overlay is drawn AFTER characters so pen lines sit on top.
+function drawLandscapeOverlay(P) {
+  if (!P) return;
+  push();
+  noFill();
+  var PEN_SW = 0.55;  // micron 0.05mm equivalent at 72ppi
+
+  if (P.type === 'mountain_range') {
+    for (var ri3 = 0; ri3 < P.ridges.length; ri3++) {
+      var rdg = P.ridges[ri3];
+      var alpha = map(rdg.depth, 0, 1, 90, 200);
+      var sw2 = PEN_SW * map(rdg.depth, 0, 1, 0.5, 1.2);
+      strokeWeight(sw2);
+      // Ridge silhouette
+      stroke(26, 23, 21, alpha);
+      penSpline(rdg.pts, 0.8, rdg.nOff);
+      // Face hatching (thinner)
+      strokeWeight(PEN_SW * 0.6);
+      stroke(26, 23, 21, alpha * 0.7);
+      for (var hi4 = 0; hi4 < rdg.hatch.length; hi4++) {
+        var ht = rdg.hatch[hi4];
+        penLine(ht[0], ht[1], ht[2], ht[3], 4, 0.5, rdg.nOff + hi4 * 3);
+      }
+    }
+    // Horizontal sky hatch
+    strokeWeight(PEN_SW * 0.5);
+    stroke(26, 23, 21, 45);
+    for (var si3 = 0; si3 < P.skyHatch.length; si3++) {
+      var sy = P.skyHatch[si3];
+      penLine(ORIGIN_X, sy, CW - ORIGIN_X, sy, 10, 0.6, si3 * 17);
+    }
+
+  } else if (P.type === 'douro_valley') {
+    // Far hills — very faint
+    stroke(26, 23, 21, 70);
+    strokeWeight(PEN_SW * 0.55);
+    for (var fhi4 = 0; fhi4 < P.farHills.length; fhi4++) {
+      penSpline(P.farHills[fhi4].pts, 0.6, P.farHills[fhi4].nOff);
+    }
+    // Horizon line
+    stroke(26, 23, 21, 160);
+    strokeWeight(PEN_SW * 0.9);
+    penSpline(P.horizon, 1.0, 111);
+    // Terrace contours
+    for (var ti3 = 0; ti3 < P.terraces.length; ti3++) {
+      var tDepth = ti3 / P.terraces.length;
+      var tAlpha = map(tDepth, 0, 1, 90, 180);
+      stroke(26, 23, 21, tAlpha);
+      strokeWeight(PEN_SW * map(tDepth, 0, 1, 0.6, 1.1));
+      penSpline(P.terraces[ti3].pts, 0.9, P.terraces[ti3].nOff);
+    }
+    // Vine row marks (short diagonal strokes)
+    strokeWeight(PEN_SW * 0.5);
+    stroke(26, 23, 21, 80);
+    for (var vri3 = 0; vri3 < P.vineRows.length; vri3++) {
+      var vx3 = P.vineRows[vri3][0], vy3 = P.vineRows[vri3][1];
+      penLine(vx3 - 4, vy3 + 4, vx3 + 4, vy3 - 4, 3, 0.4, vri3 * 7);
+    }
+    // Cypress trees
+    strokeWeight(PEN_SW * 0.8);
+    stroke(26, 23, 21, 170);
+    for (var ci4 = 0; ci4 < P.cypress.length; ci4++) {
+      var cy2 = P.cypress[ci4];
+      drawCypressTree(cy2.x, cy2.y, cy2.h, cy2.w, cy2.nOff);
+    }
+    // Winding path
+    strokeWeight(PEN_SW * 0.7);
+    stroke(26, 23, 21, 110);
+    penSpline(P.path, 1.2, 333);
+
+  } else if (P.type === 'mesa_vista') {
+    // Background ridges — very faint
+    strokeWeight(PEN_SW * 0.5);
+    stroke(26, 23, 21, 55);
+    for (var bgi4 = 0; bgi4 < P.bgRidges.length; bgi4++) {
+      penSpline(P.bgRidges[bgi4].pts, 0.5, P.bgRidges[bgi4].nOff);
+    }
+    // Mesa flat top line
+    strokeWeight(PEN_SW * 1.1);
+    stroke(26, 23, 21, 210);
+    var m = P.mesa;
+    penLine(m.x, m.top, m.x + m.w, m.top, 12, 1.0, m.nOff);
+    // Cliff silhouettes
+    strokeWeight(PEN_SW * 0.9);
+    penSpline(P.leftCliff, 1.2, m.nOff + 200);
+    penSpline(P.rightCliff, 1.2, m.nOff + 400);
+    // Base ground line
+    strokeWeight(PEN_SW * 0.7);
+    stroke(26, 23, 21, 130);
+    penLine(ORIGIN_X, m.base, CW - ORIGIN_X, m.base, 12, 0.8, m.nOff + 600);
+    // Mesa top hatch
+    strokeWeight(PEN_SW * 0.55);
+    stroke(26, 23, 21, 110);
+    for (var mhi4 = 0; mhi4 < P.mesaHatch.length; mhi4++) {
+      var mh = P.mesaHatch[mhi4];
+      penLine(mh[0], mh[1], mh[2], mh[3], 4, 0.5, mhi4 * 5 + m.nOff);
+    }
+    // Cliff face hatch
+    strokeWeight(PEN_SW * 0.5);
+    stroke(26, 23, 21, 90);
+    for (var chi4 = 0; chi4 < P.cliffHatch.length; chi4++) {
+      var ch2 = P.cliffHatch[chi4];
+      penLine(ch2[0], ch2[1], ch2[2], ch2[3], 4, 0.4, chi4 * 4 + m.nOff);
+    }
+    // Clouds
+    strokeWeight(PEN_SW * 0.6);
+    stroke(26, 23, 21, 100);
+    for (var cli4 = 0; cli4 < P.clouds.length; cli4++) {
+      drawCloud(P.clouds[cli4].x, P.clouds[cli4].y, P.clouds[cli4].w, P.clouds[cli4].nOff);
+    }
+
+  } else if (P.type === 'modernist_marks') {
+    // Circles + crosshairs
+    for (var cir4 = 0; cir4 < P.circles.length; cir4++) {
+      var cc = P.circles[cir4];
+      var cr = color(cc.col);
+      stroke(red(cr), green(cr), blue(cr), 200);
+      strokeWeight(PEN_SW * 0.9);
+      noFill();
+      drawModernistCircle(cc.x, cc.y, cc.r, cc.style, cc.nOff);
+    }
+    // Dashed lines
+    for (var di4 = 0; di4 < P.dashLines.length; di4++) {
+      var dl = P.dashLines[di4];
+      var dlc = color(dl.col);
+      stroke(red(dlc), green(dlc), blue(dlc), 190);
+      strokeWeight(PEN_SW * 0.7);
+      drawDashLine(dl);
+    }
+    // Gestural marks
+    for (var gi4 = 0; gi4 < P.gestural.length; gi4++) {
+      var gm = P.gestural[gi4];
+      var gc = color(gm.col);
+      stroke(red(gc), green(gc), blue(gc), 200);
+      strokeWeight(PEN_SW * 0.8);
+      penSpline(gm.pts, 1.3, gm.nOff);
+    }
+  }
+  pop();
+}
+
+// ── Cypress tree silhouette (tall narrow oval) ─────────────────────
+function drawCypressTree(x, y, h, w, nOff) {
+  var nPts = 14;
+  var pts  = [];
+  // Left side going up
+  for (var i = 0; i <= nPts; i++) {
+    var t  = i / nPts;
+    var ty = y - t * h;
+    var tx = x - (w * 0.5) * Math.sin(t * Math.PI) + jit(tx + nOff, ty, 0.9, 0.04);
+    pts.push([x + (tx - x), ty]);
+  }
+  // Right side going down
+  for (var i2 = nPts; i2 >= 0; i2--) {
+    var t2  = i2 / nPts;
+    var ty2 = y - t2 * h;
+    var txR = x + (w * 0.5) * Math.sin(t2 * Math.PI) + jit(txR + nOff + 100, ty2, 0.9, 0.04);
+    pts.push([x + (txR - x), ty2]);
+  }
+  penSpline(pts, 0.7, nOff);
+}
+
+// ── Cloud arc cluster ──────────────────────────────────────────────
+function drawCloud(cx, cy, w, nOff) {
+  var nBumps = Math.floor(w / 18) + 2;
+  var bumpR  = w / (nBumps * 1.8);
+  for (var bi = 0; bi < nBumps; bi++) {
+    var bx = cx - w * 0.5 + (bi + 0.5) * (w / nBumps);
+    var by = cy + (bi % 2 === 0 ? 0 : -bumpR * 0.4);
+    var pts = [];
+    var nArc = 10;
+    for (var ai = 0; ai <= nArc; ai++) {
+      var ang2 = Math.PI + (ai / nArc) * Math.PI;
+      pts.push([
+        bx + Math.cos(ang2) * (bumpR + jit(bx+nOff+ai*3, by, 0.5, 0.03)),
+        by + Math.sin(ang2) * (bumpR * 0.7 + jit(bx+nOff, by+ai*4, 0.5, 0.03))
+      ]);
+    }
+    penSpline(pts, 0.6, nOff + bi * 30);
+  }
+}
+
+// ── Modernist circle with optional crosshair ──────────────────────
+function drawModernistCircle(cx, cy, r, style, nOff) {
+  // Draw circle as spline through 16 pts for organic feel
+  var pts = [];
+  var nArc2 = 16;
+  for (var ai2 = 0; ai2 <= nArc2; ai2++) {
+    var ang3 = (ai2 / nArc2) * Math.PI * 2;
+    pts.push([
+      cx + Math.cos(ang3) * r + jit(cx+nOff+ai2*5, cy, 0.7, 0.03),
+      cy + Math.sin(ang3) * r + jit(cx+nOff, cy+ai2*4, 0.7, 0.03)
+    ]);
+  }
+  pts.push(pts[0]); // close
+  penSpline(pts, 0.5, nOff);
+  if (style === 1) {
+    // Crosshair lines through center
+    penLine(cx - r - 8, cy, cx + r + 8, cy, 8, 0.5, nOff + 111);
+    penLine(cx, cy - r - 8, cx, cy + r + 8, 8, 0.5, nOff + 222);
+    // Tiny center dot circle
+    var dPts = [];
+    for (var di5 = 0; di5 <= 10; di5++) {
+      var da = (di5/10)*Math.PI*2;
+      dPts.push([cx + Math.cos(da)*2.5, cy + Math.sin(da)*2.5]);
+    }
+    penSpline(dPts, 0.3, nOff + 333);
+  } else if (style === 2) {
+    // Concentric inner ring
+    var iPts = [];
+    for (var ii2 = 0; ii2 <= nArc2; ii2++) {
+      var ia = (ii2/nArc2)*Math.PI*2;
+      iPts.push([
+        cx + Math.cos(ia)*(r*0.55) + jit(cx+nOff+ii2*3, cy, 0.5, 0.03),
+        cy + Math.sin(ia)*(r*0.55) + jit(cx+nOff, cy+ii2*3, 0.5, 0.03)
+      ]);
+    }
+    iPts.push(iPts[0]);
+    penSpline(iPts, 0.4, nOff + 500);
+  }
+}
+
+// ── Dashed construction line ──────────────────────────────────────
+function drawDashLine(dl) {
+  var x1,y1,x2,y2;
+  if (dl.horiz) {
+    y1=y2 = dl.pos * CH;
+    x1 = dl.a * CW; x2 = dl.b * CW;
+  } else {
+    x1=x2 = dl.pos * CW;
+    y1 = dl.a * CH; y2 = dl.b * CH;
+  }
+  var totalLen = Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+  var dx3 = (x2-x1)/totalLen, dy3 = (y2-y1)/totalLen;
+  var pos3 = 0;
+  var on = true;
+  while (pos3 < totalLen) {
+    var segLen3 = on ? dl.dashLen : dl.gapLen;
+    if (on) {
+      var sx = x1+dx3*pos3, sy = y1+dy3*pos3;
+      var ex = x1+dx3*Math.min(pos3+segLen3, totalLen);
+      var ey = y1+dy3*Math.min(pos3+segLen3, totalLen);
+      penLine(sx, sy, ex, ey, 3, 0.4, pos3*7);
+    }
+    pos3 += segLen3;
+    on = !on;
+  }
+}
+
+// ── SVG export of landscape overlay ──────────────────────────────
+// Generates a standalone SVG containing ONLY the landscape pen lines,
+// ready to import into Inkscape for AxiDraw pen plotting.
+function exportLandscapeSVG() {
+  if (!landscapeParams) {
+    alert('No landscape overlay active. Select a Landscape mode first.');
+    return;
+  }
+  // Collect strokes by drawing to a hidden recorder
+  var svgStrokes = [];
+  var _currentStroke = null;
+
+  function svgBegin() { _currentStroke = []; }
+  function svgVertex(x, y) { if (_currentStroke) _currentStroke.push([x, y]); }
+  function svgEnd(col, sw3) {
+    if (_currentStroke && _currentStroke.length > 1) {
+      svgStrokes.push({ pts: _currentStroke.slice(), col: col || '#1a1715', sw: sw3 || 0.55 });
+    }
+    _currentStroke = null;
+  }
+
+  // Re-generate geometry in SVG mode using same seed
+  // (landscape lines are deterministic from seed)
+  var P = landscapeParams;
+  var svgLines = buildSVGLines(P);
+
+  // Build SVG string
+  // Use physical units: 8.5" x 11" at 96dpi (SVG default)
+  var scale = 96/72; // convert 72ppi canvas to 96dpi SVG
+  var svgW = CW * scale, svgH = CH * scale;
+  var lines = [];
+  lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+  lines.push('<svg xmlns="http://www.w3.org/2000/svg"');
+  lines.push('  width="' + (CW/72*25.4).toFixed(2) + 'mm" height="' + (CH/72*25.4).toFixed(2) + 'mm"');
+  lines.push('  viewBox="0 0 ' + CW + ' ' + CH + '">');
+  lines.push('  <g id="landscape-overlay" fill="none">');
+  for (var li5 = 0; li5 < svgLines.length; li5++) {
+    var sl = svgLines[li5];
+    if (sl.pts.length < 2) continue;
+    var d = 'M ' + sl.pts[0][0].toFixed(2) + ' ' + sl.pts[0][1].toFixed(2);
+    for (var pi4 = 1; pi4 < sl.pts.length; pi4++) {
+      d += ' L ' + sl.pts[pi4][0].toFixed(2) + ' ' + sl.pts[pi4][1].toFixed(2);
+    }
+    lines.push('  <path d="' + d + '" stroke="' + sl.col + '" stroke-width="' + sl.sw.toFixed(3) + '" />');
+  }
+  lines.push('  </g>');
+  lines.push('</svg>');
+  var svgStr = lines.join('\n');
+  var fname = 'platen_landscape_' + P.type + '_' + seed;
+  saveStrings(svgStr.split('\n'), fname, 'svg');
+}
+
+// ── Build SVG path list from landscape params ─────────────────────
+// Converts the same geometry as drawLandscapeOverlay into SVG paths
+// with jitter applied, ensuring the SVG matches the canvas render.
+function buildSVGLines(P) {
+  if (!P) return [];
+  var lines = [];
+  var PEN_SW = 0.55;
+  function polyToSVG(pts, col, sw4) {
+    if (pts && pts.length >= 2) lines.push({ pts: pts, col: col || '#1a1715', sw: sw4 || PEN_SW });
+  }
+  function jitteredLine(x1, y1, x2, y2, nSeg, amp2, nOff, col2, sw5) {
+    nSeg = nSeg || 8; amp2 = amp2 || 1.5; nOff = nOff || 0;
+    var pts = [];
+    for (var i = 0; i <= nSeg; i++) {
+      var t2 = i/nSeg;
+      var px = x1+(x2-x1)*t2, py = y1+(y2-y1)*t2;
+      pts.push([px + jit(px+nOff, py+nOff*1.3, amp2, 0.02), py + jit(px+nOff*0.7, py+nOff+50, amp2, 0.02)]);
+    }
+    polyToSVG(pts, col2, sw5);
+  }
+  function jitteredSpline(rawPts, amp3, nOff3, col3, sw6) {
+    if (!rawPts || rawPts.length < 2) return;
+    var pts2 = rawPts.map(function(pt3) {
+      return [pt3[0]+jit(pt3[0]+nOff3, pt3[1]+nOff3, amp3, 0.02),
+              pt3[1]+jit(pt3[0]+nOff3+7, pt3[1]+nOff3, amp3, 0.02)];
+    });
+    polyToSVG(pts2, col3, sw6);
+  }
+
+  if (P.type === 'mountain_range') {
+    for (var ri5 = 0; ri5 < P.ridges.length; ri5++) {
+      var rdg2 = P.ridges[ri5];
+      var sw7 = PEN_SW * map(rdg2.depth, 0, 1, 0.5, 1.2);
+      jitteredSpline(rdg2.pts, 0.8, rdg2.nOff, '#1a1715', sw7);
+      for (var hi5 = 0; hi5 < rdg2.hatch.length; hi5++) {
+        var ht2 = rdg2.hatch[hi5];
+        jitteredLine(ht2[0],ht2[1],ht2[2],ht2[3],4,0.5,rdg2.nOff+hi5*3,'#1a1715',PEN_SW*0.6);
+      }
+    }
+    for (var si4 = 0; si4 < P.skyHatch.length; si4++) {
+      jitteredLine(ORIGIN_X, P.skyHatch[si4], CW-ORIGIN_X, P.skyHatch[si4], 10, 0.6, si4*17, '#1a1715', PEN_SW*0.5);
+    }
+  } else if (P.type === 'douro_valley') {
+    for (var fhi5 = 0; fhi5 < P.farHills.length; fhi5++) {
+      jitteredSpline(P.farHills[fhi5].pts, 0.6, P.farHills[fhi5].nOff, '#1a1715', PEN_SW*0.55);
+    }
+    jitteredSpline(P.horizon, 1.0, 111, '#1a1715', PEN_SW*0.9);
+    for (var ti4 = 0; ti4 < P.terraces.length; ti4++) {
+      var tDepth2 = ti4 / P.terraces.length;
+      jitteredSpline(P.terraces[ti4].pts, 0.9, P.terraces[ti4].nOff, '#1a1715', PEN_SW*map(tDepth2,0,1,0.6,1.1));
+    }
+    for (var vri4 = 0; vri4 < P.vineRows.length; vri4++) {
+      var vx4=P.vineRows[vri4][0], vy4=P.vineRows[vri4][1];
+      jitteredLine(vx4-4,vy4+4,vx4+4,vy4-4,3,0.4,vri4*7,'#1a1715',PEN_SW*0.5);
+    }
+    jitteredSpline(P.path, 1.2, 333, '#1a1715', PEN_SW*0.7);
+  } else if (P.type === 'mesa_vista') {
+    for (var bgi5 = 0; bgi5 < P.bgRidges.length; bgi5++) {
+      jitteredSpline(P.bgRidges[bgi5].pts, 0.5, P.bgRidges[bgi5].nOff, '#1a1715', PEN_SW*0.5);
+    }
+    var m2 = P.mesa;
+    jitteredLine(m2.x,m2.top,m2.x+m2.w,m2.top,12,1.0,m2.nOff,'#1a1715',PEN_SW*1.1);
+    jitteredSpline(P.leftCliff, 1.2, m2.nOff+200, '#1a1715', PEN_SW*0.9);
+    jitteredSpline(P.rightCliff, 1.2, m2.nOff+400, '#1a1715', PEN_SW*0.9);
+    jitteredLine(ORIGIN_X,m2.base,CW-ORIGIN_X,m2.base,12,0.8,m2.nOff+600,'#1a1715',PEN_SW*0.7);
+    for (var mhi5 = 0; mhi5 < P.mesaHatch.length; mhi5++) {
+      var mh2=P.mesaHatch[mhi5];
+      jitteredLine(mh2[0],mh2[1],mh2[2],mh2[3],4,0.5,mhi5*5+m2.nOff,'#1a1715',PEN_SW*0.55);
+    }
+    for (var chi5 = 0; chi5 < P.cliffHatch.length; chi5++) {
+      var ch3=P.cliffHatch[chi5];
+      jitteredLine(ch3[0],ch3[1],ch3[2],ch3[3],4,0.4,chi5*4+m2.nOff,'#1a1715',PEN_SW*0.5);
+    }
+  } else if (P.type === 'modernist_marks') {
+    for (var gi5 = 0; gi5 < P.gestural.length; gi5++) {
+      var gm2=P.gestural[gi5];
+      jitteredSpline(gm2.pts, 1.3, gm2.nOff, gm2.col, PEN_SW*0.8);
+    }
+  }
+  return lines;
+}
 
 // ── Shape point-in-shape test (grid cell coordinates) ─────────────
 // Circles use column-radius so they print physically round (CPI/LPI = 10/6 aspect).
@@ -1246,8 +1941,27 @@ function buildPanel() {
   btnSave = createButton('SAVE PNG'); btnSave.parent(content);
   btnSave.mousePressed(function(){ saveCanvas('platen_'+currentEngine+'_'+seed,'png'); });
 
+  btnSaveSVG = createButton('SAVE SVG (PLOT)'); btnSaveSVG.parent(content);
+  btnSaveSVG.mousePressed(exportLandscapeSVG);
+
   btnScore = createButton('EXPORT TXT'); btnScore.parent(content);
   btnScore.mousePressed(dumpScore);
+
+  createElement('hr','').parent(content);
+
+  createElement('label','Landscape').parent(content);
+  selLandscape = createSelect(); selLandscape.parent(content);
+  var LANDSCAPE_LIST = ['none','mountain_range','douro_valley','mesa_vista','modernist_marks','random'];
+  for (var il=0; il<LANDSCAPE_LIST.length; il++) selLandscape.option(LANDSCAPE_LIST[il], LANDSCAPE_LIST[il]);
+  selLandscape.selected('none');
+  selLandscape.changed(function(){
+    var v = selLandscape.value();
+    currentLandscape = (v === 'random')
+      ? LANDSCAPE_LIST[Math.floor(Math.random() * (LANDSCAPE_LIST.length - 2)) + 1]
+      : v;
+    landscapeParams = generateLandscapeParams(currentLandscape, seed + 88213);
+    redraw();
+  });
 
   createElement('hr','').parent(content);
     createElement('label','Space').parent(content);
@@ -1315,6 +2029,7 @@ function freshSeed() {
 
 function regenerate() {
   grid = buildGrid();
+  landscapeParams = generateLandscapeParams(currentLandscape, seed + 88213);
   if (lblSeed)   lblSeed.html('seed ' + seed);
   if (lblEngine) lblEngine.html(currentEngine);
   if (lblInfo) {
@@ -1471,6 +2186,7 @@ function drawArt() {
   }
   drawShapeHints();
   drawBoldShapes();
+  drawLandscapeOverlay(landscapeParams);
 }
 
 // ── Export ────────────────────────────────────────────────────────
