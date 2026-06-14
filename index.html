@@ -1086,10 +1086,7 @@
 
 
 
-        /* Hide typewriter header in gallery grid thumbnails */
-        #gallery-grid .typewriter-header {
-            display: none !important;
-        }
+
 
 
 
@@ -14430,6 +14427,19 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
 
             setInterval(updateCurationDeadline, 1000);
 
+            // Click on left area of screen/artwork in gallery detail modal to go back
+            var detailModal = document.getElementById('gallery-detail-modal');
+            if (detailModal) {
+                detailModal.addEventListener('click', function(e) {
+                    if (e.target.closest('.gallery-topbar') || e.target.closest('button') || e.target.closest('a')) {
+                        return;
+                    }
+                    if (e.clientX < window.innerWidth * 0.45) {
+                        closeGalleryDetail();
+                    }
+                });
+            }
+
         });
 
 
@@ -14857,49 +14867,9 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
                     var destSize = size - 2 * padding;
                     ctx.drawImage(offCanvas, sx, sy, cropSize, cropSize, padding, padding, destSize, destSize);
 
-                    // Now draw the header SVG on top
-                    renderVersoHeader();
-
                 };
 
                 svgImg.src = svgUrl;
-
-            }
-
-            function renderVersoHeader() {
-
-                var svgClone2 = svgElement.cloneNode(true);
-
-                // Inject fill colour
-                var versoFill2 = (activeCanvas === 'white' || activeCanvas === 'tan' || activeCanvas === 'olive') ? '#1a1a1a' : '#ffffff';
-                var vs2 = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-                vs2.textContent = '.typewriter-header text, .typewriter-header tspan { fill: ' + versoFill2 + ' !important; } .grid-numbers text, .grid-numbers tspan { fill: ' + versoFill2 + ' !important; }';
-                svgClone2.insertBefore(vs2, svgClone2.firstChild);
-
-                // Hide artwork and grid numbers, show header only
-                var artworkG2 = svgClone2.querySelector('.platen-artwork');
-                if (artworkG2) artworkG2.setAttribute('visibility', 'hidden');
-                var gridG2 = svgClone2.querySelector('.grid-numbers');
-                if (gridG2) gridG2.setAttribute('visibility', 'hidden');
-
-                var headerG2 = svgClone2.querySelector('.typewriter-header');
-                if (!headerG2) return; // No header on this artwork, done
-                headerG2.setAttribute('visibility', 'visible');
-
-                var svgW2 = parseInt(svgClone2.getAttribute('width')) || 1248;
-                var svgH2 = parseInt(svgClone2.getAttribute('height')) || 2368;
-
-                var str2 = new XMLSerializer().serializeToString(svgClone2);
-                var blob2 = new Blob([str2], {type: 'image/svg+xml;charset=utf-8'});
-                var url2 = URL.createObjectURL(blob2);
-
-                var hImg = new Image();
-                hImg.onload = function() {
-                    // Draw header at the same scale as the artwork (full SVG fills canvas)
-                    ctx.drawImage(hImg, 0, 0, svgW2, svgH2, 0, 0, size, size);
-                    URL.revokeObjectURL(url2);
-                };
-                hImg.src = url2;
 
             }
 
@@ -16448,56 +16418,6 @@ var _glyphSet = getTypewriterGlyphs(traits.symmetry, traits.motif);
                     sx, sy, cropSize, cropSize, // source crop
                     dx, dy, destSize, destSize  // destination centered & padded
                 );
-            }
-
-            // Draw header / text layer on top of back canvas
-            var svgElement = document.getElementById('s' + id);
-            if (svgElement) {
-                var cacheKey = RENDER_SEED + '_' + activeCanvas + '_' + currentLayout;
-                if (!canvasBack._cachedHeaderImg || canvasBack._cachedHeaderKey !== cacheKey) {
-                    canvasBack._cachedHeaderKey = cacheKey;
-                    canvasBack._cachedHeaderImg = null; // Clear old one
-
-                    var svgClone2 = svgElement.cloneNode(true);
-                    var versoFill2 = (activeCanvas === 'white' || activeCanvas === 'tan' || activeCanvas === 'olive') ? '#1a1a1a' : '#ffffff';
-                    var vs2 = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-                    vs2.textContent = '.typewriter-header text, .typewriter-header tspan { fill: ' + versoFill2 + ' !important; } .grid-numbers text, .grid-numbers tspan { fill: ' + versoFill2 + ' !important; }';
-                    svgClone2.insertBefore(vs2, svgClone2.firstChild);
-
-                    // Hide artwork and grid numbers, show header only
-                    var artworkG2 = svgClone2.querySelector('.platen-artwork');
-                    if (artworkG2) artworkG2.setAttribute('visibility', 'hidden');
-                    var gridG2 = svgClone2.querySelector('.grid-numbers');
-                    if (gridG2) gridG2.setAttribute('visibility', 'hidden');
-
-                    var headerG2 = svgClone2.querySelector('.typewriter-header');
-                    if (headerG2) {
-                        headerG2.setAttribute('visibility', 'visible');
-                        
-                        var svgW2 = parseInt(svgClone2.getAttribute('width')) || 1248;
-                        var svgH2 = parseInt(svgClone2.getAttribute('height')) || 2368;
-
-                        var str2 = new XMLSerializer().serializeToString(svgClone2);
-                        var blob2 = new Blob([str2], {type: 'image/svg+xml;charset=utf-8'});
-                        var url2 = URL.createObjectURL(blob2);
-
-                        var hImg = new Image();
-                        hImg.onload = function() {
-                            canvasBack._cachedHeaderImg = hImg;
-                            URL.revokeObjectURL(url2);
-                            // If breathing is not active, force a single redraw to show the newly loaded header
-                            if (!_breathingActive[id]) {
-                                // Draw it immediately
-                                ctxBack.drawImage(hImg, 0, 0, svgW2, svgH2, 0, 0, size, size);
-                            }
-                        };
-                        hImg.src = url2;
-                    }
-                } else if (canvasBack._cachedHeaderImg) {
-                    var svgW2 = parseInt(svgElement.getAttribute('width')) || 1248;
-                    var svgH2 = parseInt(svgElement.getAttribute('height')) || 2368;
-                    ctxBack.drawImage(canvasBack._cachedHeaderImg, 0, 0, svgW2, svgH2, 0, 0, size, size);
-                }
             }
         };
 
