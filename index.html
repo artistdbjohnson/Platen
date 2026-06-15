@@ -3314,26 +3314,7 @@
 
         }
 
-        #data-readout {
-            position: fixed;
-            bottom: 24px;
-            left: 24px;
-            z-index: 9999;
-            background: rgba(30, 30, 30, 0.45);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: #8a8a8a;
-            font: 9px/1.4 "Courier New", monospace;
-            padding: 10px 14px;
-            pointer-events: none;
-            text-transform: lowercase;
-            letter-spacing: 0.05em;
-        }
-        #data-readout span {
-            color: #fff;
-            font-weight: 600;
-        }
+
 
         .gallery-topbar .motus-dropdown-content {
             top: 100%;
@@ -5533,7 +5514,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 }
 
-                updateDataReadout();
+
 
             } finally {
 
@@ -5545,53 +5526,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
 
 
-        function updateDataReadout() {
 
-            var readout = document.getElementById('data-readout');
-
-            if (!readout) return;
-
-            var ts = window.RESOLVED_TRAITS || window.TRAITS || {};
-
-            var spaceVal = ts.space || 'normal';
-
-            var engineVal = ts.engine || 'random';
-
-            var seedVal = typeof RENDER_SEED !== 'undefined' ? RENDER_SEED : 'n/a';
-
-            var symVal = ts.symmetry || 'none';
-
-            var motifVal = ts.motif || 'platen';
-
-            var chromeVal = ts.chromes || 'random';
-
-            var canvasVal = ts.canvas || 'black';
-
-            var layoutVal = typeof currentLayout !== 'undefined' ? currentLayout : 'default';
-
-
-
-            readout.innerHTML = [
-
-                'engine: <span>' + engineVal.toUpperCase() + '</span>',
-
-                'space: <span>' + spaceVal.toUpperCase() + '</span>',
-
-                'seed: <span>' + seedVal + '</span>',
-
-                'motif: <span>' + motifVal.toUpperCase() + '</span>',
-
-                'symmetry: <span>' + symVal.toUpperCase() + '</span>',
-
-                'chrome: <span>' + chromeVal.toUpperCase() + '</span>',
-
-                'canvas: <span>' + canvasVal.toUpperCase() + '</span>',
-
-                'layout: <span>' + layoutVal.toUpperCase() + '</span>'
-
-            ].join('<br>');
-
-        }
 
 
 
@@ -16646,7 +16581,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
     </div>
 
-    <div id="data-readout"></div>
+
 
 </body>
 
