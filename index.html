@@ -3335,6 +3335,12 @@
             font-weight: 600;
         }
 
+        .gallery-topbar .motus-dropdown-content {
+            top: 100%;
+            bottom: auto;
+            right: 0;
+        }
+
     </style>
 
 </head>
@@ -14576,6 +14582,10 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
             activeGalleryIndex = index;
 
+            galleryPanelsData = [];
+
+            stopGalleryAnimation();
+
             var m = document.getElementById('gallery-detail-modal');
 
             var c = document.getElementById('gallery-detail-content');
@@ -14797,9 +14807,13 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
 
 
-        var isGalleryAnimOn = false;
+        var galleryAnimRafId = null;
 
-        var galleryAnimatedPaths = [];
+        var galleryAnimActive = false;
+
+        var galleryAnimMode = 'flux';
+
+        var galleryPanelsData = [];
 
 
 
@@ -15514,7 +15528,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
 
                     _mediaRecorder.onstop = function() {
-
                         var blob = new Blob(_recordedChunks, { type: 'video/webm' });
 
                         var rt = art.traits;
@@ -15621,130 +15634,528 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
 
 
-        function toggleGalleryAnimation() {
+        function prepareGalleryAnimation(art) {
+            galleryPanelsData = [];
+            var detailContent = document.getElementById('gallery-detail-content');
+            if (!detailContent) return;
 
-            var btn = document.getElementById('btn-gallery-anim');
-
-            isGalleryAnimOn = !isGalleryAnimOn;
-
-            
-
-            if (isGalleryAnimOn) {
-
-                var svgWrap = document.getElementById('gallery-detail-content');
-
-                if (!svgWrap) return;
-
-                
-
-                var paths = Array.from(svgWrap.querySelectorAll('path[fill]'));
-
-                galleryAnimatedPaths = [];
-
-                
-
-                var colorCounts = {};
-
-                paths.forEach(function(p) {
-
-                    var c = p.getAttribute('fill') || '#000000';
-
-                    if (c === 'none') c = p.getAttribute('stroke') || '#000000';
-
-                    if (!colorCounts[c]) colorCounts[c] = { count: 0 };
-
-                    colorCounts[c].count++;
-
-                });
-
-                
-
-                var colorKeys = Object.keys(colorCounts);
-
-                colorKeys.sort(function(a, b) { return colorCounts[b].count - colorCounts[a].count; });
-
-                
-
-                var targetPaths = [];
-
-                if (colorKeys.length >= 2) {
-
-                    var targetColor = colorKeys[1];
-
-                    paths.forEach(function(p) {
-
-                        var c = p.getAttribute('fill') || '#000000';
-
-                        if (c === 'none') c = p.getAttribute('stroke') || '#000000';
-
-                        if (c === targetColor) targetPaths.push(p);
-
-                    });
-
-                } else {
-
-                    var rndCap = Math.floor(paths.length * 0.33);
-
-                    var pool = paths.slice();
-
-                    pool.sort(function() { return 0.5 - Math.random(); });
-
-                    targetPaths = pool.slice(0, Math.min(rndCap, pool.length));
-
+            var cards = detailContent.querySelectorAll('.platen-card');
+            cards.forEach(function(card, pid) {
+                var svg = card.querySelector('.front svg');
+                if (!svg) {
+                    galleryPanelsData.push(null);
+                    return;
                 }
 
-                
+                var viewBox = svg.getAttribute('viewBox');
+                var svgW = 1376;
+                var svgH = 2496;
+                if (viewBox) {
+                    var vbParts = viewBox.split(/\s+/);
+                    if (vbParts.length === 4) {
+                        svgW = parseFloat(vbParts[2]);
+                        svgH = parseFloat(vbParts[3]);
+                    }
+                }
 
-                galleryAnimatedPaths = targetPaths.map(function(p) {
+                var paths = Array.from(svg.querySelectorAll('.platen-artwork path'));
+                if (!paths.length) {
+                    paths = Array.from(svg.querySelectorAll('path'));
+                }
 
-                    var g = Math.floor(Math.random() * 32);
+                var currentLayout = art.layout || 'default';
+                var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(currentLayout) : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
+                if (pid > 0 && currentLayout !== 'banner' && currentLayout !== 'banner_sq' && currentLayout !== 'banner_32_40' && currentLayout !== 'banner_39_51' && currentLayout !== 'banner_us_letter' && currentLayout !== 'banner_39_39' && currentLayout !== 'graph_paper_banner' && currentLayout !== 'graph_paper_sq_banner') {
+                    sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes('panel') : sizes;
+                }
 
-                    var originalClass = p.getAttribute('class') || '';
+                var sizeX = sizes.sizeX;
+                var sizeY = sizes.sizeY;
 
-                    var cleanClass = originalClass.replace(/keyanim-path/g, '').replace(/keyanim-g\d+/g, '').trim();
+                function hash(seed) {
+                    var x = Math.sin(seed * 12.9898) * 43758.5453;
+                    return x - Math.floor(x);
+                }
 
-                    p.setAttribute('class', (cleanClass + ' keyanim-path keyanim-g' + g).trim());
+                var masterSeed = art.seed || 9248;
 
-                    return { path: p, originalClass: cleanClass };
+                var pathsData = paths.map(function(p, idx) {
+                    var xform = p.getAttribute('transform') || '';
+                    var match = /translate\(([^,\s]+)[,\s]+([^)\s]+)\)/.exec(xform);
+                    var tx = 0, ty = 0, restXform = xform;
+                    if (match) {
+                        tx = parseFloat(match[1]);
+                        ty = parseFloat(match[2]);
+                        restXform = xform.replace(match[0], '').trim();
+                    }
+                    var col = Math.round(tx / sizeX);
+                    var row = Math.round(ty / sizeY);
 
+                    var cx_px = svgW / 2;
+                    var cy_px = svgH / 2;
+                    var dx = tx - cx_px;
+                    var dy = ty - (cy_px + 130);
+                    var r2 = Math.sqrt(dx*dx + dy*dy) / 240.0;
+                    var ang = Math.atan2(dy, dx);
+                    var u = tx / 280.0;
+                    var v = ty / 280.0;
+
+                    var originalRot = 0;
+                    var flipRot = 0;
+                    var rotateMatch = /rotate\([^)]+\)/g;
+                    var rotates = [];
+                    var m;
+                    while ((m = rotateMatch.exec(xform)) !== null) {
+                        rotates.push(m[0]);
+                    }
+                    rotates.forEach(function(rStr) {
+                        var nums = rStr.match(/-?\d+(\.\d+)?/g);
+                        if (nums) {
+                            var angle = parseFloat(nums[0]);
+                            if (angle === 180 && rStr.indexOf('180,10,10') > -1) {
+                                flipRot = 180;
+                            } else {
+                                originalRot = angle;
+                            }
+                        }
+                    });
+
+                    var scaleMatch = /scale\([^)]+\)/.exec(xform);
+                    var scaleStr = scaleMatch ? scaleMatch[0] : "";
+                    var scX = 1.0, scY = 1.0;
+                    if (scaleStr) {
+                        var nums = scaleStr.match(/-?\d+(\.\d+)?/g);
+                        if (nums) {
+                            scX = parseFloat(nums[0]);
+                            scY = nums.length > 1 ? parseFloat(nums[1]) : scX;
+                        }
+                    }
+
+                    var moireHashOffset = (hash(idx * 17 + masterSeed) - 0.5) * 0.15;
+                    var isoHashOffset = (hash(idx * 31 + masterSeed) - 0.5) * 0.12;
+
+                    var p2d = null;
+                    var dAttr = p.getAttribute('d');
+                    if (dAttr) {
+                        try {
+                            p2d = new Path2D(dAttr);
+                        } catch(e) {}
+                    }
+
+                    return {
+                        path: p,
+                        p2d: p2d,
+                        tx: tx,
+                        ty: ty,
+                        scX: scX,
+                        scY: scY,
+                        originalRot: originalRot,
+                        flipRot: flipRot,
+                        originalColor: p.getAttribute('fill') || '#000000',
+                        col: col,
+                        row: row,
+                        moireU: u,
+                        moireV: v,
+                        moireR: r2,
+                        moireAng: ang,
+                        moireHashOffset: moireHashOffset,
+                        isoHashOffset: isoHashOffset,
+                        idx: idx
+                    };
                 });
 
-                
+                var colorCounts = {};
+                pathsData.forEach(function(d) {
+                    var c = d.originalColor;
+                    if (!colorCounts[c]) colorCounts[c] = 0;
+                    colorCounts[c]++;
+                });
+                var colorKeys = Object.keys(colorCounts).sort(function(a, b) { return colorCounts[b] - colorCounts[a]; });
+                var targetColor = colorKeys.length >= 2 ? colorKeys[1] : null;
 
-                if (btn) btn.innerHTML = '&#9679; motus';
-
-            } else {
-
-                galleryAnimatedPaths.forEach(function(item) {
-
-                    item.path.setAttribute('class', item.originalClass);
-
+                pathsData.forEach(function(d) {
+                    d.isTarget = (targetColor ? (d.originalColor === targetColor) : (d.idx % 3 === 0));
                 });
 
-                galleryAnimatedPaths = [];
-
-                if (btn) btn.innerHTML = 'motus';
-
-            }
-
+                galleryPanelsData.push({
+                    svgW: svgW,
+                    svgH: svgH,
+                    pathsData: pathsData,
+                    sizes: sizes,
+                    canvasWidth: svgW * 1.5,
+                    canvasHeight: svgH * 1.5
+                });
+            });
         }
 
+        function startGalleryAnimLoop(art) {
+            var tAccum = 0;
+            var lastTime = performance.now();
+            var masterSeed = art.seed || 9248;
 
+            var detailContent = document.getElementById('gallery-detail-content');
+            if (!detailContent) return;
+
+            var cards = detailContent.querySelectorAll('.platen-card');
+            var panelCanvases = [];
+
+            cards.forEach(function(card, pid) {
+                var pData = galleryPanelsData[pid];
+                if (!pData) return;
+
+                var front = card.querySelector('.front');
+                var svg = front.querySelector('svg');
+                var artworkG = svg.querySelector('.platen-artwork');
+                if (artworkG) artworkG.style.display = 'none';
+
+                var canvas = front.querySelector('.gallery-anim-canvas');
+                if (!canvas) {
+                    canvas = document.createElement('canvas');
+                    canvas.className = 'gallery-anim-canvas';
+                    canvas.style.position = 'absolute';
+                    canvas.style.top = '0';
+                    canvas.style.left = '0';
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
+                    canvas.style.objectFit = 'contain';
+                    canvas.style.pointerEvents = 'none';
+                    front.appendChild(canvas);
+                }
+                
+                canvas.width = pData.canvasWidth;
+                canvas.height = pData.canvasHeight;
+                canvas.style.display = 'block';
+
+                panelCanvases.push({
+                    canvas: canvas,
+                    ctx: canvas.getContext('2d'),
+                    pData: pData
+                });
+            });
+
+            function getRgbaString(hex, alpha) {
+                if (!hex) return 'rgba(0,0,0,0)';
+                if (hex.indexOf('rgb') === 0) {
+                    return hex.replace('rgb(', 'rgba(').replace(')', ',' + alpha + ')');
+                }
+                var c = hex.substring(1);
+                if (c.length === 3) c = c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+                var r = parseInt(c.substring(0, 2), 16) || 0;
+                var g = parseInt(c.substring(2, 4), 16) || 0;
+                var b = parseInt(c.substring(4, 6), 16) || 0;
+                return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+            }
+
+            function tick(timestamp) {
+                if (!galleryAnimActive) return;
+
+                var now = performance.now();
+                var dt = (now - lastTime) / 1000;
+                lastTime = now;
+                tAccum += dt * 1.0;
+                var t = tAccum;
+
+                panelCanvases.forEach(function(item) {
+                    var canvas = item.canvas;
+                    var ctx = item.ctx;
+                    var pData = item.pData;
+                    var pathsData = pData.pathsData;
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    var scaleX = canvas.width / pData.svgW;
+                    var scaleY = canvas.height / pData.svgH;
+
+                    ctx.save();
+                    ctx.scale(scaleX, scaleY);
+
+                    var animSpeed = 12;
+                    var animProb = 50;
+                    var ghostOp = 0.10;
+                    var qTime = Math.floor(t * animSpeed);
+
+                    if (galleryAnimMode === 'flux') {
+                        pathsData.forEach(function(d) {
+                            if (d.isTarget) {
+                                var h = (d.idx * 374761393 + qTime * 668265263 + masterSeed) ^ 0x9e3779b9;
+                                h = (h ^ (h >>> 13)) * 1274126177;
+                                var visible = ((h >>> 0) % 100) < animProb;
+
+                                ctx.globalAlpha = visible ? 1.0 : ghostOp;
+                                ctx.fillStyle = visible ? d.originalColor : '#7a7068';
+                            } else {
+                                ctx.globalAlpha = 1.0;
+                                ctx.fillStyle = d.originalColor;
+                            }
+
+                            ctx.setTransform(scaleX * d.scX, 0, 0, scaleY * d.scY, scaleX * d.tx, scaleY * d.ty);
+                            if (d.flipRot) {
+                                ctx.translate(10, 10);
+                                ctx.rotate(Math.PI);
+                                ctx.translate(-10, -10);
+                            }
+                            if (d.originalRot) {
+                                ctx.translate(10, 10);
+                                ctx.rotate(d.originalRot * Math.PI / 180);
+                                ctx.translate(-10, -10);
+                            }
+                            if (d.p2d) ctx.fill(d.p2d, 'evenodd');
+                        });
+                    } else if (galleryAnimMode === 'moire') {
+                        pathsData.forEach(function(d) {
+                            var u = d.moireU;
+                            var v = d.moireV;
+                            var r2 = d.moireR;
+                            var ang = d.moireAng;
+
+                            var f = 0.5 + 0.5 * (
+                                0.42 * Math.sin(7 * u + t) +
+                                0.30 * Math.sin(9 * v - t * 0.7) +
+                                0.42 * Math.sin(18 * r2 - t * 1.25) +
+                                0.18 * Math.sin(5 * ang + t * 0.4)
+                            );
+                            f += d.moireHashOffset;
+                            if (f < 0) f = 0; if (f > 1) f = 1;
+
+                            var shiftAmt = (f - 0.5) * 8.0;
+                            var shiftX = Math.cos(ang) * shiftAmt;
+                            var shiftY = Math.sin(ang) * shiftAmt;
+                            var twist = (f - 0.5) * 0.22;
+
+                            if (d.isTarget) {
+                                var h = (d.idx * 374761393 + qTime * 668265263 + masterSeed) ^ 0x9e3779b9;
+                                h = (h ^ (h >>> 13)) * 1274126177;
+                                var visible = ((h >>> 0) % 100) < animProb;
+
+                                ctx.globalAlpha = visible ? 1.0 : ghostOp;
+                                ctx.fillStyle = visible ? d.originalColor : '#7a7068';
+                            } else {
+                                ctx.globalAlpha = 1.0;
+                                ctx.fillStyle = d.originalColor;
+                            }
+
+                            var drawTx = d.tx + shiftX;
+                            var drawTy = d.ty + shiftY;
+
+                            ctx.setTransform(scaleX * d.scX, 0, 0, scaleY * d.scY, scaleX * drawTx, scaleY * drawTy);
+                            if (d.flipRot) {
+                                ctx.translate(10, 10);
+                                ctx.rotate(Math.PI);
+                                ctx.translate(-10, -10);
+                            }
+                            var totalRot = (d.originalRot || 0) * Math.PI / 180 + twist;
+                            if (totalRot) {
+                                ctx.translate(10, 10);
+                                ctx.rotate(totalRot);
+                                ctx.translate(-10, -10);
+                            }
+                            if (d.p2d) ctx.fill(d.p2d, 'evenodd');
+                        });
+                    } else if (galleryAnimMode === 'iso_col') {
+                        var stag = 0.50;
+                        var iso_t = t * 0.55;
+
+                        pathsData.forEach(function(d) {
+                            var ph = d.col * stag;
+                            var base = 0.5 + 0.5 * Math.sin(d.row * 0.40 - iso_t * 1.1 + ph);
+                            var env = 0.5 + 0.5 * Math.sin(d.col * 0.45 + iso_t * 0.22);
+                            
+                            var f = (0.30 + 0.70 * base) * (0.45 + 0.55 * env);
+                            f += d.isoHashOffset;
+                            if (f < 0) f = 0; if (f > 1) f = 1;
+
+                            var elev = (f - 0.5) * 72;
+                            var drawTy = d.ty - elev;
+
+                            ctx.globalAlpha = 1.0;
+                            var scaleMod = 1.0 + f * 0.15;
+                            var drawScX = d.scX * scaleMod;
+                            var drawScY = d.scY * scaleMod;
+
+                            ctx.fillStyle = d.originalColor;
+
+                            if (d.col === 0 && elev > 2) {
+                                ctx.beginPath();
+                                var cx = d.tx + 10 * d.scX;
+                                ctx.moveTo(cx, d.ty + (10 * d.scY));
+                                ctx.lineTo(cx, drawTy + (10 * d.scY));
+                                var lineAlpha = 0.02 + 0.15 * ((f - 0.2) / 0.8);
+                                ctx.strokeStyle = getRgbaString(d.originalColor, Math.max(0, lineAlpha));
+                                ctx.lineWidth = d.scX * (0.3 + 1.2 * ((f - 0.2) / 0.8));
+                                ctx.stroke();
+                            }
+
+                            ctx.setTransform(scaleX * drawScX, 0, 0, scaleY * drawScY, scaleX * d.tx, scaleY * drawTy);
+                            if (d.flipRot) {
+                                ctx.translate(10, 10);
+                                ctx.rotate(Math.PI);
+                                ctx.translate(-10, -10);
+                            }
+                            if (d.originalRot) {
+                                ctx.translate(10, 10);
+                                ctx.rotate(d.originalRot * Math.PI / 180);
+                                ctx.translate(-10, -10);
+                            }
+                            if (d.p2d) ctx.fill(d.p2d, 'evenodd');
+                        });
+                    } else if (galleryAnimMode === 'plotter') {
+                        var scanSpeed = 22.0;
+                        var cycleLength = 320.0;
+                        var progress = (t * scanSpeed) % cycleLength;
+
+                        pathsData.forEach(function(d) {
+                            var sweep = (d.row + d.col) * 0.5;
+                            if (sweep > progress) return;
+
+                            var age = progress - sweep;
+                            var glow = age < 4.0 ? (1.0 - (age / 4.0)) : 0;
+                            var f = d.isoHashOffset + 0.5;
+                            var elev = f * 72;
+                            var drawTy = d.ty - elev;
+
+                            ctx.globalAlpha = 1.0;
+                            var scaleMod = 1.0 + f * 0.15;
+                            var drawScX = d.scX * scaleMod;
+                            var drawScY = d.scY * scaleMod;
+
+                            if (glow > 0.05) {
+                                var _r = parseInt(d.originalColor.slice(1,3), 16) || 0;
+                                var _g = parseInt(d.originalColor.slice(3,5), 16) || 0;
+                                var _b = parseInt(d.originalColor.slice(5,7), 16) || 0;
+                                _r = Math.floor(_r + (255 - _r) * glow);
+                                _g = Math.floor(_g + (255 - _g) * glow);
+                                _b = Math.floor(_b + (255 - _b) * glow);
+                                ctx.fillStyle = "rgb(" + _r + "," + _g + "," + _b + ")";
+                            } else {
+                                ctx.fillStyle = d.originalColor;
+                            }
+
+                            if (d.col === 0 && elev > 2) {
+                                ctx.beginPath();
+                                var cx = d.tx + 10 * d.scX;
+                                ctx.moveTo(cx, d.ty + (10 * d.scY));
+                                ctx.lineTo(cx, drawTy + (10 * d.scY));
+                                var lineAlpha = 0.02 + 0.15 * ((f - 0.2) / 0.8) + (glow * 0.5);
+                                ctx.strokeStyle = getRgbaString(d.originalColor, Math.max(0, lineAlpha));
+                                ctx.lineWidth = d.scX * (0.3 + 1.2 * ((f - 0.2) / 0.8));
+                                ctx.stroke();
+                            }
+
+                            ctx.setTransform(scaleX * drawScX, 0, 0, scaleY * drawScY, scaleX * d.tx, scaleY * drawTy);
+                            if (d.flipRot) {
+                                ctx.translate(10, 10);
+                                ctx.rotate(Math.PI);
+                                ctx.translate(-10, -10);
+                            }
+                            if (d.originalRot) {
+                                ctx.translate(10, 10);
+                                ctx.rotate(d.originalRot * Math.PI / 180);
+                                ctx.translate(-10, -10);
+                            }
+                            if (d.p2d) ctx.fill(d.p2d, 'evenodd');
+                        });
+                    }
+
+                    ctx.restore();
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                });
+
+                galleryAnimRafId = requestAnimationFrame(tick);
+            }
+
+        function toggleGalleryAnimation() {
+            var btn = document.getElementById('btn-gallery-anim');
+            var btnMode = document.getElementById('gallery-motus-dropdown-container');
+            galleryAnimActive = !galleryAnimActive;
+
+            if (galleryAnimActive) {
+                var art = curatedGallery[activeGalleryIndex];
+                if (!art) { galleryAnimActive = false; return; }
+
+                if (!galleryPanelsData.length) {
+                    prepareGalleryAnimation(art);
+                }
+
+                var traits = art.traits || {};
+                if (traits.space === 'isometric') {
+                    galleryAnimMode = 'iso_col';
+                } else {
+                    galleryAnimMode = 'flux';
+                }
+                updateGalleryModeButtonLabel();
+                if (btnMode) btnMode.style.display = 'block';
+
+                if (galleryAnimRafId) cancelAnimationFrame(galleryAnimRafId);
+                startGalleryAnimLoop(art);
+
+                if (btn) btn.innerHTML = '&#9632; motus';
+            } else {
+                stopGalleryAnimation();
+                if (btn) btn.innerHTML = '&#9654; motus';
+            }
+        }
+
+        function stopGalleryAnimation() {
+            galleryAnimActive = false;
+            if (galleryAnimRafId) {
+                cancelAnimationFrame(galleryAnimRafId);
+                galleryAnimRafId = null;
+            }
+
+            var detailContent = document.getElementById('gallery-detail-content');
+            if (detailContent) {
+                var cards = detailContent.querySelectorAll('.platen-card');
+                cards.forEach(function(card) {
+                    var front = card.querySelector('.front');
+                    var svg = front.querySelector('svg');
+                    if (svg) {
+                        var artworkG = svg.querySelector('.platen-artwork');
+                        if (artworkG) artworkG.style.display = 'block';
+                    }
+
+                    var canvas = front.querySelector('.gallery-anim-canvas');
+                    if (canvas) canvas.style.display = 'none';
+                });
+            }
+
+            var btnMode = document.getElementById('gallery-motus-dropdown-container');
+            if (btnMode) btnMode.style.display = 'none';
+        }
+
+        function updateGalleryModeButtonLabel() {
+            var btn = document.getElementById('gallery-motus-mode-btn');
+            if (!btn) return;
+            var labels = {
+                'flux': 'flux',
+                'moire': 'moiré',
+                'iso_col': 'elevate',
+                'plotter': 'plotter'
+            };
+            btn.textContent = labels[galleryAnimMode] || galleryAnimMode;
+        }
+
+        function setGalleryMotusMode(mode) {
+            var art = curatedGallery[activeGalleryIndex];
+            if (!art) return;
+            var traits = art.traits || {};
+            if (traits.space === 'isometric') {
+                if (mode !== 'iso_col' && mode !== 'plotter') return;
+            } else {
+                if (mode !== 'flux' && mode !== 'moire') return;
+            }
+
+            galleryAnimMode = mode;
+            updateGalleryModeButtonLabel();
+        }
 
         function closeGalleryDetail() {
-
-            if (isGalleryAnimOn) toggleGalleryAnimation();
-
+            stopGalleryAnimation();
             document.getElementById('gallery-detail-modal').style.display = 'none';
-
-            // Restore main workspace canvas-wrap ID
             var mainCanvasWrap = document.getElementById('canvas-wrap-main');
             if (mainCanvasWrap) {
                 mainCanvasWrap.id = 'canvas-wrap';
             }
-
             activeGalleryIndex = -1;
-
         }
 
 
@@ -16211,7 +16622,17 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 <button id="btn-gallery-rec" onclick="startGalleryRecording()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">record loop</button>
 
-                <button id="btn-gallery-anim" onclick="toggleGalleryAnimation()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">motus</button>
+                <div id="gallery-motus-dropdown-container" class="motus-dropdown" style="display: none;">
+                    <button id="gallery-motus-mode-btn" class="motus-dropdown-btn" onclick="document.getElementById('gallery-motus-dropdown-container').classList.toggle('open')" style="text-align: right; text-transform: lowercase; font-family: inherit; font-size: 11px;">flux</button>
+                    <div class="motus-dropdown-content" onclick="document.getElementById('gallery-motus-dropdown-container').classList.remove('open')">
+                        <div id="gallery-motus-mode-flux" onclick="setGalleryMotusMode('flux')">flux</div>
+                        <div id="gallery-motus-mode-moire" onclick="setGalleryMotusMode('moire')">moiré</div>
+                        <div id="gallery-motus-mode-iso" onclick="setGalleryMotusMode('iso_col')">elevate</div>
+                        <div id="gallery-motus-mode-plotter" onclick="setGalleryMotusMode('plotter')">plotter</div>
+                    </div>
+                </div>
+
+                <button id="btn-gallery-anim" onclick="toggleGalleryAnimation()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">&#9654; motus</button>
 
             </div>
 
