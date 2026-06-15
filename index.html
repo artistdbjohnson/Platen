@@ -15677,6 +15677,12 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         } catch(e) {}
                     }
 
+                    var flowAngle = Math.sin(col * 0.1) * Math.cos(row * 0.1) * Math.PI * 2;
+                    var flowPhase = col * 0.15 + row * 0.15;
+                    var fHash = hash(idx * 73 + masterSeed);
+                    var flickerFreq = 6.0 + (fHash * 12.0);
+                    var phase = idx * 2.39996;
+
                     return {
                         path: p,
                         p2d: p2d,
@@ -15695,6 +15701,12 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         moireAng: ang,
                         moireHashOffset: moireHashOffset,
                         isoHashOffset: isoHashOffset,
+                        flowAngle: flowAngle,
+                        flowCos: Math.cos(flowAngle),
+                        flowSin: Math.sin(flowAngle),
+                        flowPhase: flowPhase,
+                        flickerFreq: flickerFreq,
+                        phase: phase,
                         idx: idx
                     };
                 });
@@ -15811,19 +15823,27 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                     if (galleryAnimMode === 'flux') {
                         pathsData.forEach(function(d) {
-                            if (d.isTarget) {
-                                var h = (d.idx * 374761393 + qTime * 668265263 + masterSeed) ^ 0x9e3779b9;
-                                h = (h ^ (h >>> 13)) * 1274126177;
-                                var visible = ((h >>> 0) % 100) < animProb;
+                            var wave = Math.sin(t * 2.5 + d.flowPhase);
+                            var phase = d.phase;
+                            var freq = d.flickerFreq;
+                            var glowVal = 0.5 + 
+                                Math.sin(t * freq + phase) * 0.4 + 
+                                Math.sin(t * (freq * 0.37) + phase * 2.1) * 0.15 +
+                                Math.sin(t * 35.0 + phase * 5.0) * 0.1;
+                            
+                            glowVal = Math.max(0, Math.min(1, glowVal));
+                            var hyperspeedBase = ghostOp + (1.0 - ghostOp) * glowVal;
+                            
+                            var flowX = d.flowCos * wave * 10.0 + Math.sin(t * 50.0 + phase) * 0.35;
+                            var flowY = d.flowSin * wave * 10.0 + Math.cos(t * 50.0 + phase * 1.3) * 0.35;
 
-                                ctx.globalAlpha = visible ? 1.0 : ghostOp;
-                                ctx.fillStyle = visible ? d.originalColor : '#7a7068';
-                            } else {
-                                ctx.globalAlpha = 1.0;
-                                ctx.fillStyle = d.originalColor;
-                            }
+                            ctx.globalAlpha = Math.min(hyperspeedBase, 1.0);
+                            ctx.fillStyle = d.originalColor;
 
-                            ctx.setTransform(scaleX * d.scX, 0, 0, scaleY * d.scY, scaleX * d.tx, scaleY * d.ty);
+                            var drawTx = d.tx + flowX;
+                            var drawTy = d.ty + flowY;
+
+                            ctx.setTransform(scaleX * d.scX, 0, 0, scaleY * d.scY, scaleX * drawTx, scaleY * drawTy);
                             if (d.flipRot) {
                                 ctx.translate(10, 10);
                                 ctx.rotate(Math.PI);
