@@ -16062,6 +16062,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 galleryAnimRafId = requestAnimationFrame(tick);
             }
+            tick();
+        }
 
         function toggleGalleryAnimation() {
             var btn = document.getElementById('btn-gallery-anim');
