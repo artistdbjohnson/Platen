@@ -14130,7 +14130,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     isAnyBlank = true;
                     break;
                 }
-                svgs.push(el.outerHTML);
+                svgs.push(el.outerHTML.replace(/\bmotus-active\b/g, ''));
             }
 
             if (isAnyBlank || svgs.length !== panels.length) {
@@ -14260,7 +14260,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 var preview = document.createElement('div');
 
-                preview.innerHTML = art.svgs[0] || '';
+                preview.innerHTML = (art.svgs[0] || '').replace(/\bmotus-active\b/g, '');
 
                 var svgEl = preview.querySelector('svg');
 
@@ -14609,7 +14609,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 
 
-                front.innerHTML = svgStr;
+                front.innerHTML = svgStr.replace(/\bmotus-active\b/g, '');
 
                 var s = front.querySelector('svg');
 
@@ -14760,6 +14760,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             
 
             art.svgs.forEach(function(svgStr, idx) {
+
+                svgStr = svgStr.replace(/\bmotus-active\b/g, '');
 
                 var d = document.createElement('div');
 
@@ -14918,6 +14920,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             if (!art) return;
 
             art.svgs.forEach(function(svgStr, idx) {
+                svgStr = svgStr.replace(/\bmotus-active\b/g, '');
                 var d = document.createElement('div');
                 d.innerHTML = svgStr;
                 var svg = d.querySelector('svg');
@@ -14960,6 +14963,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
 
             art.svgs.forEach(function(svgStr, idx) {
+
+                svgStr = svgStr.replace(/\bmotus-active\b/g, '');
 
                 var d = document.createElement('div');
 
