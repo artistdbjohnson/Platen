@@ -15593,9 +15593,9 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     }
                 }
 
-                var paths = Array.from(svg.querySelectorAll('.platen-artwork path'));
-                if (!paths.length) {
-                    paths = Array.from(svg.querySelectorAll('path'));
+                var elements = Array.from(svg.querySelectorAll('.platen-artwork path, .platen-artwork text'));
+                if (!elements.length) {
+                    elements = Array.from(svg.querySelectorAll('path, text'));
                 }
 
                 var currentLayout = art.layout || 'default';
@@ -15614,15 +15614,64 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 var masterSeed = art.seed || 9248;
 
-                var pathsData = paths.map(function(p, idx) {
+                var pathsData = elements.map(function(p, idx) {
+                    var isQuine = (p.tagName.toLowerCase() === 'text');
                     var xform = p.getAttribute('transform') || '';
-                    var match = /translate\(([^,\s]+)[,\s]+([^)\s]+)\)/.exec(xform);
-                    var tx = 0, ty = 0, restXform = xform;
-                    if (match) {
-                        tx = parseFloat(match[1]);
-                        ty = parseFloat(match[2]);
-                        restXform = xform.replace(match[0], '').trim();
+                    var tx = 0, ty = 0;
+                    var scX = 1.0, scY = 1.0;
+                    var originalRot = 0;
+                    var flipRot = 0;
+                    var char = '';
+                    var fontSize = 0;
+
+                    if (isQuine) {
+                        tx = parseFloat(p.getAttribute('x')) || 0;
+                        ty = parseFloat(p.getAttribute('y')) || 0;
+                        char = p.textContent || '';
+                        fontSize = parseFloat(p.getAttribute('font-size')) || (sizes.rSize * 1.35);
+                        var rotateMatch = /rotate\([^)]+\)/g;
+                        var m;
+                        while ((m = rotateMatch.exec(xform)) !== null) {
+                            var nums = m[0].match(/-?\d+(\.\d+)?/g);
+                            if (nums) {
+                                originalRot = parseFloat(nums[0]);
+                            }
+                        }
+                    } else {
+                        var match = /translate\(([^,\s]+)[,\s]+([^)\s]+)\)/.exec(xform);
+                        if (match) {
+                            tx = parseFloat(match[1]);
+                            ty = parseFloat(match[2]);
+                        }
+                        var rotateMatch = /rotate\([^)]+\)/g;
+                        var rotates = [];
+                        var m;
+                        while ((m = rotateMatch.exec(xform)) !== null) {
+                            rotates.push(m[0]);
+                        }
+                        rotates.forEach(function(rStr) {
+                            var nums = rStr.match(/-?\d+(\.\d+)?/g);
+                            if (nums) {
+                                var angle = parseFloat(nums[0]);
+                                if (angle === 180 && rStr.indexOf('180,10,10') > -1) {
+                                    flipRot = 180;
+                                } else {
+                                    originalRot = angle;
+                                }
+                            }
+                        });
+
+                        var scaleMatch = /scale\([^)]+\)/.exec(xform);
+                        var scaleStr = scaleMatch ? scaleMatch[0] : "";
+                        if (scaleStr) {
+                            var nums = scaleStr.match(/-?\d+(\.\d+)?/g);
+                            if (nums) {
+                                scX = parseFloat(nums[0]);
+                                scY = nums.length > 1 ? parseFloat(nums[1]) : scX;
+                            }
+                        }
                     }
+
                     var col = Math.round(tx / sizeX);
                     var row = Math.round(ty / sizeY);
 
@@ -15635,46 +15684,17 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     var u = tx / 280.0;
                     var v = ty / 280.0;
 
-                    var originalRot = 0;
-                    var flipRot = 0;
-                    var rotateMatch = /rotate\([^)]+\)/g;
-                    var rotates = [];
-                    var m;
-                    while ((m = rotateMatch.exec(xform)) !== null) {
-                        rotates.push(m[0]);
-                    }
-                    rotates.forEach(function(rStr) {
-                        var nums = rStr.match(/-?\d+(\.\d+)?/g);
-                        if (nums) {
-                            var angle = parseFloat(nums[0]);
-                            if (angle === 180 && rStr.indexOf('180,10,10') > -1) {
-                                flipRot = 180;
-                            } else {
-                                originalRot = angle;
-                            }
-                        }
-                    });
-
-                    var scaleMatch = /scale\([^)]+\)/.exec(xform);
-                    var scaleStr = scaleMatch ? scaleMatch[0] : "";
-                    var scX = 1.0, scY = 1.0;
-                    if (scaleStr) {
-                        var nums = scaleStr.match(/-?\d+(\.\d+)?/g);
-                        if (nums) {
-                            scX = parseFloat(nums[0]);
-                            scY = nums.length > 1 ? parseFloat(nums[1]) : scX;
-                        }
-                    }
-
                     var moireHashOffset = (hash(idx * 17 + masterSeed) - 0.5) * 0.15;
                     var isoHashOffset = (hash(idx * 31 + masterSeed) - 0.5) * 0.12;
 
                     var p2d = null;
-                    var dAttr = p.getAttribute('d');
-                    if (dAttr) {
-                        try {
-                            p2d = new Path2D(dAttr);
-                        } catch(e) {}
+                    if (!isQuine) {
+                        var dAttr = p.getAttribute('d');
+                        if (dAttr) {
+                            try {
+                                p2d = new Path2D(dAttr);
+                            } catch(e) {}
+                        }
                     }
 
                     var flowAngle = Math.sin(col * 0.1) * Math.cos(row * 0.1) * Math.PI * 2;
@@ -15686,6 +15706,9 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     return {
                         path: p,
                         p2d: p2d,
+                        isQuine: isQuine,
+                        char: char,
+                        fontSize: fontSize,
                         tx: tx,
                         ty: ty,
                         scX: scX,
@@ -15843,18 +15866,34 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             var drawTx = d.tx + flowX;
                             var drawTy = d.ty + flowY;
 
-                            ctx.setTransform(scaleX * d.scX, 0, 0, scaleY * d.scY, scaleX * drawTx, scaleY * drawTy);
-                            if (d.flipRot) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(Math.PI);
-                                ctx.translate(-10, -10);
+                            if (d.isQuine) {
+                                ctx.save();
+                                ctx.font = 'bold ' + (d.fontSize) + 'px Courier, \'Courier New\', monospace';
+                                ctx.textAlign = 'left';
+                                ctx.textBaseline = 'alphabetic';
+                                ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * drawTx, scaleY * drawTy);
+                                var totalRot = (d.originalRot || 0) * Math.PI / 180;
+                                if (totalRot) {
+                                    ctx.translate(d.fontSize / 2, -d.fontSize / 2);
+                                    ctx.rotate(totalRot);
+                                    ctx.translate(-d.fontSize / 2, d.fontSize / 2);
+                                }
+                                ctx.fillText(d.char, 0, 0);
+                                ctx.restore();
+                            } else {
+                                ctx.setTransform(scaleX * d.scX, 0, 0, scaleY * d.scY, scaleX * drawTx, scaleY * drawTy);
+                                if (d.flipRot) {
+                                    ctx.translate(10, 10);
+                                    ctx.rotate(Math.PI);
+                                    ctx.translate(-10, -10);
+                                }
+                                if (d.originalRot) {
+                                    ctx.translate(10, 10);
+                                    ctx.rotate(d.originalRot * Math.PI / 180);
+                                    ctx.translate(-10, -10);
+                                }
+                                if (d.p2d) ctx.fill(d.p2d, 'evenodd');
                             }
-                            if (d.originalRot) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(d.originalRot * Math.PI / 180);
-                                ctx.translate(-10, -10);
-                            }
-                            if (d.p2d) ctx.fill(d.p2d, 'evenodd');
                         });
                     } else if (galleryAnimMode === 'moire') {
                         pathsData.forEach(function(d) {
@@ -15892,19 +15931,35 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                             var drawTx = d.tx + shiftX;
                             var drawTy = d.ty + shiftY;
 
-                            ctx.setTransform(scaleX * d.scX, 0, 0, scaleY * d.scY, scaleX * drawTx, scaleY * drawTy);
-                            if (d.flipRot) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(Math.PI);
-                                ctx.translate(-10, -10);
+                            if (d.isQuine) {
+                                ctx.save();
+                                ctx.font = 'bold ' + (d.fontSize) + 'px Courier, \'Courier New\', monospace';
+                                ctx.textAlign = 'left';
+                                ctx.textBaseline = 'alphabetic';
+                                ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * drawTx, scaleY * drawTy);
+                                var totalRot = (d.originalRot || 0) * Math.PI / 180 + twist;
+                                if (totalRot) {
+                                    ctx.translate(d.fontSize / 2, -d.fontSize / 2);
+                                    ctx.rotate(totalRot);
+                                    ctx.translate(-d.fontSize / 2, d.fontSize / 2);
+                                }
+                                ctx.fillText(d.char, 0, 0);
+                                ctx.restore();
+                            } else {
+                                ctx.setTransform(scaleX * d.scX, 0, 0, scaleY * d.scY, scaleX * drawTx, scaleY * drawTy);
+                                if (d.flipRot) {
+                                    ctx.translate(10, 10);
+                                    ctx.rotate(Math.PI);
+                                    ctx.translate(-10, -10);
+                                }
+                                var totalRot = (d.originalRot || 0) * Math.PI / 180 + twist;
+                                if (totalRot) {
+                                    ctx.translate(10, 10);
+                                    ctx.rotate(totalRot);
+                                    ctx.translate(-10, -10);
+                                }
+                                if (d.p2d) ctx.fill(d.p2d, 'evenodd');
                             }
-                            var totalRot = (d.originalRot || 0) * Math.PI / 180 + twist;
-                            if (totalRot) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(totalRot);
-                                ctx.translate(-10, -10);
-                            }
-                            if (d.p2d) ctx.fill(d.p2d, 'evenodd');
                         });
                     } else if (galleryAnimMode === 'iso_col') {
                         var stag = 0.50;
@@ -15940,18 +15995,33 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                                 ctx.stroke();
                             }
 
-                            ctx.setTransform(scaleX * drawScX, 0, 0, scaleY * drawScY, scaleX * d.tx, scaleY * drawTy);
-                            if (d.flipRot) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(Math.PI);
-                                ctx.translate(-10, -10);
+                            if (d.isQuine) {
+                                ctx.save();
+                                ctx.font = 'bold ' + (d.fontSize * scaleMod) + 'px Courier, \'Courier New\', monospace';
+                                ctx.textAlign = 'left';
+                                ctx.textBaseline = 'alphabetic';
+                                ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * d.tx, scaleY * drawTy);
+                                if (d.originalRot) {
+                                    ctx.translate(d.fontSize / 2, -d.fontSize / 2);
+                                    ctx.rotate(d.originalRot * Math.PI / 180);
+                                    ctx.translate(-d.fontSize / 2, d.fontSize / 2);
+                                }
+                                ctx.fillText(d.char, 0, 0);
+                                ctx.restore();
+                            } else {
+                                ctx.setTransform(scaleX * drawScX, 0, 0, scaleY * drawScY, scaleX * d.tx, scaleY * drawTy);
+                                if (d.flipRot) {
+                                    ctx.translate(10, 10);
+                                    ctx.rotate(Math.PI);
+                                    ctx.translate(-10, -10);
+                                }
+                                if (d.originalRot) {
+                                    ctx.translate(10, 10);
+                                    ctx.rotate(d.originalRot * Math.PI / 180);
+                                    ctx.translate(-10, -10);
+                                }
+                                if (d.p2d) ctx.fill(d.p2d, 'evenodd');
                             }
-                            if (d.originalRot) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(d.originalRot * Math.PI / 180);
-                                ctx.translate(-10, -10);
-                            }
-                            if (d.p2d) ctx.fill(d.p2d, 'evenodd');
                         });
                     } else if (galleryAnimMode === 'plotter') {
                         var scanSpeed = 22.0;
@@ -15996,18 +16066,33 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                                 ctx.stroke();
                             }
 
-                            ctx.setTransform(scaleX * drawScX, 0, 0, scaleY * drawScY, scaleX * d.tx, scaleY * drawTy);
-                            if (d.flipRot) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(Math.PI);
-                                ctx.translate(-10, -10);
+                            if (d.isQuine) {
+                                ctx.save();
+                                ctx.font = 'bold ' + (d.fontSize * scaleMod) + 'px Courier, \'Courier New\', monospace';
+                                ctx.textAlign = 'left';
+                                ctx.textBaseline = 'alphabetic';
+                                ctx.setTransform(scaleX, 0, 0, scaleY, scaleX * d.tx, scaleY * drawTy);
+                                if (d.originalRot) {
+                                    ctx.translate(d.fontSize / 2, -d.fontSize / 2);
+                                    ctx.rotate(d.originalRot * Math.PI / 180);
+                                    ctx.translate(-d.fontSize / 2, d.fontSize / 2);
+                                }
+                                ctx.fillText(d.char, 0, 0);
+                                ctx.restore();
+                            } else {
+                                ctx.setTransform(scaleX * drawScX, 0, 0, scaleY * drawScY, scaleX * d.tx, scaleY * drawTy);
+                                if (d.flipRot) {
+                                    ctx.translate(10, 10);
+                                    ctx.rotate(Math.PI);
+                                    ctx.translate(-10, -10);
+                                }
+                                if (d.originalRot) {
+                                    ctx.translate(10, 10);
+                                    ctx.rotate(d.originalRot * Math.PI / 180);
+                                    ctx.translate(-10, -10);
+                                }
+                                if (d.p2d) ctx.fill(d.p2d, 'evenodd');
                             }
-                            if (d.originalRot) {
-                                ctx.translate(10, 10);
-                                ctx.rotate(d.originalRot * Math.PI / 180);
-                                ctx.translate(-10, -10);
-                            }
-                            if (d.p2d) ctx.fill(d.p2d, 'evenodd');
                         });
                     }
 
