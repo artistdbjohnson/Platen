@@ -1566,6 +1566,11 @@ function buildGrid() {
       var lvl = Math.round(norm * MAXLVL * gain);
       lvl = Math.max(1, Math.min(MAXLVL, lvl));
       var stack = RAMP[lvl].slice();
+      if (currentEngine === 'mondrian_geo') {
+        for (var si = 0; si < stack.length; si++) {
+          if (stack[si] === 'M') stack[si] = 'H';
+        }
+      }
       stack.wt = norm;
       g[r2][c2] = stack;
     }
