@@ -34,11 +34,153 @@ var VIANA_HEART_D = 'M10 19C4 13 4 8 10 8C16 8 16 13 10 19 M10 8C8 6 8 2 10 1C12
 
 // ── Active motif — 'larkspur', 'quatrefoil', or 'tatreez' (M key toggles)
 var currentMotif = 'larkspur';
+
+// ── Mathematical motifs (inspiration: DESIGN≒FORMULA)
+var LISSAJOUS_D = '';
+var ROSE_D = '';
+var SPIROGRAPH_D = '';
+var PHYLLOTAXIS_D = '';
+var SUPERFORMULA_D = '';
+var HARMONOGRAPH_D = '';
+
+function updateMathMotifs(seed) {
+    var prng = makePRNG(seed + 987654);
+
+    // 1. Lissajous
+    var a = prng.rin(1, 6);
+    var b = prng.rin(1, 6);
+    if (a === b && a > 1) b--;
+    var delta = prng.rfl(0, Math.PI);
+    var lissPoints = [];
+    var steps = 180;
+    for (var i = 0; i <= steps; i++) {
+        var t = (i / steps) * 2 * Math.PI * Math.max(a, b);
+        var x = 10 + 9 * Math.sin(a * t + delta);
+        var y = 10 + 9 * Math.sin(b * t);
+        lissPoints.push(x.toFixed(3) + ',' + y.toFixed(3));
+    }
+    LISSAJOUS_D = 'M ' + lissPoints.join(' L ') + ' Z';
+
+    // 2. Rose
+    var n = prng.rin(1, 8);
+    var d = prng.rin(1, 4);
+    if (n === d) { n = 5; d = 2; }
+    var k = n / d;
+    var rosePoints = [];
+    var rsteps = 360;
+    var maxTheta = 2 * Math.PI * d;
+    for (var j = 0; j <= rsteps; j++) {
+        var theta = (j / rsteps) * maxTheta;
+        var r = 9 * Math.cos(k * theta);
+        var rx = 10 + r * Math.cos(theta);
+        var ry = 10 + r * Math.sin(theta);
+        rosePoints.push(rx.toFixed(3) + ',' + ry.toFixed(3));
+    }
+    ROSE_D = 'M ' + rosePoints.join(' L ') + ' Z';
+
+    // 3. Spirograph (Hypotrochoid)
+    var R = prng.rin(8, 15);
+    var r_sp = prng.rin(3, 7);
+    if (r_sp >= R) r_sp = R - 2;
+    var d_sp = prng.rfl(r_sp * 0.4, r_sp * 1.2);
+    // gcd calculation
+    var g = 1;
+    for (var val = 1; val <= Math.min(R, r_sp); val++) {
+        if (R % val === 0 && r_sp % val === 0) g = val;
+    }
+    var spsteps = 360;
+    var spPoints = [];
+    var maxSpTheta = 2 * Math.PI * (r_sp / g);
+    var maxPossible = Math.abs(R - r_sp) + Math.abs(d_sp);
+    if (maxPossible === 0) maxPossible = 1;
+    for (var k_sp = 0; k_sp <= spsteps; k_sp++) {
+        var th = (k_sp / spsteps) * maxSpTheta;
+        var sx = (R - r_sp) * Math.cos(th) + d_sp * Math.cos(((R - r_sp) / r_sp) * th);
+        var sy = (R - r_sp) * Math.sin(th) - d_sp * Math.sin(((R - r_sp) / r_sp) * th);
+        sx = 10 + (sx / maxPossible) * 9;
+        sy = 10 + (sy / maxPossible) * 9;
+        spPoints.push(sx.toFixed(3) + ',' + sy.toFixed(3));
+    }
+    SPIROGRAPH_D = 'M ' + spPoints.join(' L ') + ' Z';
+
+    // 4. Phyllotaxis
+    var phylPoints = [];
+    var pCount = 80;
+    for (var p = 0; p < pCount; p++) {
+        var pTheta = p * 137.5 * Math.PI / 180;
+        var pr = 9 * Math.sqrt(p) / Math.sqrt(pCount);
+        var px = 10 + pr * Math.cos(pTheta);
+        var py = 10 + pr * Math.sin(pTheta);
+        phylPoints.push(px.toFixed(3) + ',' + py.toFixed(3));
+    }
+    PHYLLOTAXIS_D = 'M ' + phylPoints.join(' L ');
+
+    // 5. Superformula
+    var sf_m = prng.rin(3, 10);
+    var sf_n1 = prng.rfl(0.5, 5);
+    var sf_n2 = prng.rfl(0.5, 5);
+    var sf_n3 = prng.rfl(0.5, 5);
+    var sfsteps = 240;
+    var sfPoints = [];
+    var maxR = 0;
+    var tempR = [];
+    for (var sfi = 0; sfi <= sfsteps; sfi++) {
+        var sf_th = (sfi / sfsteps) * 2 * Math.PI;
+        var t1 = Math.abs(Math.cos(sf_m * sf_th / 4.0));
+        var t2 = Math.abs(Math.sin(sf_m * sf_th / 4.0));
+        var rad = Math.pow(Math.pow(t1, sf_n2) + Math.pow(t2, sf_n3), -1.0 / sf_n1);
+        if (rad > maxR) maxR = rad;
+        tempR.push(rad);
+    }
+    if (maxR === 0) maxR = 1;
+    for (var sfi = 0; sfi <= sfsteps; sfi++) {
+        var sf_th = (sfi / sfsteps) * 2 * Math.PI;
+        var rad = (tempR[sfi] / maxR) * 9;
+        var sfx = 10 + rad * Math.cos(sf_th);
+        var sfy = 10 + rad * Math.sin(sf_th);
+        sfPoints.push(sfx.toFixed(3) + ',' + sfy.toFixed(3));
+    }
+    SUPERFORMULA_D = 'M ' + sfPoints.join(' L ') + ' Z';
+
+    // 6. Harmonograph
+    var h_f1 = prng.rin(1, 4);
+    var h_f2 = prng.rin(1, 4);
+    var h_d1 = prng.rfl(0.01, 0.05);
+    var h_d2 = prng.rfl(0.01, 0.05);
+    var h_p1 = prng.rfl(0, Math.PI);
+    var h_p2 = prng.rfl(0, Math.PI);
+    var hsteps = 300;
+    var hPoints = [];
+    var maxH = 0;
+    var tempH = [];
+    for (var hi = 0; hi <= hsteps; hi++) {
+        var ht = (hi / hsteps) * 50;
+        var hx = Math.sin(h_f1 * ht + h_p1) * Math.exp(-h_d1 * ht);
+        var hy = Math.sin(h_f2 * ht + h_p2) * Math.exp(-h_d2 * ht);
+        var h_dist = Math.sqrt(hx * hx + hy * hy);
+        if (h_dist > maxH) maxH = h_dist;
+        tempH.push({ x: hx, y: hy });
+    }
+    if (maxH === 0) maxH = 1;
+    for (var hi = 0; hi <= hsteps; hi++) {
+        var hx = 10 + (tempH[hi].x / maxH) * 9;
+        var hy = 10 + (tempH[hi].y / maxH) * 9;
+        hPoints.push(hx.toFixed(3) + ',' + hy.toFixed(3));
+    }
+    HARMONOGRAPH_D = 'M ' + hPoints.join(' L ');
+}
+
 function whichMotifD() {
     if (currentMotif === 'ichthus') return ICHTHUS_D;
     if (currentMotif === 'quatrefoil') return QUATREFOIL_D;
     if (currentMotif === 'tatreez') return TATREEZ_D;
     if (currentMotif === 'viana_heart') return VIANA_HEART_D;
+    if (currentMotif === 'lissajous') return LISSAJOUS_D;
+    if (currentMotif === 'rose') return ROSE_D;
+    if (currentMotif === 'spirograph') return SPIROGRAPH_D;
+    if (currentMotif === 'phyllotaxis') return PHYLLOTAXIS_D;
+    if (currentMotif === 'superformula') return SUPERFORMULA_D;
+    if (currentMotif === 'harmonograph') return HARMONOGRAPH_D;
     return FLOWER_D;
 }
 
@@ -144,8 +286,8 @@ function keyPressed() {
     if (key === ' ') { reroll(); redraw(); }
     if (key === 's' || key === 'S') exportSVG();
     if (key === 'm' || key === 'M') {
-        var opts = ['ichthus', 'larkspur', 'quatrefoil', 'tatreez', 'viana_heart'];
-        currentMotif = opts[(opts.indexOf(currentMotif) + 1) % 5];
+        var opts = ['ichthus', 'larkspur', 'quatrefoil', 'tatreez', 'viana_heart', 'lissajous', 'rose', 'spirograph', 'phyllotaxis', 'superformula', 'harmonograph'];
+        currentMotif = opts[(opts.indexOf(currentMotif) + 1) % opts.length];
         flowerCmds = parseSVGCmds(whichMotifD());
         redraw();
     }
@@ -197,7 +339,9 @@ function mouseWheel(e) {
 function reroll() {
     currentEngine = ENGINE_LIST[floor(random(ENGINE_LIST.length))];
     currentSeed = floor(random(999999));
+    updateMathMotifs(currentSeed);
     flowers = computeGrid(currentEngine, currentSeed);
+    flowerCmds = parseSVGCmds(whichMotifD());
 }
 
 function computeGrid(eng, seed) {
@@ -300,13 +444,16 @@ function drawFlowers() {
             else if (cmd.type === 'Z') ctx.closePath();
         }
         ctx.closePath();
-        ctx.fillStyle = 'rgba(255,255,255,' + alpha.toFixed(3) + ')';
-        if (currentMotif === 'ichthus') {
+        var isLineMotif = (currentMotif === 'phyllotaxis' || currentMotif === 'harmonograph');
+        if (isLineMotif || currentMotif === 'ichthus') {
             ctx.strokeStyle = 'rgba(255,255,255,' + alpha.toFixed(3) + ')';
             ctx.lineWidth = 1.2;
             ctx.stroke();
         }
-        ctx.fill(currentMotif === 'quatrefoil' ? 'evenodd' : 'nonzero');
+        if (!isLineMotif) {
+            ctx.fillStyle = 'rgba(255,255,255,' + alpha.toFixed(3) + ')';
+            ctx.fill(currentMotif === 'quatrefoil' ? 'evenodd' : 'nonzero');
+        }
 
         ctx.restore();
     }
@@ -430,8 +577,12 @@ function exportSVG() {
             var py = (f.y + 4) * SIZE + 1;
             var xform = 'translate(' + px + ',' + py + ') scale(' + sc + ')';
             if (f.flip) xform += ' rotate(180,10,10)';
-            svg += '    <path d="' + whichMotifD() + '" fill="white" stroke="none"';
-
+            var isLine = (currentMotif === 'phyllotaxis' || currentMotif === 'harmonograph');
+            if (isLine) {
+                svg += '    <path d="' + whichMotifD() + '" fill="none" stroke="white" stroke-width="1.2"';
+            } else {
+                svg += '    <path d="' + whichMotifD() + '" fill="white" stroke="none"';
+            }
             svg += ' transform="' + xform + '"/>\n';
         }
         svg += '  </g>\n';
