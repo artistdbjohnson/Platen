@@ -267,9 +267,6 @@ function draw() {
     fill(12, 10, 18); noStroke();
     rect(MARGIN, MARGIN, PANEL_W, PANEL_H);
     drawFlowers();
-    Agent
-    Authentication Required
-    
 
     ctx.restore();
 
