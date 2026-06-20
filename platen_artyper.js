@@ -94,6 +94,8 @@ var currentEngine = '';
 var currentSpace = 'none';
 var currentLandscape = 'none';
 var landscapeParams = null;
+var currentMathOverlay = 'none';
+var mathOverlayParams = null;
 var importedSVGContent = null;  // raw SVG text from user file import
 var svgOverlayEl = null;        // the overlay div element
 var svgOverlayOpacity = 0.72;   // 0-1
@@ -580,6 +582,169 @@ function drawLandscapeOverlay(P) {
   pop();
 }
 
+// ── Draw mathematical overlay ─────────────────────────────────────
+function drawMathOverlay(P) {
+  if (!P || !P.paths) return;
+  push();
+  noFill();
+  var PEN_SW = 0.65;
+  strokeWeight(PEN_SW);
+  var cr = color(PALETTE.red);
+  stroke(red(cr), green(cr), blue(cr), 220); // gorgeous typewriter red ink
+  for (var i = 0; i < P.paths.length; i++) {
+    penSpline(P.paths[i], 1.2, P.nOff + i * 200);
+  }
+  pop();
+}
+
+function generateMathOverlayParams(type, lseed) {
+  if (!type || type === 'none') return null;
+  var p = makeLandPRNG(lseed);
+  var P = { type: type };
+  var cx = CW / 2;
+  var cy = CH / 2;
+  var R_max = p.rf(160, 240);
+
+  if (type === 'lissajous') {
+    var a = p.ri(1, 6);
+    var b = p.ri(1, 6);
+    if (a === b && a > 1) b--;
+    var delta = p.rf(0, Math.PI);
+    var pts = [];
+    var steps = 360;
+    for (var i = 0; i <= steps; i++) {
+      var t = (i / steps) * 2 * Math.PI * Math.max(a, b);
+      var px = cx + R_max * Math.sin(a * t + delta);
+      var py = cy + R_max * Math.sin(b * t);
+      pts.push([px, py]);
+    }
+    P.paths = [pts];
+  } else if (type === 'rose') {
+    var n = p.ri(1, 8);
+    var d = p.ri(1, 4);
+    if (n === d) { n = 5; d = 2; }
+    var k = n / d;
+    var pts = [];
+    var rsteps = 720;
+    var maxTheta = 2 * Math.PI * d;
+    for (var j = 0; j <= rsteps; j++) {
+      var theta = (j / rsteps) * maxTheta;
+      var r = R_max * Math.cos(k * theta);
+      var rx = cx + r * Math.cos(theta);
+      var ry = cy + r * Math.sin(theta);
+      pts.push([rx, ry]);
+    }
+    P.paths = [pts];
+  } else if (type === 'spirograph') {
+    var RGear = p.ri(8, 15);
+    var rGear = p.ri(3, 7);
+    if (rGear >= RGear) rGear = RGear - 2;
+    var dGear = p.rf(rGear * 0.4, rGear * 1.2);
+    var g = 1;
+    for (var val = 1; val <= Math.min(RGear, rGear); val++) {
+      if (RGear % val === 0 && rGear % val === 0) g = val;
+    }
+    var spsteps = 720;
+    var pts = [];
+    var maxSpTheta = 2 * Math.PI * (rGear / g);
+    var maxPossible = Math.abs(RGear - rGear) + Math.abs(dGear);
+    if (maxPossible === 0) maxPossible = 1;
+    for (var k_sp = 0; k_sp <= spsteps; k_sp++) {
+      var th = (k_sp / spsteps) * maxSpTheta;
+      var sx = (RGear - rGear) * Math.cos(th) + dGear * Math.cos(((RGear - rGear) / rGear) * th);
+      var sy = (RGear - rGear) * Math.sin(th) - dGear * Math.sin(((RGear - rGear) / rGear) * th);
+      sx = cx + (sx / maxPossible) * R_max;
+      sy = cy + (sy / maxPossible) * R_max;
+      pts.push([sx, sy]);
+    }
+    P.paths = [pts];
+  } else if (type === 'phyllotaxis') {
+    var pts = [];
+    var pCount = 200;
+    for (var pt = 0; pt < pCount; pt++) {
+      var pTheta = pt * 137.5 * Math.PI / 180;
+      var pr = R_max * Math.sqrt(pt) / Math.sqrt(pCount);
+      var px = cx + pr * Math.cos(pTheta);
+      var py = cy + pr * Math.sin(pTheta);
+      pts.push([px, py]);
+    }
+    P.paths = [pts];
+  } else if (type === 'superformula') {
+    var sf_m = p.ri(3, 10);
+    var sf_n1 = p.rf(0.5, 5);
+    var sf_n2 = p.rf(0.5, 5);
+    var sf_n3 = p.rf(0.5, 5);
+    var sfsteps = 360;
+    var pts = [];
+    var maxR = 0;
+    var tempR = [];
+    for (var sfi = 0; sfi <= sfsteps; sfi++) {
+      var sf_th = (sfi / sfsteps) * 2 * Math.PI;
+      var t1 = Math.abs(Math.cos(sf_m * sf_th / 4.0));
+      var t2 = Math.abs(Math.sin(sf_m * sf_th / 4.0));
+      var rad = Math.pow(Math.pow(t1, sf_n2) + Math.pow(t2, sf_n3), -1.0 / sf_n1);
+      if (rad > maxR) maxR = rad;
+      tempR.push(rad);
+    }
+    if (maxR === 0) maxR = 1;
+    for (var sfi = 0; sfi <= sfsteps; sfi++) {
+      var sf_th = (sfi / sfsteps) * 2 * Math.PI;
+      var rad = (tempR[sfi] / maxR) * R_max;
+      var sfx = cx + rad * Math.cos(sf_th);
+      var sfy = cy + rad * Math.sin(sf_th);
+      pts.push([sfx, sfy]);
+    }
+    P.paths = [pts];
+  } else if (type === 'harmonograph') {
+    var h_f1 = p.ri(1, 4);
+    var h_f2 = p.ri(1, 4);
+    var h_d1 = p.rf(0.005, 0.02);
+    var h_d2 = p.rf(0.005, 0.02);
+    var h_p1 = p.rf(0, Math.PI);
+    var h_p2 = p.rf(0, Math.PI);
+    var hsteps = 600;
+    var pts = [];
+    var maxH = 0;
+    var tempH = [];
+    for (var hi = 0; hi <= hsteps; hi++) {
+      var ht = (hi / hsteps) * 120;
+      var hx = Math.sin(h_f1 * ht + h_p1) * Math.exp(-h_d1 * ht);
+      var hy = Math.sin(h_f2 * ht + h_p2) * Math.exp(-h_d2 * ht);
+      var h_dist = Math.sqrt(hx * hx + hy * hy);
+      if (h_dist > maxH) maxH = h_dist;
+      tempH.push({ x: hx, y: hy });
+    }
+    if (maxH === 0) maxH = 1;
+    for (var hi = 0; hi <= hsteps; hi++) {
+      var hx = cx + (tempH[hi].x / maxH) * R_max;
+      var hy = cy + (tempH[hi].y / maxH) * R_max;
+      pts.push([hx, hy]);
+    }
+    P.paths = [pts];
+  }
+  P.nOff = p.rf(0, 1000);
+  return P;
+}
+
+function buildSVGMathLines(P) {
+  if (!P || !P.paths) return [];
+  var lines = [];
+  var PEN_SW = 0.65;
+  for (var i = 0; i < P.paths.length; i++) {
+    var rawPts = P.paths[i];
+    var amp = 1.2;
+    var nOff = P.nOff + i * 200;
+    var pts = [];
+    for (var j = 0; j < rawPts.length; j++) {
+      var px = rawPts[j][0] + jit(rawPts[j][0] + nOff, rawPts[j][1] + nOff, amp, 0.02);
+      var py = rawPts[j][1] + jit(rawPts[j][0] + nOff + 7, rawPts[j][1] + nOff, amp, 0.02);
+      pts.push([px, py]);
+    }
+    lines.push({ pts: pts, col: PALETTE.red, sw: PEN_SW });
+  }
+  return lines;
+}
+
 // ── Cypress tree silhouette (tall narrow oval) ─────────────────────
 function drawCypressTree(x, y, h, w, nOff) {
   var nPts = 14;
@@ -717,27 +882,18 @@ function drawDashLine(dl) {
 // Generates a standalone SVG containing ONLY the landscape pen lines,
 // ready to import into Inkscape for AxiDraw pen plotting.
 function exportLandscapeSVG() {
-  if (!landscapeParams) {
-    alert('No landscape overlay active. Select a Landscape mode first.');
+  if (!landscapeParams && !mathOverlayParams) {
+    alert('No overlay active. Select a Landscape or Math Overlay mode first.');
     return;
   }
-  // Collect strokes by drawing to a hidden recorder
-  var svgStrokes = [];
-  var _currentStroke = null;
-
-  function svgBegin() { _currentStroke = []; }
-  function svgVertex(x, y) { if (_currentStroke) _currentStroke.push([x, y]); }
-  function svgEnd(col, sw3) {
-    if (_currentStroke && _currentStroke.length > 1) {
-      svgStrokes.push({ pts: _currentStroke.slice(), col: col || '#1a1715', sw: sw3 || 0.55 });
-    }
-    _currentStroke = null;
+  
+  var svgLines = [];
+  if (landscapeParams) {
+    svgLines = svgLines.concat(buildSVGLines(landscapeParams));
   }
-
-  // Re-generate geometry in SVG mode using same seed
-  // (landscape lines are deterministic from seed)
-  var P = landscapeParams;
-  var svgLines = buildSVGLines(P);
+  if (mathOverlayParams) {
+    svgLines = svgLines.concat(buildSVGMathLines(mathOverlayParams));
+  }
 
   // Build SVG string
   // Use physical units: 8.5" x 11" at 96dpi (SVG default)
@@ -748,7 +904,7 @@ function exportLandscapeSVG() {
   lines.push('<svg xmlns="http://www.w3.org/2000/svg"');
   lines.push('  width="' + (CW/72*25.4).toFixed(2) + 'mm" height="' + (CH/72*25.4).toFixed(2) + 'mm"');
   lines.push('  viewBox="0 0 ' + CW + ' ' + CH + '">');
-  lines.push('  <g id="landscape-overlay" fill="none">');
+  lines.push('  <g id="platen-overlay" fill="none">');
   for (var li5 = 0; li5 < svgLines.length; li5++) {
     var sl = svgLines[li5];
     if (sl.pts.length < 2) continue;
@@ -761,7 +917,10 @@ function exportLandscapeSVG() {
   lines.push('  </g>');
   lines.push('</svg>');
   var svgStr = lines.join('\n');
-  var fname = 'platen_landscape_' + P.type + '_' + seed;
+  var suffix = '';
+  if (landscapeParams) suffix += '_' + landscapeParams.type;
+  if (mathOverlayParams) suffix += '_' + mathOverlayParams.type;
+  var fname = 'platen_overlay' + suffix + '_' + seed;
   saveStrings(svgStr.split('\n'), fname, 'svg');
 }
 
@@ -2318,6 +2477,20 @@ function buildPanel() {
     redraw();
   });
 
+  createElement('label','Math Overlay').parent(secOvl);
+  var selMathOverlay = createSelect(); selMathOverlay.parent(secOvl);
+  var MATH_OVERLAY_LIST = ['none', 'lissajous', 'rose', 'spirograph', 'phyllotaxis', 'superformula', 'harmonograph', 'random'];
+  for (var im=0; im<MATH_OVERLAY_LIST.length; im++) selMathOverlay.option(MATH_OVERLAY_LIST[im], MATH_OVERLAY_LIST[im]);
+  selMathOverlay.selected('none');
+  selMathOverlay.changed(function(){
+    var v = selMathOverlay.value();
+    currentMathOverlay = (v === 'random')
+      ? MATH_OVERLAY_LIST[Math.floor(Math.random() * (MATH_OVERLAY_LIST.length - 2)) + 1]
+      : v;
+    mathOverlayParams = generateMathOverlayParams(currentMathOverlay, seed + 991823);
+    redraw();
+  });
+
   // Hidden file input
   var svgFileInput = document.createElement('input');
   svgFileInput.type = 'file';
@@ -2664,6 +2837,7 @@ function freshSeed() {
 function regenerate() {
   grid = buildGrid();
   landscapeParams = generateLandscapeParams(currentLandscape, seed + 88213);
+  mathOverlayParams = generateMathOverlayParams(currentMathOverlay, seed + 991823);
   if (lblSeed)   lblSeed.html('seed ' + seed);
   if (lblEngine) lblEngine.html(currentEngine);
   if (lblInfo) {
@@ -2681,7 +2855,8 @@ function regenerate() {
       'INK DENSITY: <span>' + Math.round(gain * 100) + '%</span>',
       'BORDER: <span>' + borderKey + '</span>',
       'PALMS: <span>' + (showPalms ? 'YES' : 'NO') + '</span>',
-      'FLUX: <span>' + (isFluxMode ? 'ACTIVE (AMP ' + fluxAmplitude.toFixed(1) + ')' : 'INACTIVE') + '</span>'
+      'FLUX: <span>' + (isFluxMode ? 'ACTIVE (AMP ' + fluxAmplitude.toFixed(1) + ')' : 'INACTIVE') + '</span>',
+      'MATH OVERLAY: <span>' + currentMathOverlay.toUpperCase() + '</span>'
     ].join('<br>');
   }
 
@@ -2869,6 +3044,7 @@ function drawArt() {
     drawBoldShapes();
   }
   drawLandscapeOverlay(landscapeParams);
+  drawMathOverlay(mathOverlayParams);
 }
 
 // ── Export ────────────────────────────────────────────────────────
