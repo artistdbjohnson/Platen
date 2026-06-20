@@ -96,6 +96,7 @@ var currentLandscape = 'none';
 var landscapeParams = null;
 var currentMathOverlay = 'none';
 var mathOverlayParams = null;
+var typeMathOverlay = false;
 var importedSVGContent = null;  // raw SVG text from user file import
 var svgOverlayEl = null;        // the overlay div element
 var svgOverlayOpacity = 0.72;   // 0-1
@@ -117,7 +118,7 @@ var grid = [];
 
 // UI handles
 var panel, lblSeed, lblInfo, lblEngine;
-var selBorder, selEngine, selSpace, selLandscape, sldGain, chkPalms, btnRegen, btnSave, btnSaveSVG, btnScore;
+var selBorder, selEngine, selSpace, selLandscape, sldGain, chkPalms, btnRegen, btnSave, btnSaveSVG, btnScore, chkTypeMath;
 var paperImg;
 var shapeHints = [];   // faint dashed hints for old mondrian/brutalist engines
 var boldShapes = [];   // full composition shapes for suprematist/mondrian_geo/kandinsky_comp
@@ -584,7 +585,7 @@ function drawLandscapeOverlay(P) {
 
 // ── Draw mathematical overlay ─────────────────────────────────────
 function drawMathOverlay(P) {
-  if (!P || !P.paths) return;
+  if (!P || !P.paths || typeMathOverlay) return;
   push();
   noFill();
   var PEN_SW = 0.65;
@@ -882,16 +883,19 @@ function drawDashLine(dl) {
 // Generates a standalone SVG containing ONLY the landscape pen lines,
 // ready to import into Inkscape for AxiDraw pen plotting.
 function exportLandscapeSVG() {
-  if (!landscapeParams && !mathOverlayParams) {
-    alert('No overlay active. Select a Landscape or Math Overlay mode first.');
+  var activeLandscape = landscapeParams;
+  var activeMathPlotted = mathOverlayParams && !typeMathOverlay;
+
+  if (!activeLandscape && !activeMathPlotted) {
+    alert('No vector overlay active. Select a Landscape or Math Overlay (plotted) mode first.');
     return;
   }
   
   var svgLines = [];
-  if (landscapeParams) {
+  if (activeLandscape) {
     svgLines = svgLines.concat(buildSVGLines(landscapeParams));
   }
-  if (mathOverlayParams) {
+  if (activeMathPlotted) {
     svgLines = svgLines.concat(buildSVGMathLines(mathOverlayParams));
   }
 
@@ -918,8 +922,8 @@ function exportLandscapeSVG() {
   lines.push('</svg>');
   var svgStr = lines.join('\n');
   var suffix = '';
-  if (landscapeParams) suffix += '_' + landscapeParams.type;
-  if (mathOverlayParams) suffix += '_' + mathOverlayParams.type;
+  if (activeLandscape) suffix += '_' + activeLandscape.type;
+  if (activeMathPlotted) suffix += '_' + mathOverlayParams.type;
   var fname = 'platen_overlay' + suffix + '_' + seed;
   saveStrings(svgStr.split('\n'), fname, 'svg');
 }
@@ -1753,7 +1757,51 @@ function buildGrid() {
   // mondrian_geo uses divider lines — stored separately in params.divH/divV/cells
   // canyonlands uses wall profile — no bold shapes overlay needed
 
+  if (currentMathOverlay !== 'none' && typeMathOverlay) {
+    applyMathTypewriterOverlay(g);
+  }
+
   return g;
+}
+
+// ── Trace and stamp math overlay onto typewriter grid ──────────────────
+function applyMathTypewriterOverlay(g) {
+  if (!mathOverlayParams || !mathOverlayParams.paths) return;
+  var charState = 0;
+  var lastC = -1, lastR = -1;
+  for (var pi = 0; pi < mathOverlayParams.paths.length; pi++) {
+    var path = mathOverlayParams.paths[pi];
+    if (path.length === 0) continue;
+    for (var i = 0; i < path.length - 1; i++) {
+      var p0 = path[i];
+      var p1 = path[i+1];
+      var dist = Math.sqrt(Math.pow(p1[0] - p0[0], 2) + Math.pow(p1[1] - p0[1], 2));
+      var steps = Math.ceil(dist / 3.0);
+      for (var s = 0; s <= steps; s++) {
+        var t = s / steps;
+        var x = p0[0] + (p1[0] - p0[0]) * t;
+        var y = p0[1] + (p1[1] - p0[1]) * t;
+        var c = Math.floor((x - ORIGIN_X) / CELL_W);
+        var r = Math.floor((y - ORIGIN_Y) / CELL_H);
+        if (c >= 0 && c < COLS && r >= 0 && r < ROWS) {
+          if (c !== lastC || r !== lastR) {
+            var char = (charState === 0) ? '0' : '1';
+            charState = (charState + 1) % 2;
+            if (!g[r][c]) {
+              g[r][c] = [char];
+              g[r][c].wt = 0.5;
+            } else {
+              if (g[r][c].indexOf(char) === -1) {
+                g[r][c].push(char);
+              }
+            }
+            lastC = c;
+            lastR = r;
+          }
+        }
+      }
+    }
+  }
 }
 
 // ── Universal palm trees (Flanagan I* motif) ──────────────────────
@@ -2489,6 +2537,13 @@ function buildPanel() {
       : v;
     mathOverlayParams = generateMathOverlayParams(currentMathOverlay, seed + 991823);
     redraw();
+  });
+
+  var mathTypeRow = createElement('div',''); mathTypeRow.class('row'); mathTypeRow.parent(secOvl);
+  chkTypeMath = createCheckbox(' Type Math (0/1)', false); chkTypeMath.parent(mathTypeRow);
+  chkTypeMath.changed(function(){
+    typeMathOverlay = chkTypeMath.checked();
+    regenerate();
   });
 
   // Hidden file input
