@@ -14135,6 +14135,14 @@ rawWt.push(baseWt + jitter);
 
 
 
+            var panelFlowers = {};
+            for (var i = 0; i < panels.length; i++) {
+                var pid = panels[i];
+                if (window._lastFlowers && window._lastFlowers[pid]) {
+                    panelFlowers[pid] = window._lastFlowers[pid];
+                }
+            }
+
             var newArt = {
 
                 id: Date.now(),
@@ -14145,7 +14153,9 @@ rawWt.push(baseWt + jitter);
 
                 layout: currentLayout,
 
-                svgs: svgs
+                svgs: svgs,
+
+                flowers: panelFlowers
 
             };
 
@@ -14721,6 +14731,15 @@ rawWt.push(baseWt + jitter);
             }
 
             var art = curatedGallery[index];
+
+            // Restore stored raw flower data for PlatenHyperspeed animations inside the gallery viewer
+            if (art.flowers) {
+                Object.keys(art.flowers).forEach(function(pid, idx) {
+                    var galleryPanelId = 'gal-' + (idx + 1);
+                    if (!window._lastFlowers) window._lastFlowers = {};
+                    window._lastFlowers[galleryPanelId] = art.flowers[pid];
+                });
+            }
 
             var wrap = document.createElement('div');
 
