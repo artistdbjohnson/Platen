@@ -14293,20 +14293,25 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 div.style.position = 'relative';
 
+                var isLight = (canvasCls.indexOf('white') !== -1 || canvasCls.indexOf('tan') !== -1);
+                var btnBg = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.4)';
+                var btnBorder = isLight ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.15)';
+                var btnColor = isLight ? '#1a1a1a' : '#888';
+
                 var removeBtn = document.createElement('button');
                 removeBtn.innerHTML = '✕';
                 removeBtn.title = 'Remove from curated gallery';
-                removeBtn.style.cssText = 'position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #888; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; transition: all 0.2s; z-index: 10; line-height: 1;';
+                removeBtn.style.cssText = 'position: absolute; bottom: 24px; right: 16px; background: ' + btnBg + '; border: 1px solid ' + btnBorder + '; color: ' + btnColor + '; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; transition: all 0.2s; z-index: 10; line-height: 1;';
                 
                 removeBtn.onmouseover = function() {
                     removeBtn.style.color = '#fff';
-                    removeBtn.style.borderColor = 'rgba(255,255,255,0.4)';
+                    removeBtn.style.borderColor = isLight ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.4)';
                     removeBtn.style.background = 'rgba(255,0,0,0.6)';
                 };
                 removeBtn.onmouseout = function() {
-                    removeBtn.style.color = '#888';
-                    removeBtn.style.borderColor = 'rgba(255,255,255,0.15)';
-                    removeBtn.style.background = 'rgba(0,0,0,0.4)';
+                    removeBtn.style.color = btnColor;
+                    removeBtn.style.borderColor = btnBorder;
+                    removeBtn.style.background = btnBg;
                 };
                 
                 removeBtn.onclick = function(e) {
@@ -14349,7 +14354,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 label.style.fontSize = '10px';
 
-                label.style.color = 'var(--dim)';
+                label.style.color = isLight ? '#1a1a1a' : 'var(--dim)';
 
                 label.style.lineHeight = '1.5';
 
@@ -14695,7 +14700,44 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
         };
 
+        var _galMotusOn = false;
+        function toggleGalMotus() {
+            _galMotusOn = !_galMotusOn;
+            var btn = document.getElementById('btn-gal-motus');
+            if (btn) btn.textContent = 'motus: ' + (_galMotusOn ? 'on' : 'off');
+            var dropdown = document.getElementById('motus-dropdown-container-gal');
+            if (dropdown) dropdown.style.display = _galMotusOn ? 'block' : 'none';
 
+            if (!window.PlatenHyperspeed) return;
+
+            for (var i = 1; i <= 9; i++) {
+                var id = 'gal-' + i;
+                if (document.getElementById('c' + id)) {
+                    if (_galMotusOn) {
+                        PlatenHyperspeed.start(id);
+                    } else {
+                        PlatenHyperspeed.stop(id);
+                    }
+                }
+            }
+        }
+
+        function setGalMotusMode(mode) {
+            var labels = { 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'plotter': 'PLOTTER' };
+            var btn = document.getElementById('motus-mode-btn-gal');
+            if (btn) btn.textContent = labels[mode];
+            if (window.PlatenHyperspeed) {
+                PlatenHyperspeed.setMode(mode);
+                for (var i = 1; i <= 9; i++) {
+                    var id = 'gal-' + i;
+                    if (document.getElementById('c' + id)) {
+                        PlatenHyperspeed.stop(id);
+                        PlatenHyperspeed.prepare(id);
+                        PlatenHyperspeed.start(id);
+                    }
+                }
+            }
+        }
 
         function openGalleryDetail(index) {
 
@@ -14792,6 +14834,8 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 if (s) {
 
+                    s.id = 'sgal-' + (idx + 1);
+
                     s.style.height = '100%';
 
                     s.style.width = '100%';
@@ -14801,6 +14845,32 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     s.style.display = 'block';
 
                 }
+
+
+
+                var cvsBase = document.createElement('canvas');
+
+                cvsBase.id = 'cgal-' + (idx + 1);
+
+                cvsBase.style.display = 'none';
+
+                // Try to get dimensions from the main canvas if possible, otherwise hardcode or use SVG viewBox
+
+                cvsBase.width = 1376;
+
+                cvsBase.height = 2496;
+
+                front.appendChild(cvsBase);
+
+
+
+                var cvsHs = document.createElement('canvas');
+
+                cvsHs.id = 'cgal-' + (idx + 1) + '-hs';
+
+                cvsHs.style.cssText = 'display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;';
+
+                front.appendChild(cvsHs);
 
                 
 
@@ -15913,6 +15983,9 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
 
         function closeGalleryDetail() {
+            if (_galMotusOn) {
+                toggleGalMotus(); // This will stop animations and update the UI toggle
+            }
             document.getElementById('gallery-detail-modal').style.display = 'none';
             var mainCanvasWrap = document.getElementById('canvas-wrap-main');
             if (mainCanvasWrap) {
@@ -16382,7 +16455,20 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 <div id="title" style="font-size: 11px; letter-spacing: 0.2em; text-transform: lowercase;">gallery viewer</div>
             </div>
 
-            <div class="btn-group" style="display: flex; gap: 20px; margin-left: auto;">
+            <div class="btn-group" style="display: flex; gap: 20px; margin-left: auto; align-items: center;">
+
+                <div style="display: flex; gap: 6px; align-items: stretch; position: relative;">
+                    <button id="btn-gal-motus" onclick="toggleGalMotus()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">motus: off</button>
+                    <div id="motus-dropdown-container-gal" class="motus-dropdown" style="display: none; top: 100%;">
+                        <button id="motus-mode-btn-gal" class="motus-dropdown-btn" onclick="document.getElementById('motus-dropdown-container-gal').classList.toggle('open')" style="text-transform: uppercase;">FLUX</button>
+                        <div class="motus-dropdown-content" onclick="document.getElementById('motus-dropdown-container-gal').classList.remove('open')" style="bottom: auto; top: 100%; margin-top: 4px; margin-bottom: 0;">
+                            <div onclick="setGalMotusMode('flux')">FLUX</div>
+                            <div onclick="setGalMotusMode('moire')">MOIRÉ</div>
+                            <div onclick="setGalMotusMode('iso_col')">ELEVATE</div>
+                            <div onclick="setGalMotusMode('plotter')">PLOTTER</div>
+                        </div>
+                    </div>
+                </div>
 
                 <button onclick="downloadGalleryPNG()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">download png</button>
 
