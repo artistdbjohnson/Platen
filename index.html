@@ -14917,16 +14917,7 @@
                 
 
                 var svgClone = svg.cloneNode(true);
-                var headerG = svgClone.querySelector('.typewriter-header');
-                if (headerG) headerG.remove();
 
-                var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-
-                g.setAttribute("transform", "translate(0, 16)");
-
-                while (svgClone.firstChild) { g.appendChild(svgClone.firstChild); }
-
-                svgClone.appendChild(g);
 
                 
 
@@ -15079,16 +15070,7 @@
                 
 
                 var svgClone = svg.cloneNode(true);
-                var headerG = svgClone.querySelector('.typewriter-header');
-                if (headerG) headerG.remove();
 
-                var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-
-                g.setAttribute("transform", "translate(0, 16)");
-
-                while (svgClone.firstChild) { g.appendChild(svgClone.firstChild); }
-
-                svgClone.appendChild(g);
 
                 
 
@@ -15206,8 +15188,6 @@
                 d.innerHTML = svgStr;
                 var svg = d.querySelector('svg');
                 if (svg) {
-                    var headerG = svg.querySelector('.typewriter-header');
-                    if (headerG) headerG.remove();
                     svgStr = svg.outerHTML;
                 }
 
