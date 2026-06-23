@@ -7330,6 +7330,9 @@ rawWt.push(baseWt + jitter);
                                 var charX = ((startCol + col + 4) * hSizeX + hSizeX / 2);
 
                                 var charY = (row * hSizeY + hSizeY / 2) + 24; // Nudged down for top margin clearance
+                                if (row === 1) {
+                                    charY = (row * hSizeY + hSizeY / 2) + 12; // Nudge top title line up slightly
+                                }
 
                                 
 
