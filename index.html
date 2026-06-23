@@ -3319,11 +3319,11 @@
             /* Restrict gallery modal to no scroll and fit 10 cards */
             #gallery-modal {
                 overflow-y: hidden !important;
+            }
+            #gallery-modal[style*="display: block"],
+            #gallery-modal[style*="display:block"] {
                 display: flex !important;
                 flex-direction: column;
-            }
-            #gallery-modal[style*="display: none"] {
-                display: none !important;
             }
             #gallery-grid {
                 grid-template-columns: repeat(5, 1fr) !important;
