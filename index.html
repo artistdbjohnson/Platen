@@ -1301,93 +1301,63 @@
 
 
         /* Custom Motus Dropdown */
-
         .motus-dropdown {
-
             position: relative;
-
             flex: 1;
-
         }
-
         .motus-dropdown-btn {
-
-            background: transparent;
-
-            border: none;
-
-            color: var(--text);
-
-            text-transform: uppercase;
-
-            font-family: 'IBM Plex Mono', monospace;
-
-            font-size: 11px;
-
-            cursor: pointer;
-
-            width: 100%;
-
-            text-align: right;
-
-            padding: 2px 4px;
-
+            background: transparent !important;
+            border: none !important;
+            border-bottom: 1.5px solid transparent !important;
+            color: var(--text) !important;
+            text-transform: uppercase !important;
+            font-family: inherit !important;
+            font-size: 10px !important;
+            letter-spacing: 0.05em !important;
+            cursor: pointer !important;
+            width: 100% !important;
+            text-align: right !important;
+            padding: 2px 4px !important;
+            opacity: 0.8 !important;
+            transition: opacity 0.2s, border-bottom-color 0.2s;
         }
-
         .motus-dropdown-btn:hover {
-
-            opacity: 0.8;
-
-            color: #fff;
-
+            opacity: 1 !important;
+            border-bottom-color: var(--text) !important;
         }
-
         .motus-dropdown-content {
-
             display: none;
-
             position: absolute;
-
             bottom: 100%;
-
             right: 0;
-
-            background: var(--dropdown-bg, var(--bg));
-
-            border: 1px solid var(--border);
-
-            z-index: 100;
-
-            min-width: 100px;
-
+            background: rgba(15, 15, 15, 0.96) !important;
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border) !important;
+            border-radius: 4px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            min-width: 90px;
+            padding: 4px 0 !important;
+            margin-bottom: 4px;
         }
-
         .motus-dropdown-content div {
-
-            padding: 6px 12px;
-
-            text-align: right;
-
-            cursor: pointer;
-
-            text-transform: uppercase;
-
-            font-size: 11px;
-
+            padding: 6px 12px !important;
+            text-align: right !important;
+            cursor: pointer !important;
+            text-transform: uppercase !important;
+            font-size: 10px !important;
+            letter-spacing: 0.05em !important;
+            color: var(--text) !important;
+            opacity: 0.7 !important;
+            transition: opacity 0.2s, background 0.2s;
         }
-
         .motus-dropdown-content div:hover {
-
-            background: #222;
-
-            color: #fff;
-
+            background: rgba(222, 228, 215, 0.08) !important;
+            color: #fff !important;
+            opacity: 1 !important;
         }
-
         .motus-dropdown.open .motus-dropdown-content {
-
             display: block;
-
         }
 
 
@@ -3314,65 +3284,7 @@
 
         }
 
-        /* ── Gallery and UI Responsiveness Rules ── */
-        @media (min-width: 1025px) {
-            /* Restrict gallery modal to no scroll and fit 10 cards */
-            #gallery-modal {
-                overflow-y: hidden !important;
-            }
-            #gallery-modal[style*="display: block"],
-            #gallery-modal[style*="display:block"] {
-                display: flex !important;
-                flex-direction: column;
-            }
-            #gallery-grid {
-                grid-template-columns: repeat(5, minmax(150px, 200px)) !important;
-                justify-content: center !important;
-                gap: 15px !important;
-                padding: 0 40px 20px 40px !important;
-                flex-grow: 1;
-                align-content: center;
-            }
-            
-            /* Compact controls column to fit without scrolling */
-            .col-controls {
-                padding: 15px 20px !important;
-                overflow-y: auto !important;
-            }
-            #curation-status-banner {
-                margin-bottom: 10px !important;
-                padding: 8px !important;
-            }
-            #curation-status-banner #curation-countdown {
-                font-size: 12px !important;
-                margin-bottom: 4px !important;
-            }
-            .control-section {
-                padding-bottom: 10px !important;
-                margin-bottom: 10px !important;
-                gap: 6px !important;
-            }
-            .control-section h3 {
-                margin-bottom: 4px !important;
-            }
-            .control-grid {
-                gap: 4px 10px !important;
-            }
-            .trait {
-                margin-bottom: 4px !important;
-            }
-            #palette-lock-status {
-                margin-top: 6px !important;
-                padding: 6px !important;
-            }
-        }
-        
-        /* Dropdown style overrides inside the topbar */
-        .gallery-topbar .motus-dropdown-content {
-            bottom: auto !important;
-            top: 100% !important;
-            z-index: 101 !important;
-        }
+
 
     </style>
 
@@ -3624,7 +3536,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 <!-- Palette Lock Status Dashboard -->
 
-                <div id="palette-lock-status" style="margin-top: 10px; padding: 10px; border-radius: 6px; border: 1px dashed var(--border); background: rgba(222, 228, 215, 0.01); font-size: 10px; display: flex; flex-direction: column; gap: 4px; text-transform: lowercase; transition: all 0.2s;">
+                <div id="palette-lock-status" style="margin-top: 10px; margin-bottom: 25px; padding: 10px; border-radius: 6px; border: 1px dashed var(--border); background: rgba(222, 228, 215, 0.01); font-size: 10px; display: flex; flex-direction: column; gap: 4px; text-transform: lowercase; transition: all 0.2s;">
 
                     <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
 
@@ -13095,12 +13007,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                     }
 
-                    if (typeof updateMotusUI === 'function') {
-
-                        updateMotusUI();
-
-                    }
-
                 },
 
 
@@ -13152,12 +13058,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         if (typeof updateTraitBar === 'function') {
 
                             updateTraitBar();
-
-                        }
-
-                        if (typeof updateMotusUI === 'function') {
-
-                            updateMotusUI();
 
                         }
 
@@ -13271,83 +13171,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
         });
 
-        function updateMotusUI() {
-            var isHSActive = window.PlatenHyperspeed && PlatenHyperspeed.isActive();
-            var currentMode = window.PlatenHyperspeed ? PlatenHyperspeed.getMode() : 'flux';
-            
-            // Main dashboard buttons
-            var btn = document.getElementById('btn-hyperspeed');
-            if (btn) btn.textContent = isHSActive ? 'Motus: ON' : 'Motus: OFF';
-            var sel = document.getElementById('motus-dropdown-container');
-            if (sel) sel.style.display = isHSActive ? 'block' : 'none';
-            var modeBtn = document.getElementById('motus-mode-btn');
-            if (modeBtn) modeBtn.textContent = currentMode.toUpperCase();
-            
-            // Gallery detail modal buttons
-            var gBtn = document.getElementById('btn-gallery-hyperspeed');
-            if (gBtn) gBtn.textContent = isHSActive ? 'motus: on' : 'motus: off';
-            var gSel = document.getElementById('gallery-motus-dropdown-container');
-            if (gSel) gSel.style.display = isHSActive ? 'block' : 'none';
-            var gModeBtn = document.getElementById('gallery-motus-mode-btn');
-            if (gModeBtn) gModeBtn.textContent = currentMode.toUpperCase();
-        }
-
-        var savedMainState = null;
-
-        function backupMainState() {
-            savedMainState = {
-                traits: JSON.parse(JSON.stringify(TRAITS)),
-                resolvedTraits: JSON.parse(JSON.stringify(RESOLVED_TRAITS || {})),
-                seed: RENDER_SEED,
-                layout: currentLayout,
-                isMotusActive: window.PlatenHyperspeed ? PlatenHyperspeed.isActive() : false
-            };
-            
-            // If Motus was active on the main page, stop it before loading gallery
-            if (savedMainState.isMotusActive && window.PlatenHyperspeed) {
-                [1, 2, 3].forEach(function(id) {
-                    PlatenHyperspeed.stop(id);
-                });
-            }
-        }
-
-        function restoreMainState() {
-            if (!savedMainState) return;
-            
-            TRAITS = savedMainState.traits;
-            RESOLVED_TRAITS = savedMainState.resolvedTraits;
-            RENDER_SEED = savedMainState.seed;
-            currentLayout = savedMainState.layout;
-            
-            // Rename back the IDs to restore target to main page elements
-            for (var i = 1; i <= 3; i++) {
-                var c = document.getElementById('c' + i + '-main'); if (c) c.id = 'c' + i;
-                var chs = document.getElementById('c' + i + '-hs-main'); if (chs) chs.id = 'c' + i + '-hs';
-                var s = document.getElementById('s' + i + '-main'); if (s) s.id = 's' + i;
-                var card = document.getElementById('card' + i + '-main'); if (card) card.id = 'card' + i;
-            }
-            
-            // Re-render main page in background to restore its state
-            renderAll(true);
-            
-            // Restore Motus state
-            if (window.PlatenHyperspeed) {
-                var currentMotus = PlatenHyperspeed.isActive();
-                if (currentMotus !== savedMainState.isMotusActive) {
-                    PlatenHyperspeed.toggle();
-                } else if (savedMainState.isMotusActive) {
-                    [1, 2, 3].forEach(function(id) {
-                        if (document.getElementById('c' + id)) {
-                            PlatenHyperspeed.start(id);
-                        }
-                    });
-                }
-            }
-            
-            savedMainState = null;
-            updateMotusUI();
-        }
-
         const PlatenDB = {
 
             db: null,
@@ -13400,26 +13223,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
             },
 
-            delete: function(id) {
-
-                return PlatenDB.init().then(function(db) {
-
-                    return new Promise(function(resolve, reject) {
-
-                        var tx = db.transaction('artworks', 'readwrite');
-
-                        tx.objectStore('artworks').delete(id);
-
-                        tx.oncomplete = function() { resolve(); };
-
-                        tx.onerror = function() { reject(tx.error); };
-
-                    });
-
-                });
-
-            },
-
             getAll: function() {
 
                 return PlatenDB.init().then(function(db) {
@@ -13433,6 +13236,26 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                         req.onsuccess = function() { resolve(req.result || []); };
 
                         req.onerror = function() { reject(tx.error); };
+
+                    });
+
+                });
+
+            },
+
+            delete: function(id) {
+
+                return PlatenDB.init().then(function(db) {
+
+                    return new Promise(function(resolve, reject) {
+
+                        var tx = db.transaction('artworks', 'readwrite');
+
+                        tx.objectStore('artworks').delete(id);
+
+                        tx.oncomplete = function() { resolve(); };
+
+                        tx.onerror = function() { reject(tx.error); };
 
                     });
 
@@ -14309,30 +14132,56 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             var oldText = btn.innerHTML;
             btn.innerHTML = "Curating...";
 
+
+
             var newArt = {
+
                 id: Date.now(),
+
                 seed: RENDER_SEED,
+
                 traits: JSON.parse(JSON.stringify(RESOLVED_TRAITS || TRAITS)),
+
                 layout: currentLayout,
+
                 svgs: svgs
+
             };
 
+
+
             curatedGallery.push(newArt);
+
             PlatenDB.save(newArt).catch(function(e) {
+
                 console.error("Failed to save curation to IndexedDB:", e);
+
                 alert("Storage error: Could not save curation. " + e);
+
             });
 
+
+
             // Lock it
+
             locks[key] = { palette: TRAITS.chromes, owner: 'You' };
+
             localStorage.setItem('platen_palette_locks', JSON.stringify(locks));
 
+
+
             setTimeout(function() {
+
                 updateLockStatus();
+
             }, 800);
+
             
+
             updateLockStatus();
+
             renderGalleryGrid();
+
             // Reset button text to give visual feedback and restore it
             setTimeout(function() {
                 btn.innerHTML = "✓ Curated";
@@ -14340,37 +14189,65 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     btn.innerHTML = oldText;
                 }, 1500);
             }, 300);
+
         }
+
+
 
         function toggleGalleryModal() {
+
             var m = document.getElementById('gallery-modal');
+
             m.style.display = m.style.display === 'none' ? 'block' : 'none';
+
             if(m.style.display === 'block') renderGalleryGrid();
+
         }
 
+
+
         function renderGalleryGrid() {
+
             var grid = document.getElementById('gallery-grid');
+
             if(!grid) return;
+
             grid.innerHTML = '';
+
             if (curatedGallery.length === 0) {
+
                 grid.innerHTML = '<p>No curated artworks yet. Click the Curate button to save your favorites.</p>';
+
                 return;
+
             }
+
             curatedGallery.forEach(function(art, index) {
+
                 var div = document.createElement('div');
+
                 var canvasCls = 'canvas-' + (art.traits.canvas || 'black');
+
                 div.className = 'gallery-item ' + canvasCls;
-                div.style.position = 'relative';
+
                 var bgStyle = getCanvasBackgroundStyle(art);
+
                 div.style.backgroundImage = bgStyle.backgroundImage;
+
                 div.style.backgroundColor = bgStyle.backgroundColor;
+
                 div.style.backgroundSize = 'cover';
+
                 div.style.padding = '10px';
+
                 div.style.borderRadius = '8px';
+
                 div.style.cursor = 'pointer';
+
                 div.style.border = '1px solid #444';
-                
-                // Minimal remove button in the top right
+
+                div.style.position = 'relative';
+
                 var removeBtn = document.createElement('button');
                 removeBtn.innerHTML = '✕';
                 removeBtn.title = 'Remove from curated gallery';
@@ -14392,13 +14269,19 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                     showConfirmRemovePopup(index);
                 };
                 div.appendChild(removeBtn);
-                
+
                 var preview = document.createElement('div');
+
                 preview.innerHTML = (art.svgs[0] || '').replace(/\bmotus-active\b/g, '');
+
                 var svgEl = preview.querySelector('svg');
+
                 if (svgEl) {
+
                     svgEl.style.width = '100%';
+
                     svgEl.style.height = 'auto';
+
                     // Inject inline style so header text colour renders correctly in SVG thumbnails
                     if (!svgEl.querySelector('style.gallery-thumb-style')) {
                         var thumbStyle = document.createElementNS('http://www.w3.org/2000/svg', 'style');
@@ -14773,7 +14656,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
             activeGalleryIndex = index;
 
-            backupMainState();
+
 
             var m = document.getElementById('gallery-detail-modal');
 
@@ -14790,24 +14673,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 mainCanvasWrap.id = 'canvas-wrap-main';
             }
 
-            // Rename IDs of main page elements to avoid duplicate ID conflicts
-            for (var i = 1; i <= 3; i++) {
-                var canvasMain = document.getElementById('c' + i);
-                if (canvasMain) canvasMain.id = 'c' + i + '-main';
-                var canvasHSMain = document.getElementById('c' + i + '-hs');
-                if (canvasHSMain) canvasHSMain.id = 'c' + i + '-hs-main';
-                var svgMain = document.getElementById('s' + i);
-                if (svgMain) svgMain.id = 's' + i + '-main';
-                var cardMain = document.getElementById('card' + i);
-                if (cardMain) cardMain.id = 'card' + i + '-main';
-            }
-
             var art = curatedGallery[index];
-
-            TRAITS = JSON.parse(JSON.stringify(art.traits));
-            RESOLVED_TRAITS = JSON.parse(JSON.stringify(art.traits));
-            RENDER_SEED = art.seed;
-            currentLayout = art.layout;
 
             var wrap = document.createElement('div');
 
@@ -14828,11 +14694,10 @@ else</span>                     level = <span class="code-num">4</span>;   <span
             
 
             art.svgs.forEach(function(svgStr, idx) {
-                var panelNum = idx + 1;
 
                 var panel = document.createElement('div');
 
-                panel.id = 'panel' + panelNum;
+                panel.id = 'panel' + (idx + 1);
 
                 var canvasCls = 'canvas-' + (art.traits.canvas || 'black');
 
@@ -14845,7 +14710,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 var card = document.createElement('div');
 
                 card.className = 'platen-card';
-                card.id = 'card' + panelNum;
 
                 
 
@@ -14876,22 +14740,22 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 front.style.backgroundRepeat = 'no-repeat';
 
                 
-                // Create required nodes that renderAll & PlatenHyperspeed expect
-                var canvasHS = document.createElement('canvas');
-                canvasHS.id = 'c' + panelNum + '-hs';
-                canvasHS.style.cssText = "display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;";
-                front.appendChild(canvasHS);
 
-                var canvasStatic = document.createElement('canvas');
-                canvasStatic.id = 'c' + panelNum;
-                canvasStatic.style.cssText = "display:none;";
-                front.appendChild(canvasStatic);
+                front.innerHTML = svgStr.replace(/\bmotus-active\b/g, '');
 
-                var svgEl = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-                svgEl.id = 's' + panelNum;
-                svgEl.className = 'qs';
-                svgEl.style.cssText = "width: 100%; height: 100%; object-fit: contain; display: block;";
-                front.appendChild(svgEl);
+                var s = front.querySelector('svg');
+
+                if (s) {
+
+                    s.style.height = '100%';
+
+                    s.style.width = '100%';
+
+                    s.style.objectFit = 'contain';
+
+                    s.style.display = 'block';
+
+                }
 
                 
 
@@ -14908,7 +14772,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 
 
                 var canvasBack = document.createElement('canvas');
-                canvasBack.id = 'c' + panelNum + '-back';
 
                 canvasBack.style.width = '100%';
 
@@ -14930,7 +14793,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 backBtnFlip.addEventListener('click', function(e) {
 
-                    toggleGalleryFlip(card, canvasBack, svgEl, art, e);
+                    toggleGalleryFlip(card, canvasBack, s, art, e);
 
                 });
 
@@ -14998,7 +14861,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                 btnFlip.addEventListener('click', function(e) {
 
-                    toggleGalleryFlip(card, canvasBack, svgEl, art, e);
+                    toggleGalleryFlip(card, canvasBack, s, art, e);
 
                 });
 
@@ -15012,10 +14875,6 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
             c.appendChild(wrap);
 
-            // Re-render in background to generate vectors/canvas texture & trigger hyperspeed if active
-            renderAll(true);
-            updateMotusUI();
-
         }
 
 
@@ -15024,15 +14883,13 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
 
 
-        function downloadGalleryHiRes(format) {
+        function downloadGalleryPNG() {
 
             var art = curatedGallery[activeGalleryIndex];
 
             if (!art) return;
 
-            var type = format === 'png' ? 'image/png' : 'image/jpeg';
-
-            var quality = format === 'png' ? undefined : 0.95;
+            
 
             art.svgs.forEach(function(svgStr, idx) {
 
@@ -15164,17 +15021,17 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
                         ctx.drawImage(svgImg, 0, 0, outW, outH);
 
-                        canvas.toBlob(function (outBlob) {
+                        canvas.toBlob(function (pngBlob) {
 
                             var rt = art.traits;
 
                             var tStr = "-sym_" + rt.symmetry + "-space_" + rt.space + "-motif_" + rt.motif + "-chrome_" + rt.chromes + "-engine_" + rt.engine;
 
-                            var name = 'platen-' + art.seed + '-v' + (idx+1) + tStr + '.' + format;
+                            var name = 'platen-' + art.seed + '-v' + (idx+1) + tStr + '.png';
 
-                            downloadBlob(outBlob, name);
+                            downloadBlob(pngBlob, name);
 
-                        }, type, quality);
+                        }, 'image/png');
 
                     }
 
@@ -15188,17 +15045,196 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
 
 
-        function downloadGalleryPNG() {
+        function downloadGalleryJPG() {
 
-            downloadGalleryHiRes('png');
+            var art = curatedGallery[activeGalleryIndex];
+
+            if (!art) return;
+
+            
+
+            art.svgs.forEach(function(svgStr, idx) {
+
+                svgStr = svgStr.replace(/\bmotus-active\b/g, '');
+
+                var d = document.createElement('div');
+
+                d.innerHTML = svgStr;
+
+                var svg = d.querySelector('svg');
+
+                if (!svg) return;
+
+                
+
+                var svgW = parseInt(svg.getAttribute('width'));
+
+                var svgH = parseInt(svg.getAttribute('height'));
+
+                var aspect = svgW / svgH;
+
+                var outW, outH;
+
+                if (Math.abs(aspect - (9 / 16)) < 0.01) { outW = 1440; outH = 2560; } 
+
+                else if (Math.abs(aspect - 1.0) < 0.01) { outW = 2560; outH = 2560; } 
+
+                else if (Math.abs(aspect - (16 / 9)) < 0.01) { outW = 2560; outH = 1440; } 
+
+                else {
+
+                    if (aspect < 1.0) { outH = 2560; outW = Math.round(outH * aspect); } 
+
+                    else { outW = 2560; outH = Math.round(outW / aspect); }
+
+                }
+
+                
+
+                var svgClone = svg.cloneNode(true);
+                var headerG = svgClone.querySelector('.typewriter-header');
+                if (headerG) headerG.remove();
+
+                var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+                g.setAttribute("transform", "translate(0, 16)");
+
+                while (svgClone.firstChild) { g.appendChild(svgClone.firstChild); }
+
+                svgClone.appendChild(g);
+
+                
+
+                var str = svgToString(svgClone, art.traits.canvas);
+
+                var blob = new Blob([str], { type: 'image/svg+xml' });
+
+                var svgUrl = URL.createObjectURL(blob);
+
+                
+
+                var svgImg = new Image();
+
+                svgImg.onload = function() {
+
+                    var canvas = document.createElement('canvas');
+
+                    canvas.width = outW; canvas.height = outH;
+
+                    var ctx = canvas.getContext('2d');
+
+                    
+
+                    var bgStyle = getCanvasBackgroundStyle(art);
+
+                    ctx.fillStyle = bgStyle.backgroundColor || '#1a1724';
+
+                    ctx.fillRect(0, 0, outW, outH);
+
+                    
+
+                    var texSrc = bgStyle.backgroundImage;
+
+                    if (texSrc && texSrc !== 'none') {
+
+                        var urlMatch = texSrc.match(/^url\(['"]?(.*?)['"]?\)$/);
+
+                        if (urlMatch && urlMatch[1]) {
+
+                            var texImg = new Image();
+
+                            texImg.onload = function() { drawLayer2(texImg); };
+
+                            texImg.src = urlMatch[1];
+
+                            return;
+
+                        }
+
+                    }
+
+                    
+
+                    drawLayer2(null);
+
+
+
+                    function drawLayer2(texImg) {
+
+                        if (texImg) {
+
+                            var imgW = texImg.width, imgH = texImg.height;
+
+                            var tScale = Math.max(outW / imgW, outH / imgH);
+
+                            if (art.layout.indexOf('us_letter') !== -1) tScale *= 1.06;
+
+                            var newW = imgW * tScale, newH = imgH * tScale;
+
+                            var dx = (outW - newW) / 2, dy = (outH - newH) / 2;
+
+                            if (art.traits.canvas && art.traits.canvas.indexOf('graph_paper') === 0) dy = 0;
+
+                            ctx.drawImage(texImg, 0, 0, imgW, imgH, dx, dy, newW, newH);
+
+                        }
+
+                        
+
+                        ctx.drawImage(svgImg, 0, 0, outW, outH);
+
+                        canvas.toBlob(function (jpgBlob) {
+
+                            var rt = art.traits;
+
+                            var tStr = "-sym_" + rt.symmetry + "-space_" + rt.space + "-motif_" + rt.motif + "-chrome_" + rt.chromes + "-engine_" + rt.engine;
+
+                            var name = 'platen-' + art.seed + '-v' + (idx+1) + tStr + '.jpg';
+
+                            downloadBlob(jpgBlob, name);
+
+                        }, 'image/jpeg', 0.95);
+
+                    }
+
+                };
+
+                svgImg.src = svgUrl;
+
+            });
 
         }
 
 
 
-        function downloadGalleryJPG() {
+        function downloadGallerySVG() {
 
-            downloadGalleryHiRes('jpg');
+            var art = curatedGallery[activeGalleryIndex];
+
+            if (!art) return;
+
+            art.svgs.forEach(function(svgStr, idx) {
+                svgStr = svgStr.replace(/\bmotus-active\b/g, '');
+                var d = document.createElement('div');
+                d.innerHTML = svgStr;
+                var svg = d.querySelector('svg');
+                if (svg) {
+                    var headerG = svg.querySelector('.typewriter-header');
+                    if (headerG) headerG.remove();
+                    svgStr = svg.outerHTML;
+                }
+
+                var blob = new Blob([svgStr], { type: 'image/svg+xml' });
+
+                var rt = art.traits;
+
+                var tStr = "-sym_" + rt.symmetry + "-space_" + rt.space + "-motif_" + rt.motif + "-chrome_" + rt.chromes + "-engine_" + rt.engine;
+
+                var name = 'platen-' + art.seed + '-v' + (idx+1) + tStr + '.svg';
+
+                downloadBlob(blob, name);
+
+            });
 
         }
 
@@ -15832,31 +15868,12 @@ else</span>                     level = <span class="code-num">4</span>;   <span
 
 
         function closeGalleryDetail() {
-
             document.getElementById('gallery-detail-modal').style.display = 'none';
-
-            if (window.PlatenHyperspeed) {
-
-                [1, 2, 3].forEach(function(id) {
-
-                    PlatenHyperspeed.stop(id);
-
-                });
-
-            }
-
             var mainCanvasWrap = document.getElementById('canvas-wrap-main');
-
             if (mainCanvasWrap) {
-
                 mainCanvasWrap.id = 'canvas-wrap';
-
             }
-
             activeGalleryIndex = -1;
-
-            restoreMainState();
-
         }
 
 
@@ -16320,20 +16337,7 @@ else</span>                     level = <span class="code-num">4</span>;   <span
                 <div id="title" style="font-size: 11px; letter-spacing: 0.2em; text-transform: lowercase;">gallery viewer</div>
             </div>
 
-            <div class="btn-group" style="display: flex; gap: 20px; align-items: center; margin-left: auto;">
-
-                <div style="display: flex; gap: 6px; align-items: center; position: relative;">
-                    <button id="btn-gallery-hyperspeed" onclick="toggleGalleryHyperspeed()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px; color: inherit;">motus: off</button>
-                    <div id="gallery-motus-dropdown-container" class="motus-dropdown" style="display: none; position: relative;">
-                        <button id="gallery-motus-mode-btn" class="motus-dropdown-btn" onclick="document.getElementById('gallery-motus-dropdown-container').classList.toggle('open')" style="text-align: left; padding: 0 4px; border: none; background: transparent; cursor: pointer; color: inherit; font-family: inherit; font-size: 11px;">FLUX</button>
-                        <div class="motus-dropdown-content" onclick="document.getElementById('gallery-motus-dropdown-container').classList.remove('open')">
-                            <div id="gallery-motus-mode-flux" onclick="setGalleryMotusMode('flux')">FLUX</div>
-                            <div id="gallery-motus-mode-moire" onclick="setGalleryMotusMode('moire')">MOIRÉ</div>
-                            <div id="gallery-motus-mode-iso" onclick="setGalleryMotusMode('iso_col')">ELEVATE</div>
-                            <div id="gallery-motus-mode-plotter" onclick="setGalleryMotusMode('plotter')">PLOTTER</div>
-                        </div>
-                    </div>
-                </div>
+            <div class="btn-group" style="display: flex; gap: 20px; margin-left: auto;">
 
                 <button onclick="downloadGalleryPNG()" style="background: transparent; border: none; cursor: pointer; text-transform: lowercase; font-family: inherit; font-size: 11px;">download png</button>
 
