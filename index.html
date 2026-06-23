@@ -3456,9 +3456,9 @@
 
                 <div class="control-grid">
 
-                    <button id="btn-randomize" onclick="randomize()">Randomize</button>
+                    <button id="btn-randomize" onclick="randomize()" title="Completely randomizes all parameters and background">Randomize</button>
 
-                    <button id="btn-regen" onclick="regenerate()">Regenerate</button>
+                    <button id="btn-regen" onclick="regenerate()" title="Generates a new seed but keeps current parameters and background">Regenerate</button>
 
                     <button id="btn-curate" onclick="curateArtwork()">Curate</button>
 
@@ -4867,6 +4867,8 @@
             TRAITS.engine = ENGINE_OPTS[Math.floor(Math.random() * (ENGINE_OPTS.length - 1)) + 1];
 
             TRAITS.solid = Math.random() < 0.3;
+
+            TRAITS.canvas = 'random';
 
 
 
