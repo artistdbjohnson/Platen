@@ -788,7 +788,7 @@
 
             position: relative;
 
-            cursor: grab;
+            cursor: default;
 
             transform-origin: center center;
 
@@ -896,7 +896,7 @@
 
         .platen-panel:active {
 
-            cursor: grabbing;
+            cursor: default;
 
             transition: none;
 
@@ -14865,6 +14865,70 @@
             });
 
             c.appendChild(wrap);
+
+            // Add zoom & pan event listeners to the modal's wrap
+            var galState = {};
+            function getGalState(id) {
+                if (!galState[id]) galState[id] = { scale: 1, x: 0, y: 0 };
+                return galState[id];
+            }
+            function applyGalTransform(panel, s) {
+                if (!panel) return;
+                panel.style.transform = 'translate(' + s.x + 'px, ' + s.y + 'px) scale(' + s.scale + ')';
+            }
+
+            wrap.addEventListener('wheel', function (e) {
+                var panel = e.target.closest('.platen-panel');
+                if (!panel) return;
+                e.preventDefault();
+                var id = panel.id || 'pgal';
+                var s = getGalState(id);
+                var delta = e.deltaY > 0 ? -0.15 : 0.15;
+                s.scale = Math.min(Math.max(s.scale + delta, 1), 8);
+                applyGalTransform(panel, s);
+            }, { passive: false });
+
+            var galDragging = false;
+            var galStartX, galStartY;
+            var galActivePanelId = null;
+
+            wrap.addEventListener('mousedown', function (e) {
+                var panel = e.target.closest('.platen-panel');
+                if (!panel) return;
+                var svg = panel.querySelector('svg');
+                if (!svg) return;
+                galDragging = true;
+                galActivePanelId = panel.id || 'pgal';
+                galStartX = e.clientX;
+                galStartY = e.clientY;
+                e.preventDefault();
+            });
+
+            window.addEventListener('mousemove', function (e) {
+                if (!galDragging || !galActivePanelId) return;
+                var s = getGalState(galActivePanelId);
+                var dx = e.clientX - galStartX;
+                var dy = e.clientY - galStartY;
+                s.x += dx;
+                s.y += dy;
+                galStartX = e.clientX;
+                galStartY = e.clientY;
+                var panel = wrap.querySelector('#' + galActivePanelId) || wrap.querySelector('.platen-panel');
+                applyGalTransform(panel, s);
+            });
+
+            window.addEventListener('mouseup', function () {
+                galDragging = false;
+                galActivePanelId = null;
+            });
+
+            wrap.addEventListener('dblclick', function (e) {
+                var panel = e.target.closest('.platen-panel');
+                if (!panel) return;
+                var id = panel.id || 'pgal';
+                galState[id] = { scale: 1, x: 0, y: 0 };
+                applyGalTransform(panel, galState[id]);
+            });
 
         }
 
