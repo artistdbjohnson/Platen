@@ -3356,50 +3356,50 @@
 
             <p>The full algorithm is open. The engine at the center is a switch across forty named patterns, each one computing weight analytically from pure geometry. Here is what that looks like in the code:</p>
 
-            <pre>function calcMotifWeight(x, y, w, h, engine, params) {
-    switch(engine) {
-        case 'VERNA':
-            // Perlin noise field sampled at rotated coordinates
-            var nx = (x / w) * params.scale;
-            var ny = (y / h) * params.scale;
-            return Math.abs(noise(nx, ny, params.seed));
+            <pre><span class="code-kw">function</span> <span class="code-fn">calcMotifWeight</span>(x, y, w, h, engine, params) {
+    <span class="code-kw">switch</span>(engine) {
+        <span class="code-kw">case</span> <span class="code-str">'VERNA'</span>:
+            <span class="code-comment">// Perlin noise field sampled at rotated coordinates</span>
+            <span class="code-kw">var</span> nx = (x / w) * params.scale;
+            <span class="code-kw">var</span> ny = (y / h) * params.scale;
+            <span class="code-kw">return</span> Math.abs(noise(nx, ny, params.seed));
 
-        case 'TNGNT':
-            // Tangent wave interference pattern
-            var fx = Math.tan(x * params.freq) * params.amp;
-            var fy = Math.tan(y * params.freq) * params.amp;
-            return Math.abs(Math.sin(fx + fy));
+        <span class="code-kw">case</span> <span class="code-str">'TNGNT'</span>:
+            <span class="code-comment">// Tangent wave interference pattern</span>
+            <span class="code-kw">var</span> fx = Math.tan(x * params.freq) * params.amp;
+            <span class="code-kw">var</span> fy = Math.tan(y * params.freq) * params.amp;
+            <span class="code-kw">return</span> Math.abs(Math.sin(fx + fy));
 
-        case 'TOLM':
-            // Distance field from lattice centers
-            var gx = (x % params.cell) / params.cell;
-            var gy = (y % params.cell) / params.cell;
-            return 1.0 - Math.sqrt(gx * gx + gy * gy);
+        <span class="code-kw">case</span> <span class="code-str">'TOLM'</span>:
+            <span class="code-comment">// Distance field from lattice centers</span>
+            <span class="code-kw">var</span> gx = (x % params.cell) / params.cell;
+            <span class="code-kw">var</span> gy = (y % params.cell) / params.cell;
+            <span class="code-kw">return</span> <span class="code-num">1.0</span> - Math.sqrt(gx * gx + gy * gy);
 
-        // ... 37 further engines
+        <span class="code-comment">// ... 37 further engines</span>
     }
 }</pre>
 
             <p>Every engine returns a raw float. That float gets normalized across the full grid, jittered deterministically by cell coordinate to prevent hard threshold edges, then mapped to a glyph:</p>
 
-            <pre>// Pass 1: raw weight + deterministic jitter per cell coordinate
-var jitter = baseWt > 0 ? (((cx * 37 + cy * 13) % 100) / 400.0) : 0;
+            <pre><span class="code-comment">// Pass 1: raw weight + deterministic jitter per cell coordinate</span>
+<span class="code-kw">var</span> jitter = baseWt > <span class="code-num">0</span> ? (((cx * <span class="code-num">37</span> + cy * <span class="code-num">13</span>) % <span class="code-num">100</span>) / <span class="code-num">400.0</span>) : <span class="code-num">0</span>;
 rawWt.push(baseWt + jitter);
 
-// Pass 2: normalize, ground to 0, discard bottom 7% as background
-var wMin = 0;
-var wRange = isFlat ? 1 : (wMax - wMin);
-var norm = (rawWt[ri2++] - wMin) / wRange;
-if (norm > 0.07) {
+<span class="code-comment">// Pass 2: normalize, ground to 0, discard bottom 7% as background</span>
+<span class="code-kw">var</span> wMin = <span class="code-num">0</span>;
+<span class="code-kw">var</span> wRange = isFlat ? <span class="code-num">1</span> : (wMax - wMin);
+<span class="code-kw">var</span> norm = (rawWt[ri2++] - wMin) / wRange;
+<span class="code-kw">if</span> (norm > <span class="code-num">0.07</span>) {
     grid[cx2][cy2].wt = norm;
 }
 
-// Scalar to glyph level — five bands
-if      (cell.wt < 0.36) level = 0;   // comma
-else if (cell.wt < 0.51) level = 1;   // dot
-else if (cell.wt < 0.66) level = 2;   // plus
-else if (cell.wt < 0.81) level = 3;   // x
-else                     level = 4;   // asterisk</pre>
+<span class="code-comment">// Scalar to glyph level — five bands</span>
+<span class="code-kw">if</span>      (cell.wt < <span class="code-num">0.36</span>) level = <span class="code-num">0</span>;   <span class="code-comment">// comma</span>
+<span class="code-kw">else if</span> (cell.wt < <span class="code-num">0.51</span>) level = <span class="code-num">1</span>;   <span class="code-comment">// dot</span>
+<span class="code-kw">else if</span> (cell.wt < <span class="code-num">0.66</span>) level = <span class="code-num">2</span>;   <span class="code-comment">// plus</span>
+<span class="code-kw">else if</span> (cell.wt < <span class="code-num">0.81</span>) level = <span class="code-num">3</span>;   <span class="code-comment">// x</span>
+<span class="code-kw">else</span>                     level = <span class="code-num">4</span>;   <span class="code-comment">// asterisk</span></pre>
 
             <p>Dot. Comma. Plus. X. Asterisk. Slash. Hash. Dash. Eight possible outcomes per cell, each one natively typeable on a standard QWERTY SM3. The shift-key symbols, the punctuation, the letters, every mark in every output existed in the machine's mechanical vocabulary in 1952. The simulation never asks the SM3 to do something it could not physically do.</p>
 
