@@ -330,6 +330,111 @@
 
 
 
+        .about-card-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 5px;
+        }
+
+        .about-card {
+            background-color: #f2efe9;
+            background-size: cover;
+            border: 1px solid #d3cdbe;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            box-sizing: border-box;
+            width: 100%;
+            aspect-ratio: 1 / 1.3;
+            justify-content: space-between;
+        }
+
+        .about-card-logo {
+            width: 100%;
+            height: 78%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 4px;
+            background: #111;
+        }
+
+        .about-card-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .about-card-meta {
+            width: 100%;
+            margin-top: 8px;
+            font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+            font-size: 8.5px;
+            color: #1a1a1a;
+            line-height: 1.4;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            text-align: left;
+        }
+
+        .about-description {
+            font-size: 11px;
+            line-height: 1.6;
+            color: var(--text);
+            opacity: 0.85;
+        }
+
+        .about-description p {
+            margin: 0 0 12px 0 !important;
+            font-size: 11px !important;
+            line-height: 1.6 !important;
+        }
+
+        .about-release-notes {
+            border-top: 1px dashed var(--border);
+            padding-top: 12px;
+            margin-top: 4px;
+        }
+
+        .about-release-notes h4 {
+            font-size: 9px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text);
+            margin: 0 0 8px 0;
+            opacity: 0.7;
+        }
+
+        .about-release-notes ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .about-release-notes li {
+            font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+            font-size: 9px;
+            line-height: 1.5;
+            color: var(--dim);
+            position: relative;
+            padding-left: 12px;
+            margin-bottom: 4px;
+        }
+
+        .about-release-notes li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--text);
+            opacity: 0.5;
+        }
+
         .col-about pre {
 
             font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
@@ -3351,133 +3456,34 @@
 
             <h2>PLATEN by DGLXSS</h2>
 
-            <p>2017. A typewriter shop in West Los Angeles. My son was four, running the shop floor between dead ribbons and open cases while I paid for an Olympia SM3 with one intention. Write a novel no one would ever read. Private. Something to pass down to him one day.</p>
-
-            <p>The novel remains unfinished. And the typewriter has been following along ever since.</p>
-
-            <p>Then #plottertwitter. Artists feeding algorithms into machines, ink finding paper one mechanical decision at a time. Paul Prudence holding a pen against a platen roller, discovering he had a hand-operated plotter in his studio the whole time. Henri Chopin in 1985 mapping density through a split ribbon, blue and red, building form from the weight of repeated strikes. Ruth Wolf-Rehfeldt typing one word across an entire page until the word became a shape and the shape carried the meaning.</p>
-
-            <p>The SM3 in the corner looked different after that. A constraint system that had known how to translate a mathematical instruction into a physical mark since 1952.</p>
-
-            <p>PLATEN starts in mathematics. A closed-form calculation runs across every cell on a mechanical grid, geometric tests, sine-wave phase comparisons, lattice arithmetic. Each cell returns one number measuring how strongly that coordinate activates under the current pattern. No pixels, no image lookup, no rasterization anywhere in the chain. The number normalizes to a scalar between zero and one.</p>
-
-            <p>That scalar becomes a glyph. The glyph becomes a strike.</p>
-
-            <p>The full algorithm is open. The engine at the center is a switch across forty named patterns, each one computing weight analytically from pure geometry. Here is what that looks like in the code:</p>
-
-            <pre><span class="code-kw">function</span> <span class="code-fn">calcMotifWeight</span>(x, y, w, h, engine, params) {
-
-    <span class="code-kw">switch</span>(engine) {
-
-        <span class="code-kw">case</span> <span class="code-str">'VERNA'</span>:
-
-            <span class="code-comment">// Perlin noise field sampled at rotated coordinates</span>
-
-            <span class="code-kw">var</span> nx = (x / w) * params.scale;
-
-            <span class="code-kw">var</span> ny = (y / h) * params.scale;
-
-            <span class="code-kw">return</span> Math.<span class="code-fn">abs</span>(<span class="code-fn">noise</span>(nx, ny, params.seed));
-
-
-
-        <span class="code-kw">case</span> <span class="code-str">'TNGNT'</span>:
-
-            <span class="code-comment">// Tangent wave interference pattern</span>
-
-            <span class="code-kw">var</span> fx = Math.<span class="code-fn">tan</span>(x * params.freq) * params.amp;
-
-            <span class="code-kw">var</span> fy = Math.<span class="code-fn">tan</span>(y * params.freq) * params.amp;
-
-            <span class="code-kw">return</span> Math.<span class="code-fn">abs</span>(Math.<span class="code-fn">sin</span>(fx + fy));
-
-
-
-        <span class="code-kw">case</span> <span class="code-str">'TOLM'</span>:
-
-            <span class="code-comment">// Distance field from lattice centers</span>
-
-            <span class="code-kw">var</span> gx = (x % params.cell) / params.cell;
-
-            <span class="code-kw">var</span> gy = (y % params.cell) / params.cell;
-
-            <span class="code-kw">return</span> <span class="code-num">1.0</span> - Math.<span class="code-fn">sqrt</span>(gx * gx + gy * gy);
-
-
-
-        <span class="code-comment">// ... 37 further engines</span>
-
-    }
-
-}</pre>
-
-            <p>Every engine returns a raw float. That float gets normalized across the full grid, jittered deterministically by cell coordinate to prevent hard threshold edges, then mapped to a glyph:</p>
-
-            <pre><span class="code-comment">// Pass 1: raw weight + deterministic jitter per cell coordinate</span>
-
-<span class="code-kw">var</span> jitter = baseWt &gt; <span class="code-num">0</span> ? (((cx * <span class="code-num">37</span> + cy * <span class="code-num">13</span>) % <span class="code-num">100</span>) / <span class="code-num">400.0</span>) : <span class="code-num">0</span>;
-
-rawWt.push(baseWt + jitter);
-
-
-
-<span class="code-comment">// Pass 2: normalize, ground to 0, discard bottom 7% as background</span>
-
-<span class="code-kw">var</span> wMin = <span class="code-num">0</span>;
-
-<span class="code-kw">var</span> wRange = isFlat ? <span class="code-num">1</span> : (wMax - wMin);
-
-<span class="code-kw">var</span> norm = (rawWt[ri2++] - wMin) / wRange;
-
-<span class="code-kw">if</span> (norm &gt; <span class="code-num">0.07</span>) {
-
-    grid[cx2][cy2].wt = norm;
-
-}
-
-
-
-<span class="code-comment">// Scalar to glyph level — five bands</span>
-
-<span class="code-kw">if</span>      (cell.wt &lt; <span class="code-num">0.36</span>) level = <span class="code-num">0</span>;   <span class="code-comment">// comma</span>
-
-<span class="code-kw">else if (cell.wt &lt; <span class="code-num">0.51</span>) level = <span class="code-num">1</span>;   <span class="code-comment">// dot</span>
-
-<span class="code-kw">else if (cell.wt &lt; <span class="code-num">0.66</span>) level = <span class="code-num">2</span>;   <span class="code-comment">// plus</span>
-
-<span class="code-kw">else if (cell.wt &lt; <span class="code-num">0.81</span>) level = <span class="code-num">3</span>;   <span class="code-comment">// x
-
-else</span>                     level = <span class="code-num">4</span>;   <span class="code-comment">// asterisk</span></pre>
-
-            <p>Dot. Comma. Plus. X. Asterisk. Slash. Hash. Dash. Eight possible outcomes per cell, each one natively typeable on a standard QWERTY SM3. The shift-key symbols, the punctuation, the letters, every mark in every output existed in the machine's mechanical vocabulary in 1952. The simulation never asks the SM3 to do something it could not physically do.</p>
-
-            <p>Forty engines. Each one a closed-form translation of a specific material culture, historical textile, or architectural system into pure scalar mathematics. The loom: kente, bogolan, adire, kuba, the stepped diamonds of Navajo tradition, the structured geometry of chiefs blankets and Serape optical tunneling. The compass: seigaiha concentric waves, asanoha hemp leaf lattices, kagome tri-axial basket weave, shippo overlapping circles, Islamic interlace strapwork built from multi-frequency radial math. The drafting table: tangents connecting nodes like architectural drawings, stolz recreating the Bauhaus grid after Gunta Stölzl, structural simulating blueprint hatching and nested frames. The machine turned against itself: glitch simulating data corruption, scanline tearing, bit-crushing, orak warping the grid into cosmic distortion.</p>
-
-            <p>All forty passing through the same bottleneck: the physical width of a type slug. 0.082 inches inside a 0.100-inch cell. 10 characters per inch, 6 lines per inch. The machine's actual specifications, inherited exactly.</p>
-
-            <p>Symmetry works the same way. Rotational, glide, translational operations don't mirror pixels after the fact. The coordinate space rotates before the noise samples, so the mathematics generates the symmetry natively. The typewriter destroys most of it. Eight glyphs hold what survives.</p>
-
-            <p>Print it, send it to a pen plotter. The output is raw SVG against real-world inches, laid over a scanned paper canvas at 600dpi, the texture of an actual sheet beneath every vector path. Screen is preview. The work only fully exists when pressed into a surface you can touch. Chopin made this argument with a ribbon. Prudence makes it with a platen roller. Wolf-Rehfeldt made it with one repeated word. The machine is not incidental. The machine is the point.</p>
-
-            <p>My son is thirteen now.</p>
-
-            <p>The novel is still unfinished. So is everything worth keeping.</p>
-
-            <br>
-
-            <h3>Release Notes</h3>
-
-            <p>PLATEN — 2026.05.31</p>
-
-            <p>Eight natively typeable glyphs mapped across five density levels: comma, dot, plus, X, asterisk, slash, hash, dash. Each character exists in the Olympia SM3's standard QWERTY vocabulary. The simulation inherits the machine's exact mechanical specifications — 10 CPI, 6 LPI, 0.082" type slug width — without approximation.</p>
-
-            <p>Glyph vocabulary is symmetry-aware. ROTAT outputs resolve through radially neutral characters. GLIDE outputs bias toward diagonal strikes. TRANS outputs carry horizontal weight. The character set reflects the underlying mathematical operation, not just the density it represents.</p>
-
-            <p>Forty generative engines. Deterministic ink variance per seed. Scanned paper canvas at 600dpi. Archival SVG output at real-world print dimensions.</p>
-
-            <p>88 editions. 0.088 ETH.</p>
-
-            <p>One piece for every character an Olympia SM3 can strike.</p>
+            <div class="about-card-container">
+                <div class="about-card">
+                    <div class="about-card-logo">
+                        <img src="platen_logo.png" alt="PLATEN Logo">
+                    </div>
+                    <div class="about-card-meta">
+                        LAYOUT: A4 [ ISO 216 ]<br>
+                        ENGINE: OLYMPIA SM3<br>
+                        EDITIONS: 88 / 0.088 ETH
+                    </div>
+                </div>
+
+                <div class="about-description">
+                    <p><strong>West Los Angeles, 2017.</strong> A father buys an Olympia SM3 typewriter to write a private novel. The novel remains unfinished, but the machine finds a new purpose: translating mathematical constraints into physical marks.</p>
+
+                    <p><strong>PLATEN</strong> is an open constraint system mapping 40 generative engines to 8 natively typeable character levels. Inheriting the SM3’s physical layout (10 CPI, 6 LPI), the simulation bridges code and ink, existing fully when pressed into a physical surface.</p>
+                </div>
+
+                <div class="about-release-notes">
+                    <h4>RELEASE NOTES — 2026.05.31</h4>
+                    <ul>
+                        <li>Eight natively typeable glyphs mapped across five density levels.</li>
+                        <li>Symmetry-aware glyph selection (ROTAT, GLIDE, TRANS).</li>
+                        <li>Forty generative engines with deterministic ink variance.</li>
+                        <li>Archival SVG output at real-world print dimensions.</li>
+                    </ul>
+                </div>
+            </div>
 
             <br><br><br>
 
