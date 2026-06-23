@@ -13902,11 +13902,14 @@
 
             setInterval(updateCurationDeadline, 1000);
 
-            // Click on left area of screen/artwork in gallery detail modal to go back
             var detailModal = document.getElementById('gallery-detail-modal');
             if (detailModal) {
                 detailModal.addEventListener('click', function(e) {
                     if (e.target.closest('.gallery-topbar') || e.target.closest('button') || e.target.closest('a')) {
+                        return;
+                    }
+                    if (window.galWasDragging) {
+                        window.galWasDragging = false;
                         return;
                     }
                     if (e.clientX < window.innerWidth * 0.45) {
@@ -14150,7 +14153,10 @@
 
             }
 
-            curatedGallery.forEach(function(art, index) {
+            // Loop in reverse order to load most recent curated first
+            for (var i = curatedGallery.length - 1; i >= 0; i--) {
+                (function(index) {
+                    var art = curatedGallery[index];
 
                 var div = document.createElement('div');
 
@@ -14281,7 +14287,8 @@
 
                 grid.appendChild(div);
 
-            });
+                })(i);
+            }
 
         }
 
@@ -14908,6 +14915,7 @@
 
             window.addEventListener('mousemove', function (e) {
                 if (!galDragging || !galActivePanelId) return;
+                window.galWasDragging = true;
                 var s = getGalState(galActivePanelId);
                 var dx = e.clientX - galStartX;
                 var dy = e.clientY - galStartY;
