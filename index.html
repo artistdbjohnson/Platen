@@ -10487,6 +10487,8 @@ rawWt.push(baseWt + jitter);
 
             var _active      = {};   // id → boolean
 
+            var _layouts     = {};   // id → layout string
+
             var _isGloballyOn = false; // tracks if user manually turned Motus ON
 
             var _rafIds      = {};   // id → raf handle
@@ -10785,7 +10787,7 @@ rawWt.push(baseWt + jitter);
 
                     : null;
 
-                var currentLayout = window.currentLayout || 'default';
+                var currentLayout = _layouts[id] || window.currentLayout || 'default';
 
                 var sizes   = (typeof getLayoutSizes === 'function') ? getLayoutSizes(currentLayout) : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
 
@@ -11225,7 +11227,9 @@ rawWt.push(baseWt + jitter);
 
 
 
-                var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(window.currentLayout || 'default') : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
+                var currentLayout = _layouts[id] || window.currentLayout || 'default';
+
+                var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(currentLayout) : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
 
                 var l_w = sizes.w, l_h = sizes.h, sizeX = sizes.sizeX, sizeY = sizes.sizeY;
 
@@ -11233,13 +11237,13 @@ rawWt.push(baseWt + jitter);
 
                 var svgH = (l_h + 8) * sizeY;
 
-                var isGraphPaper = (window.currentLayout === 'graph_paper' || window.currentLayout === 'graph_paper_sq' || window.currentLayout === 'graph_paper_banner' || window.currentLayout === 'graph_paper_sq_banner');
+                var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
 
                 if (isGraphPaper) {
 
                     svgW = 1696;
 
-                    svgH = (window.currentLayout === 'graph_paper_sq' || window.currentLayout === 'graph_paper_sq_banner') ? 1707.08 : 2192;
+                    svgH = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner') ? 1707.08 : 2192;
 
                 }
 
@@ -11429,7 +11433,9 @@ rawWt.push(baseWt + jitter);
 
 
 
-                var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(window.currentLayout || 'default') : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
+                var currentLayout = _layouts[id] || window.currentLayout || 'default';
+
+                var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(currentLayout) : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
 
                 var l_w = sizes.w, l_h = sizes.h, sizeX = sizes.sizeX, sizeY = sizes.sizeY;
 
@@ -11437,13 +11443,13 @@ rawWt.push(baseWt + jitter);
 
                 var svgH = (l_h + 8) * sizeY;
 
-                var isGraphPaper = (window.currentLayout === 'graph_paper' || window.currentLayout === 'graph_paper_sq' || window.currentLayout === 'graph_paper_banner' || window.currentLayout === 'graph_paper_sq_banner');
+                var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
 
                 if (isGraphPaper) {
 
                     svgW = 1696;
 
-                    svgH = (window.currentLayout === 'graph_paper_sq' || window.currentLayout === 'graph_paper_sq_banner') ? 1707.08 : 2192;
+                    svgH = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner') ? 1707.08 : 2192;
 
                 }
 
@@ -12571,7 +12577,13 @@ rawWt.push(baseWt + jitter);
 
                 // Call after _lastFlowers[id] is assigned (line ~2794 in index.html)
 
-                prepare: function (id) {
+                prepare: function (id, layout) {
+
+                    if (layout) {
+
+                        _layouts[id] = layout;
+
+                    }
 
                     _buildPaths();
 
@@ -12605,7 +12617,9 @@ rawWt.push(baseWt + jitter);
 
                     
 
-                    var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(window.currentLayout || 'default') : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
+                    var currentLayout = _layouts[id] || window.currentLayout || 'default';
+
+                    var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(currentLayout) : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
 
                     var l_w = sizes.w, l_h = sizes.h, sizeX = sizes.sizeX, sizeY = sizes.sizeY;
 
@@ -12613,13 +12627,13 @@ rawWt.push(baseWt + jitter);
 
                     var svgH = (l_h + 8) * sizeY;
 
-                    var isGraphPaper = (window.currentLayout === 'graph_paper' || window.currentLayout === 'graph_paper_sq' || window.currentLayout === 'graph_paper_banner' || window.currentLayout === 'graph_paper_sq_banner');
+                    var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
 
                     if (isGraphPaper) {
 
                         svgW = 1696;
 
-                        svgH = (window.currentLayout === 'graph_paper_sq' || window.currentLayout === 'graph_paper_sq_banner') ? 1707.08 : 2192;
+                        svgH = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner') ? 1707.08 : 2192;
 
                     }
 
@@ -14680,10 +14694,14 @@ rawWt.push(baseWt + jitter);
 
             if (!window.PlatenHyperspeed) return;
 
+            var art = curatedGallery[activeGalleryIndex];
+            var layout = art ? art.layout : null;
+
             for (var i = 1; i <= 9; i++) {
                 var id = 'gal-' + i;
                 if (document.getElementById('c' + id)) {
                     if (_galMotusOn) {
+                        if (layout) PlatenHyperspeed.prepare(id, layout);
                         PlatenHyperspeed.start(id);
                     } else {
                         PlatenHyperspeed.stop(id);
@@ -14698,11 +14716,14 @@ rawWt.push(baseWt + jitter);
             if (btn) btn.textContent = labels[mode];
             if (window.PlatenHyperspeed) {
                 PlatenHyperspeed.setMode(mode);
+                var art = curatedGallery[activeGalleryIndex];
+                var layout = art ? art.layout : null;
                 for (var i = 1; i <= 9; i++) {
                     var id = 'gal-' + i;
                     if (document.getElementById('c' + id)) {
                         PlatenHyperspeed.stop(id);
-                        PlatenHyperspeed.prepare(id);
+                        if (layout) PlatenHyperspeed.prepare(id, layout);
+                        else PlatenHyperspeed.prepare(id);
                         PlatenHyperspeed.start(id);
                     }
                 }
