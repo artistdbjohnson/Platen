@@ -1824,6 +1824,16 @@
 
         }
 
+        .platen-loader.initial-load {
+
+            bottom: auto;
+
+            top: 50%;
+
+            transform: translate(-50%, -50%);
+
+        }
+
 
 
         /* ── CSS 3D Card Flip ── */
@@ -3730,7 +3740,7 @@ rawWt.push(baseWt + jitter);
 
                         <div class="platen-face front">
 
-                            <div class="platen-loader">rendering...</div>
+                            <div class="platen-loader initial-load">rendering...</div>
 
                             <canvas id="c1" class="qs" style="display: none;"></canvas>
 
@@ -3772,7 +3782,7 @@ rawWt.push(baseWt + jitter);
 
                         <div class="platen-face front">
 
-                            <div class="platen-loader">rendering...</div>
+                            <div class="platen-loader initial-load">rendering...</div>
 
                             <canvas id="c2" class="qs" style="display: none;"></canvas>
 
@@ -3814,7 +3824,7 @@ rawWt.push(baseWt + jitter);
 
                         <div class="platen-face front">
 
-                            <div class="platen-loader">rendering...</div>
+                            <div class="platen-loader initial-load">rendering...</div>
 
                             <canvas id="c3" class="qs" style="display: none;"></canvas>
 
@@ -6734,7 +6744,15 @@ rawWt.push(baseWt + jitter);
 
         function renderPlaten(svgId, id, traits, expectedGen) {
 
-            return new Promise(function (resolve, reject) {
+            return new Promise(function (originalResolve, reject) {
+                var resolve = function(val) {
+                    var panelEl = document.getElementById('panel' + id);
+                    if (panelEl) {
+                        var loader = panelEl.querySelector('.platen-loader');
+                        if (loader) loader.classList.remove('initial-load');
+                    }
+                    originalResolve(val);
+                };
 
                 var svgNS = "http://www.w3.org/2000/svg";
 
