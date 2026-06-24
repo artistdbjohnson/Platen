@@ -1858,6 +1858,8 @@
 
             transform-style: preserve-3d;
 
+            -webkit-transform-style: preserve-3d;
+
             transition: transform 0.7s ease; /* ~700ms ease transition */
 
         }
@@ -1866,6 +1868,20 @@
 
             transform: rotateY(180deg);
 
+        }
+
+        .platen-card.flipped .platen-face.front {
+            z-index: 1 !important;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .platen-card.flipped .platen-face.back {
+            z-index: 2 !important;
+            pointer-events: auto;
+            opacity: 1;
+            visibility: visible;
         }
 
         .platen-face {
@@ -1882,6 +1898,8 @@
 
             backface-visibility: hidden;
 
+            -webkit-backface-visibility: hidden;
+
             background-size: cover;
 
             background-position: center;
@@ -1891,19 +1909,19 @@
         }
 
         .platen-face.front {
-
             z-index: 2;
-
             transform: rotateY(0deg);
-
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
         .platen-face.back {
-
             transform: rotateY(180deg);
-
             z-index: 1;
-
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
         .btn-flip {
@@ -3316,7 +3334,7 @@
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
-            transition-delay: 0.05s;
+            transition-delay: 0s;
             font-family: var(--font-mono);
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
             z-index: 10000;
@@ -3331,6 +3349,7 @@
             opacity: 1;
             visibility: visible;
             transform: translateX(-50%) translateY(-4px) scale(1);
+            transition-delay: 1.2s;
         }
 
         /* Prevent clipping on left-aligned control-grid items */
@@ -3352,6 +3371,13 @@
         }
         .control-grid > button:nth-child(even)[data-tooltip]:hover::after {
             transform: translateX(0) translateY(-4px) scale(1);
+        }
+        
+        button[data-disabled="true"] {
+            opacity: 0.4 !important;
+            cursor: default !important;
+            pointer-events: auto !important;
+            text-decoration: none !important;
         }
     </style>
 
@@ -3880,9 +3906,9 @@ rawWt.push(baseWt + jitter);
 
                     <button class="btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">VERSO</button>
 
+                </div>
+
             </div>
-
-
 
         </section>
 
@@ -5642,6 +5668,26 @@ rawWt.push(baseWt + jitter);
 
             _lastRenderState = stateKey;
 
+            // Clear all canvases/SVGs of all panels (1, 2, 3) to prevent any ghosting of previous artworks
+            [1, 2, 3].forEach(function(pId) {
+                var svg = document.getElementById('s' + pId);
+                if (svg) {
+                    while (svg.firstChild) svg.removeChild(svg.firstChild);
+                }
+                var canvas = document.getElementById('c' + pId);
+                if (canvas) {
+                    canvas.style.opacity = '0';
+                    var ctx2d = canvas.getContext('2d');
+                    if (ctx2d) ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+                }
+                var canvasHS = document.getElementById('c' + pId + '-hs');
+                if (canvasHS) {
+                    canvasHS.style.opacity = '0';
+                    var ctxHS = canvasHS.getContext('2d');
+                    if (ctxHS) ctxHS.clearRect(0, 0, canvasHS.width, canvasHS.height);
+                }
+            });
+
 
 
             // ── Coalesce rapid calls: cancel any pending deferred start ──────────
@@ -6847,6 +6893,100 @@ rawWt.push(baseWt + jitter);
                 }
 
 
+
+                // Reset SVG dimensions instantly to prevent size jumps or layout breakages
+                svg.setAttribute("width", svgW);
+                svg.setAttribute("height", svgH);
+                svg.setAttribute("viewBox", "0 0 " + svgW + " " + svgH);
+                svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+                svg.parentElement.style.aspectRatio = svgW + " / " + svgH;
+
+                // Clear SVG children instantly
+                while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+                // Add instant background rect
+                var activeBg = resolveCanvasBackground(traits, RENDER_SEED);
+                var bg = dc.createElementNS(svgNS, "rect");
+                bg.setAttribute("width", svgW);
+                bg.setAttribute("height", svgH);
+                bg.setAttribute("fill", activeBg || "transparent");
+                svg.appendChild(bg);
+
+                // Hide canvas and canvas-hs elements instantly
+                var canvasFront = dc.getElementById('c' + id);
+                if (canvasFront) {
+                    canvasFront.style.opacity = '0';
+                    var ctx2d = canvasFront.getContext('2d');
+                    if (ctx2d) ctx2d.clearRect(0, 0, canvasFront.width, canvasFront.height);
+                }
+                var canvasHS = dc.getElementById('c' + id + '-hs');
+                if (canvasHS) {
+                    canvasHS.style.opacity = '0';
+                    var ctxHS = canvasHS.getContext('2d');
+                    if (ctxHS) ctxHS.clearRect(0, 0, canvasHS.width, canvasHS.height);
+                }
+
+                // If typewriter, Chopin, etc., render header instantly
+                if (traits.motif === 'typewriter' || traits.motif === 'chopin' || traits.motif === 'typewriter_classic' || traits.motif === 'typewriter_quine') {
+                    var hW = w;
+                    var hSizeX = sizeX;
+                    var hSizeY = sizeY;
+                    if (currentLayout === 'gallery') {
+                        hW = 78;
+                        hSizeX = sizeX * (w / 78);
+                        hSizeY = sizeY * (w / 78);
+                    }
+                    var headerData = getTypewriterHeaderLines(traits, RENDER_SEED, hW);
+                    var headerLines = headerData.lines;
+                    var headerTextColor = (activeBg === '#0a0a0a' || activeBg === '#000000' || activeBg === 'black') ? '#e8e4dc' : '#1a1a1a';
+                    var headerG = dc.createElementNS(svgNS, "g");
+                    headerG.setAttribute("class", "typewriter-header");
+                    for (var row = 0; row < headerLines.length; row++) {
+                        var lineText = headerLines[row];
+                        if (!lineText) continue;
+                        var startCol = 0;
+                        for (var col = 0; col < lineText.length; col++) {
+                            var char = lineText[col];
+                            if (char === " ") continue;
+                            var charX = ((startCol + col + 4) * hSizeX + hSizeX / 2);
+                            var charY = (row * hSizeY + hSizeY / 2) + 24;
+                            if (row === 1) {
+                                charY = (row * hSizeY + hSizeY / 2) + 12;
+                            }
+                            if (isGraphPaper) {
+                                charX = 9 + (startCol + col) * hSizeX + hSizeX / 2;
+                                charY = 38 + (row - 1) * hSizeY + hSizeY / 2;
+                            }
+                            var textEl = dc.createElementNS(svgNS, "text");
+                            textEl.setAttribute("x", charX);
+                            textEl.setAttribute("y", charY);
+                            var rank = headerData.ranks && headerData.ranks[row] ? headerData.ranks[row][col] : 1;
+                            var currentSize = 12;
+                            var currentCharCol = headerTextColor;
+                            var currentWeight = 'bold';
+                            if (headerData.ranks && headerData.ranks[row]) {
+                                if (traits.motif === 'typewriter_quine') {
+                                    currentSize = [10, 10, 10, 10, 10][rank - 1] || 10;
+                                    var weights = ['300', '400', '600', '800', '900'];
+                                    currentWeight = weights[rank - 1] || 'bold';
+                                } else {
+                                    currentSize = [10, 10, 11, 12, 13][rank - 1] || 12;
+                                    var weights = ['300', '400', '600', '800', '900'];
+                                    currentWeight = weights[rank - 1] || 'bold';
+                                }
+                            }
+                            textEl.setAttribute("fill", currentCharCol);
+                            textEl.setAttribute("font-size", currentSize + "px");
+                            textEl.setAttribute("font-family", "Courier, 'Courier New', monospace");
+                            textEl.setAttribute("font-weight", currentWeight);
+                            textEl.setAttribute("text-anchor", "middle");
+                            textEl.setAttribute("dominant-baseline", "central");
+                            textEl.textContent = char;
+                            headerG.appendChild(textEl);
+                        }
+                    }
+                    svg.appendChild(headerG);
+                }
 
                 var frag = dc.createDocumentFragment();
 
@@ -10523,6 +10663,18 @@ rawWt.push(baseWt + jitter);
 
         window.addEventListener('keydown', function (e) {
 
+            if (e.key === 'F5') {
+                e.preventDefault();
+                localStorage.removeItem('platen_curated_gallery');
+                PlatenDB.clear().then(function() {
+                    window.location.reload();
+                }).catch(function(err) {
+                    console.error("Failed to clear PlatenDB on F5:", err);
+                    window.location.reload();
+                });
+                return;
+            }
+
             // Check if focus is not in an input or select element to avoid firing while user is typing
 
             if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'TEXTAREA') {
@@ -13370,6 +13522,26 @@ rawWt.push(baseWt + jitter);
 
                 });
 
+            },
+
+            clear: function() {
+
+                return PlatenDB.init().then(function(db) {
+
+                    return new Promise(function(resolve, reject) {
+
+                        var tx = db.transaction('artworks', 'readwrite');
+
+                        tx.objectStore('artworks').clear();
+
+                        tx.oncomplete = function() { resolve(); };
+
+                        tx.onerror = function() { reject(tx.error); };
+
+                    });
+
+                });
+
             }
 
         };
@@ -13474,7 +13646,8 @@ rawWt.push(baseWt + jitter);
 
                 if (btnCurate) {
 
-                    btnCurate.disabled = true;
+                    btnCurate.setAttribute('data-disabled', 'true');
+                    btnCurate.setAttribute('data-tooltip', 'curation closed');
 
                     btnCurate.innerHTML = "🔒 curation closed";
 
@@ -13486,7 +13659,8 @@ rawWt.push(baseWt + jitter);
 
                 if (btnCurate && btnCurate.innerHTML !== "Curating..." && !btnCurate.innerHTML.includes("✓")) {
 
-                    btnCurate.disabled = false;
+                    btnCurate.removeAttribute('data-disabled');
+                    btnCurate.setAttribute('data-tooltip', 'curate current artwork');
 
                 }
 
@@ -13629,7 +13803,8 @@ rawWt.push(baseWt + jitter);
                 if (chromeSelect) chromeSelect.disabled = true;
 
                 if (btnCurate) {
-                    btnCurate.disabled = true;
+                    btnCurate.setAttribute('data-disabled', 'true');
+                    btnCurate.setAttribute('data-tooltip', 'curation closed');
                     btnCurate.innerHTML = "🔒 curation closed";
                 }
 
@@ -13644,10 +13819,12 @@ rawWt.push(baseWt + jitter);
                 });
                 if (isCurated) {
                     btnCurate.innerHTML = "&#10003; Curated";
-                    btnCurate.disabled = true;
+                    btnCurate.setAttribute('data-disabled', 'true');
+                    btnCurate.setAttribute('data-tooltip', 'already curated');
                 } else {
                     btnCurate.innerHTML = "Curate";
-                    btnCurate.disabled = false;
+                    btnCurate.removeAttribute('data-disabled');
+                    btnCurate.setAttribute('data-tooltip', 'curate current artwork');
                 }
             }
 
@@ -13715,7 +13892,8 @@ rawWt.push(baseWt + jitter);
 
                     if (btnCurate) {
 
-                        btnCurate.disabled = true;
+                        btnCurate.setAttribute('data-disabled', 'true');
+                        btnCurate.setAttribute('data-tooltip', 'locked by peer');
 
                         btnCurate.innerHTML = "locked by peer";
 
@@ -14185,6 +14363,11 @@ rawWt.push(baseWt + jitter);
 
 
         function curateArtwork() {
+
+            var btnCheck = document.getElementById('btn-curate');
+            if (btnCheck && btnCheck.getAttribute('data-disabled') === 'true') {
+                return;
+            }
 
             var now = new Date();
 
