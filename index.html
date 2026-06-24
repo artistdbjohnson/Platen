@@ -16322,8 +16322,6 @@ rawWt.push(baseWt + jitter);
 
         function drawBackCanvas(id) {
 
-            window.drawBackCanvas = drawBackCanvas;
-
             var canvasBack = document.getElementById('c' + id + '-back');
 
             var canvasFront = document.getElementById('c' + id);
@@ -16480,7 +16478,8 @@ rawWt.push(baseWt + jitter);
                     dx, dy, destSize, destSize  // destination centered & padded
                 );
             }
-        };
+        }
+        window.drawBackCanvas = drawBackCanvas;
 
 
 
