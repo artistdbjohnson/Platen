@@ -2,7 +2,7 @@
 
 <!-- Vercel Production Deploy Trigger -->
 
-<html lang="en" translate="no">
+<html lang="en" translate="no" class="notranslate">
 
 
 
@@ -3334,7 +3334,7 @@
 
 
 
-<body>
+<body class="notranslate">
 
     <!-- Fullscreen Autocycle HUD -->
 
@@ -10332,6 +10332,8 @@ rawWt.push(baseWt + jitter);
 
             wrap.addEventListener('mousedown', function (e) {
 
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input') || e.target.closest('select')) return;
+
                 var panel = e.target.closest('.platen-panel');
 
                 if (!panel) return;
@@ -14074,6 +14076,7 @@ rawWt.push(baseWt + jitter);
                 detailModal.addEventListener('mousedown', function(e) {
                     modalStartX = e.clientX;
                     modalStartY = e.clientY;
+                    window.galWasDragging = false;
                 });
                 detailModal.addEventListener('click', function(e) {
                     if (e.target.closest('.gallery-topbar') || e.target.closest('button') || e.target.closest('a')) {
@@ -15136,6 +15139,7 @@ rawWt.push(baseWt + jitter);
             var galActivePanelId = null;
 
             wrap.addEventListener('mousedown', function (e) {
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input') || e.target.closest('select')) return;
                 var panel = e.target.closest('.platen-panel');
                 if (!panel) return;
                 var svg = panel.querySelector('svg');
