@@ -6960,19 +6960,22 @@ rawWt.push(baseWt + jitter);
                             var textEl = dc.createElementNS(svgNS, "text");
                             textEl.setAttribute("x", charX);
                             textEl.setAttribute("y", charY);
-                            var rank = headerData.ranks && headerData.ranks[row] ? headerData.ranks[row][col] : 1;
-                            var currentSize = 12;
+                            
                             var currentCharCol = headerTextColor;
-                            var currentWeight = 'bold';
-                            if (headerData.ranks && headerData.ranks[row]) {
-                                if (traits.motif === 'typewriter_quine') {
-                                    currentSize = [10, 10, 10, 10, 10][rank - 1] || 10;
+                            var currentSize = hSizeY * 0.92;
+                            var currentWeight = "bold";
+
+                            if (row === headerData.infoRow) {
+                                if (col >= headerData.engStart && col < headerData.engEnd) {
+                                    var engineMetadata = typeof ENGINE_METADATA !== 'undefined' ? ENGINE_METADATA[traits.engine] : { complexity: 3, series: 'FIELD' };
+                                    var rank = engineMetadata ? engineMetadata.complexity : 3;
+                                    var sizeScale = 0.8 + (rank - 1) * 0.1;
+                                    currentSize = hSizeY * 0.92 * sizeScale;
                                     var weights = ['300', '400', '600', '800', '900'];
                                     currentWeight = weights[rank - 1] || 'bold';
-                                } else {
-                                    currentSize = [10, 10, 11, 12, 13][rank - 1] || 12;
-                                    var weights = ['300', '400', '600', '800', '900'];
-                                    currentWeight = weights[rank - 1] || 'bold';
+                                    if (rank === 5) {
+                                        currentCharCol = traits.canvas === 'black' ? '#ff6b6b' : '#d94545';
+                                    }
                                 }
                             }
                             textEl.setAttribute("fill", currentCharCol);
