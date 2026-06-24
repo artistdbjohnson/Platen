@@ -3284,6 +3284,45 @@
             }
         }
 
+        /* Tooltip Styles */
+        [data-tooltip] {
+            position: relative;
+        }
+        [data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: rgba(15, 15, 20, 0.95);
+            color: #e0e0e0;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            z-index: 10000;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            transition-delay: 0.1s;
+            font-family: var(--font-mono);
+            text-transform: lowercase;
+            letter-spacing: 0.5px;
+        }
+        html[data-theme="light"] [data-tooltip]::after {
+            background: rgba(250, 250, 250, 0.95);
+            color: #1a1a1a;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        [data-tooltip]:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
     </style>
 
 </head>
@@ -3528,9 +3567,9 @@ rawWt.push(baseWt + jitter);
 
                 <div class="control-grid">
 
-                    <button id="btn-randomize" onclick="randomize()" title="Completely randomizes all parameters and background">Randomize</button>
+                    <button id="btn-randomize" onclick="randomize()" data-tooltip="Completely randomizes all parameters and background">Randomize</button>
 
-                    <button id="btn-regen" onclick="regenerate()" title="Generates a new seed but keeps current parameters and background">Regenerate</button>
+                    <button id="btn-regen" onclick="regenerate()" data-tooltip="Generates a new seed but keeps current parameters and background">Regenerate</button>
 
                     <button id="btn-curate" onclick="curateArtwork()">Curate</button>
 
@@ -3673,7 +3712,7 @@ rawWt.push(baseWt + jitter);
 
             <div class="control-section" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
 
-                <button id="btn-theme" onclick="toggleTheme()" title="Toggle Light/Dark Mode" style="width: 100%; text-transform: uppercase; text-align: center;">☀︎ Toggle Theme</button>
+                <button id="btn-theme" onclick="toggleTheme()" data-tooltip="Toggle Light/Dark Mode" style="width: 100%; text-transform: uppercase; text-align: center;">☀︎ Toggle Theme</button>
 
             </div>
 
@@ -10518,6 +10557,13 @@ rawWt.push(baseWt + jitter);
                     return window.curatedGallery[window.activeGalleryIndex].traits || {};
                 }
                 return window.RESOLVED_TRAITS || window.TRAITS || {};
+            }
+
+            function _getSeed() {
+                if (window.activeGalleryIndex !== -1 && window.curatedGallery && window.curatedGallery[window.activeGalleryIndex]) {
+                    return window.curatedGallery[window.activeGalleryIndex].seed || window.RENDER_SEED || 9248;
+                }
+                return window.RENDER_SEED || 9248;
             }   // flowers per group for column-offset ripple
 
 
@@ -10688,7 +10734,7 @@ rawWt.push(baseWt + jitter);
 
                         }
 
-                        var r = makePRNG((window.RENDER_SEED || 9248) + 8888);
+                        var r = makePRNG((_getSeed() || 9248) + 8888);
 
                         for (var j = candidates.length - 1; j > 0; j--) {
 
@@ -10718,7 +10764,7 @@ rawWt.push(baseWt + jitter);
 
                     // Monochrome: seed-deterministic random selection of 150-400 glyphs
 
-                    var r = makePRNG((window.RENDER_SEED || 9248) + 8888);
+                    var r = makePRNG((_getSeed() || 9248) + 8888);
 
                     var animCount = 150 + r.rin(0, 250);  // 150-400
 
@@ -10774,7 +10820,7 @@ rawWt.push(baseWt + jitter);
 
                 var animSet = _selectFlowers(id);
 
-                var r = makePRNG((window.RENDER_SEED || 9248) + 9999);
+                var r = makePRNG((_getSeed() || 9248) + 9999);
 
 
 
@@ -11482,7 +11528,7 @@ rawWt.push(baseWt + jitter);
 
                 var qTime = Math.floor(t * _animSpeed);
 
-                var masterSeed = (_animSeed || window.RENDER_SEED || 9248);
+                var masterSeed = (_animSeed || _getSeed() || 9248);
 
                 var halfW = svgW / 2;
 
@@ -13301,6 +13347,16 @@ rawWt.push(baseWt + jitter);
 
         var activeGalleryIndex = -1;
 
+        Object.defineProperty(window, 'curatedGallery', {
+            get: function() { return curatedGallery; },
+            set: function(val) { curatedGallery = val; }
+        });
+
+        Object.defineProperty(window, 'activeGalleryIndex', {
+            get: function() { return activeGalleryIndex; },
+            set: function(val) { activeGalleryIndex = val; }
+        });
+
 
 
         // Load gallery from IndexedDB and migrate legacy localStorage items
@@ -14006,11 +14062,19 @@ rawWt.push(baseWt + jitter);
 
             var detailModal = document.getElementById('gallery-detail-modal');
             if (detailModal) {
+                var modalStartX = 0, modalStartY = 0;
+                detailModal.addEventListener('mousedown', function(e) {
+                    modalStartX = e.clientX;
+                    modalStartY = e.clientY;
+                });
                 detailModal.addEventListener('click', function(e) {
                     if (e.target.closest('.gallery-topbar') || e.target.closest('button') || e.target.closest('a')) {
                         return;
                     }
-                    if (window.galWasDragging) {
+                    var dx = e.clientX - modalStartX;
+                    var dy = e.clientY - modalStartY;
+                    var dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist > 5 || window.galWasDragging) {
                         window.galWasDragging = false;
                         return;
                     }
@@ -15075,6 +15139,12 @@ rawWt.push(baseWt + jitter);
                 e.preventDefault();
             });
 
+            if (window.galAbortController) {
+                window.galAbortController.abort();
+            }
+            window.galAbortController = new AbortController();
+            var signal = window.galAbortController.signal;
+
             window.addEventListener('mousemove', function (e) {
                 if (!galDragging || !galActivePanelId) return;
                 window.galWasDragging = true;
@@ -15087,12 +15157,12 @@ rawWt.push(baseWt + jitter);
                 galStartY = e.clientY;
                 var panel = wrap.querySelector('#' + galActivePanelId) || wrap.querySelector('.platen-panel');
                 applyGalTransform(panel, s);
-            });
+            }, { signal: signal });
 
             window.addEventListener('mouseup', function () {
                 galDragging = false;
                 galActivePanelId = null;
-            });
+            }, { signal: signal });
 
             wrap.addEventListener('dblclick', function (e) {
                 var panel = e.target.closest('.platen-panel');
@@ -16078,6 +16148,10 @@ rawWt.push(baseWt + jitter);
             if (_galMotusOn) {
                 toggleGalMotus(); // This will stop animations and update the UI toggle
             }
+            if (window.galAbortController) {
+                window.galAbortController.abort();
+                window.galAbortController = null;
+            }
             document.getElementById('gallery-detail-modal').style.display = 'none';
             var mainCanvasWrap = document.getElementById('canvas-wrap-main');
             if (mainCanvasWrap) {
@@ -16519,7 +16593,7 @@ rawWt.push(baseWt + jitter);
         <div class="gallery-topbar" style="position: sticky; top: 0; z-index: 1000; background: var(--bg); display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-bottom: 1px solid var(--border); margin-bottom: 40px;">
 
             <div style="display: flex; align-items: center; gap: 12px; margin-left: 20px;">
-                <button onclick="toggleGalleryModal()" style="background: transparent; border: none; padding: 0; cursor: pointer; color: inherit; display: flex; align-items: center; justify-content: center;" title="Home">
+                <button onclick="toggleGalleryModal()" style="background: transparent; border: none; padding: 0; cursor: pointer; color: inherit; display: flex; align-items: center; justify-content: center;" data-tooltip="Home">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 </button>
                 <div id="title" style="font-size: 11px; letter-spacing: 0.2em; text-transform: lowercase; margin-left: 15px;">curated gallery</div>
