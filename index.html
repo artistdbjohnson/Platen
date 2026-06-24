@@ -427,7 +427,7 @@
 
         .col-controls {
 
-            padding: 30px 20px;
+            padding: 20px 20px;
 
             border-right: 1px solid var(--border);
 
@@ -449,15 +449,15 @@
 
             border-bottom: 1px solid var(--border);
 
-            padding-bottom: 18px;
+            padding-bottom: 12px;
 
-            margin-bottom: 18px;
+            margin-bottom: 12px;
 
             display: flex;
 
             flex-direction: column;
 
-            gap: 10px;
+            gap: 6px;
 
         }
 
@@ -3300,33 +3300,58 @@
             position: absolute;
             bottom: 100%;
             left: 50%;
-            transform: translateX(-50%) translateY(5px);
-            background: #000000 !important;
+            transform: translateX(-50%) translateY(4px) scale(0.95);
+            background: rgba(15, 15, 15, 0.75) !important;
+            backdrop-filter: blur(8px) saturate(120%);
+            -webkit-backdrop-filter: blur(8px) saturate(120%);
             color: #ffffff !important;
-            padding: 4px 8px;
+            padding: 5px 10px;
             font-size: 8px;
             letter-spacing: 0.08em;
             text-transform: lowercase;
             white-space: nowrap;
             pointer-events: none;
-            border: 1px solid #333333 !important;
-            border-radius: 0;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+            border-radius: 4px;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.2s ease;
-            transition-delay: 0.1s;
+            transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+            transition-delay: 0.05s;
             font-family: var(--font-mono);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            z-index: 10000;
         }
         html[data-theme="light"] [data-tooltip]::after {
-            background: #000000 !important;
-            color: #ffffff !important;
-            border: 1px solid #333333 !important;
-            box-shadow: none;
+            background: rgba(245, 240, 232, 0.82) !important;
+            color: #1a1a1a !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.6);
         }
         [data-tooltip]:hover::after {
             opacity: 1;
             visibility: visible;
-            transform: translateX(-50%) translateY(0);
+            transform: translateX(-50%) translateY(-4px) scale(1);
+        }
+
+        /* Prevent clipping on left-aligned control-grid items */
+        .control-grid > button:nth-child(odd)[data-tooltip]::after {
+            left: 0;
+            transform: translateX(0) translateY(4px) scale(0.95);
+            transform-origin: left bottom;
+        }
+        .control-grid > button:nth-child(odd)[data-tooltip]:hover::after {
+            transform: translateX(0) translateY(-4px) scale(1);
+        }
+
+        /* Prevent clipping on right-aligned control-grid items */
+        .control-grid > button:nth-child(even)[data-tooltip]::after {
+            left: auto;
+            right: 0;
+            transform: translateX(0) translateY(4px) scale(0.95);
+            transform-origin: right bottom;
+        }
+        .control-grid > button:nth-child(even)[data-tooltip]:hover::after {
+            transform: translateX(0) translateY(-4px) scale(1);
         }
     </style>
 
@@ -3486,7 +3511,7 @@ rawWt.push(baseWt + jitter);
 
             <!-- Curation Deadline & Status Banner -->
 
-            <div id="curation-status-banner" style="background: rgba(222, 228, 215, 0.03); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 18px; text-transform: lowercase; font-size: 11px;">
+            <div id="curation-status-banner" style="background: rgba(222, 228, 215, 0.03); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; text-transform: lowercase; font-size: 11px;">
 
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
 
@@ -3538,7 +3563,7 @@ rawWt.push(baseWt + jitter);
 
                 <!-- Palette Lock Status Dashboard -->
 
-                <div id="palette-lock-status" style="margin-top: 10px; margin-bottom: 25px; padding: 10px; border-radius: 6px; border: 1px dashed var(--border); background: rgba(222, 228, 215, 0.01); font-size: 10px; display: flex; flex-direction: column; gap: 4px; text-transform: lowercase; transition: all 0.2s;">
+                <div id="palette-lock-status" style="margin-top: 6px; margin-bottom: 12px; padding: 8px 10px; border-radius: 6px; border: 1px dashed var(--border); background: rgba(222, 228, 215, 0.01); font-size: 10px; display: flex; flex-direction: column; gap: 4px; text-transform: lowercase; transition: all 0.2s;">
 
                     <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
 
@@ -3572,21 +3597,21 @@ rawWt.push(baseWt + jitter);
 
                 <div class="control-grid">
 
-                    <button id="btn-randomize" onclick="randomize()" data-tooltip="randomize all parameters">Randomize</button>
+                    <button id="btn-randomize" onclick="randomize()" data-tooltip="randomize parameters">Randomize</button>
 
-                    <button id="btn-regen" onclick="regenerate()" data-tooltip="generate new seed">Regenerate</button>
+                    <button id="btn-regen" onclick="regenerate()" data-tooltip="regenerate seed">Regenerate</button>
 
-                    <button id="btn-curate" onclick="curateArtwork()">Curate</button>
+                    <button id="btn-curate" onclick="curateArtwork()" data-tooltip="curate current artwork">Curate</button>
 
-                    <button id="btn-gallery-modal" onclick="toggleGalleryModal()">Gallery</button>
+                    <button id="btn-gallery-modal" onclick="toggleGalleryModal()" data-tooltip="open curated gallery">Gallery</button>
 
-                    <button id="btn-set-seed" onclick="setSeed()">Set Seed</button>
+                    <button id="btn-set-seed" onclick="setSeed()" data-tooltip="set custom seed">Set Seed</button>
 
-                    <button id="btn-fs-autocycle" onclick="fsEnter()">Fullscreen Autocycle</button>
+                    <button id="btn-fs-autocycle" onclick="fsEnter()" data-tooltip="fullscreen autocycle">Fullscreen Autocycle</button>
 
                     <div style="display: flex; gap: 6px; align-items: stretch; position: relative;">
 
-                        <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()" style="flex: 1;">Motus: OFF</button>
+                        <button id="btn-hyperspeed" onclick="PlatenHyperspeed.toggle()" style="flex: 1;" data-tooltip="toggle motus animation">Motus: OFF</button>
 
                         <div id="motus-dropdown-container" class="motus-dropdown" style="display: none;">
 
@@ -3606,20 +3631,20 @@ rawWt.push(baseWt + jitter);
 
                     </div>
 
-                    <button id="btn-stack" onclick="toggleStack()">Stack: OFF</button>
+                    <button id="btn-stack" onclick="toggleStack()" data-tooltip="toggle layer stacking">Stack: OFF</button>
 
-                    <button id="btn-clear-stack" onclick="clearStack()">Clear Stack</button>
+                    <button id="btn-clear-stack" onclick="clearStack()" data-tooltip="clear stacked layers">Clear Stack</button>
 
 
                     <div style="display: flex; gap: 6px; align-items: center;">
 
                         <span style="font-size: 10px; letter-spacing: 0.05em; opacity: 0.5; text-transform: lowercase;">canvas:</span>
 
-                        <button id="btn-canvas-black" class="canvas-toggle-btn" onclick="setCanvasBackground('black')">black</button>
+                        <button id="btn-canvas-black" class="canvas-toggle-btn" onclick="setCanvasBackground('black')" data-tooltip="black paper background">black</button>
 
                         <span style="font-size: 9px; opacity: 0.3;">/</span>
 
-                        <button id="btn-canvas-white" class="canvas-toggle-btn" onclick="setCanvasBackground('white')">white</button>
+                        <button id="btn-canvas-white" class="canvas-toggle-btn" onclick="setCanvasBackground('white')" data-tooltip="white paper background">white</button>
 
                     </div>
 
@@ -3645,11 +3670,11 @@ rawWt.push(baseWt + jitter);
 
                 <div class="control-grid">
 
-                    <button id="btn-out-png" onclick="savePNG()">Download PNG</button>
+                    <button id="btn-out-png" onclick="savePNG()" data-tooltip="download hires png">Download PNG</button>
 
-                    <button id="btn-out-jpg" onclick="saveJPG()">Download JPG</button>
+                    <button id="btn-out-jpg" onclick="saveJPG()" data-tooltip="download hires jpg">Download JPG</button>
 
-                    <button id="btn-out-svg" onclick="saveSVG('full')">Download SVG</button>
+                    <button id="btn-out-svg" onclick="saveSVG('full')" data-tooltip="download vector svg">Download SVG</button>
 
                 </div>
 
@@ -3685,7 +3710,7 @@ rawWt.push(baseWt + jitter);
 
 
 
-            <div class="control-section" style="max-height: 250px; display: flex; flex-direction: column; overflow: hidden;">
+            <div class="control-section" style="max-height: 120px; display: flex; flex-direction: column; overflow: hidden;">
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
 
