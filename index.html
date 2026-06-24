@@ -10794,7 +10794,7 @@ rawWt.push(baseWt + jitter);
 
                 var sizes   = (typeof getLayoutSizes === 'function') ? getLayoutSizes(currentLayout) : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
 
-                if (id !== 1 && currentLayout !== 'banner' && currentLayout !== 'banner_sq' && currentLayout !== 'banner_32_40' && currentLayout !== 'banner_39_51' && currentLayout !== 'banner_us_letter' && currentLayout !== 'banner_39_39' && currentLayout !== 'graph_paper_banner' && currentLayout !== 'graph_paper_sq_banner') {
+                if (id !== 1 && id !== 'gal-1' && currentLayout !== 'banner' && currentLayout !== 'banner_sq' && currentLayout !== 'banner_32_40' && currentLayout !== 'banner_39_51' && currentLayout !== 'banner_us_letter' && currentLayout !== 'banner_39_39' && currentLayout !== 'graph_paper_banner' && currentLayout !== 'graph_paper_sq_banner') {
 
                     sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes('panel') : sizes;
 
@@ -11234,6 +11234,12 @@ rawWt.push(baseWt + jitter);
 
                 var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(currentLayout) : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
 
+                if (id !== 1 && id !== 'gal-1' && currentLayout !== 'banner' && currentLayout !== 'banner_sq' && currentLayout !== 'banner_32_40' && currentLayout !== 'banner_39_51' && currentLayout !== 'banner_us_letter' && currentLayout !== 'banner_39_39' && currentLayout !== 'graph_paper_banner' && currentLayout !== 'graph_paper_sq_banner') {
+
+                    sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes('panel') : sizes;
+
+                }
+
                 var l_w = sizes.w, l_h = sizes.h, sizeX = sizes.sizeX, sizeY = sizes.sizeY;
 
                 var svgW = (l_w + 8) * sizeX;
@@ -11439,6 +11445,12 @@ rawWt.push(baseWt + jitter);
                 var currentLayout = _layouts[id] || window.currentLayout || 'default';
 
                 var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(currentLayout) : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
+
+                if (id !== 1 && id !== 'gal-1' && currentLayout !== 'banner' && currentLayout !== 'banner_sq' && currentLayout !== 'banner_32_40' && currentLayout !== 'banner_39_51' && currentLayout !== 'banner_us_letter' && currentLayout !== 'banner_39_39' && currentLayout !== 'graph_paper_banner' && currentLayout !== 'graph_paper_sq_banner') {
+
+                    sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes('panel') : sizes;
+
+                }
 
                 var l_w = sizes.w, l_h = sizes.h, sizeX = sizes.sizeX, sizeY = sizes.sizeY;
 
@@ -12623,6 +12635,12 @@ rawWt.push(baseWt + jitter);
                     var currentLayout = _layouts[id] || window.currentLayout || 'default';
 
                     var sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes(currentLayout) : {w: 154, h: 249, sizeX: 8.5, sizeY: 10, rSize: 20};
+
+                    if (id !== 1 && id !== 'gal-1' && currentLayout !== 'banner' && currentLayout !== 'banner_sq' && currentLayout !== 'banner_32_40' && currentLayout !== 'banner_39_51' && currentLayout !== 'banner_us_letter' && currentLayout !== 'banner_39_39' && currentLayout !== 'graph_paper_banner' && currentLayout !== 'graph_paper_sq_banner') {
+
+                        sizes = (typeof getLayoutSizes === 'function') ? getLayoutSizes('panel') : sizes;
+
+                    }
 
                     var l_w = sizes.w, l_h = sizes.h, sizeX = sizes.sizeX, sizeY = sizes.sizeY;
 
