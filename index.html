@@ -13555,17 +13555,25 @@ rawWt.push(baseWt + jitter);
 
         var activeGalleryIndex = -1;
 
-        Object.defineProperty(window, 'curatedGallery', {
-            get: function() { return curatedGallery; },
-            set: function(val) { curatedGallery = val; },
-            configurable: true
-        });
+        try {
+            Object.defineProperty(window, 'curatedGallery', {
+                get: function() { return curatedGallery; },
+                set: function(val) { curatedGallery = val; },
+                configurable: true
+            });
+        } catch (e) {
+            console.warn("Could not define property curatedGallery on window:", e);
+        }
 
-        Object.defineProperty(window, 'activeGalleryIndex', {
-            get: function() { return activeGalleryIndex; },
-            set: function(val) { activeGalleryIndex = val; },
-            configurable: true
-        });
+        try {
+            Object.defineProperty(window, 'activeGalleryIndex', {
+                get: function() { return activeGalleryIndex; },
+                set: function(val) { activeGalleryIndex = val; },
+                configurable: true
+            });
+        } catch (e) {
+            console.warn("Could not define property activeGalleryIndex on window:", e);
+        }
 
 
 
