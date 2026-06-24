@@ -14857,23 +14857,27 @@ rawWt.push(baseWt + jitter);
                 // Build a clone of the SVG for rendering artwork area only
                 var svgClone = svgElement.cloneNode(true);
 
-                // Inject colour style so header text is visible when rasterised
-                var versoFill = (activeCanvas === 'white' || activeCanvas === 'tan' || activeCanvas === 'olive') ? '#1a1a1a' : '#ffffff';
-                if (!svgClone.querySelector('style.verso-style')) {
-                    var vs = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-                    vs.setAttribute('class', 'verso-style');
-                    vs.textContent = '.typewriter-header text, .typewriter-header tspan { fill: ' + versoFill + ' !important; } .grid-numbers text, .grid-numbers tspan { fill: ' + versoFill + ' !important; }';
-                    svgClone.insertBefore(vs, svgClone.firstChild);
+                // Remove all text and header elements completely
+                var headers = svgClone.querySelectorAll('.typewriter-header');
+                headers.forEach(function(el) { el.remove(); });
+                var gridNums = svgClone.querySelectorAll('.grid-numbers');
+                gridNums.forEach(function(el) { el.remove(); });
+                var texts = svgClone.querySelectorAll('text');
+                texts.forEach(function(t) { t.remove(); });
+                var tspans = svgClone.querySelectorAll('tspan');
+                tspans.forEach(function(ts) { ts.remove(); });
+
+                var artLayout = art.layout || 'panel';
+                var isGraphPaper = (artLayout.indexOf('graph_paper') === 0);
+                var svgW, svgH;
+                if (isGraphPaper) {
+                    svgW = 1696;
+                    svgH = (artLayout.indexOf('graph_paper_sq') === 0) ? 1707.08 : 2192;
+                } else {
+                    var sizes = getLayoutSizes(artLayout);
+                    svgW = (sizes.w + 8) * sizes.sizeX;
+                    svgH = (sizes.h + 8) * sizes.sizeY;
                 }
-
-                // Keep artwork visible, hide header and grid numbers
-                var headerG = svgClone.querySelector('.typewriter-header');
-                if (headerG) headerG.setAttribute('visibility', 'hidden');
-                var gridG = svgClone.querySelector('.grid-numbers');
-                if (gridG) gridG.setAttribute('visibility', 'hidden');
-
-                var svgW = parseInt(svgClone.getAttribute('width')) || 1248;
-                var svgH = parseInt(svgClone.getAttribute('height')) || 2368;
 
                 var svgString = new XMLSerializer().serializeToString(svgClone);
                 var svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
@@ -14893,11 +14897,6 @@ rawWt.push(baseWt + jitter);
                     offCtx.drawImage(svgImg, 0, 0, offW, offH);
                     URL.revokeObjectURL(svgUrl);
 
-                    // Determine header rows to skip (same logic as drawBackCanvas)
-                    var artLayout = art.layout || 'panel';
-                    var artMotif = art.traits.motif || '';
-                    var isGraphPaper = (artLayout.indexOf('graph_paper') === 0);
-
                     var sx, sy, cropSize;
 
                     if (isGraphPaper) {
@@ -14914,8 +14913,7 @@ rawWt.push(baseWt + jitter);
                         var logicalH = (h + 8) * sizeY;
                         var scaleX = offW / logicalW;
                         var scaleY = offH / logicalH;
-                        var hasHeader = (artLayout !== 'square' && artLayout !== 'grid_39_39' &&
-                            (artMotif === 'typewriter' || artMotif === 'chopin' || artMotif === 'typewriter_classic' || artMotif === 'typewriter_quine'));
+                        var hasHeader = svgElement && !!svgElement.querySelector('.typewriter-header');
                         var headerRows = hasHeader ? 11 : 0;
                         var W = w * sizeX * scaleX;
                         var H = (h - headerRows) * sizeY * scaleY;
@@ -16621,85 +16619,116 @@ rawWt.push(baseWt + jitter);
 
             
 
-            // Copy the front canvas composition area to the back canvas
-
-            var fw = sourceCanvas.width;
-
-            var fh = sourceCanvas.height;
-
-            if (fw > 0 && fh > 0) {
-
-                var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
-
-                
-
-                var sx, sy, cropSize;
-
-                
-
-                if (isGraphPaper) {
-
-                    cropSize = Math.min(fw, fh);
-
-                    sx = (fw - cropSize) / 2;
-
-                    sy = (fh - cropSize) / 2;
-
-                } else {
-
-                    var sizes = getLayoutSizes(currentLayout);
-
-                    var sizeX = sizes.sizeX;
-
-                    var sizeY = sizes.sizeY;
-
-                    var w = sizes.w;
-
-                    var h = sizes.h;
-
-                    var logicalW = (w + 8) * sizeX;
-
-                    var logicalH = (h + 8) * sizeY;
-
-                    var scaleX = fw / logicalW;
-
-                    var scaleY = fh / logicalH;
-
-                    var hasHeader = (currentLayout !== 'square' && currentLayout !== 'grid_39_39' && (TRAITS.motif === 'typewriter' || TRAITS.motif === 'chopin' || TRAITS.motif === 'typewriter_classic' || TRAITS.motif === 'typewriter_quine'));
-
-                    var headerRows = hasHeader ? 11 : 0;
-
-                    var W = w * sizeX * scaleX;
-
-                    var H = (h - headerRows) * sizeY * scaleY;
-
-                    cropSize = Math.min(W, H);
-
-                    sx = 4 * sizeX * scaleX + (W - cropSize) / 2;
-
-                    sy = (4 + headerRows) * sizeY * scaleY + (H - cropSize) / 2;
-
+            var isHSActive = window.PlatenHyperspeed && PlatenHyperspeed.isActive();
+            if (isHSActive && canvasHS && canvasHS.style.display !== 'none') {
+                // If Motus is active, draw directly from canvasHS (which has no text)
+                var fw = canvasHS.width;
+                var fh = canvasHS.height;
+                if (fw > 0 && fh > 0) {
+                    var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
+                    var sx, sy, cropSize;
+                    if (isGraphPaper) {
+                        cropSize = Math.min(fw, fh);
+                        sx = (fw - cropSize) / 2;
+                        sy = (fh - cropSize) / 2;
+                    } else {
+                        var sizes = getLayoutSizes(currentLayout);
+                        var sizeX = sizes.sizeX;
+                        var sizeY = sizes.sizeY;
+                        var w = sizes.w;
+                        var h = sizes.h;
+                        var logicalW = (w + 8) * sizeX;
+                        var logicalH = (h + 8) * sizeY;
+                        var scaleX = fw / logicalW;
+                        var scaleY = fh / logicalH;
+                        
+                        var svgElement = document.getElementById('s' + id);
+                        var hasHeader = svgElement && !!svgElement.querySelector('.typewriter-header');
+                        var headerRows = hasHeader ? 11 : 0;
+                        
+                        var W = w * sizeX * scaleX;
+                        var H = (h - headerRows) * sizeY * scaleY;
+                        cropSize = Math.min(W, H);
+                        sx = 4 * sizeX * scaleX + (W - cropSize) / 2;
+                        sy = (4 + headerRows) * sizeY * scaleY + (H - cropSize) / 2;
+                    }
+                    var padding = 120;
+                    var destSize = size - 2 * padding;
+                    ctxBack.drawImage(canvasHS, sx, sy, cropSize, cropSize, padding, padding, destSize, destSize);
                 }
+            } else {
+                // Otherwise, render from SVG, hiding all text to ensure it's text-free
+                var svgElement = document.getElementById('s' + id);
+                if (svgElement) {
+                    var svgClone = svgElement.cloneNode(true);
+                    
+                    // Remove all text and header elements completely
+                    var headers = svgClone.querySelectorAll('.typewriter-header');
+                    headers.forEach(function(el) { el.remove(); });
+                    var gridNums = svgClone.querySelectorAll('.grid-numbers');
+                    gridNums.forEach(function(el) { el.remove(); });
+                    var texts = svgClone.querySelectorAll('text');
+                    texts.forEach(function(t) { t.remove(); });
+                    var tspans = svgClone.querySelectorAll('tspan');
+                    tspans.forEach(function(ts) { ts.remove(); });
 
-                
+                    var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
+                    var svgW, svgH;
+                    if (isGraphPaper) {
+                        svgW = 1696;
+                        svgH = (currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_sq_banner') ? 1707.08 : 2192;
+                    } else {
+                        var sizes = getLayoutSizes(currentLayout);
+                        svgW = (sizes.w + 8) * sizes.sizeX;
+                        svgH = (sizes.h + 8) * sizes.sizeY;
+                    }
 
-                // We want to center it and pad it (using padding, e.g. 120px like original drawBackCanvas)
+                    var svgString = new XMLSerializer().serializeToString(svgClone);
+                    var svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+                    var svgUrl = URL.createObjectURL(svgBlob);
 
-                var padding = 120;
+                    var svgImg = new Image();
+                    svgImg.onload = function() {
+                        var offW = svgW;
+                        var offH = svgH;
+                        var offCanvas = document.createElement('canvas');
+                        offCanvas.width = offW;
+                        offCanvas.height = offH;
+                        var offCtx = offCanvas.getContext('2d');
+                        if (offCtx) offCtx.drawImage(svgImg, 0, 0, offW, offH);
+                        URL.revokeObjectURL(svgUrl);
 
-                var destSize = size - 2 * padding;
-
-                var dx = padding;
-
-                var dy = padding;
-
-                
-
-                ctxBack.drawImage(
-                    sourceCanvas,
-                    sx, sy, cropSize, cropSize, // source crop
-                    dx, dy, destSize, destSize  // destination centered & padded
-                );
+                        var sx, sy, cropSize;
+                        if (isGraphPaper) {
+                            cropSize = Math.min(offW, offH);
+                            sx = (offW - cropSize) / 2;
+                            sy = (offH - cropSize) / 2;
+                        } else {
+                            var sizes = getLayoutSizes(currentLayout);
+                            var sizeX = sizes.sizeX;
+                            var sizeY = sizes.sizeY;
+                            var w = sizes.w;
+                            var h = sizes.h;
+                            var logicalW = (w + 8) * sizeX;
+                            var logicalH = (h + 8) * sizeY;
+                            var scaleX = offW / logicalW;
+                            var scaleY = offH / logicalH;
+                            
+                            var hasHeader = !!svgElement.querySelector('.typewriter-header');
+                            var headerRows = hasHeader ? 11 : 0;
+                            
+                            var W = w * sizeX * scaleX;
+                            var H = (h - headerRows) * sizeY * scaleY;
+                            cropSize = Math.min(W, H);
+                            sx = 4 * sizeX * scaleX + (W - cropSize) / 2;
+                            sy = (4 + headerRows) * sizeY * scaleY + (H - cropSize) / 2;
+                        }
+                        var padding = 120;
+                        var destSize = size - 2 * padding;
+                        ctxBack.drawImage(offCanvas, sx, sy, cropSize, cropSize, padding, padding, destSize, destSize);
+                    };
+                    svgImg.src = svgUrl;
+                }
             }
         }
         window.drawBackCanvas = drawBackCanvas;
