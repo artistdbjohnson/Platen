@@ -3291,16 +3291,20 @@
         [data-tooltip]::after {
             content: attr(data-tooltip);
             position: absolute;
-            bottom: calc(100% + 8px);
+            bottom: 100%;
             left: 50%;
-            transform: translateX(-50%) translateY(4px);
-            background: rgba(15, 15, 20, 0.95);
-            color: #e0e0e0;
+            transform: translateX(-50%) translateY(5px);
+            background: var(--text);
+            color: var(--bg);
             padding: 6px 10px;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            text-transform: none;
+            white-space: normal;
+            width: max-content;
+            max-width: 250px;
+            line-height: 1.4;
             border-radius: 4px;
-            font-size: 10px;
-            white-space: nowrap;
-            z-index: 10000;
             pointer-events: none;
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
@@ -4927,14 +4931,10 @@ rawWt.push(baseWt + jitter);
 
 
         function randomize() {
-
+            if (_renderBusy) return;
             var now = Date.now();
-
             if (now - _lastRandomizeCall < _DEBOUNCE_MS) return; // drop the call
-
             _lastRandomizeCall = now;
-
-
 
             _autoMode = 'randomize';
 
@@ -4999,14 +4999,10 @@ rawWt.push(baseWt + jitter);
 
 
         function regenerate() {
-
+            if (_renderBusy) return;
             var now = Date.now();
-
             if (now - _lastRegenerateCall < _DEBOUNCE_MS) return; // drop the call
-
             _lastRegenerateCall = now;
-
-
 
             _autoMode = 'regenerate';
 
