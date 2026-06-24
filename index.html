@@ -3556,8 +3556,6 @@ rawWt.push(baseWt + jitter);
 
                                 <div id="motus-mode-iso" onclick="PlatenHyperspeed.setMode('iso_col')">ELEVATE</div>
 
-                                <div id="motus-mode-plotter" onclick="PlatenHyperspeed.setMode('plotter')">PLOTTER</div>
-
                             </div>
 
                         </div>
@@ -3568,7 +3566,6 @@ rawWt.push(baseWt + jitter);
 
                     <button id="btn-clear-stack" onclick="clearStack()">Clear Stack</button>
 
-                    <button id="btn-plotter-build" onclick="togglePlotterBuild()" style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 12px; margin-left: 4px;">Plotter Build: ON</button>
 
                     <div style="display: flex; gap: 6px; align-items: center;">
 
@@ -5402,10 +5399,6 @@ rawWt.push(baseWt + jitter);
 
                     var elIso = document.getElementById('motus-mode-iso');
 
-                    var elPlotter = document.getElementById('motus-mode-plotter');
-
-                    
-
                     if (spaceVal === 'isometric') {
 
                         if (elFlux) { elFlux.style.opacity = '0.4'; elFlux.style.pointerEvents = 'none'; }
@@ -5414,8 +5407,6 @@ rawWt.push(baseWt + jitter);
 
                         if (elIso) { elIso.style.opacity = '1.0'; elIso.style.pointerEvents = 'auto'; }
 
-                        if (elPlotter) { elPlotter.style.opacity = '1.0'; elPlotter.style.pointerEvents = 'auto'; }
-
                     } else {
 
                         if (elFlux) { elFlux.style.opacity = '1.0'; elFlux.style.pointerEvents = 'auto'; }
@@ -5423,8 +5414,6 @@ rawWt.push(baseWt + jitter);
                         if (elMoire) { elMoire.style.opacity = '1.0'; elMoire.style.pointerEvents = 'auto'; }
 
                         if (elIso) { elIso.style.opacity = '0.4'; elIso.style.pointerEvents = 'none'; }
-
-                        if (elPlotter) { elPlotter.style.opacity = '0.4'; elPlotter.style.pointerEvents = 'none'; }
 
                     }
 
@@ -7522,7 +7511,7 @@ rawWt.push(baseWt + jitter);
 
                             var activeBgImg = typeof _activeCanvasImg !== 'undefined' ? _activeCanvasImg : null;
 
-                            if (window._plotterBuildMode && window.PlatenHyperspeed) {
+                            if (false && window._plotterBuildMode && window.PlatenHyperspeed) {
 
                                 canvas.style.opacity = '0'; // Hide webgl canvas during build
 
@@ -7584,7 +7573,7 @@ rawWt.push(baseWt + jitter);
 
 
 
-                    if (window.PlatenHyperspeed && !window._plotterBuildMode) {
+                    if (window.PlatenHyperspeed) {
 
                         PlatenHyperspeed.prepare(id);
 
@@ -11899,7 +11888,7 @@ rawWt.push(baseWt + jitter);
 
                         }
 
-                    } else if (_animMode === 'plotter') {
+                    } else if (false && _animMode === 'plotter') {
 
                         // Plotter scanning animation (diagonal sweep)
 
@@ -12616,7 +12605,8 @@ rawWt.push(baseWt + jitter);
 
 
                 buildPlotterAnimation: function(id, webglCanvas, callback) {
-
+                    if (callback) callback();
+                    return;
                     if (!_baseEntries[id] && !_animEntries[id]) this.prepare(id);
 
                     var cvs = document.getElementById('c' + id + '-hs');
@@ -13057,7 +13047,7 @@ rawWt.push(baseWt + jitter);
 
                     if (traits.space === 'isometric') {
 
-                        if (mode !== 'iso_col' && mode !== 'plotter') return;
+                        if (mode !== 'iso_col') return;
 
                     } else {
 
@@ -13065,9 +13055,9 @@ rawWt.push(baseWt + jitter);
 
                     }
 
-                    var modes = ['flux', 'moire', 'iso_col', 'plotter'];
+                    var modes = ['flux', 'moire', 'iso_col'];
 
-                    var labels = { 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'plotter': 'PLOTTER' };
+                    var labels = { 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE' };
 
                     if (modes.indexOf(mode) > -1) {
 
@@ -13123,7 +13113,7 @@ rawWt.push(baseWt + jitter);
 
                     if (traits.space === 'isometric') {
 
-                        modes = ['iso_col', 'plotter'];
+                        modes = ['iso_col'];
 
                     } else {
 
@@ -13131,7 +13121,7 @@ rawWt.push(baseWt + jitter);
 
                     }
 
-                    var labels = { 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'plotter': 'PLOTTER' };
+                    var labels = { 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE' };
 
                     var idx = modes.indexOf(_animMode);
 
@@ -14739,7 +14729,7 @@ rawWt.push(baseWt + jitter);
         }
 
         function setGalMotusMode(mode) {
-            var labels = { 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'plotter': 'PLOTTER' };
+            var labels = { 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE' };
             var btn = document.getElementById('motus-mode-btn-gal');
             if (btn) btn.textContent = labels[mode];
             if (window.PlatenHyperspeed) {
@@ -14793,7 +14783,7 @@ rawWt.push(baseWt + jitter);
 
             var modeBtnGal = document.getElementById('motus-mode-btn-gal');
             if (modeBtnGal) {
-                var labels = { 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'plotter': 'PLOTTER' };
+                var labels = { 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE' };
                 modeBtnGal.textContent = labels[defaultMode];
             }
 
@@ -14804,18 +14794,15 @@ rawWt.push(baseWt + jitter);
             var elFluxGal = document.getElementById('motus-mode-flux-gal');
             var elMoireGal = document.getElementById('motus-mode-moire-gal');
             var elIsoGal = document.getElementById('motus-mode-iso-gal');
-            var elPlotterGal = document.getElementById('motus-mode-plotter-gal');
 
             if (spaceVal === 'isometric') {
                 if (elFluxGal) { elFluxGal.style.opacity = '0.4'; elFluxGal.style.pointerEvents = 'none'; }
                 if (elMoireGal) { elMoireGal.style.opacity = '0.4'; elMoireGal.style.pointerEvents = 'none'; }
                 if (elIsoGal) { elIsoGal.style.opacity = '1.0'; elIsoGal.style.pointerEvents = 'auto'; }
-                if (elPlotterGal) { elPlotterGal.style.opacity = '1.0'; elPlotterGal.style.pointerEvents = 'auto'; }
             } else {
                 if (elFluxGal) { elFluxGal.style.opacity = '1.0'; elFluxGal.style.pointerEvents = 'auto'; }
                 if (elMoireGal) { elMoireGal.style.opacity = '1.0'; elMoireGal.style.pointerEvents = 'auto'; }
                 if (elIsoGal) { elIsoGal.style.opacity = '0.4'; elIsoGal.style.pointerEvents = 'none'; }
-                if (elPlotterGal) { elPlotterGal.style.opacity = '0.4'; elPlotterGal.style.pointerEvents = 'none'; }
             }
 
             // Restore stored raw flower data for PlatenHyperspeed animations inside the gallery viewer
@@ -16570,7 +16557,6 @@ rawWt.push(baseWt + jitter);
                             <div id="motus-mode-flux-gal" onclick="setGalMotusMode('flux')">FLUX</div>
                             <div id="motus-mode-moire-gal" onclick="setGalMotusMode('moire')">MOIRÉ</div>
                             <div id="motus-mode-iso-gal" onclick="setGalMotusMode('iso_col')">ELEVATE</div>
-                            <div id="motus-mode-plotter-gal" onclick="setGalMotusMode('plotter')">PLOTTER</div>
                         </div>
                     </div>
                 </div>
