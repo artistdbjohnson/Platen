@@ -3301,30 +3301,27 @@
             bottom: 100%;
             left: 50%;
             transform: translateX(-50%) translateY(5px);
-            background: var(--bg);
-            color: var(--text);
-            padding: 6px 10px;
-            font-size: 11px;
-            letter-spacing: 0.05em;
-            text-transform: none;
-            white-space: normal;
-            width: max-content;
-            max-width: 250px;
-            line-height: 1.4;
-            border-radius: 4px;
+            background: #000000 !important;
+            color: #ffffff !important;
+            padding: 4px 8px;
+            font-size: 8px;
+            letter-spacing: 0.08em;
+            text-transform: lowercase;
+            white-space: nowrap;
             pointer-events: none;
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border: 1px solid #333333 !important;
+            border-radius: 0;
             opacity: 0;
             visibility: hidden;
             transition: all 0.2s ease;
             transition-delay: 0.1s;
             font-family: var(--font-mono);
-            text-transform: lowercase;
-            letter-spacing: 0.5px;
         }
         html[data-theme="light"] [data-tooltip]::after {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background: #000000 !important;
+            color: #ffffff !important;
+            border: 1px solid #333333 !important;
+            box-shadow: none;
         }
         [data-tooltip]:hover::after {
             opacity: 1;
@@ -3575,9 +3572,9 @@ rawWt.push(baseWt + jitter);
 
                 <div class="control-grid">
 
-                    <button id="btn-randomize" onclick="randomize()" data-tooltip="Completely randomizes all parameters and background">Randomize</button>
+                    <button id="btn-randomize" onclick="randomize()" data-tooltip="randomize all parameters">Randomize</button>
 
-                    <button id="btn-regen" onclick="regenerate()" data-tooltip="Generates a new seed but keeps current parameters and background">Regenerate</button>
+                    <button id="btn-regen" onclick="regenerate()" data-tooltip="generate new seed">Regenerate</button>
 
                     <button id="btn-curate" onclick="curateArtwork()">Curate</button>
 
@@ -16323,7 +16320,9 @@ rawWt.push(baseWt + jitter);
 
 
 
-        window.drawBackCanvas = function (id) {
+        function drawBackCanvas(id) {
+
+            window.drawBackCanvas = drawBackCanvas;
 
             var canvasBack = document.getElementById('c' + id + '-back');
 
