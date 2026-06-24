@@ -10522,7 +10522,14 @@ rawWt.push(baseWt + jitter);
 
             var _fpsTime     = {};   // id → last fps sample time
 
-            var _GROUP_SIZE  = 18;   // flowers per group for column-offset ripple
+            var _GROUP_SIZE  = 18;
+
+            function _getTraits() {
+                if (window.activeGalleryIndex !== -1 && window.curatedGallery && window.curatedGallery[window.activeGalleryIndex]) {
+                    return window.curatedGallery[window.activeGalleryIndex].traits || {};
+                }
+                return window.RESOLVED_TRAITS || window.TRAITS || {};
+            }   // flowers per group for column-offset ripple
 
 
 
@@ -10782,7 +10789,7 @@ rawWt.push(baseWt + jitter);
 
 
 
-                var traits  = window.RESOLVED_TRAITS || window.TRAITS || {};
+                var traits  = _getTraits();
 
                 _glyphSets[id] = (typeof getTypewriterGlyphs === 'function')
 
@@ -11368,7 +11375,7 @@ rawWt.push(baseWt + jitter);
 
                 var now = performance.now();
 
-                var traits = window.RESOLVED_TRAITS || window.TRAITS || {};
+                var traits = _getTraits();
 
 
 
@@ -12666,7 +12673,7 @@ rawWt.push(baseWt + jitter);
 
                     var allEntries = (_baseEntries[id] || []).concat(_animEntries[id] || []);
 
-                    var traits = window.RESOLVED_TRAITS || window.TRAITS || {};
+                    var traits = _getTraits();
 
                     
 
@@ -13046,7 +13053,7 @@ rawWt.push(baseWt + jitter);
 
                 setMode: function (mode) {
 
-                    var traits = window.RESOLVED_TRAITS || window.TRAITS || {};
+                    var traits = _getTraits();
 
                     if (traits.space === 'isometric') {
 
@@ -13110,7 +13117,7 @@ rawWt.push(baseWt + jitter);
 
                 cycleMode: function () {
 
-                    var traits = window.RESOLVED_TRAITS || window.TRAITS || {};
+                    var traits = _getTraits();
 
                     var modes = [];
 
@@ -14773,6 +14780,43 @@ rawWt.push(baseWt + jitter);
             }
 
             var art = curatedGallery[index];
+
+            // Set up motus modes for the current artwork space
+            var spaceVal = (art.traits && art.traits.space) || 'default';
+            var defaultMode = (spaceVal === 'isometric') ? 'iso_col' : 'flux';
+
+            _galMotusOn = false;
+            var btnGalMotus = document.getElementById('btn-gal-motus');
+            if (btnGalMotus) btnGalMotus.textContent = 'motus: off';
+            var dropdownGal = document.getElementById('motus-dropdown-container-gal');
+            if (dropdownGal) dropdownGal.style.display = 'none';
+
+            var modeBtnGal = document.getElementById('motus-mode-btn-gal');
+            if (modeBtnGal) {
+                var labels = { 'flux': 'FLUX', 'moire': 'MOIRÉ', 'iso_col': 'ELEVATE', 'plotter': 'PLOTTER' };
+                modeBtnGal.textContent = labels[defaultMode];
+            }
+
+            if (window.PlatenHyperspeed) {
+                PlatenHyperspeed.setMode(defaultMode);
+            }
+
+            var elFluxGal = document.getElementById('motus-mode-flux-gal');
+            var elMoireGal = document.getElementById('motus-mode-moire-gal');
+            var elIsoGal = document.getElementById('motus-mode-iso-gal');
+            var elPlotterGal = document.getElementById('motus-mode-plotter-gal');
+
+            if (spaceVal === 'isometric') {
+                if (elFluxGal) { elFluxGal.style.opacity = '0.4'; elFluxGal.style.pointerEvents = 'none'; }
+                if (elMoireGal) { elMoireGal.style.opacity = '0.4'; elMoireGal.style.pointerEvents = 'none'; }
+                if (elIsoGal) { elIsoGal.style.opacity = '1.0'; elIsoGal.style.pointerEvents = 'auto'; }
+                if (elPlotterGal) { elPlotterGal.style.opacity = '1.0'; elPlotterGal.style.pointerEvents = 'auto'; }
+            } else {
+                if (elFluxGal) { elFluxGal.style.opacity = '1.0'; elFluxGal.style.pointerEvents = 'auto'; }
+                if (elMoireGal) { elMoireGal.style.opacity = '1.0'; elMoireGal.style.pointerEvents = 'auto'; }
+                if (elIsoGal) { elIsoGal.style.opacity = '0.4'; elIsoGal.style.pointerEvents = 'none'; }
+                if (elPlotterGal) { elPlotterGal.style.opacity = '0.4'; elPlotterGal.style.pointerEvents = 'none'; }
+            }
 
             // Restore stored raw flower data for PlatenHyperspeed animations inside the gallery viewer
             if (art.flowers) {
@@ -16523,10 +16567,10 @@ rawWt.push(baseWt + jitter);
                     <div id="motus-dropdown-container-gal" class="motus-dropdown" style="display: none; top: 100%;">
                         <button id="motus-mode-btn-gal" class="motus-dropdown-btn" onclick="document.getElementById('motus-dropdown-container-gal').classList.toggle('open')" style="text-transform: uppercase;">FLUX</button>
                         <div class="motus-dropdown-content" onclick="document.getElementById('motus-dropdown-container-gal').classList.remove('open')" style="bottom: auto; top: 100%; margin-top: 4px; margin-bottom: 0;">
-                            <div onclick="setGalMotusMode('flux')">FLUX</div>
-                            <div onclick="setGalMotusMode('moire')">MOIRÉ</div>
-                            <div onclick="setGalMotusMode('iso_col')">ELEVATE</div>
-                            <div onclick="setGalMotusMode('plotter')">PLOTTER</div>
+                            <div id="motus-mode-flux-gal" onclick="setGalMotusMode('flux')">FLUX</div>
+                            <div id="motus-mode-moire-gal" onclick="setGalMotusMode('moire')">MOIRÉ</div>
+                            <div id="motus-mode-iso-gal" onclick="setGalMotusMode('iso_col')">ELEVATE</div>
+                            <div id="motus-mode-plotter-gal" onclick="setGalMotusMode('plotter')">PLOTTER</div>
                         </div>
                     </div>
                 </div>
