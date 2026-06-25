@@ -14857,6 +14857,14 @@ rawWt.push(baseWt + jitter);
                 // Build a clone of the SVG for rendering artwork area only
                 var svgClone = svgElement.cloneNode(true);
 
+                // Make background rect transparent in the clone
+                var rects = svgClone.querySelectorAll('rect');
+                rects.forEach(function(r) {
+                    if (r.parentElement === svgClone) {
+                        r.setAttribute('fill', 'transparent');
+                    }
+                });
+
                 // Remove all text and header elements completely
                 var headers = svgClone.querySelectorAll('.typewriter-header');
                 headers.forEach(function(el) { el.remove(); });
@@ -16662,6 +16670,14 @@ rawWt.push(baseWt + jitter);
                 if (svgElement) {
                     var svgClone = svgElement.cloneNode(true);
                     
+                    // Make background rect transparent in the clone
+                    var rects = svgClone.querySelectorAll('rect');
+                    rects.forEach(function(r) {
+                        if (r.parentElement === svgClone) {
+                            r.setAttribute('fill', 'transparent');
+                        }
+                    });
+
                     // Remove all text and header elements completely
                     var headers = svgClone.querySelectorAll('.typewriter-header');
                     headers.forEach(function(el) { el.remove(); });
