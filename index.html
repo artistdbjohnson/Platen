@@ -805,15 +805,21 @@
             transform: translateX(-50%) translateY(0);
         }
 
+        .gallery-item-newest,
+        .gallery-item-just-saved {
+            scroll-margin-top: 88px;
+        }
+
         .gallery-item-just-saved {
             outline: 2px solid var(--text);
-            outline-offset: 4px;
-            animation: gallery-just-saved-pulse 1.4s ease 2;
+            outline-offset: 6px;
+            box-shadow: 0 0 0 1px var(--text);
+            animation: gallery-just-saved-pulse 1.6s ease 2;
         }
 
         @keyframes gallery-just-saved-pulse {
-            0%, 100% { outline-color: var(--text); }
-            50% { outline-color: transparent; }
+            0%, 100% { outline-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
+            50% { outline-color: var(--dim); box-shadow: 0 0 0 1px var(--dim); }
         }
 
         .params-fold-summary {
