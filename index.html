@@ -792,29 +792,6 @@
             display: none;
         }
 
-        .platen-toast {
-            position: fixed;
-            left: 50%;
-            bottom: 24px;
-            transform: translateX(-50%) translateY(12px);
-            background: var(--text);
-            color: var(--bg);
-            font-family: inherit;
-            font-size: 11px;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            padding: 12px 18px;
-            z-index: 20050;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.25s ease, transform 0.25s ease;
-        }
-
-        .platen-toast.is-on {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
         .gallery-item-newest,
         .gallery-item-just-saved {
             scroll-margin-top: 88px;
@@ -864,14 +841,23 @@
         }
 
         .saved-inline-grid {
-            column-count: 2;
-            column-gap: 10px;
-            column-fill: balance;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
             padding: 0;
         }
 
+        .saved-masonry-col {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+
         .saved-inline-empty {
-            column-span: all;
+            width: 100%;
             font-size: 11px;
             letter-spacing: 0.12em;
             color: var(--dim);
@@ -882,28 +868,22 @@
         }
 
         .saved-inline-item {
-            break-inside: avoid;
-            page-break-inside: avoid;
             width: 100%;
-            margin: 0 0 10px;
+            height: auto;
+            margin: 0;
             padding: 0;
             border: 0;
             border-radius: 0;
-            cursor: default;
+            cursor: pointer;
             position: relative;
             display: block;
-            background-size: 100% 100%;
-            background-position: center;
-            background-repeat: no-repeat;
+            background: none;
             overflow: visible;
         }
 
         .saved-inline-preview {
             overflow: visible;
             border-radius: 0;
-        }
-
-        .saved-inline-preview:has(svg) {
             line-height: 0;
         }
 
@@ -917,21 +897,88 @@
             overflow: visible;
         }
 
-        .saved-inline-remove {
+        .saved-solo {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 18000;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px 32px;
+            box-sizing: border-box;
+        }
+
+        .saved-solo.is-open {
+            display: flex;
+        }
+
+        .saved-solo[hidden] {
+            display: none !important;
+        }
+
+        .saved-solo-backdrop {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 22px;
-            height: 22px;
-            padding: 0;
-            border: 1px solid var(--border);
+            inset: 0;
+            background: rgba(8, 8, 8, 0.88);
+        }
+
+        .saved-solo-frame {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            width: min(92vw, 720px);
+            max-height: 92dvh;
+        }
+
+        .saved-solo-plate {
+            width: 100%;
+            max-height: calc(92dvh - 72px);
             border-radius: 0;
-            background: var(--bg);
+            line-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .saved-solo-plate img,
+        .saved-solo-plate svg {
+            display: block;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: calc(92dvh - 72px);
+            object-fit: contain;
+            border-radius: 0;
+        }
+
+        .saved-solo-chrome {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 28px;
+            width: 100%;
+        }
+
+        .saved-solo-chrome button {
+            background: none;
+            border: none;
             color: var(--text);
+            opacity: 0.42;
+            font-family: inherit;
             font-size: 10px;
-            line-height: 1;
+            letter-spacing: 0.16em;
+            text-transform: lowercase;
             cursor: pointer;
-            z-index: 2;
+            padding: 8px 4px;
+            min-height: 44px;
+        }
+
+        .saved-solo-chrome button:hover {
+            opacity: 0.88;
         }
 
         .params-fold-summary {
@@ -1027,8 +1074,11 @@
             }
 
             .saved-inline-grid {
-                column-count: 4;
-                column-gap: 16px;
+                gap: 16px;
+            }
+
+            .saved-masonry-col {
+                gap: 16px;
             }
         }
 
@@ -1116,8 +1166,7 @@
             }
 
             .saved-inline-grid {
-                column-count: 2;
-                column-gap: 10px;
+                gap: 10px;
             }
 
             .params-fold-summary {
@@ -3614,7 +3663,8 @@
 
         body.fullscreen-active .mobile-generate-bar,
         body.fullscreen-active .canvas-generate-strip,
-        body.fullscreen-active .saved-creations {
+        body.fullscreen-active .saved-creations,
+        body.fullscreen-active .saved-solo {
             display: none !important;
         }
 
@@ -3942,7 +3992,7 @@
 
             <details class="about-fold" id="about-fold">
 
-            <summary class="about-fold-summary">Read the manifesto</summary>
+            <summary class="about-fold-summary">About</summary>
 
             <div class="about-fold-body">
 
@@ -4465,7 +4515,7 @@ rawWt.push(baseWt + jitter);
 
                     <h2 id="saved-creations-title">Saved creations</h2>
 
-                    <p class="saved-creations-cue" id="saved-creations-cue">scroll down to view saved creations</p>
+                    <p class="saved-creations-cue" id="saved-creations-cue">0 saved</p>
 
                 </div>
 
@@ -4475,7 +4525,17 @@ rawWt.push(baseWt + jitter);
 
     </main>
 
-    <div id="platen-toast" class="platen-toast" role="status" aria-live="polite">Saved</div>
+    <div id="saved-solo" class="saved-solo" role="dialog" aria-modal="true" aria-label="Saved plate" hidden>
+        <div class="saved-solo-backdrop" onclick="closeSavedSolo()"></div>
+        <div class="saved-solo-frame">
+            <div id="saved-solo-plate" class="saved-solo-plate"></div>
+            <div class="saved-solo-chrome">
+                <button type="button" id="saved-solo-close" onclick="closeSavedSolo()">close</button>
+                <button type="button" id="saved-solo-download">download</button>
+                <button type="button" id="saved-solo-remove">remove</button>
+            </div>
+        </div>
+    </div>
 
     <div id="mobile-generate-bar" class="mobile-generate-bar">
 
@@ -15204,18 +15264,6 @@ rawWt.push(baseWt + jitter);
 
         }
 
-        var _platenToastTimer = null;
-        function showPlatenToast(msg) {
-            var toast = document.getElementById('platen-toast');
-            if (!toast) return;
-            toast.textContent = msg || 'Saved';
-            toast.classList.add('is-on');
-            if (_platenToastTimer) clearTimeout(_platenToastTimer);
-            _platenToastTimer = setTimeout(function() {
-                toast.classList.remove('is-on');
-            }, 2400);
-        }
-
         function afterGalleryPaint(fn) {
             if (typeof requestAnimationFrame === 'function') {
                 requestAnimationFrame(function() {
@@ -15239,18 +15287,31 @@ rawWt.push(baseWt + jitter);
 
         function revealNewestSavedCuration(toastMsg) {
             renderSavedInline();
-            showPlatenToast(toastMsg || 'Saved');
-            showSavedScrollCue();
             afterGalleryPaint(function() {
                 highlightNewestGalleryCard();
             });
         }
 
-        function showSavedScrollCue() {
-            var hint = document.getElementById('mobile-scroll-hint');
-            if (!hint) return;
-            hint.textContent = 'scroll down to view saved creations';
-            try { hint.style.display = ''; } catch (e) {}
+        function updateSavedCount() {
+            var cue = document.getElementById('saved-creations-cue');
+            if (!cue) return;
+            var n = curatedGallery.length;
+            cue.textContent = n === 1 ? '1 saved' : (n + ' saved');
+        }
+
+        function savedMasonryColumnCount() {
+            return (typeof window !== 'undefined' && window.innerWidth >= 901) ? 4 : 2;
+        }
+
+        function plateAspectForMasonry(art) {
+            var layout = (art && art.layout) || '';
+            if (layout === 'banner' || layout === 'gallery') return 16 / 9;
+            if (layout === 'square' || layout === 'banner_sq' || layout === 'grid_39_39' || layout === 'banner_39_39') return 1;
+            if (layout === 'grid_32_40' || layout === 'banner_32_40') return 40 / 32;
+            if (layout === 'grid_39_51' || layout === 'banner_39_51') return 51 / 39;
+            if (layout === 'graph_paper' || layout === 'graph_paper_banner') return 2192 / 1696;
+            if (layout === 'graph_paper_sq' || layout === 'graph_paper_sq_banner') return 1707.08 / 1696;
+            return 11 / 8.5;
         }
 
         function highlightNewestGalleryCard() {
@@ -15330,11 +15391,57 @@ rawWt.push(baseWt + jitter);
             }
         }
 
+        function paintSavedPlate(host, art, opts) {
+            opts = opts || {};
+            host.innerHTML = '';
+            var snap = (art.svgs && art.svgs[0]) || '';
+            var previewUrl = (art.previews && art.previews[0]) || '';
+            if (previewUrl) {
+                var img = document.createElement('img');
+                img.src = previewUrl;
+                img.alt = 'saved plate ' + art.seed;
+                img.style.width = opts.fillWidth ? '100%' : 'auto';
+                img.style.height = 'auto';
+                img.style.maxWidth = '100%';
+                img.style.objectFit = 'contain';
+                img.style.borderRadius = '0';
+                img.style.display = 'block';
+                host.appendChild(img);
+                return;
+            }
+            if (snap) {
+                host.innerHTML = snap.replace(/\bmotus-active\b/g, '');
+                var svgEl = host.querySelector('svg');
+                if (svgEl) {
+                    svgEl.removeAttribute('height');
+                    svgEl.style.width = opts.fillWidth ? '100%' : 'auto';
+                    svgEl.style.height = 'auto';
+                    svgEl.style.maxWidth = '100%';
+                    svgEl.style.objectFit = 'contain';
+                    svgEl.style.borderRadius = '0';
+                    svgEl.style.overflow = 'visible';
+                    if (!svgEl.querySelector('style.gallery-thumb-style')) {
+                        var thumbStyle = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                        thumbStyle.setAttribute('class', 'gallery-thumb-style');
+                        var thumbCanvas = (art.traits && art.traits.canvas) || 'black';
+                        var thumbFill = (thumbCanvas.indexOf('black') !== -1) ? '#ffffff' : '#1a1a1a';
+                        thumbStyle.textContent = '.typewriter-header text, .typewriter-header tspan { fill: ' + thumbFill + ' !important; } .grid-numbers text, .grid-numbers tspan { fill: ' + thumbFill + ' !important; }';
+                        svgEl.insertBefore(thumbStyle, svgEl.firstChild);
+                    }
+                }
+            }
+            if (!host.querySelector('svg, img')) {
+                host.textContent = 'seed ' + art.seed;
+            }
+        }
+
         function renderSavedInline() {
 
             var grid = document.getElementById('saved-inline-grid');
 
             if (!grid) return;
+
+            updateSavedCount();
 
             grid.innerHTML = '';
 
@@ -15346,17 +15453,35 @@ rawWt.push(baseWt + jitter);
 
             }
 
+            var colCount = savedMasonryColumnCount();
+            var colEls = [];
+            var colHeights = [];
+            var c;
+            for (c = 0; c < colCount; c++) {
+                var col = document.createElement('div');
+                col.className = 'saved-masonry-col';
+                grid.appendChild(col);
+                colEls.push(col);
+                colHeights.push(0);
+            }
+
             for (var i = curatedGallery.length - 1; i >= 0; i--) {
 
                 (function(index) {
 
                     var art = curatedGallery[index];
 
-                    var canvasCls = 'canvas-' + (art.traits.canvas || 'black');
+                    var canvasCls = 'canvas-' + ((art.traits && art.traits.canvas) || 'black');
 
                     var div = document.createElement('div');
 
                     div.className = 'saved-inline-item gallery-item ' + canvasCls;
+
+                    div.setAttribute('role', 'button');
+
+                    div.setAttribute('tabindex', '0');
+
+                    div.setAttribute('aria-label', 'View saved plate ' + art.seed);
 
                     if (index === curatedGallery.length - 1) {
 
@@ -15366,108 +15491,119 @@ rawWt.push(baseWt + jitter);
 
                     }
 
-                    var bgStyle = getCanvasBackgroundStyle(art);
-
-                    div.style.backgroundImage = bgStyle.backgroundImage;
-
-                    div.style.backgroundColor = bgStyle.backgroundColor;
-
-                    var snap = (art.svgs && art.svgs[0]) || '';
-
-                    var previewUrl = (art.previews && art.previews[0]) || '';
-
                     var preview = document.createElement('div');
 
                     preview.className = 'saved-inline-preview';
 
-                    if (previewUrl) {
-
-                        var img = document.createElement('img');
-
-                        img.src = previewUrl;
-
-                        img.alt = 'saved plate ' + art.seed;
-
-                        img.style.width = '100%';
-
-                        img.style.height = 'auto';
-
-                        img.style.objectFit = 'contain';
-
-                        img.style.borderRadius = '0';
-
-                        img.style.display = 'block';
-
-                        preview.appendChild(img);
-
-                    } else if (snap) {
-
-                        preview.innerHTML = snap.replace(/\bmotus-active\b/g, '');
-
-                        var svgEl = preview.querySelector('svg');
-
-                        if (svgEl) {
-
-                            svgEl.removeAttribute('height');
-
-                            svgEl.style.width = '100%';
-
-                            svgEl.style.height = 'auto';
-
-                            svgEl.style.maxWidth = '100%';
-
-                            svgEl.style.objectFit = 'contain';
-
-                            svgEl.style.borderRadius = '0';
-
-                            svgEl.style.overflow = 'visible';
-
-                            if (!svgEl.querySelector('style.gallery-thumb-style')) {
-
-                                var thumbStyle = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-
-                                thumbStyle.setAttribute('class', 'gallery-thumb-style');
-
-                                var thumbCanvas = art.traits.canvas || 'black';
-
-                                var thumbFill = (thumbCanvas.indexOf('black') !== -1) ? '#ffffff' : '#1a1a1a';
-
-                                thumbStyle.textContent = '.typewriter-header text, .typewriter-header tspan { fill: ' + thumbFill + ' !important; } .grid-numbers text, .grid-numbers tspan { fill: ' + thumbFill + ' !important; }';
-
-                                svgEl.insertBefore(thumbStyle, svgEl.firstChild);
-
-                            }
-
-                        }
-
-                    }
-
-                    if (!preview.querySelector('svg, img')) {
-
-                        preview.textContent = 'seed ' + art.seed;
-
-                    }
+                    paintSavedPlate(preview, art, { fillWidth: true });
 
                     div.appendChild(preview);
 
-                    var removeBtn = document.createElement('button');
-                    removeBtn.type = 'button';
-                    removeBtn.className = 'saved-inline-remove';
-                    removeBtn.setAttribute('aria-label', 'Remove saved plate');
-                    removeBtn.textContent = '✕';
-                    removeBtn.onclick = function(e) {
-                        e.stopPropagation();
-                        showConfirmRemovePopup(index);
+                    div.onclick = function() {
+                        openSavedSolo(index);
                     };
-                    div.appendChild(removeBtn);
 
-                    grid.appendChild(div);
+                    div.onkeydown = function(e) {
+                        if (!e) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            openSavedSolo(index);
+                        }
+                    };
+
+                    var dest = 0;
+                    for (c = 1; c < colCount; c++) {
+                        if (colHeights[c] < colHeights[dest]) dest = c;
+                    }
+                    colEls[dest].appendChild(div);
+                    colHeights[dest] += plateAspectForMasonry(art);
 
                 })(i);
 
             }
 
         }
+
+        var _savedSoloIndex = -1;
+
+        function openSavedSolo(index) {
+            var art = curatedGallery[index];
+            var modal = document.getElementById('saved-solo');
+            var plate = document.getElementById('saved-solo-plate');
+            if (!art || !modal || !plate) return;
+            _savedSoloIndex = index;
+            try { activeGalleryIndex = index; } catch (e0) {}
+            paintSavedPlate(plate, art, { fillWidth: false });
+            modal.classList.add('is-open');
+            modal.removeAttribute('hidden');
+            var closeBtn = document.getElementById('saved-solo-close');
+            if (closeBtn) {
+                try { closeBtn.focus(); } catch (e1) {}
+            }
+        }
+
+        function closeSavedSolo() {
+            var modal = document.getElementById('saved-solo');
+            var plate = document.getElementById('saved-solo-plate');
+            if (modal) {
+                modal.classList.remove('is-open');
+                modal.setAttribute('hidden', 'hidden');
+            }
+            if (plate) plate.innerHTML = '';
+            _savedSoloIndex = -1;
+            try { activeGalleryIndex = -1; } catch (e0) {}
+        }
+
+        function downloadSavedSolo() {
+            var art = curatedGallery[_savedSoloIndex];
+            if (!art) return;
+            var url = (art.previews && art.previews[0]) || '';
+            var name = 'platen-' + art.seed;
+            if (url) {
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = name + '.jpg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                return;
+            }
+            var snap = (art.svgs && art.svgs[0]) || '';
+            if (!snap) return;
+            var blob = new Blob([snap], { type: 'image/svg+xml' });
+            var href = URL.createObjectURL(blob);
+            var link = document.createElement('a');
+            link.href = href;
+            link.download = name + '.svg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(function() { URL.revokeObjectURL(href); }, 1200);
+        }
+
+        (function bindSavedSoloChrome() {
+            var downloadBtn = document.getElementById('saved-solo-download');
+            var removeBtn = document.getElementById('saved-solo-remove');
+            if (downloadBtn) downloadBtn.onclick = downloadSavedSolo;
+            if (removeBtn) {
+                removeBtn.onclick = function() {
+                    if (_savedSoloIndex < 0) return;
+                    showConfirmRemovePopup(_savedSoloIndex);
+                };
+            }
+            document.addEventListener('keydown', function(e) {
+                if (!e || e.key !== 'Escape') return;
+                var modal = document.getElementById('saved-solo');
+                if (modal && modal.classList.contains('is-open')) closeSavedSolo();
+            });
+            var _savedMasonryResizeTimer = null;
+            window.addEventListener('resize', function() {
+                if (_savedMasonryResizeTimer) clearTimeout(_savedMasonryResizeTimer);
+                _savedMasonryResizeTimer = setTimeout(function() {
+                    renderSavedInline();
+                }, 180);
+            });
+        })();
 
         function showConfirmRemovePopup(index) {
 
@@ -15553,6 +15689,8 @@ rawWt.push(baseWt + jitter);
 
                         curatedGallery.splice(index, 1);
 
+                        closeSavedSolo();
+
                         renderSavedInline();
 
                         popup.style.display = 'none';
@@ -15562,6 +15700,8 @@ rawWt.push(baseWt + jitter);
                         console.error("Error deleting from database:", err);
 
                         curatedGallery.splice(index, 1);
+
+                        closeSavedSolo();
 
                         renderSavedInline();
 
