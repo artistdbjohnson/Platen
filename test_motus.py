@@ -76,6 +76,56 @@ toggle_fn = html.split("toggle: function () {", 1)[1].split("setMode: function",
 ok &= must("[1, 2, 3]" not in toggle_fn, "toggle no longer hardcodes all three panels")
 ok &= must("_panelIds()" in toggle_fn, "toggle asks activePanels() for who to start")
 
+# ELEVATE motion quality — mechanical field, latch, ink, hitch clamp.
+ok &= must("function _mechEase" in html, "mechanical platen easing exists")
+ok &= must("function _isoLatchLevel" in html, "glyph slug latch exists")
+ok &= must("function _isoField" in html, "ELEVATE field is centralized")
+ok &= must("function _ribbonInk" in html, "shared ribbon-ink helper exists")
+ok &= must("ISO_DENSITY" in html, "five-band density map exists")
+ok &= must("ISO_VARIANTS" in html, "SM3 variant keys stay available")
+ok &= must("typewriter_slash" in html and "typewriter_dash" in html and "typewriter_square" in html,
+           "slash/dash/square remain typewriter_* keys")
+ok &= must("f.py_steps" in hs and "yCoords = f.py_steps.slice()" in hs,
+           "Motus columns reuse the plate's budgeted py_steps")
+ok &= must("if (dt > 0.048) dt = 0.048" in html, "RAF hitch clamp absorbs long frames")
+
+iso = html.split("} else if (_animMode === 'iso_col') {", 1)[1].split(
+    "} else if (false && _animMode === 'plotter')", 1
+)[0]
+ok &= must("* 72" not in iso, "ELEVATE no longer uses the harsh ±36px linear span")
+ok &= must("(f - 0.5) * 24" in iso, "ELEVATE elevation is one strike-step")
+ok &= must("_isoField(e, iso_t, stag)" in iso, "ELEVATE uses the eased mechanical field")
+ok &= must("_isoGlyphKey(f, e.pathKey, e, t, glyphSet)" in iso, "ELEVATE latches glyphs through the 5-band set")
+ok &= must("(f - 0.5) * 0.05" in iso, "ELEVATE scale is a perspective whisper")
+ok &= must("_ribbonInk(f, e.isoInk)" in iso, "ELEVATE uses ribbon ink instead of flat alpha 1")
+ok &= must("isoRegX" in iso, "ELEVATE carries imperfect registration")
+ok &= must("0.15" not in iso.replace("0.15 * factor", ""), "ELEVATE dropped the 15% scale pulse")
+
+flux = html.split("} else if (_animMode === 'flux') {", 1)[1].split("ctx.globalAlpha = Math.min(hyperspeedBase", 1)[0]
+ok &= must("t * 50.0" not in flux, "FLUX no longer uses 50Hz electronic vibration")
+ok &= must("t * 35.0" not in flux, "FLUX no longer uses 35Hz sparkle")
+ok &= must("wave * 7.2" in flux, "FLUX flow amplitude is weightier, not 10px drift")
+
+moire = html.split("if (_animMode === 'moire') {", 1)[1].split("} else if (_animMode === 'iso_col') {", 1)[0]
+ok &= must("_isoLatchLevel" in moire, "MOIRÉ shares the glyph latch (no band popping)")
+ok &= must("_mechEase" in moire, "MOIRÉ eases the interference field")
+ok &= must("* 8.0" not in moire, "MOIRÉ shift is no longer the 8px shove")
+ok &= must("_ribbonInk" in moire, "MOIRÉ uses the same ribbon ink language")
+
+# Pause / layering contract from PR #6 must still hold after the quality pass.
+ok &= must("function _pauseAll" in html and "visibilitychange" in html, "tab-hide pause remains")
+ok &= must("cvs.style.zIndex = '3'" in html, "anim canvas z-index remains 3")
+ok &= must("svg.style.zIndex = '1'" in html, "Motus-active SVG z-index remains 1")
+
 if not ok:
     sys.exit(1)
 print("\nAll Motus structural checks passed.")
+
+# Runtime math for easing / latch / ribbon (node).
+import subprocess
+motion = subprocess.run(
+    ["node", str(ROOT / "test_motus_motion.js")],
+    cwd=ROOT,
+)
+if motion.returncode != 0:
+    sys.exit(motion.returncode)
