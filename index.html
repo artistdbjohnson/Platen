@@ -865,7 +865,8 @@
 
         .saved-inline-grid {
             column-count: 2;
-            column-gap: 14px;
+            column-gap: 10px;
+            column-fill: balance;
             padding: 0;
         }
 
@@ -884,7 +885,7 @@
             break-inside: avoid;
             page-break-inside: avoid;
             width: 100%;
-            margin: 0 0 14px;
+            margin: 0 0 10px;
             padding: 0;
             border: 0;
             border-radius: 0;
@@ -15135,9 +15136,11 @@ rawWt.push(baseWt + jitter);
                 }
             }
 
+            var previewTraits = JSON.parse(JSON.stringify(RESOLVED_TRAITS || TRAITS));
+            var previewArt = { traits: previewTraits, layout: currentLayout };
             var previews = [];
             for (var pi = 0; pi < panels.length; pi++) {
-                previews.push(captureInlinePlatePreview(document.getElementById('s' + panels[pi])));
+                previews.push(captureInlinePlatePreview(document.getElementById('s' + panels[pi]), previewArt));
             }
 
             var newArt = {
@@ -15146,7 +15149,7 @@ rawWt.push(baseWt + jitter);
 
                 seed: RENDER_SEED,
 
-                traits: JSON.parse(JSON.stringify(RESOLVED_TRAITS || TRAITS)),
+                traits: previewTraits,
 
                 layout: currentLayout,
 
@@ -15283,20 +15286,44 @@ rawWt.push(baseWt + jitter);
 
 
 
-        function captureInlinePlatePreview(svgEl) {
+        function captureInlinePlatePreview(svgEl, art) {
             if (!svgEl || typeof rasterizePlatenSvg !== 'function' || typeof getSvgPixelSize !== 'function') return '';
             try {
                 var dim = getSvgPixelSize(svgEl);
                 if (!dim || !dim.w || !dim.h) return '';
-                var w = 420;
+                var w = 480;
                 var h = Math.max(1, Math.round(w * dim.h / dim.w));
-                if (h > 680) {
-                    h = 680;
+                if (h > 720) {
+                    h = 720;
                     w = Math.max(1, Math.round(h * dim.w / dim.h));
                 }
-                var canvas = rasterizePlatenSvg(svgEl, w, h);
-                if (!canvas) return '';
-                return canvas.toDataURL('image/jpeg', 0.76);
+                var ink = rasterizePlatenSvg(svgEl, w, h);
+                if (!ink) return '';
+                var sheet = document.createElement('canvas');
+                sheet.width = w;
+                sheet.height = h;
+                var ctx = sheet.getContext('2d');
+                if (!ctx) return ink.toDataURL('image/jpeg', 0.82);
+                var canvasName = (art && art.traits && art.traits.canvas) || 'black';
+                var rosy = (canvasName === 'white' || canvasName === 'tan' || canvasName === 'olive');
+                ctx.fillStyle = rosy ? '#f5f0e8' : '#0a0a0a';
+                ctx.fillRect(0, 0, w, h);
+                var pathHint = rosy ? CANVAS_WHITE_PATH : CANVAS_BLACK_PATH;
+                var texImg = (typeof _loadedTextures !== 'undefined') ? _loadedTextures[pathHint] : null;
+                if (!texImg && typeof _loadedTextures !== 'undefined') {
+                    var needle = rosy ? 'white' : 'black';
+                    for (var tk in _loadedTextures) {
+                        if (_loadedTextures[tk] && _loadedTextures[tk].naturalWidth && tk.indexOf(needle) !== -1) {
+                            texImg = _loadedTextures[tk];
+                            break;
+                        }
+                    }
+                }
+                if (texImg && texImg.complete && texImg.naturalWidth) {
+                    ctx.drawImage(texImg, 0, 0, w, h);
+                }
+                ctx.drawImage(ink, 0, 0);
+                return sheet.toDataURL('image/jpeg', 0.84);
             } catch (err) {
                 console.warn('[Platen] inline plate preview skipped', err);
                 return '';
