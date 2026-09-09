@@ -864,13 +864,13 @@
         }
 
         .saved-inline-grid {
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            padding: 4px 2px 8px;
+            column-count: 2;
+            column-gap: 14px;
+            padding: 0;
         }
 
         .saved-inline-empty {
+            column-span: all;
             font-size: 11px;
             letter-spacing: 0.12em;
             color: var(--dim);
@@ -881,29 +881,35 @@
         }
 
         .saved-inline-item {
-            flex: 0 0 148px;
-            min-height: 128px;
-            border: 1px solid var(--border);
-            padding: 8px;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            width: 100%;
+            margin: 0 0 14px;
+            padding: 0;
+            border: 0;
+            border-radius: 0;
             cursor: pointer;
             position: relative;
-            background-size: cover;
+            display: block;
+            background-size: 100% 100%;
             background-position: center;
+            background-repeat: no-repeat;
+            overflow: visible;
+        }
+
+        .saved-inline-preview {
+            line-height: 0;
+            overflow: visible;
+            border-radius: 0;
         }
 
         .saved-inline-item .saved-inline-preview svg {
             width: 100%;
             height: auto;
             display: block;
-        }
-
-        .saved-inline-meta {
-            margin-top: 8px;
-            font-size: 9px;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            opacity: 0.65;
-            line-height: 1.45;
+            border-radius: 0;
+            object-fit: contain;
+            overflow: visible;
         }
 
         .params-fold-summary {
@@ -997,6 +1003,11 @@
             .params-fold-body {
                 display: contents;
             }
+
+            .saved-inline-grid {
+                column-count: 4;
+                column-gap: 16px;
+            }
         }
 
         .advanced-fold-summary {
@@ -1080,6 +1091,11 @@
 
             .saved-creations {
                 padding: 16px 16px 28px;
+            }
+
+            .saved-inline-grid {
+                column-count: 2;
+                column-gap: 10px;
             }
 
             .params-fold-summary {
@@ -15400,8 +15416,6 @@ rawWt.push(baseWt + jitter);
 
             }
 
-            var MAX_INLINE_CHARS = 80000;
-
             for (var i = curatedGallery.length - 1; i >= 0; i--) {
 
                 (function(index) {
@@ -15434,7 +15448,7 @@ rawWt.push(baseWt + jitter);
 
                     preview.className = 'saved-inline-preview';
 
-                    if (snap && snap.length <= MAX_INLINE_CHARS) {
+                    if (snap) {
 
                         preview.innerHTML = snap.replace(/\bmotus-active\b/g, '');
 
@@ -15442,9 +15456,35 @@ rawWt.push(baseWt + jitter);
 
                         if (svgEl) {
 
+                            svgEl.removeAttribute('height');
+
                             svgEl.style.width = '100%';
 
                             svgEl.style.height = 'auto';
+
+                            svgEl.style.maxWidth = '100%';
+
+                            svgEl.style.objectFit = 'contain';
+
+                            svgEl.style.borderRadius = '0';
+
+                            svgEl.style.overflow = 'visible';
+
+                            if (!svgEl.querySelector('style.gallery-thumb-style')) {
+
+                                var thumbStyle = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+
+                                thumbStyle.setAttribute('class', 'gallery-thumb-style');
+
+                                var thumbCanvas = art.traits.canvas || 'black';
+
+                                var thumbFill = (thumbCanvas.indexOf('black') !== -1) ? '#ffffff' : '#1a1a1a';
+
+                                thumbStyle.textContent = '.typewriter-header text, .typewriter-header tspan { fill: ' + thumbFill + ' !important; } .grid-numbers text, .grid-numbers tspan { fill: ' + thumbFill + ' !important; }';
+
+                                svgEl.insertBefore(thumbStyle, svgEl.firstChild);
+
+                            }
 
                         }
 
@@ -15457,14 +15497,6 @@ rawWt.push(baseWt + jitter);
                     }
 
                     div.appendChild(preview);
-
-                    var meta = document.createElement('div');
-
-                    meta.className = 'saved-inline-meta';
-
-                    meta.textContent = (art.traits.engine || '') + ' · ' + art.seed;
-
-                    div.appendChild(meta);
 
                     div.onclick = function() { openGalleryDetail(index); };
 
