@@ -1001,6 +1001,10 @@
             opacity: 0.88;
         }
 
+        .saved-solo-chrome button[hidden] {
+            display: none !important;
+        }
+
         .params-fold-summary {
             display: none;
         }
@@ -1988,6 +1992,30 @@
         }
         .motus-dropdown.open .motus-dropdown-content {
             display: block;
+        }
+
+        .motus-play-pause {
+            flex: 0 0 auto;
+            align-self: center;
+            background: none;
+            border: none;
+            color: var(--text);
+            opacity: 0.42;
+            font-family: inherit;
+            font-size: 10px;
+            letter-spacing: 0.16em;
+            text-transform: lowercase;
+            cursor: pointer;
+            padding: 8px 6px;
+            min-height: 44px;
+        }
+
+        .motus-play-pause:hover {
+            opacity: 0.88;
+        }
+
+        .motus-play-pause[hidden] {
+            display: none !important;
         }
 
 
@@ -4864,6 +4892,8 @@ rawWt.push(baseWt + jitter);
 
                         </div>
 
+                        <button type="button" id="btn-motus-play-pause" class="motus-play-pause" hidden onclick="PlatenHyperspeed.togglePause()" aria-label="Pause Motus">pause</button>
+
                     </div>
 
                     <button id="btn-stack" onclick="toggleStack()" data-tooltip="toggle layer stacking">Stack: OFF</button>
@@ -5171,6 +5201,7 @@ rawWt.push(baseWt + jitter);
             <div id="saved-solo-plate" class="saved-solo-plate"></div>
             <div class="saved-solo-chrome">
                 <button type="button" id="saved-solo-close" onclick="closeSavedSolo()">close</button>
+                <button type="button" id="saved-solo-play-pause" hidden onclick="PlatenHyperspeed.togglePause()" aria-label="Pause Motus">pause</button>
                 <button type="button" id="saved-solo-download">download</button>
                 <button type="button" id="saved-solo-remove">remove</button>
             </div>
@@ -12130,6 +12161,8 @@ rawWt.push(baseWt + jitter);
 
             var _isGloballyOn = false; // tracks if user manually turned Motus ON
 
+            var _userPaused  = false; // explicit play/pause; distinct from tab-hide
+
             var _rafIds      = {};   // id → raf handle
 
             var _startTime   = {};   // id → DOMHighResTimeStamp
@@ -12245,12 +12278,32 @@ rawWt.push(baseWt + jitter);
                 });
             }
 
+            function _syncPlayPauseUI() {
+                var playing = _isGloballyOn && !_userPaused;
+                var label = playing ? 'pause' : 'play';
+                var aria = playing ? 'Pause Motus' : 'Play Motus';
+                var studio = document.getElementById('btn-motus-play-pause');
+                if (studio) {
+                    studio.textContent = label;
+                    studio.setAttribute('aria-label', aria);
+                    if (_isGloballyOn) studio.removeAttribute('hidden');
+                    else studio.setAttribute('hidden', 'hidden');
+                }
+                var solo = document.getElementById('saved-solo-play-pause');
+                if (solo) {
+                    solo.textContent = label;
+                    solo.setAttribute('aria-label', aria);
+                    if (_isGloballyOn) solo.removeAttribute('hidden');
+                    else solo.setAttribute('hidden', 'hidden');
+                }
+            }
+
             if (typeof document !== 'undefined' && !window._motusVisibilityBound) {
                 window._motusVisibilityBound = true;
                 document.addEventListener('visibilitychange', function () {
                     if (!_isGloballyOn) return;
                     if (document.hidden) _pauseAll();
-                    else _resumeAll();
+                    else if (!_userPaused) _resumeAll();
                 });
             }
 
@@ -14677,7 +14730,16 @@ rawWt.push(baseWt + jitter);
 
                     _startTime[id] = performance.now();
 
-                    _armFrame(id);
+                    if (_userPaused) {
+                        _frame(id);
+                        _paused[id] = true;
+                        if (_rafIds[id]) {
+                            cancelAnimationFrame(_rafIds[id]);
+                            _rafIds[id] = null;
+                        }
+                    } else {
+                        _armFrame(id);
+                    }
 
                 },
 
@@ -14754,6 +14816,10 @@ rawWt.push(baseWt + jitter);
                     var sel = document.getElementById('motus-dropdown-container');
 
                     if (sel) sel.style.display = _isGloballyOn ? 'block' : 'none';
+
+                    if (!_isGloballyOn) _userPaused = false;
+
+                    _syncPlayPauseUI();
 
                     if (typeof updateTraitBar === 'function') {
 
@@ -14913,7 +14979,13 @@ rawWt.push(baseWt + jitter);
 
                 pause: function () {
 
+                    if (!_isGloballyOn) return;
+
+                    _userPaused = true;
+
                     _pauseAll();
+
+                    _syncPlayPauseUI();
 
                 },
 
@@ -14921,7 +14993,32 @@ rawWt.push(baseWt + jitter);
 
                     if (!_isGloballyOn) return;
 
+                    _userPaused = false;
+
                     _resumeAll();
+
+                    _syncPlayPauseUI();
+
+                },
+
+                togglePause: function () {
+
+                    if (!_isGloballyOn) return;
+
+                    if (_userPaused) PlatenHyperspeed.resume();
+                    else PlatenHyperspeed.pause();
+
+                },
+
+                isPaused: function () {
+
+                    return !!_userPaused;
+
+                },
+
+                syncPlayPauseUI: function () {
+
+                    _syncPlayPauseUI();
 
                 }
 
@@ -16352,6 +16449,9 @@ rawWt.push(baseWt + jitter);
             var closeBtn = document.getElementById('saved-solo-close');
             if (closeBtn) {
                 try { closeBtn.focus(); } catch (e1) {}
+            }
+            if (window.PlatenHyperspeed && typeof PlatenHyperspeed.syncPlayPauseUI === 'function') {
+                PlatenHyperspeed.syncPlayPauseUI();
             }
         }
 

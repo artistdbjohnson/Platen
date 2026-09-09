@@ -113,7 +113,7 @@ ok &= must("openSavedSolo" in render_fn, "clicking a masonry plate opens the sol
 ok &= must("saved-inline-remove" not in render_fn and "✕" not in render_fn, "masonry renderer does not paint delete overlays")
 ok &= must('id="saved-solo"' in html and "function openSavedSolo" in html and "function closeSavedSolo" in html, "solo plate viewer exists")
 ok &= must("saved-solo-backdrop" in html and "saved-solo-plate" in html, "solo viewer is one plate on a dark backdrop")
-ok &= must("saved-solo-download" in html and "saved-solo-remove" in html and "saved-solo-close" in html, "solo chrome is close, download, and remove")
+ok &= must("saved-solo-download" in html and "saved-solo-remove" in html and "saved-solo-close" in html and "saved-solo-play-pause" in html, "solo chrome is close, play/pause, download, and remove")
 ok &= must('id="gallery-modal"' not in html and 'id="gallery-detail-modal"' not in html, "gallery modal and gallery viewer surfaces are removed")
 ok &= must("gallery viewer" not in html, "gallery viewer header chrome is gone")
 ok &= must("function openGalleryModal" not in html and "function toggleGalleryModal" not in html, "Gallery no longer opens a second surface")
