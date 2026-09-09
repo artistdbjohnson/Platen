@@ -1490,6 +1490,11 @@
 
 
 
+        svg.motus-active {
+            position: relative;
+            z-index: 1;
+        }
+
         svg.motus-active .platen-artwork,
 
         svg.motus-active .grid-numbers {
@@ -3221,7 +3226,37 @@
 
             display: none;
 
-            image-rendering: pixelated;
+            image-rendering: auto;
+
+            position: absolute;
+
+            top: 0;
+
+            left: 0;
+
+            width: 100%;
+
+            height: 100%;
+
+            object-fit: contain;
+
+            pointer-events: none;
+
+            z-index: 3;
+
+            opacity: 0;
+
+        }
+
+        .platen-anim-canvas.motus-running {
+
+            display: block !important;
+
+            opacity: 1 !important;
+
+            visibility: visible !important;
+
+            z-index: 3;
 
         }
 
@@ -4389,7 +4424,7 @@ rawWt.push(baseWt + jitter);
 
                             <canvas id="c1" class="qs" style="display: none;"></canvas>
 
-                            <canvas id="c1-hs" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;"></canvas>
+                            <canvas id="c1-hs" class="platen-anim-canvas" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;"></canvas>
 
                             <svg id="s1" class="qs" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; object-fit: contain; display: block;"></svg>
 
@@ -4431,7 +4466,7 @@ rawWt.push(baseWt + jitter);
 
                             <canvas id="c2" class="qs" style="display: none;"></canvas>
 
-                            <canvas id="c2-hs" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;"></canvas>
+                            <canvas id="c2-hs" class="platen-anim-canvas" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;"></canvas>
 
                             <svg id="s2" class="qs" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; object-fit: contain; display: block;"></svg>
 
@@ -4473,7 +4508,7 @@ rawWt.push(baseWt + jitter);
 
                             <canvas id="c3" class="qs" style="display: none;"></canvas>
 
-                            <canvas id="c3-hs" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;"></canvas>
+                            <canvas id="c3-hs" class="platen-anim-canvas" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; pointer-events:none;"></canvas>
 
                             <svg id="s3" class="qs" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%; object-fit: contain; display: block;"></svg>
 
@@ -11481,19 +11516,107 @@ rawWt.push(baseWt + jitter);
 
             var _GROUP_SIZE  = 18;
 
-            function _getTraits() {
-                if (window.activeGalleryIndex !== -1 && window.curatedGallery && window.curatedGallery[window.activeGalleryIndex]) {
-                    return window.curatedGallery[window.activeGalleryIndex].traits || {};
+            var ISO_GLYPHS = ['typewriter_comma', 'typewriter_dot', 'typewriter_plus', 'typewriter_x', 'typewriter_asterisk', 'typewriter_slash', 'typewriter_square', 'typewriter_dash'];
+
+            function _isoGlyphKey(f, fallback) {
+                var gIdx = Math.floor(f * ISO_GLYPHS.length * 0.99);
+                var key = ISO_GLYPHS[gIdx];
+                return (_p2d && _p2d[key]) ? key : fallback;
+            }
+
+            function _panelIds() {
+                if (typeof activePanels === 'function') {
+                    try {
+                        var ids = activePanels();
+                        if (ids && ids.length) return ids;
+                    } catch (e) {}
                 }
+                return [1];
+            }
+
+            function _flowersFor(id) {
+                var fromWindow = window._lastFlowers && window._lastFlowers[id];
+                if (fromWindow && fromWindow.length) return fromWindow;
+                if (typeof _lastFlowers !== 'undefined' && _lastFlowers && _lastFlowers[id] && _lastFlowers[id].length) {
+                    return _lastFlowers[id];
+                }
+                return fromWindow || null;
+            }
+
+            function _hasEntries(id) {
+                return ((_animEntries[id] && _animEntries[id].length) || (_baseEntries[id] && _baseEntries[id].length));
+            }
+
+            function _showAnimCanvas(id, cvs) {
+                if (cvs) {
+                    cvs.style.display = 'block';
+                    cvs.style.opacity = '1';
+                    cvs.style.visibility = 'visible';
+                    cvs.style.zIndex = '3';
+                    cvs.classList.add('motus-running');
+                }
+                var svg = document.getElementById('s' + id);
+                if (svg) {
+                    svg.classList.add('motus-active');
+                    svg.style.zIndex = '1';
+                }
+            }
+
+            function _hideAnimCanvas(id, cvs) {
+                if (cvs) {
+                    cvs.style.display = 'none';
+                    cvs.style.opacity = '0';
+                    cvs.classList.remove('motus-running');
+                }
+                var svg = document.getElementById('s' + id);
+                if (svg) {
+                    svg.classList.remove('motus-active');
+                    svg.style.zIndex = '';
+                }
+            }
+
+            function _armFrame(id) {
+                if (!_active[id] || _paused[id] || (typeof document !== 'undefined' && document.hidden)) return;
+                if (_rafIds[id]) cancelAnimationFrame(_rafIds[id]);
+                _rafIds[id] = requestAnimationFrame(function () { _frame(id); });
+            }
+
+            function _pauseAll() {
+                Object.keys(_active).forEach(function (id) {
+                    if (!_active[id]) return;
+                    _paused[id] = true;
+                    if (_rafIds[id]) {
+                        cancelAnimationFrame(_rafIds[id]);
+                        _rafIds[id] = null;
+                    }
+                });
+            }
+
+            function _resumeAll() {
+                Object.keys(_active).forEach(function (id) {
+                    if (!_active[id]) return;
+                    _paused[id] = false;
+                    _tLast[id] = performance.now();
+                    _armFrame(id);
+                });
+            }
+
+            if (typeof document !== 'undefined' && !window._motusVisibilityBound) {
+                window._motusVisibilityBound = true;
+                document.addEventListener('visibilitychange', function () {
+                    if (!_isGloballyOn) return;
+                    if (document.hidden) _pauseAll();
+                    else _resumeAll();
+                });
+            }
+
+            function _getTraits() {
                 return window.RESOLVED_TRAITS || window.TRAITS || {};
             }
 
             function _getSeed() {
-                if (window.activeGalleryIndex !== -1 && window.curatedGallery && window.curatedGallery[window.activeGalleryIndex]) {
-                    return window.curatedGallery[window.activeGalleryIndex].seed || window.RENDER_SEED || 9248;
-                }
                 return window.RENDER_SEED || 9248;
-            }   // flowers per group for column-offset ripple
+            }
 
 
 
@@ -11581,6 +11704,8 @@ rawWt.push(baseWt + jitter);
 
                 _p2d = {};
 
+                if (typeof MOTIF_PATHS === 'undefined' || !MOTIF_PATHS) return;
+
                 for (var k in MOTIF_PATHS) {
 
                     try { _p2d[k] = new Path2D(MOTIF_PATHS[k]); } catch(e) {}
@@ -11593,7 +11718,7 @@ rawWt.push(baseWt + jitter);
 
             function _selectFlowers(id) {
 
-                var flowers = window._lastFlowers && window._lastFlowers[id];
+                var flowers = _flowersFor(id);
 
                 if (!flowers || !flowers.length) return {};
 
@@ -11741,7 +11866,7 @@ rawWt.push(baseWt + jitter);
 
             function _prepareFlowers(id) {
 
-                var flowers = window._lastFlowers && window._lastFlowers[id];
+                var flowers = _flowersFor(id);
 
                 if (!flowers || !flowers.length) return;
 
@@ -12333,7 +12458,7 @@ rawWt.push(baseWt + jitter);
 
                 var cvs = document.getElementById('c' + id + '-hs');
 
-                if (!cvs || !_active[id]) return;
+                if (!cvs || !_active[id] || _paused[id]) return;
 
                 var ctx = cvs.getContext('2d');
 
@@ -12693,11 +12818,7 @@ rawWt.push(baseWt + jitter);
 
 
 
-                        var iso_glyphs = ['comma', 'dot', 'plus', 'x', 'asterisk', 'slash', 'hash', 'dash'];
-
-                        var gIdx = Math.floor(f * iso_glyphs.length * 0.99);
-
-                        var pKey = _p2d[iso_glyphs[gIdx]] ? iso_glyphs[gIdx] : e.pathKey;
+                        var pKey = _isoGlyphKey(f, e.pathKey);
 
                         var p2d = _p2d[pKey] || _p2d[e.pathKey];
 
@@ -12899,11 +13020,7 @@ rawWt.push(baseWt + jitter);
 
 
 
-                        var iso_glyphs = ['comma', 'dot', 'plus', 'x', 'asterisk', 'slash', 'hash', 'dash'];
-
-                        var gIdx = Math.floor(f * iso_glyphs.length * 0.99);
-
-                        var pKey = _p2d[iso_glyphs[gIdx]] ? iso_glyphs[gIdx] : e.pathKey;
+                        var pKey = _isoGlyphKey(f, e.pathKey);
 
                         var p2d = _p2d[pKey] || _p2d[e.pathKey];
 
@@ -13239,11 +13356,7 @@ rawWt.push(baseWt + jitter);
 
                             if (traits.space === 'isometric') {
 
-                                var iso_glyphs = ['comma', 'dot', 'plus', 'x', 'asterisk', 'slash', 'hash', 'dash'];
-
-                                var gIdx = Math.floor(f * iso_glyphs.length * 0.99);
-
-                                pKey = _p2d[iso_glyphs[gIdx]] ? iso_glyphs[gIdx] : e.pathKey;
+                                pKey = _isoGlyphKey(f, e.pathKey);
 
                             }
 
@@ -13551,7 +13664,7 @@ rawWt.push(baseWt + jitter);
 
 
 
-                _rafIds[id] = requestAnimationFrame(function () { _frame(id); });
+                _armFrame(id);
 
             }
 
@@ -13772,11 +13885,7 @@ rawWt.push(baseWt + jitter);
 
                                     if (f < 0) f = 0; if (f > 1) f = 1;
 
-                                    var iso_glyphs = ['comma', 'dot', 'plus', 'x', 'asterisk', 'slash', 'hash', 'dash'];
-
-                                    var gIdx = Math.floor(f * iso_glyphs.length * 0.99);
-
-                                    pKey = _p2d[iso_glyphs[gIdx]] ? iso_glyphs[gIdx] : e.pathKey;
+                                    pKey = _isoGlyphKey(f, e.pathKey);
 
                                     p2d = _p2d[pKey] || _p2d[e.pathKey];
 
@@ -13882,7 +13991,9 @@ rawWt.push(baseWt + jitter);
 
                     if (_active[id]) return;
 
-                    if (!_baseEntries[id]) this.prepare(id);
+                    this.prepare(id);
+
+                    if (!_hasEntries(id)) return;
 
                     var cvs = document.getElementById('c' + id + '-hs');
 
@@ -13902,13 +14013,7 @@ rawWt.push(baseWt + jitter);
 
                     _buildBaseLayer(id);
 
-                    
-
-                    cvs.style.display = 'block';
-
-                    var svg = document.getElementById('s' + id);
-
-                    if (svg) svg.classList.add('motus-active');
+                    _showAnimCanvas(id, cvs);
 
                     
 
@@ -13928,7 +14033,7 @@ rawWt.push(baseWt + jitter);
 
                     _startTime[id] = performance.now();
 
-                    _frame(id);
+                    _armFrame(id);
 
                 },
 
@@ -13938,29 +14043,29 @@ rawWt.push(baseWt + jitter);
 
                     _active[id] = false;
 
-                    if (_rafIds[id]) cancelAnimationFrame(_rafIds[id]);
+                    _paused[id] = true;
 
-                    var cvs = document.getElementById('c' + id + '-hs');
+                    if (_rafIds[id]) {
 
-                    var svg = document.getElementById('s' + id);
+                        cancelAnimationFrame(_rafIds[id]);
 
-                    if (cvs) {
-
-                        cvs.style.display = 'none';
-
-                        if (cvs.dataset.bgUrl) {
-
-                            URL.revokeObjectURL(cvs.dataset.bgUrl);
-
-                            cvs.style.backgroundImage = '';
-
-                            cvs.dataset.bgUrl = '';
-
-                        }
+                        _rafIds[id] = null;
 
                     }
 
-                    if (svg) svg.classList.remove('motus-active');
+                    var cvs = document.getElementById('c' + id + '-hs');
+
+                    if (cvs && cvs.dataset.bgUrl) {
+
+                        URL.revokeObjectURL(cvs.dataset.bgUrl);
+
+                        cvs.style.backgroundImage = '';
+
+                        cvs.dataset.bgUrl = '';
+
+                    }
+
+                    _hideAnimCanvas(id, cvs);
 
                     _baseCanvas[id] = null;
 
@@ -13980,7 +14085,7 @@ rawWt.push(baseWt + jitter);
 
                 toggle: function () {
 
-                    var ids   = [1, 2, 3];
+                    var ids   = _panelIds();
 
                     _isGloballyOn = !_isGloballyOn;
 
@@ -14044,7 +14149,7 @@ rawWt.push(baseWt + jitter);
 
                         
 
-                        var ids = [1, 2, 3];
+                        var ids = _panelIds();
 
                         ids.forEach(function (id) {
 
@@ -14108,6 +14213,20 @@ rawWt.push(baseWt + jitter);
 
                     if (btn) btn.textContent = labels[_animMode];
 
+                    _panelIds().forEach(function (id) {
+
+                        if (_active[id]) {
+
+                            PlatenHyperspeed.stop(id);
+
+                            PlatenHyperspeed.prepare(id);
+
+                            PlatenHyperspeed.start(id);
+
+                        }
+
+                    });
+
                     if (typeof updateTraitBar === 'function') {
 
                         updateTraitBar();
@@ -14146,11 +14265,27 @@ rawWt.push(baseWt + jitter);
 
                     return _animMode;
 
+                },
+
+                pause: function () {
+
+                    _pauseAll();
+
+                },
+
+                resume: function () {
+
+                    if (!_isGloballyOn) return;
+
+                    _resumeAll();
+
                 }
 
             };
 
         })();
+
+        window.PlatenHyperspeed = PlatenHyperspeed;
 
 
 
