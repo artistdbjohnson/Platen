@@ -45,7 +45,10 @@ ok &= must("position: fixed" in html and "mobile-generate-bar" in html, "sticky 
 ok &= must("min-height: 52px" in html, "mobile generate touch target is at least 52px")
 ok &= must("min-height: 44px" in html, "secondary / form controls have 44px targets")
 ok &= must("advanced-fold" in html and "More controls" in html, "advanced controls are secondary on mobile")
-ok &= must("Randomize: new parameters. Regenerate: same parameters, new seed." in html, "Randomize/Regenerate legend preserved")
+ok &= must("New seed: same parameters, new seed." in html, "Regenerate relabeled as New seed")
+ok &= must("Save to gallery" in html, "Curate relabeled as Save to gallery")
+ok &= must("btn-png-mobile" in html and "btn-png-dock" in html, "PNG download sits next to Generate")
+ok &= must("about-fold" in html and "Read the manifesto" in html, "manifesto is tucked on mobile")
 
 ok &= must("0.082" in html and "10 CPI" in html and "6 LPI" in html, "Olympia SM3 specs still documented")
 ok &= must("function calcMotifWeight" in engines, "motif weight path still present")
