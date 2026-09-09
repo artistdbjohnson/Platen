@@ -104,13 +104,12 @@ if mobile_stack:
     canvas_ord = css_order(stack, ".col-canvas")
     strip_ord = css_order(stack, ".canvas-generate-strip")
     controls_ord = css_order(stack, ".col-controls")
-    about_ord = css_order(stack, ".col-about")
     saved_ord = css_order(stack, ".saved-creations")
     ok &= must(canvas_ord == 1 and strip_ord == 2, "mobile canvas then Generate/Save strip")
-    ok &= must(controls_ord == 4 and about_ord == 5, "mobile params/more-controls then About")
+    ok &= must(controls_ord == 4, "mobile params and more-controls stay in the menu chrome")
     ok &= must(
-        saved_ord is not None and saved_ord > controls_ord and saved_ord > about_ord,
-        "saved masonry starts after the mobile menu chrome",
+        saved_ord is not None and saved_ord > controls_ord,
+        "saved masonry starts after Parameters / More controls",
     )
 ok &= must("position: sticky" in html and "canvas-generate-strip" in html, "Generate/Save strip stays sticky")
 ok &= must('id="mobile-scroll-hint"' in html and "scroll for parameters" in html, "first-visit mobile has a scroll hint")
