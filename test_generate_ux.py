@@ -57,6 +57,25 @@ ok &= must("function _budgetIsoExtrusions" in html, "isometric SVG node budget e
 ok &= must("MAX_LIVE_SVG_NODES" in html and "MAX_ISO_STEPS_PER_GLYPH" in html, "live SVG caps are defined")
 ok &= must("createElementNS(svgNS, \"use\")" in html or "createElementNS(svgNS, 'use')" in html, "repeated motifs use SVG <use> to cut memory")
 ok &= must("SVG serialize skipped" in html, "oversized SVG rasterize is guarded")
+ok &= must("MAX_RASTERIZE_NODES" in html, "Image-decode rasterize has a lower cap than live SVG")
+ok &= must("overflow-x: visible" in html and "flex-wrap: wrap" in html, "mobile btn-group wraps instead of hidden-scroll")
+ok &= must("Aw, Snap" in html or "SIGKILL" in html, "crash root cause is documented next to the budget")
+
+# Iso-step sampler must keep column height while capping node count.
+def sample_iso(steps, max_steps):
+    if len(steps) <= max_steps:
+        return steps
+    out = []
+    last = len(steps) - 1
+    for si in range(max_steps):
+        idx = round(si * last / (max_steps - 1))
+        if not out or out[-1] != steps[idx]:
+            out.append(steps[idx])
+    return out
+
+tall = list(range(90))
+sampled = sample_iso(tall, 16)
+ok &= must(len(sampled) <= 16 and sampled[0] == 0 and sampled[-1] == 89, "iso sampler keeps first/last and stays at 16 steps")
 
 # The UX pass must not rewrite the engine switch.
 ok &= must(len(engines) > 50000, "platen-engines.js still a full engine file")

@@ -3025,23 +3025,13 @@
 
                 width: 100%;
 
-                overflow-x: auto;
+                overflow-x: visible;
 
-                padding-bottom: 8px;
+                flex-wrap: wrap;
 
-                gap: 4px;
+                padding-bottom: 0;
 
-                -webkit-overflow-scrolling: touch;
-
-                scrollbar-width: none; /* Hide scrollbar for cleaner look */
-
-            }
-
-
-
-            .btn-group::-webkit-scrollbar {
-
-                display: none;
+                gap: 8px;
 
             }
 
@@ -7177,7 +7167,11 @@ rawWt.push(baseWt + jitter);
 
         // ── PLATEN ENGINE (Worker Version) ──────────────────────────────────────────
 
+        // Chrome Aw, Snap! / error 9 on Randomize was SIGKILL (OOM) from isometric
+        // columns: each glyph became dozens of full <path> copies, then
+        // XMLSerializer + Image decode of that tree killed the renderer.
         var MAX_LIVE_SVG_NODES = 8000;
+        var MAX_RASTERIZE_NODES = 2500;
         var MAX_ISO_STEPS_PER_GLYPH = 16;
         var MAX_STACK_LAYERS = 6;
 
@@ -8126,8 +8120,7 @@ rawWt.push(baseWt + jitter);
                     // Render SVG to WebGL Canvas for pure hardware-acceleration
 
                     var canvas = document.getElementById('c' + id);
-                    var motusNeedsRaster = !!(window.PlatenHyperspeed && window.PlatenHyperspeed.isActive());
-                    var safeToRasterize = canvas && (motusNeedsRaster || projectedNodes < MAX_LIVE_SVG_NODES);
+                    var safeToRasterize = canvas && projectedNodes < MAX_RASTERIZE_NODES;
 
                     _lastFlowers[id] = flowers;
                     window._lastFlowers[id] = flowers;
