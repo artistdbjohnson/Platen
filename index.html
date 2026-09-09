@@ -898,9 +898,12 @@
         }
 
         .saved-inline-preview {
-            line-height: 0;
             overflow: visible;
             border-radius: 0;
+        }
+
+        .saved-inline-preview:has(svg) {
+            line-height: 0;
         }
 
         .saved-inline-item .saved-inline-preview svg {
