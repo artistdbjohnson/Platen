@@ -56,6 +56,24 @@ ok &= must("click curate to save" not in html, "empty gallery no longer says cli
 ok &= must("btn-png-dock" in html, "PNG download remains available from the dock")
 ok &= must("about-fold" in html and ">About</summary>" in html, "about fold is labeled About")
 ok &= must("Read the manifesto" not in html, "manifesto summary label is gone")
+ok &= must(not re.search(r'manifesto', html, re.I), "no user-facing manifesto copy remains")
+about_summary_css = re.search(r'\.about-fold-summary \{([^}]+)\}', html)
+ok &= must(
+    about_summary_css and "display: none" not in about_summary_css.group(1) and "display: flex" in about_summary_css.group(1),
+    "About summary is a visible tappable control on desktop and mobile",
+)
+desktop_unfold = re.search(r'@media \(min-width: 901px\) \{(.*?)\n        \}', html, re.S)
+ok &= must(bool(desktop_unfold), "desktop unfold media query exists")
+if desktop_unfold:
+    ok &= must(
+        ".about-fold" not in desktop_unfold.group(1) and ".about-fold-body" not in desktop_unfold.group(1),
+        "desktop does not unwrap About into an always-open manifesto column",
+    )
+sync_fn = html.split("function syncAdvancedFold", 1)[1].split("function ", 1)[0]
+ok &= must(
+    "about-fold" not in sync_fn,
+    "resize sync does not force About open on desktop",
+)
 ok &= must('id="params-fold"' in html and "params-fold-summary" in html, "Parameters collapse on first-visit mobile")
 ok &= must('id="platen-toast"' not in html and "function showPlatenToast" not in html, "floating Saved toast is removed")
 ok &= must("function highlightNewestGalleryCard" in html, "new saved card is highlighted after Save")
