@@ -191,11 +191,15 @@
 
             grid-template-columns: 480px 480px 1fr;
 
+            grid-template-rows: 100dvh auto;
+
             height: 100dvh;
 
             width: 100vw;
 
-            overflow: hidden;
+            overflow-x: hidden;
+
+            overflow-y: auto;
 
             background: var(--bg);
 
@@ -264,6 +268,12 @@
                 border-right: none !important;
 
                 overflow: visible !important;
+
+            }
+
+            .saved-creations {
+
+                order: 3;
 
             }
 
@@ -822,6 +832,80 @@
             50% { outline-color: var(--dim); box-shadow: 0 0 0 1px var(--dim); }
         }
 
+        .saved-creations {
+            grid-column: 1 / -1;
+            border-top: 1px solid var(--border);
+            padding: 16px 20px 24px;
+            background: var(--bg);
+        }
+
+        .saved-creations-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .saved-creations-head h2 {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .saved-creations-cue {
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-transform: lowercase;
+            opacity: 0.45;
+            margin: 0;
+        }
+
+        .saved-inline-grid {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 4px 2px 8px;
+        }
+
+        .saved-inline-empty {
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            color: var(--dim);
+            text-transform: lowercase;
+            min-height: 72px;
+            display: flex;
+            align-items: center;
+        }
+
+        .saved-inline-item {
+            flex: 0 0 148px;
+            min-height: 128px;
+            border: 1px solid var(--border);
+            padding: 8px;
+            cursor: pointer;
+            position: relative;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .saved-inline-item .saved-inline-preview svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .saved-inline-meta {
+            margin-top: 8px;
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0.65;
+            line-height: 1.45;
+        }
+
         .params-fold-summary {
             display: none;
         }
@@ -992,6 +1076,10 @@
                 opacity: 0.45;
                 padding: 8px 12px 0;
                 margin: 0;
+            }
+
+            .saved-creations {
+                padding: 16px 16px 28px;
             }
 
             .params-fold-summary {
@@ -3534,7 +3622,8 @@
 
 
         body.fullscreen-active .mobile-generate-bar,
-        body.fullscreen-active .canvas-generate-strip {
+        body.fullscreen-active .canvas-generate-strip,
+        body.fullscreen-active .saved-creations {
             display: none !important;
         }
 
@@ -4387,6 +4476,20 @@ rawWt.push(baseWt + jitter);
             </div>
 
             <p class="mobile-scroll-hint" id="mobile-scroll-hint">scroll for parameters</p>
+
+            <section id="saved-creations" class="saved-creations" aria-labelledby="saved-creations-title">
+
+                <div class="saved-creations-head">
+
+                    <h2 id="saved-creations-title">Saved creations</h2>
+
+                    <p class="saved-creations-cue" id="saved-creations-cue">scroll down to view saved creations</p>
+
+                </div>
+
+                <div id="saved-inline-grid" class="saved-inline-grid"></div>
+
+            </section>
 
     </main>
 
@@ -14222,9 +14325,13 @@ rawWt.push(baseWt + jitter);
 
                     }
 
+                    renderSavedInline();
+
                 });
 
             }
+
+            renderSavedInline();
 
         }).catch(function(e) {
 
@@ -15208,33 +15315,36 @@ rawWt.push(baseWt + jitter);
         }
 
         function revealNewestSavedCuration(toastMsg) {
-            openGalleryModal();
-            renderGalleryGrid();
+            renderSavedInline();
+            if (isGalleryModalOpen()) renderGalleryGrid();
             showPlatenToast(toastMsg || 'Saved');
+            showSavedScrollCue();
             afterGalleryPaint(function() {
                 highlightNewestGalleryCard();
             });
         }
 
+        function showSavedScrollCue() {
+            var hint = document.getElementById('mobile-scroll-hint');
+            if (!hint) return;
+            hint.textContent = 'scroll down to view saved creations';
+            try { hint.style.display = ''; } catch (e) {}
+        }
+
         function highlightNewestGalleryCard() {
-            var grid = document.getElementById('gallery-grid');
-            var modal = document.getElementById('gallery-modal');
-            if (!grid) return;
-            var newest = grid.querySelector('[data-newest-save="true"]') || grid.querySelector('.gallery-item');
+            var inlineGrid = document.getElementById('saved-inline-grid');
+            var modalGrid = document.getElementById('gallery-grid');
+            var newest = (inlineGrid && inlineGrid.querySelector('[data-newest-save="true"]'))
+                || (inlineGrid && inlineGrid.querySelector('.saved-inline-item'))
+                || (modalGrid && modalGrid.querySelector('[data-newest-save="true"]'))
+                || (modalGrid && modalGrid.querySelector('.gallery-item'));
             if (!newest) return;
             newest.classList.add('gallery-item-just-saved');
-            if (modal) {
-                try { modal.scrollTop = 0; } catch (e0) {}
-            }
             try {
                 newest.scrollIntoView({ block: 'nearest', behavior: 'smooth', inline: 'nearest' });
             } catch (e) {
                 try { newest.scrollIntoView(true); } catch (e2) {}
             }
-            try {
-                newest.setAttribute('tabindex', '-1');
-                newest.focus({ preventScroll: true });
-            } catch (e3) {}
             setTimeout(function() {
                 newest.classList.remove('gallery-item-just-saved');
             }, 4000);
@@ -15274,7 +15384,101 @@ rawWt.push(baseWt + jitter);
 
 
 
+        function renderSavedInline() {
+
+            var grid = document.getElementById('saved-inline-grid');
+
+            if (!grid) return;
+
+            grid.innerHTML = '';
+
+            if (curatedGallery.length === 0) {
+
+                grid.innerHTML = '<div class="saved-inline-empty">no saved pieces yet. tap Save to keep one.</div>';
+
+                return;
+
+            }
+
+            var MAX_INLINE_CHARS = 80000;
+
+            for (var i = curatedGallery.length - 1; i >= 0; i--) {
+
+                (function(index) {
+
+                    var art = curatedGallery[index];
+
+                    var canvasCls = 'canvas-' + (art.traits.canvas || 'black');
+
+                    var div = document.createElement('div');
+
+                    div.className = 'saved-inline-item gallery-item ' + canvasCls;
+
+                    if (index === curatedGallery.length - 1) {
+
+                        div.className += ' gallery-item-newest';
+
+                        div.setAttribute('data-newest-save', 'true');
+
+                    }
+
+                    var bgStyle = getCanvasBackgroundStyle(art);
+
+                    div.style.backgroundImage = bgStyle.backgroundImage;
+
+                    div.style.backgroundColor = bgStyle.backgroundColor;
+
+                    var snap = (art.svgs && art.svgs[0]) || '';
+
+                    var preview = document.createElement('div');
+
+                    preview.className = 'saved-inline-preview';
+
+                    if (snap && snap.length <= MAX_INLINE_CHARS) {
+
+                        preview.innerHTML = snap.replace(/\bmotus-active\b/g, '');
+
+                        var svgEl = preview.querySelector('svg');
+
+                        if (svgEl) {
+
+                            svgEl.style.width = '100%';
+
+                            svgEl.style.height = 'auto';
+
+                        }
+
+                    }
+
+                    if (!preview.querySelector('svg')) {
+
+                        preview.textContent = 'seed ' + art.seed;
+
+                    }
+
+                    div.appendChild(preview);
+
+                    var meta = document.createElement('div');
+
+                    meta.className = 'saved-inline-meta';
+
+                    meta.textContent = (art.traits.engine || '') + ' · ' + art.seed;
+
+                    div.appendChild(meta);
+
+                    div.onclick = function() { openGalleryDetail(index); };
+
+                    grid.appendChild(div);
+
+                })(i);
+
+            }
+
+        }
+
         function renderGalleryGrid() {
+
+            renderSavedInline();
 
             var grid = document.getElementById('gallery-grid');
 
