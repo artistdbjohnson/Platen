@@ -74,6 +74,18 @@ ok &= must(
     and "html[data-theme=\"light\"] .saved-solo-backdrop" in html,
     "index mode covers fullscreen HUD and saved solo chrome",
 )
+ok &= must(
+    'html[data-theme="light"] #canvas-wrap' in html
+    and 'html[data-theme="light"] .platen-panel' in html
+    and 'html[data-theme="light"] .platen-face' in html
+    and "box-shadow: none !important" in index_css,
+    "index mode kills plate box-shadow on canvas-wrap / platen-panel / platen-face",
+)
+ok &= must(
+    "indexPlate ? 'none' : '0 8px 24px rgba(0,0,0,0.06)'" in html
+    or 'indexPlate ? "none" : "0 8px 24px rgba(0,0,0,0.06)"' in html,
+    "US Letter paper shadow is skipped in index mode and kept in studio",
+)
 
 # Existing product surfaces must remain wired — chrome only.
 ok &= must('id="btn-generate"' in html and "function randomize()" in html, "Generate / randomize remains")
