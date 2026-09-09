@@ -215,6 +215,8 @@
 
                 overflow-y: auto;
 
+                padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+
             }
 
             .col-canvas {
@@ -249,6 +251,12 @@
 
                 overflow: visible !important;
 
+            }
+
+            /* In-flow Generate is replaced by the sticky bar on small screens */
+            .generate-dock .btn-generate,
+            .generate-dock .generate-hint {
+                display: none;
             }
 
         }
@@ -631,6 +639,204 @@
 
             text-decoration: underline;
 
+        }
+
+        /* ── Primary Generate (desktop dock + mobile sticky) ── */
+
+        .generate-dock {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 14px;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-generate {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 48px;
+            padding: 14px 16px;
+            background: var(--text);
+            color: var(--bg);
+            border: 1px solid var(--text);
+            border-radius: 0;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            text-align: center;
+            cursor: pointer;
+            opacity: 1;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.2s cubic-bezier(0.22, 1, 0.36, 1), color 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .control-section .btn-generate,
+        .generate-dock .btn-generate {
+            width: 100%;
+            text-align: center;
+            text-transform: uppercase;
+            opacity: 1;
+            border-bottom: 1px solid var(--text);
+            padding: 14px 16px;
+        }
+
+        .btn-generate:hover,
+        .control-section .btn-generate:hover {
+            background: transparent;
+            color: var(--text);
+            text-decoration: none;
+            opacity: 1;
+        }
+
+        .btn-generate:disabled,
+        .control-section .btn-generate:disabled {
+            opacity: 0.4;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .btn-generate.active,
+        .control-section .btn-generate.active,
+        .btn-generate.active:hover,
+        .control-section .btn-generate.active:hover {
+            background: var(--text);
+            color: var(--bg);
+            border-bottom: 1px solid var(--text) !important;
+            text-decoration: none !important;
+            box-shadow: inset 0 0 0 1px var(--bg);
+        }
+
+        .generate-hint {
+            font-size: 9px;
+            letter-spacing: 0.08em;
+            text-transform: lowercase;
+            opacity: 0.5;
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        .generate-secondary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px 16px;
+            margin-top: 4px;
+        }
+
+        .generate-secondary button {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid transparent;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 10px;
+            letter-spacing: 0.05em;
+            padding: 8px 0;
+            min-height: 44px;
+            cursor: pointer;
+            text-transform: lowercase;
+            text-align: left;
+            opacity: 0.8;
+        }
+
+        .generate-secondary button:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .generate-secondary button.active,
+        .generate-secondary button.active:hover {
+            opacity: 1;
+            border-bottom: 1px solid var(--text);
+            text-decoration: none;
+        }
+
+        .generate-legend {
+            font-size: 8px;
+            letter-spacing: 0.06em;
+            text-transform: lowercase;
+            opacity: 0.45;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .advanced-fold {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 901px) {
+            .advanced-fold,
+            .advanced-fold-body {
+                display: contents;
+            }
+        }
+
+        .advanced-fold-summary {
+            display: none;
+            list-style: none;
+            cursor: pointer;
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            opacity: 0.55;
+            min-height: 44px;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 12px;
+            user-select: none;
+        }
+
+        .advanced-fold-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .advanced-fold-summary::after {
+            content: '+';
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .advanced-fold[open] > .advanced-fold-summary::after {
+            content: '–';
+        }
+
+        .mobile-generate-bar {
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            .advanced-fold-summary {
+                display: flex;
+            }
+
+            .generate-secondary button {
+                min-height: 48px;
+                font-size: 12px;
+            }
+
+            .mobile-generate-bar {
+                display: flex;
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 800;
+                padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+                background: var(--bg);
+                border-top: 1px solid var(--border);
+            }
+
+            .mobile-generate-bar .btn-generate {
+                min-height: 52px;
+                font-size: 13px;
+            }
         }
 
 
@@ -2182,7 +2388,7 @@
 
             backdrop-filter: blur(10px);
 
-            z-index: 100;
+            z-index: 10000;
 
             display: none;
 
@@ -2780,11 +2986,13 @@
 
 
 
-            button {
+            button:not(.btn-generate):not(.btn-flip):not(.back-btn-flip) {
 
-                padding: 6px 10px;
+                padding: 12px 10px;
 
-                font-size: 8px;
+                font-size: 11px;
+
+                min-height: 44px;
 
                 white-space: nowrap;
 
@@ -2832,11 +3040,13 @@
 
             .trait-select {
 
-                font-size: 10px;
+                font-size: 14px;
 
-                padding: 4px 6px;
+                padding: 10px 6px;
 
-                height: 24px; /* Better touch target */
+                min-height: 44px;
+
+                height: auto;
 
             }
 
@@ -3105,6 +3315,10 @@
         }
 
 
+
+        body.fullscreen-active .mobile-generate-bar {
+            display: none !important;
+        }
 
         body.fullscreen-active .col-canvas {
 
@@ -3535,6 +3749,24 @@ rawWt.push(baseWt + jitter);
 
         <section class="col-controls">
 
+            <div class="generate-dock" id="generate-dock">
+
+                <button type="button" id="btn-generate" class="btn-generate" onclick="randomize()" data-tooltip="new piece — randomize parameters and seed">Generate</button>
+
+                <p class="generate-hint">new piece — randomizes parameters and seed</p>
+
+                <div class="generate-secondary">
+
+                    <button type="button" id="btn-randomize" onclick="randomize()" data-tooltip="randomize parameters">Randomize</button>
+
+                    <button type="button" id="btn-regen" onclick="regenerate()" data-tooltip="same parameters, new seed">Regenerate</button>
+
+                </div>
+
+                <p class="generate-legend">Randomize: new parameters. Regenerate: same parameters, new seed.</p>
+
+            </div>
+
             <!-- Curation Deadline & Status Banner -->
 
             <div id="curation-status-banner" style="background: rgba(222, 228, 215, 0.03); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; text-transform: lowercase; font-size: 11px;">
@@ -3566,8 +3798,6 @@ rawWt.push(baseWt + jitter);
                 </div>
 
             </div>
-
-
 
             <div class="control-section" id="params-section">
 
@@ -3617,15 +3847,17 @@ rawWt.push(baseWt + jitter);
 
 
 
+            <details class="advanced-fold" id="advanced-fold">
+
+                <summary class="advanced-fold-summary">More controls</summary>
+
+                <div class="advanced-fold-body">
+
             <div class="control-section">
 
                 <h3>Actions</h3>
 
                 <div class="control-grid">
-
-                    <button id="btn-randomize" onclick="randomize()" data-tooltip="randomize parameters">Randomize</button>
-
-                    <button id="btn-regen" onclick="regenerate()" data-tooltip="regenerate seed">Regenerate</button>
 
                     <button id="btn-curate" onclick="curateArtwork()" data-tooltip="curate current artwork">Curate</button>
 
@@ -3684,7 +3916,7 @@ rawWt.push(baseWt + jitter);
 
                 </div>
 
-                <div id="auto-guide" style="font-size: 8px; color: var(--text); display: none; opacity: 0.5; margin-top: 2px;">(Select Randomize to start)</div>
+                <div id="auto-guide" style="font-size: 8px; color: var(--text); display: none; opacity: 0.5; margin-top: 2px;">(Select Generate to start)</div>
 
             </div>
 
@@ -3771,6 +4003,10 @@ rawWt.push(baseWt + jitter);
                 <button id="btn-theme" onclick="toggleTheme()" data-tooltip="Toggle Light/Dark Mode" style="width: 100%; text-transform: uppercase; text-align: center;">☀︎ Toggle Theme</button>
 
             </div>
+
+                </div>
+
+            </details>
 
         </section>
 
@@ -3914,7 +4150,11 @@ rawWt.push(baseWt + jitter);
 
     </main>
 
+    <div id="mobile-generate-bar" class="mobile-generate-bar">
 
+        <button type="button" id="btn-generate-mobile" class="btn-generate" onclick="randomize()" aria-label="Generate a new piece">Generate</button>
+
+    </div>
 
     <div id="modal-seed" onclick="toggleSeed()">
 
@@ -4704,11 +4944,37 @@ rawWt.push(baseWt + jitter);
 
             var btnRegen = document.getElementById('btn-regen');
 
-            if (btnRand) btnRand.classList.toggle('active', _autoCycleActive && _autoMode === 'randomize');
+            var btnGenerate = document.getElementById('btn-generate');
 
-            if (btnRegen) btnRegen.classList.toggle('active', _autoCycleActive && _autoMode === 'regenerate');
+            var btnGenerateMobile = document.getElementById('btn-generate-mobile');
+
+            var randomizeActive = _autoCycleActive && _autoMode === 'randomize';
+
+            var regenerateActive = _autoCycleActive && _autoMode === 'regenerate';
+
+            if (btnRand) btnRand.classList.toggle('active', randomizeActive);
+
+            if (btnRegen) btnRegen.classList.toggle('active', regenerateActive);
+
+            if (btnGenerate) btnGenerate.classList.toggle('active', randomizeActive);
+
+            if (btnGenerateMobile) btnGenerateMobile.classList.toggle('active', randomizeActive);
 
         }
+
+        function syncAdvancedFold() {
+            var fold = document.getElementById('advanced-fold');
+            if (!fold || !window.matchMedia) return;
+            fold.open = window.matchMedia('(min-width: 901px)').matches;
+        }
+
+        (function initAdvancedFold() {
+            syncAdvancedFold();
+            if (!window.matchMedia) return;
+            var mq = window.matchMedia('(min-width: 901px)');
+            if (mq.addEventListener) mq.addEventListener('change', syncAdvancedFold);
+            else if (mq.addListener) mq.addListener(syncAdvancedFold);
+        })();
 
 
 
@@ -5596,7 +5862,7 @@ rawWt.push(baseWt + jitter);
 
         var _RENDER_BTN_IDS = [
 
-            'btn-randomize', 'btn-regen',
+            'btn-generate', 'btn-generate-mobile', 'btn-randomize', 'btn-regen',
 
             'btn-panel', 'btn-banner', 'btn-banner-sq', 'btn-square',
 
@@ -5610,6 +5876,14 @@ rawWt.push(baseWt + jitter);
 
 
 
+        function _setGenerateBusy(busy) {
+            ['btn-generate', 'btn-generate-mobile'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = busy ? 'Generating…' : 'Generate';
+            });
+        }
+
         function _lockRenderUI() {
 
             _RENDER_BTN_IDS.forEach(function(id) {
@@ -5619,6 +5893,8 @@ rawWt.push(baseWt + jitter);
                 if (el) el.disabled = true;
 
             });
+
+            _setGenerateBusy(true);
 
             ['t-sym','t-space','t-motif','t-chrome','t-engine'].forEach(function(id) {
 
@@ -5641,6 +5917,8 @@ rawWt.push(baseWt + jitter);
                 if (el) el.disabled = false;
 
             });
+
+            _setGenerateBusy(false);
 
             ['t-sym','t-space','t-motif','t-chrome','t-engine'].forEach(function(id) {
 
