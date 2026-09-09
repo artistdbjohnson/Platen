@@ -56,6 +56,24 @@ ok &= must("click curate to save" not in html, "empty gallery no longer says cli
 ok &= must("btn-png-dock" in html, "PNG download remains available from the dock")
 ok &= must("about-fold" in html and ">About</summary>" in html, "about fold is labeled About")
 ok &= must("Read the manifesto" not in html, "manifesto summary label is gone")
+ok &= must(not re.search(r'manifesto', html, re.I), "no user-facing manifesto copy remains")
+about_summary_css = re.search(r'\.about-fold-summary \{([^}]+)\}', html)
+ok &= must(
+    about_summary_css and "display: none" not in about_summary_css.group(1) and "display: flex" in about_summary_css.group(1),
+    "About summary is a visible tappable control on desktop and mobile",
+)
+desktop_unfold = re.search(r'@media \(min-width: 901px\) \{(.*?)\n        \}', html, re.S)
+ok &= must(bool(desktop_unfold), "desktop unfold media query exists")
+if desktop_unfold:
+    ok &= must(
+        ".about-fold" not in desktop_unfold.group(1) and ".about-fold-body" not in desktop_unfold.group(1),
+        "desktop does not unwrap About into an always-open manifesto column",
+    )
+sync_fn = html.split("function syncAdvancedFold", 1)[1].split("function ", 1)[0]
+ok &= must(
+    "about-fold" not in sync_fn,
+    "resize sync does not force About open on desktop",
+)
 ok &= must('id="params-fold"' in html and "params-fold-summary" in html, "Parameters collapse on first-visit mobile")
 ok &= must('id="platen-toast"' not in html and "function showPlatenToast" not in html, "floating Saved toast is removed")
 ok &= must("function highlightNewestGalleryCard" in html, "new saved card is highlighted after Save")
@@ -92,7 +110,25 @@ ok &= must("function scrollToSavedCreations" in html and 'onclick="scrollToSaved
 ok &= must("openGalleryDetail" not in html, "masonry plates cannot open a gallery viewer")
 ok &= must("data-newest-save" in html, "newest curated card is marked for highlight")
 ok &= must("saved-inline-grid" in html and "scrollIntoView" in html, "Save highlights the inline plate, not a modal takeover")
-ok &= must(".saved-creations" in html and "order: 3" in html, "saved creations sit below the mobile generate/save strip")
+def css_order(block, selector):
+    m = re.search(rf'{re.escape(selector)}\s*\{{[^}}]*\border:\s*(\d+)', block)
+    return int(m.group(1)) if m else None
+
+
+mobile_stack = re.search(r'@media \(max-width: 900px\) \{(.*?)\n        \}', html, re.S)
+ok &= must(bool(mobile_stack), "mobile stack media query exists")
+if mobile_stack:
+    stack = mobile_stack.group(1)
+    canvas_ord = css_order(stack, ".col-canvas")
+    strip_ord = css_order(stack, ".canvas-generate-strip")
+    controls_ord = css_order(stack, ".col-controls")
+    saved_ord = css_order(stack, ".saved-creations")
+    ok &= must(canvas_ord == 1 and strip_ord == 2, "mobile canvas then Generate/Save strip")
+    ok &= must(controls_ord == 4, "mobile params and more-controls stay in the menu chrome")
+    ok &= must(
+        saved_ord is not None and saved_ord > controls_ord,
+        "saved masonry starts after Parameters / More controls",
+    )
 ok &= must("position: sticky" in html and "canvas-generate-strip" in html, "Generate/Save strip stays sticky")
 ok &= must('id="mobile-scroll-hint"' in html and "scroll for parameters" in html, "first-visit mobile has a scroll hint")
 ok &= must("MAX_SAVE_MARKS" in html and "MAX_SAVE_NODES" in html, "Save snapshot is capped so Curate cannot OOM")

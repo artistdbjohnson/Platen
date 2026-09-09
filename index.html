@@ -271,9 +271,10 @@
 
             }
 
+            /* After menu chrome so Parameters is reachable without scrolling the gallery */
             .saved-creations {
 
-                order: 3;
+                order: 6;
 
             }
 
@@ -998,8 +999,38 @@
 
         .label-short { display: none; }
 
+        .about-fold {
+            display: flex;
+            flex-direction: column;
+        }
+
         .about-fold-summary {
+            display: flex;
+            list-style: none;
+            cursor: pointer;
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            opacity: 0.55;
+            min-height: 44px;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            user-select: none;
+        }
+
+        .about-fold-summary::-webkit-details-marker {
             display: none;
+        }
+
+        .about-fold-summary::after {
+            content: '+';
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .about-fold[open] > .about-fold-summary::after {
+            content: '–';
         }
 
         .canvas-generate-strip {
@@ -1066,8 +1097,6 @@
         @media (min-width: 901px) {
             .advanced-fold,
             .advanced-fold-body,
-            .about-fold,
-            .about-fold-body,
             .params-fold,
             .params-fold-body {
                 display: contents;
@@ -1194,25 +1223,6 @@
 
             .label-full { display: none; }
             .label-short { display: inline; }
-
-            .about-fold-summary {
-                display: flex;
-                list-style: none;
-                cursor: pointer;
-                font-size: 10px;
-                letter-spacing: 0.14em;
-                text-transform: uppercase;
-                opacity: 0.55;
-                min-height: 44px;
-                align-items: center;
-                justify-content: space-between;
-                border-bottom: 1px solid var(--border);
-                user-select: none;
-            }
-
-            .about-fold-summary::-webkit-details-marker { display: none; }
-            .about-fold-summary::after { content: '+'; font-size: 14px; }
-            .about-fold[open] > .about-fold-summary::after { content: '–'; }
 
             #canvas-wrap {
                 height: 100%;
@@ -5355,7 +5365,7 @@ rawWt.push(baseWt + jitter);
 
         function syncAdvancedFold() {
             var desktop = window.matchMedia && window.matchMedia('(min-width: 901px)').matches;
-            ['advanced-fold', 'about-fold', 'params-fold'].forEach(function(id) {
+            ['advanced-fold', 'params-fold'].forEach(function(id) {
                 var fold = document.getElementById(id);
                 if (fold) fold.open = desktop;
             });
