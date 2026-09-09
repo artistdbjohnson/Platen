@@ -4409,7 +4409,7 @@ rawWt.push(baseWt + jitter);
 
             <h2 id="info-modal-title">Attention</h2>
 
-            <p id="info-modal-text">This artwork has already been curated.</p>
+            <p id="info-modal-text">This artwork has already been saved.</p>
 
             <div style="text-align: right; margin-top: 20px;">
 
@@ -14213,6 +14213,34 @@ rawWt.push(baseWt + jitter);
 
         // ── Curation Curation System ──
 
+        function setSaveButtonsState(state) {
+            var labels = {
+                idle: 'Save',
+                saving: 'Saving…',
+                saved: 'Saved',
+                already: '✓ Saved',
+                closed: '🔒 closed',
+                locked: 'locked'
+            };
+            var tooltips = {
+                idle: 'save this piece',
+                saving: 'saving',
+                saved: 'saved',
+                already: 'already saved',
+                closed: 'curation closed',
+                locked: 'locked by peer'
+            };
+            var disabled = state !== 'idle';
+            ['btn-curate', 'btn-save-canvas', 'btn-save-mobile'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = labels[state] || 'Save';
+                if (disabled) el.setAttribute('data-disabled', 'true');
+                else el.removeAttribute('data-disabled');
+                el.setAttribute('data-tooltip', tooltips[state] || 'save this piece');
+            });
+        }
+
         var SIMULATE_CURATION_CLOSED = false;
 
         var curationDeadline = new Date("2027-06-07T00:00:00Z");
@@ -14253,23 +14281,16 @@ rawWt.push(baseWt + jitter);
 
                 if (banner) banner.style.borderColor = "var(--border)";
 
-                if (btnCurate) {
-
-                    btnCurate.setAttribute('data-disabled', 'true');
-                    btnCurate.setAttribute('data-tooltip', 'curation closed');
-
-                    btnCurate.innerHTML = "🔒 curation closed";
-
-                }
+                setSaveButtonsState('closed');
 
             } else {
 
                 if (dot) dot.style.background = "#98C379";
 
-                if (btnCurate && btnCurate.innerHTML !== "Curating..." && !btnCurate.innerHTML.includes("✓")) {
+                if (btnCurate && btnCurate.textContent !== "Saving…" && btnCurate.textContent !== "Saving..." && !btnCurate.innerHTML.includes("✓")) {
 
                     btnCurate.removeAttribute('data-disabled');
-                    btnCurate.setAttribute('data-tooltip', 'curate current artwork');
+                    btnCurate.setAttribute('data-tooltip', 'save this piece');
 
                 }
 
@@ -14411,29 +14432,21 @@ rawWt.push(baseWt + jitter);
 
                 if (chromeSelect) chromeSelect.disabled = true;
 
-                if (btnCurate) {
-                    btnCurate.setAttribute('data-disabled', 'true');
-                    btnCurate.setAttribute('data-tooltip', 'curation closed');
-                    btnCurate.innerHTML = "🔒 curation closed";
-                }
+                setSaveButtonsState('closed');
 
                 return;
 
             }
 
-            // Sync Curate button state
-            if (btnCurate && btnCurate.innerHTML !== "Curating...") {
+            // Sync Save button state (do not revive the Curate verb)
+            if (btnCurate && btnCurate.textContent !== "Saving…" && btnCurate.textContent !== "Saving...") {
                 var isCurated = curatedGallery.some(function(item) {
                     return item.seed === RENDER_SEED && JSON.stringify(item.traits) === JSON.stringify(RESOLVED_TRAITS || TRAITS);
                 });
                 if (isCurated) {
-                    btnCurate.innerHTML = "&#10003; Curated";
-                    btnCurate.setAttribute('data-disabled', 'true');
-                    btnCurate.setAttribute('data-tooltip', 'already curated');
+                    setSaveButtonsState('already');
                 } else {
-                    btnCurate.innerHTML = "Curate";
-                    btnCurate.removeAttribute('data-disabled');
-                    btnCurate.setAttribute('data-tooltip', 'curate current artwork');
+                    setSaveButtonsState('idle');
                 }
             }
 
@@ -14499,14 +14512,7 @@ rawWt.push(baseWt + jitter);
 
                     }
 
-                    if (btnCurate) {
-
-                        btnCurate.setAttribute('data-disabled', 'true');
-                        btnCurate.setAttribute('data-tooltip', 'locked by peer');
-
-                        btnCurate.innerHTML = "locked by peer";
-
-                    }
+                    setSaveButtonsState('locked');
 
                 }
 
@@ -14524,7 +14530,7 @@ rawWt.push(baseWt + jitter);
 
                 if (statusText) statusText.innerHTML = "available to lock";
 
-                if (statusDetails) statusDetails.innerHTML = "this layout is unclaimed. curate it to lock it to your choice.";
+                if (statusDetails) statusDetails.innerHTML = "this layout is unclaimed. save it to lock it to your choice.";
 
                 if (chromeSelect) chromeSelect.disabled = false;
 
@@ -15017,6 +15023,7 @@ rawWt.push(baseWt + jitter);
             if (alreadyCurated) {
 
                 toggleInfoModal("Already saved", "this piece is already in your gallery.");
+                setSaveButtonsState('already');
 
                 return;
 
@@ -15072,10 +15079,7 @@ rawWt.push(baseWt + jitter);
                 return;
             }
 
-            var saveBtns = ['btn-curate', 'btn-save-canvas', 'btn-save-mobile'].map(function(id) {
-                return document.getElementById(id);
-            }).filter(Boolean);
-            saveBtns.forEach(function(b) { b.textContent = 'Saving…'; });
+            setSaveButtonsState('saving');
 
 
 
@@ -15140,9 +15144,9 @@ rawWt.push(baseWt + jitter);
             highlightNewestGalleryCard();
 
             setTimeout(function() {
-                saveBtns.forEach(function(b) { b.textContent = 'Saved'; });
+                setSaveButtonsState('saved');
                 setTimeout(function() {
-                    saveBtns.forEach(function(b) { b.textContent = 'Save'; });
+                    setSaveButtonsState('already');
                 }, 1600);
             }, 200);
 

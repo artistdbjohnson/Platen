@@ -47,6 +47,8 @@ ok &= must("min-height: 44px" in html, "secondary / form controls have 44px targ
 ok &= must("advanced-fold" in html and "More controls" in html, "advanced controls are secondary on mobile")
 ok &= must("New seed: same parameters, new seed." in html, "Regenerate relabeled as New seed")
 ok &= must('id="btn-curate"' in html and ">Save</button>" in html, "Curate relabeled as Save")
+ok &= must('innerHTML = "Curate"' not in html and "function setSaveButtonsState" in html, "lock-status sync cannot revive the Curate verb")
+ok &= must("idle: 'Save'" in html or 'idle: "Save"' in html, "Save idle label is Save")
 ok &= must("btn-generate-sub" in html and "randomize</span>" in html, "Generate carries Randomize as subtitle")
 ok &= must('id="btn-save-canvas"' in html and 'id="btn-save-mobile"' in html, "Save sits with Generate on phone")
 ok &= must("no saved pieces yet" in html and "tap Save to keep one" in html, "empty gallery does not define the verb as Curate")
