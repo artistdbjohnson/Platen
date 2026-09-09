@@ -2,7 +2,7 @@
 
 <!-- Vercel Production Deploy Trigger -->
 
-<html lang="en" translate="no" class="notranslate">
+<html lang="en" translate="no" class="notranslate" data-theme="light" data-ui="index">
 
 
 
@@ -22,11 +22,17 @@
         (function () {
             try {
                 var mode = localStorage.getItem('platen_ui_mode');
-                if (mode === 'index' || mode === 'light') {
+                if (mode === 'studio' || mode === 'dark') {
+                    document.documentElement.removeAttribute('data-theme');
+                    document.documentElement.removeAttribute('data-ui');
+                } else {
                     document.documentElement.setAttribute('data-theme', 'light');
                     document.documentElement.setAttribute('data-ui', 'index');
                 }
-            } catch (e) {}
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+                document.documentElement.setAttribute('data-ui', 'index');
+            }
             try {
                 var sw = (window.screen && screen.width) ? screen.width : 0;
                 var iw = window.innerWidth || 0;
@@ -355,15 +361,16 @@
 
 
 
-        .col-about h2 {
+        .col-about h2,
+        .brand-lockup {
 
             font-size: 11px;
 
             font-weight: 500;
 
-            letter-spacing: 0.1em;
+            letter-spacing: 0.12em;
 
-            text-transform: uppercase;
+            text-transform: none;
 
             margin-bottom: 16px;
 
@@ -547,9 +554,9 @@
 
             font-weight: 500;
 
-            letter-spacing: 0.15em;
+            letter-spacing: 0.04em;
 
-            text-transform: uppercase;
+            text-transform: lowercase;
 
             opacity: 0.5;
 
@@ -739,8 +746,8 @@
             font-family: inherit;
             font-size: 12px;
             font-weight: 500;
-            letter-spacing: 0.22em;
-            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            text-transform: lowercase;
             text-align: center;
             cursor: pointer;
             opacity: 1;
@@ -753,7 +760,7 @@
         .generate-dock .btn-generate {
             width: 100%;
             text-align: center;
-            text-transform: uppercase;
+            text-transform: lowercase;
             opacity: 1;
             border-bottom: 1px solid var(--text);
             padding: 14px 16px;
@@ -811,8 +818,8 @@
             font-family: inherit;
             font-size: 12px;
             font-weight: 500;
-            letter-spacing: 0.22em;
-            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            text-transform: lowercase;
             cursor: pointer;
             touch-action: manipulation;
         }
@@ -874,10 +881,11 @@
         }
 
         .saved-creations-head h2 {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 500;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            text-transform: lowercase;
+            line-height: 1.4;
             margin: 0;
         }
 
@@ -1060,11 +1068,12 @@
             display: flex;
             list-style: none;
             cursor: pointer;
-            font-size: 10px;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.04em;
+            text-transform: lowercase;
+            line-height: 1.4;
             opacity: 0.55;
-            min-height: 44px;
+            min-height: 40px;
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid var(--border);
@@ -1167,15 +1176,16 @@
             display: none;
             list-style: none;
             cursor: pointer;
-            font-size: 10px;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.04em;
+            text-transform: lowercase;
+            line-height: 1.4;
             opacity: 0.55;
-            min-height: 44px;
+            min-height: 40px;
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid var(--border);
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             user-select: none;
         }
 
@@ -1254,11 +1264,12 @@
                 display: flex;
                 list-style: none;
                 cursor: pointer;
-                font-size: 10px;
-                letter-spacing: 0.14em;
-                text-transform: uppercase;
+                font-size: 11px;
+                letter-spacing: 0.04em;
+                text-transform: lowercase;
+                line-height: 1.4;
                 opacity: 0.55;
-                min-height: 44px;
+                min-height: 40px;
                 align-items: center;
                 justify-content: space-between;
                 border-bottom: 1px solid var(--border);
@@ -1296,15 +1307,19 @@
 
         .trait {
 
-            display: flex;
+            display: grid;
 
-            flex-direction: row;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
 
-            justify-content: space-between;
+            column-gap: 16px;
 
-            align-items: center;
+            align-items: baseline;
 
-            margin-bottom: 6px;
+            min-height: 36px;
+
+            margin: 0;
+
+            padding: 5px 0;
 
         }
 
@@ -1312,13 +1327,15 @@
 
         .trait-label {
 
-            font-size: 9px;
+            font-size: 11px;
 
-            opacity: 0.5;
+            line-height: 1.4;
 
-            text-transform: uppercase;
+            opacity: 0.7;
 
-            letter-spacing: 0.05em;
+            text-transform: lowercase;
+
+            letter-spacing: 0.04em;
 
         }
 
@@ -1336,15 +1353,17 @@
 
             font-family: inherit;
 
-            font-size: 10px;
+            font-size: 11px;
 
-            letter-spacing: 0.05em;
+            line-height: 1.4;
+
+            letter-spacing: 0.04em;
 
             padding: 2px 0px;
 
             cursor: pointer;
 
-            text-transform: uppercase;
+            text-transform: lowercase;
 
             -webkit-appearance: none;
 
@@ -4228,8 +4247,8 @@
             width: auto !important;
             text-align: left !important;
             font-weight: 400 !important;
-            letter-spacing: 0.02em !important;
-            text-transform: none !important;
+            letter-spacing: 0.04em !important;
+            text-transform: lowercase !important;
             text-decoration: none !important;
             opacity: 1 !important;
         }
@@ -4248,7 +4267,7 @@
             font-size: inherit !important;
             letter-spacing: inherit !important;
             font-weight: 400 !important;
-            text-transform: none !important;
+            text-transform: lowercase !important;
         }
         html[data-theme="light"] button:hover,
         html[data-theme="light"] .btn-generate:hover,
@@ -4698,6 +4717,55 @@
             [data-tooltip]::after {
                 display: none !important;
             }
+
+            .col-about > .ui-mode-nav,
+            .generate-dock > .ui-mode-nav,
+            .ui-mode-section,
+            html[data-theme="light"] .col-about > .ui-mode-nav,
+            html[data-theme="light"] .generate-dock > .ui-mode-nav,
+            html[data-theme="light"] .ui-mode-section {
+                display: none !important;
+            }
+
+            html[data-theme="light"] .generate-dock > .btn-generate,
+            html[data-theme="light"] .generate-dock > .btn-save,
+            html[data-theme="light"] .generate-dock > .generate-hint {
+                display: none !important;
+            }
+
+            #params-section > h3 {
+                display: none;
+            }
+
+            .generate-dock {
+                gap: 4px;
+                padding-bottom: 8px;
+                margin-bottom: 8px;
+            }
+
+            .col-controls {
+                padding: 12px 16px 20px;
+            }
+
+            .col-about {
+                padding: 12px 16px 20px;
+            }
+
+            .control-section {
+                padding-bottom: 8px;
+                margin-bottom: 8px;
+                gap: 2px;
+            }
+
+            .trait {
+                min-height: 32px;
+                padding: 4px 0;
+            }
+
+            .canvas-generate-strip {
+                align-items: baseline;
+                gap: 12px 16px;
+            }
         }
 
         /*
@@ -4757,6 +4825,69 @@
         html.is-phone .generate-dock .generate-hint {
             display: none !important;
         }
+
+        /* Brand lockup is the only chrome that keeps authored caps. */
+        .brand-lockup,
+        html[data-theme="light"] .brand-lockup,
+        html[data-theme="light"] .col-about > h2.brand-lockup {
+            text-transform: none !important;
+            letter-spacing: 0.12em !important;
+        }
+
+        /* Plate flip labels and About essay stay as authored. */
+        .btn-flip,
+        .back-btn-flip,
+        .about-fold-body,
+        .about-fold-body p,
+        .about-fold-body h3,
+        .about-fold-body pre,
+        html[data-theme="light"] .btn-flip,
+        html[data-theme="light"] .back-btn-flip,
+        html[data-theme="light"] .about-fold-body,
+        html[data-theme="light"] .about-fold-body p,
+        html[data-theme="light"] .about-fold-body h3 {
+            text-transform: none !important;
+        }
+
+        html[data-theme="light"] .trait,
+        html[data-theme="light"] .trait-label,
+        html[data-theme="light"] .trait-select,
+        html[data-theme="light"] .cd-selected {
+            text-transform: lowercase !important;
+            letter-spacing: 0.04em !important;
+            line-height: 1.4 !important;
+        }
+        html[data-theme="light"] #st-info,
+        html[data-theme="light"] .status-section #st-info {
+            text-transform: lowercase !important;
+            letter-spacing: 0.04em !important;
+        }
+        html[data-theme="light"] .control-section h3,
+        html[data-theme="light"] .saved-creations-head h2,
+        html[data-theme="light"] .about-fold-summary,
+        html[data-theme="light"] .advanced-fold-summary,
+        html[data-theme="light"] .params-fold-summary {
+            text-transform: lowercase !important;
+            letter-spacing: 0.04em !important;
+            line-height: 1.4 !important;
+        }
+
+        /* Desktop: one studio/index — the generate dock. */
+        @media (min-width: 901px) {
+            .col-about > .ui-mode-nav,
+            .ui-mode-section {
+                display: none;
+            }
+        }
+
+        html.is-phone .col-about > .ui-mode-nav,
+        html.is-phone .generate-dock > .ui-mode-nav,
+        html.is-phone .ui-mode-section {
+            display: none !important;
+        }
+        html.is-phone #params-section > h3 {
+            display: none;
+        }
     </style>
 
 </head>
@@ -4813,7 +4944,7 @@
 
         <section class="col-about">
 
-            <h2>PLATEN by DGLXSS</h2>
+            <h2 class="brand-lockup">PLATEN BY DGLXSS</h2>
 
             <nav class="ui-mode-nav" aria-label="interface mode">
                 <button type="button" class="ui-mode-link" data-ui-mode="studio" onclick="applyTheme('studio')">studio</button>

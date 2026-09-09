@@ -92,6 +92,18 @@ ok &= must(
     and "box-shadow: none !important" in style,
     "index plate still has no drop shadow",
 )
+ok &= must("PLATEN BY DGLXSS" in html and "brand-lockup" in html, "brand line keeps exact caps")
+ok &= must(
+    "html[data-theme=\"light\"] .generate-dock > .btn-generate" in style
+    and "display: none !important" in style,
+    "index+phone hides the second Generate/Save in the dock",
+)
+ok &= must(
+    ".col-about > .ui-mode-nav" in style and ".ui-mode-section" in style,
+    "extra studio/index navs can be hidden so only one placement remains",
+)
+boot = html.split("<script>", 1)[1].split("</script>", 1)[0]
+ok &= must("mode === 'studio'" in boot, "first visit with no platen_ui_mode boots index/light")
 
 if not ok:
     sys.exit(1)

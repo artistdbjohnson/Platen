@@ -26,6 +26,31 @@ ok &= must('localStorage.setItem(\'platen_ui_mode\'' in html or 'localStorage.se
 ok &= must("localStorage.getItem('platen_ui_mode')" in html, "boot script reads platen_ui_mode before paint")
 ok &= must('data-ui' in html and "setAttribute('data-ui', 'index')" in html, "index mode sets data-ui=index")
 ok &= must("setAttribute('data-theme', 'light')" in html, "index mode keeps data-theme=light for existing night checks")
+boot = html.split("<script>", 1)[1].split("</script>", 1)[0]
+ok &= must(
+    "mode === 'studio'" in boot or 'mode === "studio"' in boot,
+    "pre-paint boot defaults to index/light unless studio is already saved",
+)
+ok &= must(
+    "mode === 'index'" not in boot.split("platen_ui_mode")[1][:400]
+    or ("mode === 'studio'" in boot and "setAttribute('data-theme', 'light')" in boot),
+    "missing platen_ui_mode boots index, not dark studio",
+)
+ok &= must(
+    'data-theme="light"' in html.split("<head>", 1)[0] and 'data-ui="index"' in html.split("<head>", 1)[0],
+    "html tag paints index/light before any script so first visit has no dark flash",
+)
+ok &= must("class=\"brand-lockup\"" in html and "PLATEN BY DGLXSS" in html, "brand lockup keeps exact PLATEN BY DGLXSS casing")
+ok &= must(
+    "text-transform: lowercase !important" in html
+    and "html[data-theme=\"light\"] .brand-lockup" in html,
+    "index chrome is lowercase with a brand-lockup exception",
+)
+ok &= must(
+    ".generate-dock > .ui-mode-nav" in html
+    and "html[data-theme=\"light\"] .generate-dock > .btn-generate" in html,
+    "mobile hides the duplicate dock generate / studio-index block",
+)
 ok &= must("class=\"ui-mode-nav\"" in html and 'data-ui-mode="studio"' in html and 'data-ui-mode="index"' in html, "studio / index text toggle is in the markup")
 ok &= must(html.count('data-ui-mode="index"') >= 3, "index toggle is available in more than one column")
 ok &= must("☀︎ Toggle Theme" not in html, "sun-pill theme button copy is gone")
