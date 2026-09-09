@@ -16,7 +16,8 @@
 
     <title>Platen</title>
 
-    <!-- Restore index / light mode before first paint to avoid a dark flash -->
+    <!-- Restore index / light mode before first paint to avoid a dark flash.
+         Also mark real phones before CSS viewport inflation can hide max-width: 900px. -->
     <script>
         (function () {
             try {
@@ -24,6 +25,13 @@
                 if (mode === 'index' || mode === 'light') {
                     document.documentElement.setAttribute('data-theme', 'light');
                     document.documentElement.setAttribute('data-ui', 'index');
+                }
+            } catch (e) {}
+            try {
+                var sw = (window.screen && screen.width) ? screen.width : 0;
+                var iw = window.innerWidth || 0;
+                if ((sw && sw <= 900) || (iw && iw <= 900)) {
+                    document.documentElement.classList.add('is-phone');
                 }
             } catch (e) {}
         })();
@@ -146,7 +154,13 @@
 
             height: 100%;
 
+            width: 100%;
+
+            max-width: 100%;
+
             overflow: hidden;
+
+            overflow-x: hidden;
 
         }
 
@@ -198,19 +212,22 @@
 
 
 
-        /* ── 3-Column Index Layout ── */
+        /* Default = phone stack. The 480px + 480px desktop grid is ONLY
+           applied inside min-width: 901px. Leaving those tracks in the
+           default rule lets iOS expand the layout viewport past 900px,
+           after which every max-width: 900px query silently fails. */
 
         .index-grid {
 
-            display: grid;
+            display: flex;
 
-            grid-template-columns: 480px 480px 1fr;
-
-            grid-template-rows: 100dvh auto;
+            flex-direction: column;
 
             height: 100dvh;
 
-            width: 100vw;
+            width: 100%;
+
+            max-width: 100%;
 
             overflow-x: hidden;
 
@@ -224,13 +241,21 @@
 
         /* Responsive stack for mobile */
 
-        @media (max-width: 900px) {
+        @media (max-width: 900px), (max-device-width: 900px) {
 
             .index-grid {
 
                 display: flex;
 
                 flex-direction: column;
+
+                grid-template-columns: none;
+
+                grid-template-rows: none;
+
+                width: 100%;
+
+                max-width: 100%;
 
                 overflow-y: auto;
 
@@ -320,7 +345,9 @@
 
             gap: 10px;
 
-            height: 100dvh;
+            height: auto;
+
+            min-height: 0;
 
             box-sizing: border-box;
 
@@ -486,7 +513,9 @@
 
             flex-direction: column;
 
-            height: 100dvh;
+            height: auto;
+
+            min-height: 0;
 
             box-sizing: border-box;
 
@@ -1168,7 +1197,7 @@
             display: none;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 900px), (max-device-width: 900px) {
             .advanced-fold-summary {
                 display: flex;
             }
@@ -1397,7 +1426,11 @@
 
             position: relative;
 
-            height: 100dvh;
+            height: 48vh;
+
+            min-height: 48vh;
+
+            max-height: 48vh;
 
             box-sizing: border-box;
 
@@ -4484,7 +4517,7 @@
             pointer-events: auto !important;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 900px), (max-device-width: 900px) {
             html[data-theme="light"] .canvas-generate-strip {
                 flex-wrap: wrap;
                 gap: 8px 16px !important;
@@ -4502,12 +4535,71 @@
         }
 
         /*
+          Desktop 3-column shell. Applied only when the CSS viewport is
+          actually ≥901px. 100dvh column heights live here — not in the
+          default rules — so a phone cannot inherit a 960px-wide grid.
+        */
+        @media (min-width: 901px) {
+            .index-grid {
+                display: grid;
+                grid-template-columns: 480px 480px 1fr;
+                grid-template-rows: 100dvh auto;
+                height: 100dvh;
+                width: 100%;
+            }
+
+            .col-about {
+                height: 100dvh;
+                min-height: 0;
+                max-height: none;
+                order: initial;
+                overflow-y: auto;
+            }
+
+            .col-controls {
+                height: 100dvh;
+                min-height: 0;
+                max-height: none;
+                order: initial;
+                overflow-y: auto;
+            }
+
+            .col-canvas {
+                height: 100dvh;
+                min-height: 0;
+                max-height: none;
+                order: initial;
+            }
+
+            .canvas-generate-strip,
+            .mobile-scroll-hint,
+            .saved-creations {
+                order: initial;
+            }
+        }
+
+        /*
           Mobile stack repair — MUST come after the desktop 100dvh column heights
           and after index-mode's mobile query so this remains the last
           max-width: 900px block (tests + cascade). Index chrome still wins
           via html[data-theme="light"] !important.
+
+          max-device-width covers iOS Safari after it expands the layout
+          viewport to fit leftover 480px tracks (max-width then misses).
         */
-        @media (max-width: 900px) {
+        @media (max-width: 900px), (max-device-width: 900px) {
+            .index-grid {
+                display: flex !important;
+                flex-direction: column !important;
+                grid-template-columns: none !important;
+                grid-template-rows: none !important;
+                height: 100dvh;
+                width: 100%;
+                max-width: 100%;
+                overflow-x: hidden;
+                overflow-y: auto;
+            }
+
             .index-grid > * {
                 flex-shrink: 0;
             }
@@ -4526,12 +4618,42 @@
                 height: 48vh;
                 min-height: 48vh;
                 max-height: 48vh;
+                order: 1;
+            }
+
+            .canvas-generate-strip {
+                display: flex;
+                order: 2;
+            }
+
+            .mobile-scroll-hint {
+                order: 3;
+            }
+
+            .col-controls {
+                order: 4;
             }
 
             .col-about {
+                order: 5;
                 padding-top: 16px;
                 isolation: isolate;
                 background: var(--bg);
+            }
+
+            .saved-creations {
+                order: 6;
+                position: relative;
+                z-index: 1;
+                isolation: isolate;
+                background: var(--bg);
+                scroll-margin-top: 72px;
+            }
+
+            .generate-dock .btn-generate,
+            .generate-dock .btn-save,
+            .generate-dock .generate-hint {
+                display: none;
             }
 
             .col-about h2 {
@@ -4549,14 +4671,6 @@
 
             .about-fold-summary {
                 margin-top: 4px;
-            }
-
-            .saved-creations {
-                position: relative;
-                z-index: 1;
-                isolation: isolate;
-                background: var(--bg);
-                scroll-margin-top: 72px;
             }
 
             .saved-creations-head,
@@ -4584,6 +4698,64 @@
             [data-tooltip]::after {
                 display: none !important;
             }
+        }
+
+        /*
+          html.is-phone is set from screen.width before first paint so an
+          already-inflated CSS viewport (innerWidth > 900 on a 390px phone)
+          cannot keep the desktop 480+480 grid.
+        */
+        html.is-phone .index-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            grid-template-columns: none !important;
+            grid-template-rows: none !important;
+            height: 100dvh !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+        }
+        html.is-phone .index-grid > * {
+            flex-shrink: 0;
+        }
+        html.is-phone .col-about,
+        html.is-phone .col-controls {
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+        }
+        html.is-phone .col-canvas {
+            height: 48vh !important;
+            min-height: 48vh !important;
+            max-height: 48vh !important;
+            order: 1 !important;
+        }
+        html.is-phone .canvas-generate-strip {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            order: 2 !important;
+            position: sticky;
+            top: 0;
+            z-index: 850;
+        }
+        html.is-phone .mobile-scroll-hint {
+            order: 3 !important;
+        }
+        html.is-phone .col-controls {
+            order: 4 !important;
+        }
+        html.is-phone .col-about {
+            order: 5 !important;
+        }
+        html.is-phone .saved-creations {
+            order: 6 !important;
+        }
+        html.is-phone .generate-dock .btn-generate,
+        html.is-phone .generate-dock .btn-save,
+        html.is-phone .generate-dock .generate-hint {
+            display: none !important;
         }
     </style>
 
@@ -6076,8 +6248,16 @@ rawWt.push(baseWt + jitter);
 
         }
 
+        function syncPhoneLayoutClass() {
+            var sw = (window.screen && screen.width) ? screen.width : 0;
+            var iw = window.innerWidth || 0;
+            var phone = (iw && iw <= 900) || (sw && sw <= 900);
+            document.documentElement.classList.toggle('is-phone', !!phone);
+        }
+
         function syncAdvancedFold() {
             var desktop = window.matchMedia && window.matchMedia('(min-width: 901px)').matches;
+            if (document.documentElement.classList.contains('is-phone')) desktop = false;
             ['advanced-fold', 'params-fold'].forEach(function(id) {
                 var fold = document.getElementById(id);
                 if (fold) fold.open = desktop;
@@ -6085,11 +6265,22 @@ rawWt.push(baseWt + jitter);
         }
 
         (function initAdvancedFold() {
+            syncPhoneLayoutClass();
             syncAdvancedFold();
+            window.addEventListener('resize', function() {
+                syncPhoneLayoutClass();
+                syncAdvancedFold();
+            });
             if (!window.matchMedia) return;
             var mq = window.matchMedia('(min-width: 901px)');
-            if (mq.addEventListener) mq.addEventListener('change', syncAdvancedFold);
-            else if (mq.addListener) mq.addListener(syncAdvancedFold);
+            if (mq.addEventListener) mq.addEventListener('change', function() {
+                syncPhoneLayoutClass();
+                syncAdvancedFold();
+            });
+            else if (mq.addListener) mq.addListener(function() {
+                syncPhoneLayoutClass();
+                syncAdvancedFold();
+            });
         })();
 
 
@@ -16313,6 +16504,7 @@ rawWt.push(baseWt + jitter);
 
         function savedMasonryColumnCount() {
             if (typeof window === 'undefined') return 2;
+            if (document.documentElement.classList.contains('is-phone')) return 2;
             if (window.innerWidth >= 901) return 3;
             return 2;
         }
