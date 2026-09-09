@@ -215,23 +215,37 @@
 
                 overflow-y: auto;
 
+                padding-bottom: 16px;
+
             }
 
             .col-canvas {
 
                 order: 1;
 
-                min-height: 70vh;
+                height: 48vh;
+
+                min-height: 48vh;
+
+                max-height: 48vh;
 
                 border-bottom: 1px solid var(--border);
 
-                overflow: visible !important;
+                overflow: hidden !important;
+
+            }
+
+            .canvas-generate-strip {
+
+                order: 2;
 
             }
 
             .col-controls {
 
-                order: 2;
+                order: 4;
+
+                height: auto;
 
                 border-right: none !important;
 
@@ -243,12 +257,21 @@
 
             .col-about {
 
-                order: 3;
+                order: 5;
+
+                height: auto;
 
                 border-right: none !important;
 
                 overflow: visible !important;
 
+            }
+
+            /* Desktop Generate dock CTA is replaced by the canvas-adjacent strip */
+            .generate-dock .btn-generate,
+            .generate-dock .btn-save,
+            .generate-dock .generate-hint {
+                display: none;
             }
 
         }
@@ -631,6 +654,393 @@
 
             text-decoration: underline;
 
+        }
+
+        /* ── Primary Generate (desktop dock + mobile sticky) ── */
+
+        .generate-dock {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 14px;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-generate {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 48px;
+            padding: 14px 16px;
+            background: var(--text);
+            color: var(--bg);
+            border: 1px solid var(--text);
+            border-radius: 0;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            text-align: center;
+            cursor: pointer;
+            opacity: 1;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.2s cubic-bezier(0.22, 1, 0.36, 1), color 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .control-section .btn-generate,
+        .generate-dock .btn-generate {
+            width: 100%;
+            text-align: center;
+            text-transform: uppercase;
+            opacity: 1;
+            border-bottom: 1px solid var(--text);
+            padding: 14px 16px;
+        }
+
+        .btn-generate:hover,
+        .control-section .btn-generate:hover {
+            background: transparent;
+            color: var(--text);
+            text-decoration: none;
+            opacity: 1;
+        }
+
+        .btn-generate:disabled,
+        .control-section .btn-generate:disabled {
+            opacity: 0.4;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .btn-generate.active,
+        .control-section .btn-generate.active,
+        .btn-generate.active:hover,
+        .control-section .btn-generate.active:hover {
+            background: var(--text);
+            color: var(--bg);
+            border-bottom: 1px solid var(--text) !important;
+            text-decoration: none !important;
+            box-shadow: inset 0 0 0 1px var(--bg);
+        }
+
+        .btn-generate-sub {
+            display: block;
+            margin-top: 3px;
+            font-size: 8px;
+            letter-spacing: 0.16em;
+            font-weight: 400;
+            text-transform: lowercase;
+            opacity: 0.75;
+        }
+
+        .btn-save {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 48px;
+            padding: 12px 16px;
+            background: transparent;
+            color: var(--text);
+            border: 2px solid var(--text);
+            border-radius: 0;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .btn-save:hover {
+            background: var(--text);
+            color: var(--bg);
+            text-decoration: none;
+        }
+
+        .btn-save:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .generate-hint {
+            font-size: 9px;
+            letter-spacing: 0.08em;
+            text-transform: lowercase;
+            opacity: 0.5;
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        .mobile-scroll-hint {
+            display: none;
+        }
+
+        .platen-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%) translateY(12px);
+            background: var(--text);
+            color: var(--bg);
+            font-family: inherit;
+            font-size: 11px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            padding: 12px 18px;
+            z-index: 20050;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        .platen-toast.is-on {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .gallery-item-just-saved {
+            outline: 2px solid var(--text);
+            outline-offset: 4px;
+        }
+
+        .params-fold-summary {
+            display: none;
+        }
+
+        .generate-secondary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px 16px;
+            margin-top: 4px;
+        }
+
+        .generate-secondary #btn-png-dock {
+            grid-column: 1 / -1;
+        }
+
+        .label-short { display: none; }
+
+        .about-fold-summary {
+            display: none;
+        }
+
+        .canvas-generate-strip {
+            display: none;
+        }
+
+        .btn-png-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+            min-height: 52px;
+            min-width: 64px;
+            padding: 0 14px;
+            font-family: inherit;
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .generate-secondary button {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid transparent;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 10px;
+            letter-spacing: 0.05em;
+            padding: 8px 0;
+            min-height: 44px;
+            cursor: pointer;
+            text-transform: lowercase;
+            text-align: left;
+            opacity: 0.8;
+        }
+
+        .generate-secondary button:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .generate-secondary button.active,
+        .generate-secondary button.active:hover {
+            opacity: 1;
+            border-bottom: 1px solid var(--text);
+            text-decoration: none;
+        }
+
+        .generate-legend {
+            font-size: 8px;
+            letter-spacing: 0.06em;
+            text-transform: lowercase;
+            opacity: 0.45;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .advanced-fold {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 901px) {
+            .advanced-fold,
+            .advanced-fold-body,
+            .about-fold,
+            .about-fold-body,
+            .params-fold,
+            .params-fold-body {
+                display: contents;
+            }
+        }
+
+        .advanced-fold-summary {
+            display: none;
+            list-style: none;
+            cursor: pointer;
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            opacity: 0.55;
+            min-height: 44px;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 12px;
+            user-select: none;
+        }
+
+        .advanced-fold-summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .advanced-fold-summary::after {
+            content: '+';
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .advanced-fold[open] > .advanced-fold-summary::after {
+            content: '–';
+        }
+
+        .mobile-generate-bar {
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            .advanced-fold-summary {
+                display: flex;
+            }
+
+            .generate-secondary button {
+                min-height: 48px;
+                font-size: 12px;
+            }
+
+            .mobile-generate-bar {
+                display: none;
+            }
+
+            .canvas-generate-strip {
+                display: flex;
+                position: sticky;
+                top: 0;
+                z-index: 850;
+                gap: 8px;
+                align-items: stretch;
+                padding: 10px 16px;
+                background: var(--bg);
+                border-bottom: 1px solid var(--border);
+            }
+
+            .canvas-generate-strip .btn-generate,
+            .canvas-generate-strip .btn-save {
+                flex: 1;
+                min-height: 52px;
+                font-size: 13px;
+            }
+
+            .mobile-scroll-hint {
+                display: block;
+                order: 3;
+                text-align: center;
+                font-size: 10px;
+                letter-spacing: 0.12em;
+                text-transform: lowercase;
+                opacity: 0.45;
+                padding: 8px 12px 0;
+                margin: 0;
+            }
+
+            .params-fold-summary {
+                display: flex;
+                list-style: none;
+                cursor: pointer;
+                font-size: 10px;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                opacity: 0.55;
+                min-height: 44px;
+                align-items: center;
+                justify-content: space-between;
+                border-bottom: 1px solid var(--border);
+                user-select: none;
+            }
+
+            .params-fold-summary::-webkit-details-marker { display: none; }
+            .params-fold-summary::after { content: '+'; font-size: 14px; }
+            .params-fold[open] > .params-fold-summary::after { content: '–'; }
+
+            .control-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .label-full { display: none; }
+            .label-short { display: inline; }
+
+            .about-fold-summary {
+                display: flex;
+                list-style: none;
+                cursor: pointer;
+                font-size: 10px;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                opacity: 0.55;
+                min-height: 44px;
+                align-items: center;
+                justify-content: space-between;
+                border-bottom: 1px solid var(--border);
+                user-select: none;
+            }
+
+            .about-fold-summary::-webkit-details-marker { display: none; }
+            .about-fold-summary::after { content: '+'; font-size: 14px; }
+            .about-fold[open] > .about-fold-summary::after { content: '–'; }
+
+            #canvas-wrap {
+                height: 100%;
+                max-height: none;
+                min-height: 0;
+                padding: 8px 12px 4px;
+            }
+
+            .col-canvas .platen-panel,
+            #canvas-wrap.grid_us_letter .platen-panel {
+                height: 100% !important;
+                width: auto !important;
+                max-height: 100%;
+                max-width: 100%;
+            }
         }
 
 
@@ -2182,7 +2592,7 @@
 
             backdrop-filter: blur(10px);
 
-            z-index: 100;
+            z-index: 10000;
 
             display: none;
 
@@ -2758,33 +3168,25 @@
 
                 width: 100%;
 
-                overflow-x: auto;
+                overflow-x: visible;
 
-                padding-bottom: 8px;
+                flex-wrap: wrap;
 
-                gap: 4px;
+                padding-bottom: 0;
 
-                -webkit-overflow-scrolling: touch;
-
-                scrollbar-width: none; /* Hide scrollbar for cleaner look */
+                gap: 8px;
 
             }
 
 
 
-            .btn-group::-webkit-scrollbar {
+            button:not(.btn-generate):not(.btn-flip):not(.back-btn-flip) {
 
-                display: none;
+                padding: 12px 10px;
 
-            }
+                font-size: 11px;
 
-
-
-            button {
-
-                padding: 6px 10px;
-
-                font-size: 8px;
+                min-height: 44px;
 
                 white-space: nowrap;
 
@@ -2832,11 +3234,13 @@
 
             .trait-select {
 
-                font-size: 10px;
+                font-size: 14px;
 
-                padding: 4px 6px;
+                padding: 10px 6px;
 
-                height: 24px; /* Better touch target */
+                min-height: 44px;
+
+                height: auto;
 
             }
 
@@ -3105,6 +3509,11 @@
         }
 
 
+
+        body.fullscreen-active .mobile-generate-bar,
+        body.fullscreen-active .canvas-generate-strip {
+            display: none !important;
+        }
 
         body.fullscreen-active .col-canvas {
 
@@ -3437,6 +3846,12 @@
 
             <h2>PLATEN by DGLXSS</h2>
 
+            <details class="about-fold" id="about-fold">
+
+            <summary class="about-fold-summary">Read the manifesto</summary>
+
+            <div class="about-fold-body">
+
             <p>2017. A typewriter shop in West Los Angeles. My son was four, running the shop floor between dead ribbons and open cases while I paid for an Olympia SM3 with one intention. Write a novel no one would ever read. Private. Something to pass down to him one day.</p>
 
             <p>The novel remains unfinished. And the typewriter has been following along ever since.</p>
@@ -3527,6 +3942,10 @@ rawWt.push(baseWt + jitter);
 
             <br><br><br>
 
+            </div>
+
+            </details>
+
         </section>
 
 
@@ -3534,6 +3953,78 @@ rawWt.push(baseWt + jitter);
         <!-- MIDDLE COLUMN: CONTROLS -->
 
         <section class="col-controls">
+
+            <div class="generate-dock" id="generate-dock">
+
+                <button type="button" id="btn-generate" class="btn-generate" onclick="randomize()" data-tooltip="new piece — randomize parameters and seed">Generate<span class="btn-generate-sub">randomize</span></button>
+
+                <button type="button" id="btn-curate" class="btn-save" onclick="curateArtwork()" data-tooltip="save this piece">Save</button>
+
+                <p class="generate-hint">Generate makes a new piece. Save keeps this one.</p>
+
+                <div class="generate-secondary">
+
+                    <button type="button" id="btn-randomize" onclick="randomize()" data-tooltip="new parameters and seed">Randomize</button>
+
+                    <button type="button" id="btn-regen" onclick="regenerate()" data-tooltip="same parameters, new seed">New seed</button>
+
+                    <button type="button" id="btn-png-dock" onclick="savePNG()" data-tooltip="download hires png">Download PNG</button>
+
+                </div>
+
+                <p class="generate-legend">Randomize: new parameters. New seed: same parameters, new seed.</p>
+
+            </div>
+
+            <details class="params-fold" id="params-fold">
+
+                <summary class="params-fold-summary">Parameters</summary>
+
+                <div class="params-fold-body">
+
+            <div class="control-section" id="params-section">
+
+                <h3>Parameters</h3>
+
+                <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym" onchange="TRAITS.symmetry=this.value; renderAll();"></select></div>
+
+                <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space" onchange="TRAITS.space=this.value; renderAll();"></select></div>
+
+                <div class="trait"><span class="trait-label">Motif</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value; renderAll();"></select></div>
+
+                <div class="trait"><span class="trait-label">Ink</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value; renderAll();"></select></div>
+
+                <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value; renderAll();"></select></div>
+
+            </div>
+
+                </div>
+
+            </details>
+
+            <details class="advanced-fold" id="advanced-fold">
+
+                <summary class="advanced-fold-summary">More controls</summary>
+
+                <div class="advanced-fold-body">
+
+                <div id="palette-lock-status" style="margin-top: 6px; margin-bottom: 12px; padding: 8px 10px; border-radius: 6px; border: 1px dashed var(--border); background: rgba(222, 228, 215, 0.01); font-size: 10px; display: flex; flex-direction: column; gap: 4px; text-transform: lowercase; transition: all 0.2s;">
+
+                    <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
+
+                        <span id="palette-lock-icon">🔓</span>
+
+                        <span id="palette-lock-text">checking palette lock...</span>
+
+                    </div>
+
+                    <div id="palette-lock-details" style="font-size: 9px; opacity: 0.5;">
+
+                        this composition structure is available to lock.
+
+                    </div>
+
+                </div>
 
             <!-- Curation Deadline & Status Banner -->
 
@@ -3567,73 +4058,17 @@ rawWt.push(baseWt + jitter);
 
             </div>
 
-
-
-            <div class="control-section" id="params-section">
-
-                <h3>Parameters</h3>
-
-                <div class="trait"><span class="trait-label">Symmetry</span><select class="trait-select" id="t-sym" onchange="TRAITS.symmetry=this.value; renderAll();"></select></div>
-
-                <div class="trait"><span class="trait-label">Space</span><select class="trait-select" id="t-space" onchange="TRAITS.space=this.value; renderAll();"></select></div>
-
-                <div class="trait"><span class="trait-label">Motif</span><select class="trait-select" id="t-motif" onchange="TRAITS.motif=this.value; renderAll();"></select></div>
-
-                <div class="trait"><span class="trait-label">Ink</span><select class="trait-select" id="t-chrome" onchange="TRAITS.chromes=this.value; renderAll();"></select></div>
-
-                <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value; renderAll();"></select></div>
-
-            </div>
-
-
-
-                <!-- Palette Lock Status Dashboard -->
-
-                <div id="palette-lock-status" style="margin-top: 6px; margin-bottom: 12px; padding: 8px 10px; border-radius: 6px; border: 1px dashed var(--border); background: rgba(222, 228, 215, 0.01); font-size: 10px; display: flex; flex-direction: column; gap: 4px; text-transform: lowercase; transition: all 0.2s;">
-
-                    <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
-
-                        <span id="palette-lock-icon">🔓</span>
-
-                        <span id="palette-lock-text">checking palette lock...</span>
-
-                    </div>
-
-                    <div id="palette-lock-details" style="font-size: 9px; opacity: 0.5;">
-
-                        this composition structure is available to lock.
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-
-
-
-
-
-
-
             <div class="control-section">
 
                 <h3>Actions</h3>
 
                 <div class="control-grid">
 
-                    <button id="btn-randomize" onclick="randomize()" data-tooltip="randomize parameters">Randomize</button>
-
-                    <button id="btn-regen" onclick="regenerate()" data-tooltip="regenerate seed">Regenerate</button>
-
-                    <button id="btn-curate" onclick="curateArtwork()" data-tooltip="curate current artwork">Curate</button>
-
-                    <button id="btn-gallery-modal" onclick="toggleGalleryModal()" data-tooltip="open curated gallery">Gallery</button>
+                    <button id="btn-gallery-modal" onclick="toggleGalleryModal()" data-tooltip="open saved pieces">Gallery</button>
 
                     <button id="btn-set-seed" onclick="setSeed()" data-tooltip="set custom seed">Set Seed</button>
 
-                    <button id="btn-fs-autocycle" onclick="fsEnter()" data-tooltip="fullscreen autocycle">Fullscreen Autocycle</button>
+                    <button id="btn-fs-autocycle" onclick="fsEnter()" data-tooltip="fullscreen autocycle"><span class="label-full">Fullscreen Autocycle</span><span class="label-short">Autocycle</span></button>
 
                     <div style="display: flex; gap: 6px; align-items: stretch; position: relative;">
 
@@ -3684,7 +4119,7 @@ rawWt.push(baseWt + jitter);
 
                 </div>
 
-                <div id="auto-guide" style="font-size: 8px; color: var(--text); display: none; opacity: 0.5; margin-top: 2px;">(Select Randomize to start)</div>
+                <div id="auto-guide" style="font-size: 8px; color: var(--text); display: none; opacity: 0.5; margin-top: 2px;">(Select Generate to start)</div>
 
             </div>
 
@@ -3700,7 +4135,9 @@ rawWt.push(baseWt + jitter);
 
                     <button id="btn-out-jpg" onclick="saveJPG()" data-tooltip="download hires jpg">Download JPG</button>
 
-                    <button id="btn-out-svg" onclick="saveSVG('full')" data-tooltip="download vector svg">Download SVG</button>
+                    <button id="btn-out-svg" onclick="saveSVG('full')" data-tooltip="download vector svg (declared inches)">Download SVG</button>
+
+                    <button id="btn-out-plot" onclick="savePlotterSVG()" data-tooltip="inkscape layers, stroked pens, no paper texture">Download Plotter SVG</button>
 
                 </div>
 
@@ -3729,6 +4166,8 @@ rawWt.push(baseWt + jitter);
                     <input type="checkbox" id="inc-bg" checked onchange="renderAll()" style="cursor: pointer; accent-color: #000;">
 
                     <label for="inc-bg" style="font-size: 9px; cursor: pointer; text-transform: uppercase; opacity: 0.8; letter-spacing: 0.05em;">Include BG Texture</label>
+
+                    <span style="font-size: 8px; opacity: 0.4; letter-spacing: 0.06em; text-transform: lowercase;">plotter svg always excludes paper</span>
 
                 </div>
 
@@ -3771,6 +4210,10 @@ rawWt.push(baseWt + jitter);
                 <button id="btn-theme" onclick="toggleTheme()" data-tooltip="Toggle Light/Dark Mode" style="width: 100%; text-transform: uppercase; text-align: center;">☀︎ Toggle Theme</button>
 
             </div>
+
+                </div>
+
+            </details>
 
         </section>
 
@@ -3912,9 +4355,27 @@ rawWt.push(baseWt + jitter);
 
         </section>
 
+            <div id="canvas-generate-strip" class="canvas-generate-strip">
+
+                <button type="button" id="btn-generate-canvas" class="btn-generate" onclick="randomize()" aria-label="Generate a new piece">Generate<span class="btn-generate-sub">randomize</span></button>
+
+                <button type="button" id="btn-save-canvas" class="btn-save" onclick="curateArtwork()">Save</button>
+
+            </div>
+
+            <p class="mobile-scroll-hint" id="mobile-scroll-hint">scroll for parameters</p>
+
     </main>
 
+    <div id="platen-toast" class="platen-toast" role="status" aria-live="polite">Saved</div>
 
+    <div id="mobile-generate-bar" class="mobile-generate-bar">
+
+        <button type="button" id="btn-generate-mobile" class="btn-generate" onclick="randomize()" aria-label="Generate a new piece">Generate<span class="btn-generate-sub">randomize</span></button>
+
+        <button type="button" id="btn-save-mobile" class="btn-save" onclick="curateArtwork()">Save</button>
+
+    </div>
 
     <div id="modal-seed" onclick="toggleSeed()">
 
@@ -3948,7 +4409,7 @@ rawWt.push(baseWt + jitter);
 
             <h2 id="info-modal-title">Attention</h2>
 
-            <p id="info-modal-text">This artwork has already been curated.</p>
+            <p id="info-modal-text">This artwork has already been saved.</p>
 
             <div style="text-align: right; margin-top: 20px;">
 
@@ -4704,11 +5165,41 @@ rawWt.push(baseWt + jitter);
 
             var btnRegen = document.getElementById('btn-regen');
 
-            if (btnRand) btnRand.classList.toggle('active', _autoCycleActive && _autoMode === 'randomize');
+            var btnGenerate = document.getElementById('btn-generate');
 
-            if (btnRegen) btnRegen.classList.toggle('active', _autoCycleActive && _autoMode === 'regenerate');
+            var btnGenerateMobile = document.getElementById('btn-generate-mobile');
+            var btnGenerateCanvas = document.getElementById('btn-generate-canvas');
+
+            var randomizeActive = _autoCycleActive && _autoMode === 'randomize';
+
+            var regenerateActive = _autoCycleActive && _autoMode === 'regenerate';
+
+            if (btnRand) btnRand.classList.toggle('active', randomizeActive);
+
+            if (btnRegen) btnRegen.classList.toggle('active', regenerateActive);
+
+            if (btnGenerate) btnGenerate.classList.toggle('active', randomizeActive);
+
+            if (btnGenerateMobile) btnGenerateMobile.classList.toggle('active', randomizeActive);
+            if (btnGenerateCanvas) btnGenerateCanvas.classList.toggle('active', randomizeActive);
 
         }
+
+        function syncAdvancedFold() {
+            var desktop = window.matchMedia && window.matchMedia('(min-width: 901px)').matches;
+            ['advanced-fold', 'about-fold', 'params-fold'].forEach(function(id) {
+                var fold = document.getElementById(id);
+                if (fold) fold.open = desktop;
+            });
+        }
+
+        (function initAdvancedFold() {
+            syncAdvancedFold();
+            if (!window.matchMedia) return;
+            var mq = window.matchMedia('(min-width: 901px)');
+            if (mq.addEventListener) mq.addEventListener('change', syncAdvancedFold);
+            else if (mq.addListener) mq.addListener(syncAdvancedFold);
+        })();
 
 
 
@@ -5596,7 +6087,9 @@ rawWt.push(baseWt + jitter);
 
         var _RENDER_BTN_IDS = [
 
-            'btn-randomize', 'btn-regen',
+            'btn-generate', 'btn-generate-mobile', 'btn-generate-canvas', 'btn-randomize', 'btn-regen',
+            'btn-png-dock', 'btn-png-mobile', 'btn-png-canvas',
+            'btn-curate', 'btn-save-canvas', 'btn-save-mobile',
 
             'btn-panel', 'btn-banner', 'btn-banner-sq', 'btn-square',
 
@@ -5604,11 +6097,21 @@ rawWt.push(baseWt + jitter);
 
             'btn-banner-us-letter', 'btn-grid-39-39', 'btn-banner-39-39',
 
-            'btn-out-svg', 'btn-out-png', 'btn-out-jpg'
+            'btn-out-svg', 'btn-out-plot', 'btn-out-png', 'btn-out-jpg'
 
         ];
 
 
+
+        function _setGenerateBusy(busy) {
+            ['btn-generate', 'btn-generate-mobile', 'btn-generate-canvas'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                el.innerHTML = busy
+                    ? 'Generating…'
+                    : 'Generate<span class="btn-generate-sub">randomize</span>';
+            });
+        }
 
         function _lockRenderUI() {
 
@@ -5619,6 +6122,8 @@ rawWt.push(baseWt + jitter);
                 if (el) el.disabled = true;
 
             });
+
+            _setGenerateBusy(true);
 
             ['t-sym','t-space','t-motif','t-chrome','t-engine'].forEach(function(id) {
 
@@ -5641,6 +6146,8 @@ rawWt.push(baseWt + jitter);
                 if (el) el.disabled = false;
 
             });
+
+            _setGenerateBusy(false);
 
             ['t-sym','t-space','t-motif','t-chrome','t-engine'].forEach(function(id) {
 
@@ -6810,6 +7317,48 @@ rawWt.push(baseWt + jitter);
 
         // ── PLATEN ENGINE (Worker Version) ──────────────────────────────────────────
 
+        // Chrome Aw, Snap! / error 9 on Randomize was SIGKILL (OOM) from isometric
+        // columns: each glyph became dozens of full <path> copies, then
+        // XMLSerializer + Image decode of that tree killed the renderer.
+        var MAX_LIVE_SVG_NODES = 5000;
+        var MAX_RASTERIZE_NODES = 800;
+        var MAX_ISO_STEPS_PER_GLYPH = 16;
+        var MAX_STACK_LAYERS = 6;
+
+        function _sampleIsoSteps(steps, maxSteps) {
+            if (!steps || steps.length <= maxSteps) return steps;
+            if (maxSteps < 2) return [steps[0], steps[steps.length - 1]];
+            var out = [];
+            var last = steps.length - 1;
+            for (var si = 0; si < maxSteps; si++) {
+                var idx = Math.round(si * last / (maxSteps - 1));
+                if (!out.length || out[out.length - 1] !== steps[idx]) out.push(steps[idx]);
+            }
+            return out;
+        }
+
+        function _budgetIsoExtrusions(flowers) {
+            if (!flowers || !flowers.length) return 0;
+            var projected = 0;
+            for (var i = 0; i < flowers.length; i++) {
+                if (flowers[i].py_steps && flowers[i].py_steps.length > MAX_ISO_STEPS_PER_GLYPH) {
+                    flowers[i].py_steps = _sampleIsoSteps(flowers[i].py_steps, MAX_ISO_STEPS_PER_GLYPH);
+                }
+                projected += (flowers[i].py_steps && flowers[i].py_steps.length) ? flowers[i].py_steps.length : 1;
+            }
+            if (projected <= MAX_LIVE_SVG_NODES) return projected;
+            var scale = MAX_LIVE_SVG_NODES / projected;
+            projected = 0;
+            for (var j = 0; j < flowers.length; j++) {
+                if (flowers[j].py_steps && flowers[j].py_steps.length > 2) {
+                    var keep = Math.max(2, Math.round(flowers[j].py_steps.length * scale));
+                    flowers[j].py_steps = _sampleIsoSteps(flowers[j].py_steps, keep);
+                }
+                projected += (flowers[j].py_steps && flowers[j].py_steps.length) ? flowers[j].py_steps.length : 1;
+            }
+            return projected;
+        }
+
         function renderPlaten(svgId, id, traits, expectedGen) {
 
             return new Promise(function (originalResolve, reject) {
@@ -7079,6 +7628,14 @@ rawWt.push(baseWt + jitter);
 
                     // Draw flowers using returned data into the DocumentFragment first
 
+                    var projectedNodes = _budgetIsoExtrusions(flowers);
+                    var motifDefs = dc.createElementNS(svgNS, "defs");
+                    motifDefs.setAttribute("id", "platen-motif-defs-" + id);
+                    var motifDefIds = {};
+                    frag.insertBefore(motifDefs, frag.firstChild);
+
+                    try {
+
                     for (var i = 0; i < flowers.length; i++) {
 
                         var f = flowers[i];
@@ -7187,6 +7744,10 @@ rawWt.push(baseWt + jitter);
 
                                 f.py_steps.push(py_top);
 
+                            }
+
+                            if (f.py_steps.length > MAX_ISO_STEPS_PER_GLYPH) {
+                                f.py_steps = _sampleIsoSteps(f.py_steps, MAX_ISO_STEPS_PER_GLYPH);
                             }
 
                             
@@ -7417,13 +7978,21 @@ rawWt.push(baseWt + jitter);
 
 
                                 drawMotifs.forEach(function(mPath) {
+                                    if (!mPath) return;
+                                    var defKey = mPath;
+                                    if (!motifDefIds[defKey]) {
+                                        var defId = "pm-" + id + "-" + Object.keys(motifDefIds).length;
+                                        var defPath = dc.createElementNS(svgNS, "path");
+                                        defPath.setAttribute("id", defId);
+                                        defPath.setAttribute("d", mPath);
+                                        motifDefs.appendChild(defPath);
+                                        motifDefIds[defKey] = defId;
+                                    }
 
-                                    var path = dc.createElementNS(svgNS, "path");
-
+                                    var path = dc.createElementNS(svgNS, "use");
+                                    path.setAttribute("href", "#" + motifDefIds[defKey]);
+                                    path.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#" + motifDefIds[defKey]);
                                     path.setAttribute("transform", xform);
-
-                                    path.setAttribute("d", mPath);
-
                                     path.setAttribute("fill", activeColor);
 
                                     
@@ -7460,6 +8029,10 @@ rawWt.push(baseWt + jitter);
 
                         });
 
+                    }
+
+                    } catch (drawErr) {
+                        console.error('[Platen] SVG glyph build aborted to protect the tab:', drawErr);
                     }
 
 
@@ -7648,6 +8221,9 @@ rawWt.push(baseWt + jitter);
                     if (window._stackLayers) {
 
                         var artworkGroups = Array.from(svg.querySelectorAll('.platen-artwork'));
+                        if (artworkGroups.length >= MAX_STACK_LAYERS) {
+                            artworkGroups = artworkGroups.slice(artworkGroups.length - (MAX_STACK_LAYERS - 1));
+                        }
 
                         while (svg.firstChild) svg.removeChild(svg.firstChild);
 
@@ -7694,10 +8270,21 @@ rawWt.push(baseWt + jitter);
                     // Render SVG to WebGL Canvas for pure hardware-acceleration
 
                     var canvas = document.getElementById('c' + id);
+                    var safeToRasterize = canvas && projectedNodes < MAX_RASTERIZE_NODES;
 
-                    if (canvas) {
+                    _lastFlowers[id] = flowers;
+                    window._lastFlowers[id] = flowers;
 
-                        var svgString = new XMLSerializer().serializeToString(svg);
+                    if (safeToRasterize) {
+
+                        var svgString = '';
+                        try {
+                            svgString = new XMLSerializer().serializeToString(svg);
+                        } catch (serErr) {
+                            console.warn('[Platen] SVG serialize skipped:', serErr);
+                        }
+
+                        if (svgString && svgString.length <= 2000000) {
 
                         var svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
 
@@ -7769,7 +8356,17 @@ rawWt.push(baseWt + jitter);
 
                         };
 
+                        svgImg.onerror = function() {
+                            URL.revokeObjectURL(url);
+                            if (panel) panel.classList.remove('loading');
+                            console.warn('[Platen] SVG rasterize failed; leaving live SVG preview in place.');
+                        };
+
                         svgImg.src = url;
+
+                        } else if (panel) {
+                            panel.classList.remove('loading');
+                        }
 
                     } else {
 
@@ -7886,6 +8483,125 @@ rawWt.push(baseWt + jitter);
 
 
 
+        var PLATEN_PX_PER_IN = 160; // 10 CPI / 6 LPI letter: 16px per 0.1"
+
+        function getSvgPixelSize(svg) {
+            if (!svg) return { w: 800, h: 1200 };
+            var vb = svg.getAttribute('viewBox');
+            if (vb) {
+                var p = vb.trim().split(/[\s,]+/).map(Number);
+                if (p.length === 4 && p[2] > 0 && p[3] > 0) return { w: p[2], h: p[3] };
+            }
+            var w = parseFloat(svg.getAttribute('width'));
+            var h = parseFloat(svg.getAttribute('height'));
+            return { w: w > 0 ? w : 800, h: h > 0 ? h : 1200 };
+        }
+
+        function applyArchivalSvgUnits(svg) {
+            var dim = getSvgPixelSize(svg);
+            svg.setAttribute('viewBox', '0 0 ' + dim.w + ' ' + dim.h);
+            svg.setAttribute('width', (dim.w / PLATEN_PX_PER_IN).toFixed(4) + 'in');
+            svg.setAttribute('height', (dim.h / PLATEN_PX_PER_IN).toFixed(4) + 'in');
+            return dim;
+        }
+
+        function platenFileName(kind, ext, panelId) {
+            var rt = window.RESOLVED_TRAITS || TRAITS || {};
+            var bits = ['platen', String(RENDER_SEED || 'seed')];
+            if (panelId) bits.push('v' + panelId);
+            if (kind) bits.push(kind);
+            bits.push('sym_' + (rt.symmetry || 'x'));
+            bits.push('space_' + (rt.space || 'x'));
+            bits.push('engine_' + (rt.engine || 'x'));
+            var name = bits.join('-').replace(/[^A-Za-z0-9._-]+/g, '_');
+            if (name.length > 160) name = ['platen', String(RENDER_SEED || 'seed'), kind || 'export'].filter(Boolean).join('-');
+            ext = ext || 'svg';
+            if (ext.charAt(0) !== '.') ext = '.' + ext;
+            return name + ext;
+        }
+
+        function parseSvgTransformOps(t) {
+            var ops = [];
+            if (!t) return ops;
+            var re = /(translate|scale|rotate)\(([^)]*)\)/g;
+            var m;
+            while ((m = re.exec(t))) {
+                ops.push({ type: m[1], args: m[2].split(/[\s,]+/).filter(Boolean).map(Number) });
+            }
+            return ops;
+        }
+
+        function applyCanvasTransformOps(ctx, ops) {
+            for (var i = 0; i < ops.length; i++) {
+                var op = ops[i];
+                var a = op.args;
+                if (op.type === 'translate') ctx.translate(a[0] || 0, a[1] || 0);
+                else if (op.type === 'scale') ctx.scale(a[0] || 1, a.length > 1 ? a[1] : (a[0] || 1));
+                else if (op.type === 'rotate') {
+                    var rad = (a[0] || 0) * Math.PI / 180;
+                    var cx = a[1] || 0, cy = a[2] || 0;
+                    if (cx || cy) { ctx.translate(cx, cy); ctx.rotate(rad); ctx.translate(-cx, -cy); }
+                    else ctx.rotate(rad);
+                }
+            }
+        }
+
+        function resolveUsePath(svg, useEl) {
+            var href = useEl.getAttribute('href') || useEl.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || '';
+            if (!href || href.charAt(0) !== '#') return null;
+            var def = svg.getElementById ? svg.getElementById(href.slice(1)) : svg.querySelector(href);
+            return def && def.getAttribute('d');
+        }
+
+        function rasterizePlatenSvg(svg, outW, outH) {
+            var dim = getSvgPixelSize(svg);
+            var canvas = document.createElement('canvas');
+            canvas.width = outW;
+            canvas.height = outH;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) return canvas;
+            ctx.setTransform(outW / dim.w, 0, 0, outH / dim.h, 0, 0);
+            var nodes = svg.querySelectorAll('use, path, text');
+            for (var i = 0; i < nodes.length; i++) {
+                var el = nodes[i];
+                if (el.closest && el.closest('defs')) continue;
+                var tag = el.tagName.toLowerCase();
+                try {
+                    if (tag === 'text') {
+                        var tx = parseFloat(el.getAttribute('x')) || 0;
+                        var ty = parseFloat(el.getAttribute('y')) || 0;
+                        var fs = parseFloat(el.getAttribute('font-size')) || 12;
+                        ctx.save();
+                        ctx.fillStyle = el.getAttribute('fill') || '#111';
+                        ctx.font = (el.getAttribute('font-weight') || 'normal') + ' ' + fs + 'px ' + (el.getAttribute('font-family') || 'Courier, monospace');
+                        ctx.textAlign = (el.getAttribute('text-anchor') === 'middle') ? 'center' : 'left';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(el.textContent || '', tx, ty);
+                        ctx.restore();
+                        continue;
+                    }
+                    var d = tag === 'use' ? resolveUsePath(svg, el) : el.getAttribute('d');
+                    if (!d) continue;
+                    ctx.save();
+                    applyCanvasTransformOps(ctx, parseSvgTransformOps(el.getAttribute('transform')));
+                    var path = new Path2D(d);
+                    var fill = el.getAttribute('fill');
+                    var stroke = el.getAttribute('stroke');
+                    if (fill && fill !== 'none') {
+                        ctx.fillStyle = fill;
+                        ctx.fill(path, el.getAttribute('fill-rule') === 'evenodd' ? 'evenodd' : 'nonzero');
+                    }
+                    if (stroke && stroke !== 'none') {
+                        ctx.strokeStyle = stroke;
+                        ctx.lineWidth = parseFloat(el.getAttribute('stroke-width')) || 1;
+                        ctx.stroke(path);
+                    }
+                    ctx.restore();
+                } catch (drawErr) { /* keep export alive */ }
+            }
+            return canvas;
+        }
+
         function svgToString(svgEl, overrideCanvasClass) {
 
             if (!svgEl.querySelector('style.export-style')) {
@@ -7932,11 +8648,17 @@ rawWt.push(baseWt + jitter);
 
         function downloadBlob(blob, filename) {
 
+            filename = String(filename || 'platen-export.bin').replace(/[^A-Za-z0-9._-]+/g, '_');
+            if (filename.indexOf('platen-') !== 0) filename = 'platen-' + filename;
+
             var url = URL.createObjectURL(blob);
 
             var a = document.createElement('a');
 
-            a.href = url; a.download = filename;
+            a.href = url;
+            a.setAttribute('download', filename);
+            a.rel = 'noopener';
+            a.style.display = 'none';
 
             document.body.appendChild(a); a.click();
 
@@ -8220,9 +8942,7 @@ rawWt.push(baseWt + jitter);
 
                     
 
-                    var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
-
-                    var baseName = 'platen-' + RENDER_SEED + '-v' + id + tStr;
+                    var baseName = platenFileName(null, '', id).replace(/\.$/, '');
 
 
 
@@ -8288,11 +9008,13 @@ rawWt.push(baseWt + jitter);
 
                     } else {
 
-                        var str = svgToString(svg);
+                        var archival = svg.cloneNode(true);
+                        applyArchivalSvgUnits(archival);
+                        var str = svgToString(archival);
 
                         var blob = new Blob([str], { type: 'image/svg+xml' });
 
-                        downloadBlob(blob, baseName + '.svg');
+                        downloadBlob(blob, platenFileName(null, 'svg', id));
 
                     }
 
@@ -8320,175 +9042,82 @@ rawWt.push(baseWt + jitter);
 
                 if (!srcSvg) return;
 
-
-
-                // Clone to modify structure
-
-                var svg = srcSvg.cloneNode(true);
-
-
-
-                // Add Inkscape namespace
-
-                svg.setAttribute('xmlns:inkscape', 'http://www.inkscape.org/namespaces/inkscape');
-
-
-
-                // Clear existing content container to rebuild with layers
-
-                // The structure is: svg > rect(bg) > g > path...
-
-                // careful not to kill <defs> if any.
-
-                // We know structure: bg rect, g(flowers), t(text).
-
-
-
-                var gEl = svg.querySelector('g'); // flowers
-
-                var tEl = svg.querySelector('g + g') || svg.querySelector('tspan')?.parentNode; // text is usually in tEl appended after gEl
-
-                // My code appends gEl then tEl.
-
-                // Actually tEl is a separate group? No, tEl is a group.
-
-                // Let's find them by content or just generic iter.
-
-
-
-                // Find all paths and text elements
-
-                var pathsAndText = Array.from(srcSvg.querySelectorAll('path, text'));
-
                 var groups = {};
+                var headerNodes = [];
+                var plotNodes = srcSvg.querySelectorAll('path, use, text');
 
-                
-
-                var headerTextEl = null;
-
-
-
-                pathsAndText.forEach(function (el) {
-
-                    // Identify if this is the header text block (usually has tspan children or specific font-size)
-
-                    if (el.tagName.toLowerCase() === 'text' && el.querySelector('tspan')) {
-
-                        headerTextEl = el;
-
-                        return; // Handle header separately
-
+                plotNodes.forEach(function (el) {
+                    if (el.closest && el.closest('defs')) return;
+                    if (el.closest && el.closest('.typewriter-header')) {
+                        headerNodes.push(el);
+                        return;
                     }
-
-
-
-                    var fill = el.getAttribute('fill') || '#000000';
-
-                    if (!groups[fill]) groups[fill] = [];
-
-                    groups[fill].push(el);
-
+                    var color = el.getAttribute('fill') || el.getAttribute('stroke') || '#000000';
+                    if (color === 'none' || color === 'transparent') color = el.getAttribute('stroke') || '#000000';
+                    if (!groups[color]) groups[color] = [];
+                    groups[color].push(el);
                 });
 
-
-
-                // Clear the main group(s)
-
-                var newSvg = srcSvg.cloneNode(false); // shallow clone (attributes only)
-
+                var newSvg = srcSvg.cloneNode(false);
+                newSvg.setAttribute('xmlns', svgNS);
                 newSvg.setAttribute('xmlns:inkscape', 'http://www.inkscape.org/namespaces/inkscape');
+                applyArchivalSvgUnits(newSvg);
 
+                // Plot mode never includes paper / BG texture.
 
-
-                // 1. Header Text Layer (Reference)
-
-                if (headerTextEl) {
-
+                if (headerNodes.length) {
                     var layerT = document.createElementNS(svgNS, 'g');
-
                     layerT.setAttribute('inkscape:groupmode', 'layer');
-
                     layerT.setAttribute('inkscape:label', 'Header Text');
-
-                    layerT.appendChild(headerTextEl.cloneNode(true));
-
+                    headerNodes.forEach(function (el) { layerT.appendChild(el.cloneNode(true)); });
                     newSvg.appendChild(layerT);
-
                 }
 
-
-
-                // 2. Color Layers
-
                 Object.keys(groups).sort().forEach(function (color) {
-
                     var g = document.createElementNS(svgNS, 'g');
-
                     g.setAttribute('inkscape:groupmode', 'layer');
-
                     g.setAttribute('inkscape:label', color);
-
                     g.setAttribute('id', 'layer-' + color.replace('#', ''));
-
-
-
                     groups[color].forEach(function (el) {
-
-                        var p = el.cloneNode(true);
-
-                        // Plotter optimization: Fill=none, Stroke=color
-
-                        p.setAttribute('fill', 'none');
-
-                        p.setAttribute('stroke', color);
-
-                        p.setAttribute('stroke-width', '1'); // 1px stroke (for visibility)
-
+                        var tag = el.tagName.toLowerCase();
+                        var p;
+                        if (tag === 'use') {
+                            p = document.createElementNS(svgNS, 'path');
+                            var d = resolveUsePath(srcSvg, el);
+                            if (!d) return;
+                            p.setAttribute('d', d);
+                            if (el.getAttribute('transform')) p.setAttribute('transform', el.getAttribute('transform'));
+                        } else {
+                            p = el.cloneNode(true);
+                        }
+                        if (p.tagName && p.tagName.toLowerCase() === 'text') {
+                            p.setAttribute('fill', color);
+                            p.setAttribute('stroke', 'none');
+                        } else {
+                            p.setAttribute('fill', 'none');
+                            p.setAttribute('stroke', color);
+                            p.setAttribute('stroke-width', '1');
+                        }
                         g.appendChild(p);
-
                     });
-
                     newSvg.appendChild(g);
-
                 });
-
-
 
                 var str = svgToString(newSvg);
-
                 var blob = new Blob([str], { type: 'image/svg+xml' });
+                downloadBlob(blob, platenFileName('plot', 'svg', pid));
 
-                var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
-
-                var name = 'platen-' + RENDER_SEED + '-v' + pid + tStr + '-plot.svg';
-
-                downloadBlob(blob, name);
-
-
-
-                var penText = "Platen Axidraw Pen Mapping\nSeed: " + RENDER_SEED + "\nPanel: " + pid + "\n\n";
-
+                var penText = "Platen Axidraw Pen Mapping\nSeed: " + RENDER_SEED + "\nPanel: " + pid + "\nBG texture: OFF\n\n";
                 Object.keys(groups).sort().forEach(function (color) {
-
-                    var hex = color.toUpperCase();
-
-                    var penName = PEN_MAP[hex] || "Unknown Pen";
-
+                    var hex = String(color).toUpperCase();
+                    var penName = (typeof PEN_MAP !== 'undefined' && PEN_MAP[hex]) ? PEN_MAP[hex] : "Unknown Pen";
                     penText += "Layer: " + color + " -> " + penName + "\n";
-
                 });
-
-                var txtBlob = new Blob([penText], { type: 'text/plain' });
-
-                var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
-
-                var txtName = 'platen-' + RENDER_SEED + '-v' + pid + tStr + '-pens.txt';
-
-                downloadBlob(txtBlob, txtName);
+                downloadBlob(new Blob([penText], { type: 'text/plain' }), platenFileName('pens', 'txt', pid));
 
             });
 
-            console.log('[Platen Quine] Saved Plotter SVG(s) and Pen Text map');
+            console.log('[Platen] Saved Plotter SVG(s) and Pen Text map');
 
         }
 
@@ -9940,9 +10569,9 @@ rawWt.push(baseWt + jitter);
 
                     if (!svg) return;
 
-                    var svgW = parseInt(svg.getAttribute('width'));
-
-                    var svgH = parseInt(svg.getAttribute('height'));
+                    var pxSize = getSvgPixelSize(svg);
+                    var svgW = pxSize.w;
+                    var svgH = pxSize.h;
 
 
 
@@ -9990,41 +10619,18 @@ rawWt.push(baseWt + jitter);
 
                     var scaleX = outW / svgW, scaleY = outH / svgH;
 
-
-
-                    // Clone the SVG and shift elements down by 16px to prevent top text clipping
-
-                    var svgClone = svg.cloneNode(true);
-
-                    var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-
-                    g.setAttribute("transform", "translate(0, 16)");
-
-                    while (svgClone.firstChild) {
-
-                        g.appendChild(svgClone.firstChild);
-
+                    var svgImg;
+                    try {
+                        svgImg = rasterizePlatenSvg(svg, outW, outH);
+                    } catch (rasterErr) {
+                        console.warn('[Platen] PNG rasterize fell back:', rasterErr);
+                        svgImg = null;
                     }
 
-                    svgClone.appendChild(g);
-
-
-
-                    // Serialize SVG with transparent background
-
-                    var str = svgToString(svgClone);
-
-                    var blob = new Blob([str], { type: 'image/svg+xml' });
-
-                    var svgUrl = URL.createObjectURL(blob);
-
-
-
-                    var svgImg = new Image();
-
-                    svgImg.onload = function () {
-
-                        // Load texture from data URL (avoids tainted canvas)
+                    if (!svgImg) {
+                        console.warn('[Platen] PNG export skipped to protect the tab.');
+                        return;
+                    }
 
                         function doComposite(texImg) {
 
@@ -10111,17 +10717,13 @@ rawWt.push(baseWt + jitter);
 
 
                             canvas.toBlob(function (imgBlob) {
-
-                                var rt = RESOLVED_TRAITS || TRAITS;
-
-                                var tStr = "-sym_" + rt.symmetry + "-space_" + rt.space + "-motif_" + rt.motif + "-chrome_" + rt.chromes + "-engine_" + rt.engine;
-
-                                var name = 'platen-' + RENDER_SEED + '-v' + id + tStr + '.' + format;
-
+                                if (!imgBlob) {
+                                    console.warn('[Platen] PNG blob failed');
+                                    return;
+                                }
+                                var name = platenFileName(null, format, id);
                                 downloadBlob(imgBlob, name);
-
                                 console.log('[Platen] Saved ' + format.toUpperCase() + ': ' + name + ' (' + outW + 'x' + outH + ')');
-
                             }, mimeType, quality);
 
                         }
@@ -10138,11 +10740,7 @@ rawWt.push(baseWt + jitter);
 
                         }
 
-                    };
-
-                    svgImg.src = svgUrl;
-
-                }, idx * 450);
+                }, idx === 0 ? 0 : idx * 450);
 
             });
 
@@ -13615,6 +14213,34 @@ rawWt.push(baseWt + jitter);
 
         // ── Curation Curation System ──
 
+        function setSaveButtonsState(state) {
+            var labels = {
+                idle: 'Save',
+                saving: 'Saving…',
+                saved: 'Saved',
+                already: '✓ Saved',
+                closed: '🔒 closed',
+                locked: 'locked'
+            };
+            var tooltips = {
+                idle: 'save this piece',
+                saving: 'saving',
+                saved: 'saved',
+                already: 'already saved',
+                closed: 'curation closed',
+                locked: 'locked by peer'
+            };
+            var disabled = state !== 'idle';
+            ['btn-curate', 'btn-save-canvas', 'btn-save-mobile'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = labels[state] || 'Save';
+                if (disabled) el.setAttribute('data-disabled', 'true');
+                else el.removeAttribute('data-disabled');
+                el.setAttribute('data-tooltip', tooltips[state] || 'save this piece');
+            });
+        }
+
         var SIMULATE_CURATION_CLOSED = false;
 
         var curationDeadline = new Date("2027-06-07T00:00:00Z");
@@ -13655,23 +14281,16 @@ rawWt.push(baseWt + jitter);
 
                 if (banner) banner.style.borderColor = "var(--border)";
 
-                if (btnCurate) {
-
-                    btnCurate.setAttribute('data-disabled', 'true');
-                    btnCurate.setAttribute('data-tooltip', 'curation closed');
-
-                    btnCurate.innerHTML = "🔒 curation closed";
-
-                }
+                setSaveButtonsState('closed');
 
             } else {
 
                 if (dot) dot.style.background = "#98C379";
 
-                if (btnCurate && btnCurate.innerHTML !== "Curating..." && !btnCurate.innerHTML.includes("✓")) {
+                if (btnCurate && btnCurate.textContent !== "Saving…" && btnCurate.textContent !== "Saving..." && !btnCurate.innerHTML.includes("✓")) {
 
                     btnCurate.removeAttribute('data-disabled');
-                    btnCurate.setAttribute('data-tooltip', 'curate current artwork');
+                    btnCurate.setAttribute('data-tooltip', 'save this piece');
 
                 }
 
@@ -13813,29 +14432,21 @@ rawWt.push(baseWt + jitter);
 
                 if (chromeSelect) chromeSelect.disabled = true;
 
-                if (btnCurate) {
-                    btnCurate.setAttribute('data-disabled', 'true');
-                    btnCurate.setAttribute('data-tooltip', 'curation closed');
-                    btnCurate.innerHTML = "🔒 curation closed";
-                }
+                setSaveButtonsState('closed');
 
                 return;
 
             }
 
-            // Sync Curate button state
-            if (btnCurate && btnCurate.innerHTML !== "Curating...") {
+            // Sync Save button state (do not revive the Curate verb)
+            if (btnCurate && btnCurate.textContent !== "Saving…" && btnCurate.textContent !== "Saving...") {
                 var isCurated = curatedGallery.some(function(item) {
                     return item.seed === RENDER_SEED && JSON.stringify(item.traits) === JSON.stringify(RESOLVED_TRAITS || TRAITS);
                 });
                 if (isCurated) {
-                    btnCurate.innerHTML = "&#10003; Curated";
-                    btnCurate.setAttribute('data-disabled', 'true');
-                    btnCurate.setAttribute('data-tooltip', 'already curated');
+                    setSaveButtonsState('already');
                 } else {
-                    btnCurate.innerHTML = "Curate";
-                    btnCurate.removeAttribute('data-disabled');
-                    btnCurate.setAttribute('data-tooltip', 'curate current artwork');
+                    setSaveButtonsState('idle');
                 }
             }
 
@@ -13901,14 +14512,7 @@ rawWt.push(baseWt + jitter);
 
                     }
 
-                    if (btnCurate) {
-
-                        btnCurate.setAttribute('data-disabled', 'true');
-                        btnCurate.setAttribute('data-tooltip', 'locked by peer');
-
-                        btnCurate.innerHTML = "locked by peer";
-
-                    }
+                    setSaveButtonsState('locked');
 
                 }
 
@@ -13926,7 +14530,7 @@ rawWt.push(baseWt + jitter);
 
                 if (statusText) statusText.innerHTML = "available to lock";
 
-                if (statusDetails) statusDetails.innerHTML = "this layout is unclaimed. curate it to lock it to your choice.";
+                if (statusDetails) statusDetails.innerHTML = "this layout is unclaimed. save it to lock it to your choice.";
 
                 if (chromeSelect) chromeSelect.disabled = false;
 
@@ -14386,7 +14990,7 @@ rawWt.push(baseWt + jitter);
 
             if ((curationDeadline - now) <= 0) {
 
-                alert("Curation window has closed. Artworks cannot be curated or locked further.");
+                alert("Curation window has closed. Pieces cannot be saved or locked further.");
 
                 return;
 
@@ -14418,7 +15022,8 @@ rawWt.push(baseWt + jitter);
 
             if (alreadyCurated) {
 
-                toggleInfoModal("Already Curated", "this artwork configuration has already been curated into your gallery.");
+                toggleInfoModal("Already saved", "this piece is already in your gallery.");
+                setSaveButtonsState('already');
 
                 return;
 
@@ -14427,13 +15032,16 @@ rawWt.push(baseWt + jitter);
 
 
             if (typeof _renderBusy !== 'undefined' && _renderBusy) {
-                alert("Artwork is currently rendering. Please wait until rendering completes before curating.");
+                alert("Artwork is currently rendering. Please wait until rendering completes before saving.");
                 return;
             }
 
             var panels = activePanels();
             var svgs = [];
             var isAnyBlank = false;
+            var MAX_SAVE_MARKS = 800;
+            var MAX_SAVE_NODES = 1200;
+            var MAX_SAVE_CHARS = 1800000;
 
             for (var i = 0; i < panels.length; i++) {
                 var pid = panels[i];
@@ -14442,12 +15050,28 @@ rawWt.push(baseWt + jitter);
                     isAnyBlank = true;
                     break;
                 }
-                var paths = el.querySelectorAll('.platen-artwork path, .platen-artwork text, path, text');
-                if (paths.length === 0) {
+                var marks = el.querySelectorAll('.platen-artwork use, .platen-artwork path, .platen-artwork text, use, path, text');
+                if (marks.length === 0) {
                     isAnyBlank = true;
                     break;
                 }
-                svgs.push(el.outerHTML.replace(/\bmotus-active\b/g, ''));
+                var snap = '';
+                var nodeCount = el.getElementsByTagName('*').length;
+                if (marks.length <= MAX_SAVE_MARKS && nodeCount <= MAX_SAVE_NODES) {
+                    try {
+                        snap = el.outerHTML.replace(/\bmotus-active\b/g, '');
+                    } catch (snapErr) {
+                        console.warn('[Platen] Save snapshot failed:', snapErr);
+                        snap = '';
+                    }
+                    if (snap.length > MAX_SAVE_CHARS) {
+                        console.warn('[Platen] Save snapshot trimmed to protect the tab');
+                        snap = '';
+                    }
+                } else {
+                    console.warn('[Platen] Save snapshot skipped (marks=' + marks.length + ', nodes=' + nodeCount + ')');
+                }
+                svgs.push(snap);
             }
 
             if (isAnyBlank || svgs.length !== panels.length) {
@@ -14455,9 +15079,7 @@ rawWt.push(baseWt + jitter);
                 return;
             }
 
-            var btn = document.getElementById('btn-curate');
-            var oldText = btn.innerHTML;
-            btn.innerHTML = "Curating...";
+            setSaveButtonsState('saving');
 
 
 
@@ -14518,16 +15140,57 @@ rawWt.push(baseWt + jitter);
             updateLockStatus();
 
             renderGalleryGrid();
+            showPlatenToast('Saved');
+            highlightNewestGalleryCard();
 
-            // Reset button text to give visual feedback and restore it
             setTimeout(function() {
-                btn.innerHTML = "✓ Curated";
+                setSaveButtonsState('saved');
                 setTimeout(function() {
-                    btn.innerHTML = oldText;
-                }, 1500);
-            }, 300);
+                    setSaveButtonsState('already');
+                }, 1600);
+            }, 200);
 
         }
+
+        var _platenToastTimer = null;
+        function showPlatenToast(msg) {
+            var toast = document.getElementById('platen-toast');
+            if (!toast) return;
+            toast.textContent = msg || 'Saved';
+            toast.classList.add('is-on');
+            if (_platenToastTimer) clearTimeout(_platenToastTimer);
+            _platenToastTimer = setTimeout(function() {
+                toast.classList.remove('is-on');
+            }, 2400);
+        }
+
+        function highlightNewestGalleryCard() {
+            var grid = document.getElementById('gallery-grid');
+            if (!grid) return;
+            var items = grid.querySelectorAll('.gallery-item');
+            if (!items.length) return;
+            var newest = items[0];
+            newest.classList.add('gallery-item-just-saved');
+            try { newest.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+            setTimeout(function() {
+                newest.classList.remove('gallery-item-just-saved');
+            }, 4000);
+        }
+
+        (function initMobileScrollHint() {
+            var hint = document.getElementById('mobile-scroll-hint');
+            var grid = document.querySelector('.index-grid');
+            if (!hint || !grid) return;
+            var hide = function() {
+                hint.style.display = 'none';
+                grid.removeEventListener('scroll', hide);
+            };
+            grid.addEventListener('scroll', hide, { passive: true });
+            ['btn-generate', 'btn-generate-canvas', 'btn-generate-mobile', 'btn-save-canvas', 'btn-save-mobile', 'btn-curate'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('click', hide);
+            });
+        })();
 
 
 
@@ -14553,7 +15216,7 @@ rawWt.push(baseWt + jitter);
 
             if (curatedGallery.length === 0) {
 
-                grid.innerHTML = '<div style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; height: calc(100dvh - 160px); font-family: inherit; font-size: 11px; letter-spacing: 0.12em; color: var(--dim); text-transform: lowercase;">no curated artworks yet. click curate to save.</div>';
+                grid.innerHTML = '<div style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; height: calc(100dvh - 160px); font-family: inherit; font-size: 11px; letter-spacing: 0.12em; color: var(--dim); text-transform: lowercase;">no saved pieces yet. tap Save to keep one.</div>';
 
                 return;
 
@@ -14620,6 +15283,18 @@ rawWt.push(baseWt + jitter);
                 preview.innerHTML = (art.svgs[0] || '').replace(/\bmotus-active\b/g, '');
 
                 var svgEl = preview.querySelector('svg');
+
+                if (!svgEl) {
+                    preview.style.minHeight = '80px';
+                    preview.style.display = 'flex';
+                    preview.style.alignItems = 'center';
+                    preview.style.justifyContent = 'center';
+                    preview.style.fontSize = '10px';
+                    preview.style.letterSpacing = '0.12em';
+                    preview.style.textTransform = 'uppercase';
+                    preview.style.opacity = '0.55';
+                    preview.textContent = 'seed ' + art.seed;
+                }
 
                 if (svgEl) {
 
