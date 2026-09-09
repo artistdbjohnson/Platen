@@ -16,11 +16,24 @@
 
     <title>Platen</title>
 
+    <!-- Restore index / light mode before first paint to avoid a dark flash -->
+    <script>
+        (function () {
+            try {
+                var mode = localStorage.getItem('platen_ui_mode');
+                if (mode === 'index' || mode === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    document.documentElement.setAttribute('data-ui', 'index');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
     <!-- Preload canvas textures for instant loading -->
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
 
 
@@ -87,9 +100,9 @@
 
         [data-theme="light"] {
 
-            --bg: #f5f5f5;
+            --bg: #ffffff;
 
-            --panel: #f5f5f5;
+            --panel: #ffffff;
 
             --dropdown-bg: #ffffff;
 
@@ -101,25 +114,27 @@
 
             --dim: #000000;
 
-            --canvas-bg: #f5f5f5;
+            --canvas-bg: #ffffff;
 
-            --body-bg: #f5f5f5;
+            --body-bg: #ffffff;
 
             --shadow: none;
 
             --label-opacity: 1.0;
 
-            --code-kw: #A626A4;
+            --font-mono: 'JetBrains Mono', monospace;
 
-            --code-comment: #A0A1A7;
+            --code-kw: #000000;
 
-            --code-str: #50A14F;
+            --code-comment: #000000;
 
-            --code-num: #986801;
+            --code-str: #000000;
 
-            --code-fn: #4078F2;
+            --code-num: #000000;
 
-            --code-text: #383A42;
+            --code-fn: #000000;
+
+            --code-text: #000000;
 
         }
 
@@ -4067,6 +4082,501 @@
             pointer-events: auto !important;
             text-decoration: none !important;
         }
+
+        /* ── studio / index toggle (text only, both modes) ── */
+        .ui-mode-nav {
+            display: flex;
+            align-items: baseline;
+            gap: 0;
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            text-transform: lowercase;
+            line-height: 1.4;
+            margin: 0 0 12px;
+        }
+        .ui-mode-link {
+            color: inherit;
+            text-decoration: none;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            font: inherit;
+            letter-spacing: inherit;
+            text-transform: inherit;
+        }
+        .ui-mode-link:not(.is-active) {
+            opacity: 0.55;
+        }
+        .ui-mode-link.is-active {
+            opacity: 1;
+            text-decoration: underline;
+            font-weight: 500;
+            pointer-events: none;
+        }
+        .ui-mode-sep {
+            margin: 0 0.45em;
+            opacity: 0.55;
+        }
+        .col-about > .ui-mode-nav {
+            margin-top: -8px;
+        }
+        .generate-dock > .ui-mode-nav {
+            margin-bottom: 10px;
+        }
+        .ui-mode-section {
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           INDEX / LIGHT MODE
+           Sparse white catalog. Pure #fff / #000. JetBrains Mono.
+           Zero button chrome. No gray. Selected = underline / weight.
+           Plate art keeps its own ink and paper.
+           ═══════════════════════════════════════════════════════════ */
+        html[data-theme="light"],
+        html[data-theme="light"] body {
+            background: #fff !important;
+            color: #000 !important;
+        }
+        html[data-theme="light"] body,
+        html[data-theme="light"] button,
+        html[data-theme="light"] select,
+        html[data-theme="light"] input,
+        html[data-theme="light"] textarea,
+        html[data-theme="light"] a,
+        html[data-theme="light"] summary,
+        html[data-theme="light"] label,
+        html[data-theme="light"] h1,
+        html[data-theme="light"] h2,
+        html[data-theme="light"] h3,
+        html[data-theme="light"] h4,
+        html[data-theme="light"] p,
+        html[data-theme="light"] pre,
+        html[data-theme="light"] nav,
+        html[data-theme="light"] span,
+        html[data-theme="light"] li,
+        html[data-theme="light"] .c,
+        html[data-theme="light"] .btn-flip,
+        html[data-theme="light"] .back-btn-flip,
+        html[data-theme="light"] .back-download-links,
+        html[data-theme="light"] .cd-selected,
+        html[data-theme="light"] .cd-item,
+        html[data-theme="light"] .trait-select,
+        html[data-theme="light"] .motus-dropdown-btn {
+            font-family: 'JetBrains Mono', monospace !important;
+        }
+        html[data-theme="light"] .index-grid,
+        html[data-theme="light"] .col-about,
+        html[data-theme="light"] .col-controls,
+        html[data-theme="light"] .col-canvas,
+        html[data-theme="light"] .saved-creations,
+        html[data-theme="light"] .canvas-generate-strip,
+        html[data-theme="light"] .mobile-generate-bar,
+        html[data-theme="light"] .generate-dock {
+            background: #fff !important;
+            color: #000 !important;
+        }
+        html[data-theme="light"] .col-about,
+        html[data-theme="light"] .col-controls,
+        html[data-theme="light"] .col-canvas,
+        html[data-theme="light"] .control-section,
+        html[data-theme="light"] .saved-creations,
+        html[data-theme="light"] .generate-dock,
+        html[data-theme="light"] .about-fold-summary,
+        html[data-theme="light"] .advanced-fold-summary,
+        html[data-theme="light"] .params-fold-summary,
+        html[data-theme="light"] .canvas-generate-strip,
+        html[data-theme="light"] #seed-modal-content,
+        html[data-theme="light"] #info-modal-content,
+        html[data-theme="light"] #seed-modal-content h2,
+        html[data-theme="light"] #info-modal-content h2 {
+            border: none !important;
+            border-right: none !important;
+            border-bottom: none !important;
+            border-top: none !important;
+        }
+        html[data-theme="light"] .col-about h2,
+        html[data-theme="light"] .col-about h3,
+        html[data-theme="light"] .col-about p,
+        html[data-theme="light"] .control-section h3,
+        html[data-theme="light"] .trait-label,
+        html[data-theme="light"] .generate-hint,
+        html[data-theme="light"] .generate-legend,
+        html[data-theme="light"] .saved-creations-head h2,
+        html[data-theme="light"] .saved-creations-cue,
+        html[data-theme="light"] .saved-inline-empty,
+        html[data-theme="light"] .mobile-scroll-hint,
+        html[data-theme="light"] .about-fold-summary,
+        html[data-theme="light"] .advanced-fold-summary,
+        html[data-theme="light"] .params-fold-summary,
+        html[data-theme="light"] #st-info,
+        html[data-theme="light"] .status-section #st-info,
+        html[data-theme="light"] .btn-generate-sub,
+        html[data-theme="light"] .ui-mode-link,
+        html[data-theme="light"] .ui-mode-sep,
+        html[data-theme="light"] #auto-guide,
+        html[data-theme="light"] #palette-lock-text,
+        html[data-theme="light"] #palette-lock-details,
+        html[data-theme="light"] #curation-deadline-label,
+        html[data-theme="light"] #curation-countdown,
+        html[data-theme="light"] #stack-export-note,
+        html[data-theme="light"] #stack-export-note a {
+            color: #000 !important;
+            opacity: 1 !important;
+        }
+        html[data-theme="light"] .col-controls *,
+        html[data-theme="light"] .col-about *,
+        html[data-theme="light"] .saved-creations-head *,
+        html[data-theme="light"] .canvas-generate-strip *,
+        html[data-theme="light"] .mobile-generate-bar *,
+        html[data-theme="light"] .ui-mode-nav * {
+            opacity: 1 !important;
+        }
+
+        /* Actions, Generate, Save, export — text links, never pills */
+        html[data-theme="light"] button,
+        html[data-theme="light"] .btn-generate,
+        html[data-theme="light"] .btn-save,
+        html[data-theme="light"] .btn-png-secondary,
+        html[data-theme="light"] .control-section button,
+        html[data-theme="light"] .generate-dock .btn-generate,
+        html[data-theme="light"] .generate-dock .btn-save,
+        html[data-theme="light"] .generate-secondary button,
+        html[data-theme="light"] .canvas-generate-strip .btn-generate,
+        html[data-theme="light"] .canvas-generate-strip .btn-save,
+        html[data-theme="light"] .mobile-generate-bar .btn-generate,
+        html[data-theme="light"] .mobile-generate-bar .btn-save,
+        html[data-theme="light"] .motus-dropdown-btn,
+        html[data-theme="light"] .canvas-toggle-btn,
+        html[data-theme="light"] .btn-flip,
+        html[data-theme="light"] .back-btn-flip,
+        html[data-theme="light"] .saved-solo-chrome button,
+        html[data-theme="light"] #btn-seed-confirm,
+        html[data-theme="light"] .fs-hud button {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            color: #000 !important;
+            border: none !important;
+            border-bottom: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            outline: none !important;
+            min-height: 0 !important;
+            min-width: 0 !important;
+            padding: 2px 0 !important;
+            width: auto !important;
+            text-align: left !important;
+            font-weight: 400 !important;
+            letter-spacing: 0.02em !important;
+            text-transform: none !important;
+            text-decoration: none !important;
+            opacity: 1 !important;
+        }
+        html[data-theme="light"] .btn-generate,
+        html[data-theme="light"] .btn-save,
+        html[data-theme="light"] .canvas-generate-strip .btn-generate,
+        html[data-theme="light"] .canvas-generate-strip .btn-save {
+            display: inline-flex !important;
+            flex-direction: row !important;
+            align-items: baseline !important;
+            justify-content: flex-start !important;
+        }
+        html[data-theme="light"] .btn-generate-sub {
+            display: inline !important;
+            margin: 0 0 0 0.6em !important;
+            font-size: inherit !important;
+            letter-spacing: inherit !important;
+            font-weight: 400 !important;
+            text-transform: none !important;
+        }
+        html[data-theme="light"] button:hover,
+        html[data-theme="light"] .btn-generate:hover,
+        html[data-theme="light"] .btn-save:hover,
+        html[data-theme="light"] .control-section button:hover,
+        html[data-theme="light"] .generate-secondary button:hover,
+        html[data-theme="light"] .motus-dropdown-btn:hover,
+        html[data-theme="light"] .canvas-toggle-btn:hover,
+        html[data-theme="light"] .btn-flip:hover,
+        html[data-theme="light"] .back-btn-flip:hover,
+        html[data-theme="light"] .saved-solo-chrome button:hover,
+        html[data-theme="light"] #btn-seed-confirm:hover,
+        html[data-theme="light"] .fs-hud button:hover,
+        html[data-theme="light"] .back-download-links a:hover,
+        html[data-theme="light"] a:hover {
+            background: transparent !important;
+            color: #000 !important;
+            text-decoration: underline !important;
+            opacity: 1 !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+        html[data-theme="light"] button.active,
+        html[data-theme="light"] button.active:hover,
+        html[data-theme="light"] .control-section button.active,
+        html[data-theme="light"] .control-section button.active:hover,
+        html[data-theme="light"] .generate-secondary button.active,
+        html[data-theme="light"] .generate-secondary button.active:hover,
+        html[data-theme="light"] .btn-generate.active,
+        html[data-theme="light"] .canvas-toggle-btn.active,
+        html[data-theme="light"] .fs-hud button.active {
+            background: transparent !important;
+            color: #000 !important;
+            border: none !important;
+            border-bottom: none !important;
+            box-shadow: none !important;
+            outline: none !important;
+            text-decoration: underline !important;
+            font-weight: 500 !important;
+            opacity: 1 !important;
+        }
+        html[data-theme="light"] button:focus,
+        html[data-theme="light"] button:focus-visible,
+        html[data-theme="light"] .trait-select:focus,
+        html[data-theme="light"] .cd-selected:focus,
+        html[data-theme="light"] input:focus {
+            outline: none !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: transparent !important;
+        }
+        html[data-theme="light"] button[data-disabled="true"],
+        html[data-theme="light"] .btn-generate:disabled,
+        html[data-theme="light"] .btn-save:disabled {
+            opacity: 1 !important;
+            color: #000 !important;
+            text-decoration: line-through !important;
+            pointer-events: none !important;
+        }
+
+        /* Parameters: selected value is underlined text, no box */
+        html[data-theme="light"] .trait-select,
+        html[data-theme="light"] .cd-selected {
+            background: transparent !important;
+            color: #000 !important;
+            border: none !important;
+            border-bottom: none !important;
+            box-shadow: none !important;
+            outline: none !important;
+            text-decoration: underline !important;
+            font-weight: 500 !important;
+            text-align: right !important;
+        }
+        html[data-theme="light"] .trait-select:hover,
+        html[data-theme="light"] .trait-select:focus,
+        html[data-theme="light"] .cd-selected:hover {
+            border: none !important;
+            border-bottom: none !important;
+            color: #000 !important;
+        }
+        html[data-theme="light"] .cd-items {
+            background: #fff !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+        }
+        html[data-theme="light"] .cd-item {
+            color: #000 !important;
+            opacity: 1 !important;
+            padding: 4px 0 !important;
+            background: #fff !important;
+        }
+        html[data-theme="light"] .cd-item.is-disabled {
+            text-decoration: line-through !important;
+            pointer-events: none !important;
+        }
+        html[data-theme="light"] .trait-select option {
+            background: #fff !important;
+            color: #000 !important;
+        }
+
+        html[data-theme="light"] .motus-dropdown-content {
+            background: #fff !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            backdrop-filter: none !important;
+        }
+        html[data-theme="light"] .motus-dropdown-content div {
+            color: #000 !important;
+            opacity: 1 !important;
+            background: #fff !important;
+        }
+        html[data-theme="light"] .motus-dropdown-content div:hover {
+            background: #fff !important;
+            color: #000 !important;
+            text-decoration: underline !important;
+            opacity: 1 !important;
+        }
+
+        html[data-theme="light"] .col-about pre {
+            background: #fff !important;
+            border: none !important;
+            border-radius: 0 !important;
+            color: #000 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        html[data-theme="light"] .code-kw,
+        html[data-theme="light"] .code-comment,
+        html[data-theme="light"] .code-str,
+        html[data-theme="light"] .code-num,
+        html[data-theme="light"] .code-fn {
+            color: #000 !important;
+            font-style: normal !important;
+        }
+
+        html[data-theme="light"] #palette-lock-status,
+        html[data-theme="light"] #curation-status-banner {
+            background: #fff !important;
+            border: none !important;
+            border-radius: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        html[data-theme="light"] #curation-status-dot {
+            background: #000 !important;
+        }
+
+        html[data-theme="light"] #btn-auto {
+            width: auto !important;
+            height: auto !important;
+            min-height: 0 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        html[data-theme="light"] #btn-auto::after {
+            content: 'off';
+            color: #000;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.08em;
+        }
+        html[data-theme="light"] #btn-auto.auto-on {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        html[data-theme="light"] #btn-auto.auto-on::after {
+            content: 'on';
+            text-decoration: underline;
+            font-weight: 500;
+        }
+
+        html[data-theme="light"] .toggle-track,
+        html[data-theme="light"] .toggle-thumb {
+            display: none !important;
+        }
+
+        html[data-theme="light"] #modal-seed,
+        html[data-theme="light"] #modal-info {
+            background: #fff !important;
+            backdrop-filter: none !important;
+        }
+        html[data-theme="light"] #seed-modal-content,
+        html[data-theme="light"] #info-modal-content {
+            background: #fff !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: #000 !important;
+        }
+        html[data-theme="light"] #seed-input {
+            background: #fff !important;
+            border: none !important;
+            color: #000 !important;
+            box-shadow: none !important;
+        }
+        html[data-theme="light"] #close-seed-modal,
+        html[data-theme="light"] #close-info-modal {
+            opacity: 1 !important;
+            color: #000 !important;
+        }
+
+        html[data-theme="light"] .fs-hud {
+            background: #fff !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+        html[data-theme="light"] .fs-hud .fs-divider {
+            background: #000 !important;
+            opacity: 1 !important;
+        }
+
+        html[data-theme="light"] [data-tooltip]::after {
+            background: #fff !important;
+            color: #000 !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+        }
+
+        html[data-theme="light"] .saved-solo-backdrop {
+            background: #fff !important;
+        }
+        html[data-theme="light"] .gallery-item-just-saved,
+        html[data-theme="light"] .gallery-item-newest {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        html[data-theme="light"] .draft-history-row,
+        html[data-theme="light"] .draft-history-row:hover,
+        html[data-theme="light"] #draft-history-list > div {
+            background: #fff !important;
+            border: none !important;
+            border-radius: 0 !important;
+            color: #000 !important;
+            box-shadow: none !important;
+        }
+        html[data-theme="light"] input[type="checkbox"] {
+            accent-color: #000;
+        }
+        html:not([data-theme="light"]) .ui-mode-link[data-ui-mode="studio"] {
+            text-decoration: underline;
+            font-weight: 500;
+            opacity: 1;
+            pointer-events: none;
+        }
+        html[data-theme="light"] .ui-mode-link[data-ui-mode="index"],
+        html[data-ui="index"] .ui-mode-link[data-ui-mode="index"] {
+            text-decoration: underline !important;
+            font-weight: 500 !important;
+            pointer-events: none !important;
+        }
+        html[data-theme="light"] .ui-mode-link[data-ui-mode="studio"],
+        html[data-ui="index"] .ui-mode-link[data-ui-mode="studio"] {
+            text-decoration: none !important;
+            font-weight: 400 !important;
+            pointer-events: auto !important;
+        }
+
+        @media (max-width: 900px) {
+            html[data-theme="light"] .canvas-generate-strip {
+                flex-wrap: wrap;
+                gap: 8px 16px !important;
+                padding: 10px 16px !important;
+            }
+            html[data-theme="light"] .ui-mode-nav--strip {
+                width: 100%;
+                order: -1;
+                margin: 0 0 4px !important;
+            }
+            html[data-theme="light"] button:not(.btn-flip):not(.back-btn-flip) {
+                padding: 2px 0 !important;
+                min-height: 0 !important;
+            }
+        }
     </style>
 
 </head>
@@ -4124,6 +4634,12 @@
         <section class="col-about">
 
             <h2>PLATEN by DGLXSS</h2>
+
+            <nav class="ui-mode-nav" aria-label="interface mode">
+                <button type="button" class="ui-mode-link" data-ui-mode="studio" onclick="applyTheme('studio')">studio</button>
+                <span class="ui-mode-sep" aria-hidden="true">/</span>
+                <button type="button" class="ui-mode-link" data-ui-mode="index" onclick="applyTheme('index')">index</button>
+            </nav>
 
             <details class="about-fold" id="about-fold">
 
@@ -4234,6 +4750,12 @@ rawWt.push(baseWt + jitter);
         <section class="col-controls">
 
             <div class="generate-dock" id="generate-dock">
+
+                <nav class="ui-mode-nav" aria-label="interface mode">
+                    <button type="button" class="ui-mode-link" data-ui-mode="studio" onclick="applyTheme('studio')">studio</button>
+                    <span class="ui-mode-sep" aria-hidden="true">/</span>
+                    <button type="button" class="ui-mode-link" data-ui-mode="index" onclick="applyTheme('index')">index</button>
+                </nav>
 
                 <button type="button" id="btn-generate" class="btn-generate" onclick="generateNewPiece()" data-tooltip="new piece — randomize parameters and seed">Generate<span class="btn-generate-sub">randomize</span></button>
 
@@ -4484,9 +5006,13 @@ rawWt.push(baseWt + jitter);
 
             
 
-            <div class="control-section" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+            <div class="control-section ui-mode-section">
 
-                <button id="btn-theme" onclick="toggleTheme()" data-tooltip="Toggle Light/Dark Mode" style="width: 100%; text-transform: uppercase; text-align: center;">☀︎ Toggle Theme</button>
+                <nav class="ui-mode-nav" aria-label="interface mode">
+                    <button type="button" class="ui-mode-link" data-ui-mode="studio" onclick="applyTheme('studio')">studio</button>
+                    <span class="ui-mode-sep" aria-hidden="true">/</span>
+                    <button type="button" id="btn-theme" class="ui-mode-link" data-ui-mode="index" onclick="applyTheme('index')">index</button>
+                </nav>
 
             </div>
 
@@ -4636,6 +5162,12 @@ rawWt.push(baseWt + jitter);
 
             <div id="canvas-generate-strip" class="canvas-generate-strip">
 
+                <nav class="ui-mode-nav ui-mode-nav--strip" aria-label="interface mode">
+                    <button type="button" class="ui-mode-link" data-ui-mode="studio" onclick="applyTheme('studio')">studio</button>
+                    <span class="ui-mode-sep" aria-hidden="true">/</span>
+                    <button type="button" class="ui-mode-link" data-ui-mode="index" onclick="applyTheme('index')">index</button>
+                </nav>
+
                 <button type="button" id="btn-generate-canvas" class="btn-generate" onclick="generateNewPiece()" aria-label="Generate a new piece">Generate<span class="btn-generate-sub">randomize</span></button>
 
                 <button type="button" id="btn-save-canvas" class="btn-save" onclick="curateArtwork()">Save</button>
@@ -4762,35 +5294,80 @@ rawWt.push(baseWt + jitter);
 
 
 
-        function toggleTheme() {
+        function isIndexMode() {
 
-            var el = document.documentElement;
+            return document.documentElement.getAttribute('data-theme') === 'light'
+                || document.documentElement.getAttribute('data-ui') === 'index';
 
-            var btn = document.getElementById('btn-theme');
+        }
 
-            if (el.getAttribute('data-theme') === 'light') {
+        function syncThemeToggle() {
 
-                el.removeAttribute('data-theme');
+            var index = isIndexMode();
 
-                btn.textContent = '☀︎';
+            document.querySelectorAll('.ui-mode-link').forEach(function (link) {
 
-            } else {
+                var mode = link.getAttribute('data-ui-mode');
 
-                el.setAttribute('data-theme', 'light');
+                var active = (mode === 'index' && index) || (mode === 'studio' && !index);
 
-                btn.textContent = '☾';
+                if (active) link.classList.add('is-active');
 
-            }
-
-            updateCanvasTexture();
-
-            activePanels().forEach(function (id) {
-
-                if (window.drawBackCanvas) window.drawBackCanvas(id);
+                else link.classList.remove('is-active');
 
             });
 
         }
+
+        function applyTheme(mode) {
+
+            var el = document.documentElement;
+
+            var next = mode === 'index' || mode === 'light' ? 'index' : 'studio';
+
+            if (next === 'index') {
+
+                el.setAttribute('data-theme', 'light');
+
+                el.setAttribute('data-ui', 'index');
+
+            } else {
+
+                el.removeAttribute('data-theme');
+
+                el.removeAttribute('data-ui');
+
+            }
+
+            try {
+
+                localStorage.setItem('platen_ui_mode', next);
+
+            } catch (e) {}
+
+            syncThemeToggle();
+
+            if (typeof updateCanvasTexture === 'function') updateCanvasTexture();
+
+            if (typeof activePanels === 'function') {
+
+                activePanels().forEach(function (id) {
+
+                    if (window.drawBackCanvas) window.drawBackCanvas(id);
+
+                });
+
+            }
+
+        }
+
+        function toggleTheme() {
+
+            applyTheme(isIndexMode() ? 'studio' : 'index');
+
+        }
+
+        syncThemeToggle();
 
 
 
@@ -6140,6 +6717,8 @@ rawWt.push(baseWt + jitter);
 
                     if (nativeOpt.disabled) {
 
+                        customDiv.classList.add('is-disabled');
+
                         customDiv.style.opacity = '0.35';
 
                         customDiv.style.pointerEvents = 'none';
@@ -6147,6 +6726,8 @@ rawWt.push(baseWt + jitter);
                         customDiv.style.cursor = 'default';
 
                     } else {
+
+                        customDiv.classList.remove('is-disabled');
 
                         customDiv.style.opacity = '1.0';
 
@@ -14988,6 +15569,8 @@ rawWt.push(baseWt + jitter);
 
                 var row = document.createElement('div');
 
+                row.className = 'draft-history-row';
+
                 row.style.padding = '8px';
 
                 row.style.border = '1px solid var(--border)';
@@ -15237,6 +15820,8 @@ rawWt.push(baseWt + jitter);
         // Initialize boot logic in DOMContentLoaded listener
 
         window.addEventListener('DOMContentLoaded', function () {
+
+            syncThemeToggle();
 
             initLocks();
 
