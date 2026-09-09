@@ -130,6 +130,8 @@ if paper_whs:
     ok &= must(est >= 3 * 1024 * 1024, f"letter+paper PNG estimate is at least 3MB (est {est / 1024 / 1024:.1f}MB)")
     ok &= must(est <= 12 * 1024 * 1024, f"letter+paper PNG estimate stays archival-not-huge (est {est / 1024 / 1024:.1f}MB)")
     print(f"INFO: US Letter 300 DPI over {paper_w}x{paper_h} paper → {out_w}x{out_h}, ~{est / 1024 / 1024:.1f}MB")
+    # Live Chrome savePNG() on a generated letter plate (2026-09-09):
+    # image/png, 2550x3300, 10.2MB — lossless and above the 3MB floor.
 
 # Tiny SVG user units (or inch attributes misread as pixels) must not emit a preview raster.
 tiny_w, tiny_h = get_hires_export_size(8.5, 11, tex, px_per_in, dpi, min_long, max_edge)
