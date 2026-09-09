@@ -919,7 +919,7 @@
         .saved-solo-backdrop {
             position: absolute;
             inset: 0;
-            background: rgba(8, 8, 8, 0.88);
+            background: rgba(0, 0, 0, 0.92);
         }
 
         .saved-solo-frame {
@@ -15300,7 +15300,9 @@ rawWt.push(baseWt + jitter);
         }
 
         function savedMasonryColumnCount() {
-            return (typeof window !== 'undefined' && window.innerWidth >= 901) ? 4 : 2;
+            if (typeof window === 'undefined') return 2;
+            if (window.innerWidth >= 901) return 3;
+            return 2;
         }
 
         function plateAspectForMasonry(art) {
@@ -15453,7 +15455,7 @@ rawWt.push(baseWt + jitter);
 
             }
 
-            var colCount = savedMasonryColumnCount();
+            var colCount = Math.min(savedMasonryColumnCount(), curatedGallery.length);
             var colEls = [];
             var colHeights = [];
             var c;

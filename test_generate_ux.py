@@ -73,6 +73,7 @@ ok &= must("function captureInlinePlatePreview" in html and "previews: previews"
 ok &= must("saved-masonry-col" in html and "function savedMasonryColumnCount" in html, "saved creations pack into waterfall columns")
 ok &= must("align-items: flex-start" in html, "masonry columns keep natural heights instead of equal rows")
 ok &= must("savedMasonryColumnCount" in html and ">= 901" in html, "desktop masonry uses more columns than phone")
+ok &= must("Math.min(savedMasonryColumnCount()" in html, "masonry does not keep an empty last column")
 ok &= must(".saved-inline-item" in html and "border-radius: 0" in html and "object-fit: contain" in html, "full plates keep natural aspect without rounded crops")
 ok &= must("saved-inline-meta" not in html, "inline saved list is full plates, not metadata cards")
 ok &= must("saved-inline-remove" not in html, "masonry plates have no boxed X delete overlays")
