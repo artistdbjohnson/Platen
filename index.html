@@ -1399,92 +1399,6 @@
 
         }
 
-        /*
-          Mobile stack repair — MUST come after the desktop 100dvh column heights.
-          Those later rules were beating the earlier max-width: 900px height:auto
-          overrides, so About / controls / saved shrunk inside a 100dvh flex
-          viewport and painted on top of each other (clear stack ∩ ABOUT,
-          SAVED CREATIONS strike-through).
-        */
-        @media (max-width: 900px) {
-            .index-grid > * {
-                flex-shrink: 0;
-            }
-
-            .col-about,
-            .col-controls {
-                height: auto;
-                min-height: 0;
-                max-height: none;
-                overflow: visible;
-                position: relative;
-                z-index: 1;
-            }
-
-            .col-canvas {
-                height: 48vh;
-                min-height: 48vh;
-                max-height: 48vh;
-            }
-
-            .col-about {
-                padding-top: 16px;
-                isolation: isolate;
-                background: var(--bg);
-            }
-
-            .col-about h2 {
-                position: static;
-                z-index: auto;
-                background: var(--bg);
-            }
-
-            .about-fold,
-            .about-fold-summary {
-                position: relative;
-                z-index: 1;
-                background: var(--bg);
-            }
-
-            .about-fold-summary {
-                margin-top: 4px;
-            }
-
-            .saved-creations {
-                position: relative;
-                z-index: 1;
-                isolation: isolate;
-                background: var(--bg);
-                scroll-margin-top: 72px;
-            }
-
-            .saved-creations-head,
-            .saved-creations-head h2 {
-                position: relative;
-                background: var(--bg);
-                line-height: 1.4;
-                text-decoration: none;
-            }
-
-            .canvas-generate-strip .btn-generate {
-                min-height: 64px;
-                padding: 8px 12px;
-                line-height: 1.15;
-                gap: 4px;
-                overflow: visible;
-            }
-
-            .canvas-generate-strip .btn-generate-sub {
-                margin-top: 0;
-                line-height: 1.2;
-                position: static;
-            }
-
-            [data-tooltip]::after {
-                display: none !important;
-            }
-        }
-
 
 
         .platen-panel {
@@ -4549,6 +4463,91 @@
             html[data-theme="light"] button:not(.btn-flip):not(.back-btn-flip) {
                 padding: 2px 0 !important;
                 min-height: 0 !important;
+            }
+        }
+
+        /*
+          Mobile stack repair — MUST come after the desktop 100dvh column heights
+          and after index-mode's mobile query so this remains the last
+          max-width: 900px block (tests + cascade). Index chrome still wins
+          via html[data-theme="light"] !important.
+        */
+        @media (max-width: 900px) {
+            .index-grid > * {
+                flex-shrink: 0;
+            }
+
+            .col-about,
+            .col-controls {
+                height: auto;
+                min-height: 0;
+                max-height: none;
+                overflow: visible;
+                position: relative;
+                z-index: 1;
+            }
+
+            .col-canvas {
+                height: 48vh;
+                min-height: 48vh;
+                max-height: 48vh;
+            }
+
+            .col-about {
+                padding-top: 16px;
+                isolation: isolate;
+                background: var(--bg);
+            }
+
+            .col-about h2 {
+                position: static;
+                z-index: auto;
+                background: var(--bg);
+            }
+
+            .about-fold,
+            .about-fold-summary {
+                position: relative;
+                z-index: 1;
+                background: var(--bg);
+            }
+
+            .about-fold-summary {
+                margin-top: 4px;
+            }
+
+            .saved-creations {
+                position: relative;
+                z-index: 1;
+                isolation: isolate;
+                background: var(--bg);
+                scroll-margin-top: 72px;
+            }
+
+            .saved-creations-head,
+            .saved-creations-head h2 {
+                position: relative;
+                background: var(--bg);
+                line-height: 1.4;
+                text-decoration: none;
+            }
+
+            .canvas-generate-strip .btn-generate {
+                min-height: 64px;
+                padding: 8px 12px;
+                line-height: 1.15;
+                gap: 4px;
+                overflow: visible;
+            }
+
+            .canvas-generate-strip .btn-generate-sub {
+                margin-top: 0;
+                line-height: 1.2;
+                position: static;
+            }
+
+            [data-tooltip]::after {
+                display: none !important;
             }
         }
     </style>
