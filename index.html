@@ -906,7 +906,8 @@
             line-height: 0;
         }
 
-        .saved-inline-item .saved-inline-preview svg {
+        .saved-inline-item .saved-inline-preview svg,
+        .saved-inline-item .saved-inline-preview img {
             width: 100%;
             height: auto;
             display: block;
@@ -15240,6 +15241,11 @@ rawWt.push(baseWt + jitter);
                 }
             }
 
+            var previews = [];
+            for (var pi = 0; pi < panels.length; pi++) {
+                previews.push(captureInlinePlatePreview(document.getElementById('s' + panels[pi])));
+            }
+
             var newArt = {
 
                 id: Date.now(),
@@ -15251,6 +15257,8 @@ rawWt.push(baseWt + jitter);
                 layout: currentLayout,
 
                 svgs: svgs,
+
+                previews: previews,
 
                 flowers: panelFlowers
 
@@ -15403,6 +15411,26 @@ rawWt.push(baseWt + jitter);
 
 
 
+        function captureInlinePlatePreview(svgEl) {
+            if (!svgEl || typeof rasterizePlatenSvg !== 'function' || typeof getSvgPixelSize !== 'function') return '';
+            try {
+                var dim = getSvgPixelSize(svgEl);
+                if (!dim || !dim.w || !dim.h) return '';
+                var w = 420;
+                var h = Math.max(1, Math.round(w * dim.h / dim.w));
+                if (h > 680) {
+                    h = 680;
+                    w = Math.max(1, Math.round(h * dim.w / dim.h));
+                }
+                var canvas = rasterizePlatenSvg(svgEl, w, h);
+                if (!canvas) return '';
+                return canvas.toDataURL('image/jpeg', 0.76);
+            } catch (err) {
+                console.warn('[Platen] inline plate preview skipped', err);
+                return '';
+            }
+        }
+
         function renderSavedInline() {
 
             var grid = document.getElementById('saved-inline-grid');
@@ -15447,11 +15475,33 @@ rawWt.push(baseWt + jitter);
 
                     var snap = (art.svgs && art.svgs[0]) || '';
 
+                    var previewUrl = (art.previews && art.previews[0]) || '';
+
                     var preview = document.createElement('div');
 
                     preview.className = 'saved-inline-preview';
 
-                    if (snap) {
+                    if (previewUrl) {
+
+                        var img = document.createElement('img');
+
+                        img.src = previewUrl;
+
+                        img.alt = 'saved plate ' + art.seed;
+
+                        img.style.width = '100%';
+
+                        img.style.height = 'auto';
+
+                        img.style.objectFit = 'contain';
+
+                        img.style.borderRadius = '0';
+
+                        img.style.display = 'block';
+
+                        preview.appendChild(img);
+
+                    } else if (snap) {
 
                         preview.innerHTML = snap.replace(/\bmotus-active\b/g, '');
 

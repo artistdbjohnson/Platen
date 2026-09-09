@@ -67,6 +67,7 @@ ok &= must("renderSavedInline()" in reveal_fn and "highlightNewestGalleryCard()"
 ok &= must('id="saved-creations"' in html and 'id="saved-inline-grid"' in html, "inline saved-creations section exists below studio chrome")
 ok &= must("scroll down to view saved creations" in html, "saved creations scroll cue exists")
 ok &= must("function renderSavedInline" in html, "inline saved list renderer exists")
+ok &= must("function captureInlinePlatePreview" in html and "previews: previews" in html, "Save stores a full-plate preview for the masonry")
 ok &= must("column-count: 2" in html and "column-count: 4" in html, "saved creations use a masonry column flow")
 ok &= must("break-inside: avoid" in html, "masonry plates do not split across columns")
 ok &= must(".saved-inline-item" in html and "border-radius: 0" in html and "object-fit: contain" in html, "full plates keep natural aspect without rounded crops")
