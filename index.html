@@ -4084,6 +4084,13 @@
             -webkit-text-fill-color: unset !important;
             color: unset !important;
         }
+        /* Index plate sits flush on white. Studio keeps its US Letter paper shadow. */
+        html[data-theme="light"] #canvas-wrap,
+        html[data-theme="light"] .platen-panel,
+        html[data-theme="light"] .platen-face {
+            box-shadow: none !important;
+            filter: none !important;
+        }
         html[data-theme="light"] .index-grid,
         html[data-theme="light"] .col-about,
         html[data-theme="light"] .col-controls,
@@ -11497,13 +11504,15 @@ rawWt.push(baseWt + jitter);
 
                 var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
 
+                var indexPlate = (typeof isIndexMode === 'function' && isIndexMode());
+
                 if (isUsLetter) {
 
                     targetEl.style.backgroundSize = '106%';
 
                     targetEl.style.backgroundColor = 'transparent';
 
-                    targetEl.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)';
+                    targetEl.style.boxShadow = indexPlate ? 'none' : '0 8px 24px rgba(0,0,0,0.06)';
 
                 } else {
 
