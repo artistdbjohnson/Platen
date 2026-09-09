@@ -46,6 +46,10 @@ if index_css:
     hexes = set(re.findall(r"#[0-9A-Fa-f]{3,8}", index_css))
     ok &= must(hexes <= {"#ffffff", "#000000", "#fff", "#000"}, "index CSS uses only #ffffff / #000000")
     ok &= must("#171717" not in index_css and "#666" not in index_css and "#1a1a1a" not in index_css, "index CSS has no soft gray foreground")
+    ok &= must("-webkit-text-fill-color: #000000" in index_css, "index UI text fill is locked to #000000")
+    ok &= must("html[data-theme=\"light\"] div" in html, "index mode forces JetBrains Mono on div chrome")
+
+ok &= must("#171717" not in html.split("[data-theme=\"light\"]", 1)[1].split("</style>", 1)[0] if "[data-theme=\"light\"]" in html else True, "light/index stylesheet never uses #171717")
 
 ok &= must("html[data-theme=\"light\"]" in html and "JetBrains Mono" in html, "index mode forces JetBrains Mono")
 ok &= must(

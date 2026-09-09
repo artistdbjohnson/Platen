@@ -3972,7 +3972,7 @@
 
 
 
-        /* Light / index HUD — #ffffff / #000000 only, no gray */}
+        /* Light / index HUD — restyled in the INDEX / LIGHT MODE block (#ffffff / #000000). */
 
         /* Tooltip Styles */
         [data-tooltip] {
@@ -4121,6 +4121,7 @@
         html[data-theme="light"] nav,
         html[data-theme="light"] span,
         html[data-theme="light"] li,
+        html[data-theme="light"] div,
         html[data-theme="light"] .c,
         html[data-theme="light"] .btn-flip,
         html[data-theme="light"] .back-btn-flip,
@@ -4130,6 +4131,16 @@
         html[data-theme="light"] .trait-select,
         html[data-theme="light"] .motus-dropdown-btn {
             font-family: 'JetBrains Mono', monospace !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+        }
+        html[data-theme="light"] .platen-panel,
+        html[data-theme="light"] .platen-panel svg,
+        html[data-theme="light"] .platen-panel text,
+        html[data-theme="light"] .platen-panel tspan,
+        html[data-theme="light"] .platen-face {
+            -webkit-text-fill-color: unset !important;
+            color: unset !important;
         }
         html[data-theme="light"] .index-grid,
         html[data-theme="light"] .col-about,
