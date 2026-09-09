@@ -7088,6 +7088,44 @@ rawWt.push(baseWt + jitter);
 
         // ── PLATEN ENGINE (Worker Version) ──────────────────────────────────────────
 
+        var MAX_LIVE_SVG_NODES = 8000;
+        var MAX_ISO_STEPS_PER_GLYPH = 16;
+        var MAX_STACK_LAYERS = 6;
+
+        function _sampleIsoSteps(steps, maxSteps) {
+            if (!steps || steps.length <= maxSteps) return steps;
+            if (maxSteps < 2) return [steps[0], steps[steps.length - 1]];
+            var out = [];
+            var last = steps.length - 1;
+            for (var si = 0; si < maxSteps; si++) {
+                var idx = Math.round(si * last / (maxSteps - 1));
+                if (!out.length || out[out.length - 1] !== steps[idx]) out.push(steps[idx]);
+            }
+            return out;
+        }
+
+        function _budgetIsoExtrusions(flowers) {
+            if (!flowers || !flowers.length) return 0;
+            var projected = 0;
+            for (var i = 0; i < flowers.length; i++) {
+                if (flowers[i].py_steps && flowers[i].py_steps.length > MAX_ISO_STEPS_PER_GLYPH) {
+                    flowers[i].py_steps = _sampleIsoSteps(flowers[i].py_steps, MAX_ISO_STEPS_PER_GLYPH);
+                }
+                projected += (flowers[i].py_steps && flowers[i].py_steps.length) ? flowers[i].py_steps.length : 1;
+            }
+            if (projected <= MAX_LIVE_SVG_NODES) return projected;
+            var scale = MAX_LIVE_SVG_NODES / projected;
+            projected = 0;
+            for (var j = 0; j < flowers.length; j++) {
+                if (flowers[j].py_steps && flowers[j].py_steps.length > 2) {
+                    var keep = Math.max(2, Math.round(flowers[j].py_steps.length * scale));
+                    flowers[j].py_steps = _sampleIsoSteps(flowers[j].py_steps, keep);
+                }
+                projected += (flowers[j].py_steps && flowers[j].py_steps.length) ? flowers[j].py_steps.length : 1;
+            }
+            return projected;
+        }
+
         function renderPlaten(svgId, id, traits, expectedGen) {
 
             return new Promise(function (originalResolve, reject) {
@@ -7357,6 +7395,14 @@ rawWt.push(baseWt + jitter);
 
                     // Draw flowers using returned data into the DocumentFragment first
 
+                    var projectedNodes = _budgetIsoExtrusions(flowers);
+                    var motifDefs = dc.createElementNS(svgNS, "defs");
+                    motifDefs.setAttribute("id", "platen-motif-defs-" + id);
+                    var motifDefIds = {};
+                    frag.insertBefore(motifDefs, frag.firstChild);
+
+                    try {
+
                     for (var i = 0; i < flowers.length; i++) {
 
                         var f = flowers[i];
@@ -7465,6 +7511,10 @@ rawWt.push(baseWt + jitter);
 
                                 f.py_steps.push(py_top);
 
+                            }
+
+                            if (f.py_steps.length > MAX_ISO_STEPS_PER_GLYPH) {
+                                f.py_steps = _sampleIsoSteps(f.py_steps, MAX_ISO_STEPS_PER_GLYPH);
                             }
 
                             
@@ -7695,13 +7745,21 @@ rawWt.push(baseWt + jitter);
 
 
                                 drawMotifs.forEach(function(mPath) {
+                                    if (!mPath) return;
+                                    var defKey = mPath;
+                                    if (!motifDefIds[defKey]) {
+                                        var defId = "pm-" + id + "-" + Object.keys(motifDefIds).length;
+                                        var defPath = dc.createElementNS(svgNS, "path");
+                                        defPath.setAttribute("id", defId);
+                                        defPath.setAttribute("d", mPath);
+                                        motifDefs.appendChild(defPath);
+                                        motifDefIds[defKey] = defId;
+                                    }
 
-                                    var path = dc.createElementNS(svgNS, "path");
-
+                                    var path = dc.createElementNS(svgNS, "use");
+                                    path.setAttribute("href", "#" + motifDefIds[defKey]);
+                                    path.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#" + motifDefIds[defKey]);
                                     path.setAttribute("transform", xform);
-
-                                    path.setAttribute("d", mPath);
-
                                     path.setAttribute("fill", activeColor);
 
                                     
@@ -7738,6 +7796,10 @@ rawWt.push(baseWt + jitter);
 
                         });
 
+                    }
+
+                    } catch (drawErr) {
+                        console.error('[Platen] SVG glyph build aborted to protect the tab:', drawErr);
                     }
 
 
@@ -7926,6 +7988,9 @@ rawWt.push(baseWt + jitter);
                     if (window._stackLayers) {
 
                         var artworkGroups = Array.from(svg.querySelectorAll('.platen-artwork'));
+                        if (artworkGroups.length >= MAX_STACK_LAYERS) {
+                            artworkGroups = artworkGroups.slice(artworkGroups.length - (MAX_STACK_LAYERS - 1));
+                        }
 
                         while (svg.firstChild) svg.removeChild(svg.firstChild);
 
@@ -7972,10 +8037,22 @@ rawWt.push(baseWt + jitter);
                     // Render SVG to WebGL Canvas for pure hardware-acceleration
 
                     var canvas = document.getElementById('c' + id);
+                    var motusNeedsRaster = !!(window.PlatenHyperspeed && window.PlatenHyperspeed.isActive());
+                    var safeToRasterize = canvas && (motusNeedsRaster || projectedNodes < MAX_LIVE_SVG_NODES);
 
-                    if (canvas) {
+                    _lastFlowers[id] = flowers;
+                    window._lastFlowers[id] = flowers;
 
-                        var svgString = new XMLSerializer().serializeToString(svg);
+                    if (safeToRasterize) {
+
+                        var svgString = '';
+                        try {
+                            svgString = new XMLSerializer().serializeToString(svg);
+                        } catch (serErr) {
+                            console.warn('[Platen] SVG serialize skipped:', serErr);
+                        }
+
+                        if (svgString && svgString.length <= 12000000) {
 
                         var svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
 
@@ -8047,7 +8124,17 @@ rawWt.push(baseWt + jitter);
 
                         };
 
+                        svgImg.onerror = function() {
+                            URL.revokeObjectURL(url);
+                            if (panel) panel.classList.remove('loading');
+                            console.warn('[Platen] SVG rasterize failed; leaving live SVG preview in place.');
+                        };
+
                         svgImg.src = url;
+
+                        } else if (panel) {
+                            panel.classList.remove('loading');
+                        }
 
                     } else {
 

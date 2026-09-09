@@ -50,6 +50,10 @@ ok &= must("Randomize: new parameters. Regenerate: same parameters, new seed." i
 ok &= must("0.082" in html and "10 CPI" in html and "6 LPI" in html, "Olympia SM3 specs still documented")
 ok &= must("function calcMotifWeight" in engines, "motif weight path still present")
 ok &= must("function engineRadialWave" in engines and "switch (engine)" in engines, "engines file still contains generative cases")
+ok &= must("function _budgetIsoExtrusions" in html, "isometric SVG node budget exists")
+ok &= must("MAX_LIVE_SVG_NODES" in html and "MAX_ISO_STEPS_PER_GLYPH" in html, "live SVG caps are defined")
+ok &= must("createElementNS(svgNS, \"use\")" in html or "createElementNS(svgNS, 'use')" in html, "repeated motifs use SVG <use> to cut memory")
+ok &= must("SVG serialize skipped" in html, "oversized SVG rasterize is guarded")
 
 # The UX pass must not rewrite the engine switch.
 ok &= must(len(engines) > 50000, "platen-engines.js still a full engine file")
