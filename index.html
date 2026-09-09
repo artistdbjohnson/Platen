@@ -243,7 +243,7 @@
 
             .col-controls {
 
-                order: 3;
+                order: 4;
 
                 height: auto;
 
@@ -257,7 +257,7 @@
 
             .col-about {
 
-                order: 4;
+                order: 5;
 
                 height: auto;
 
@@ -269,6 +269,7 @@
 
             /* Desktop Generate dock CTA is replaced by the canvas-adjacent strip */
             .generate-dock .btn-generate,
+            .generate-dock .btn-save,
             .generate-dock .generate-hint {
                 display: none;
             }
@@ -668,6 +669,7 @@
 
         .btn-generate {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             width: 100%;
@@ -726,6 +728,47 @@
             box-shadow: inset 0 0 0 1px var(--bg);
         }
 
+        .btn-generate-sub {
+            display: block;
+            margin-top: 3px;
+            font-size: 8px;
+            letter-spacing: 0.16em;
+            font-weight: 400;
+            text-transform: lowercase;
+            opacity: 0.75;
+        }
+
+        .btn-save {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 48px;
+            padding: 12px 16px;
+            background: transparent;
+            color: var(--text);
+            border: 2px solid var(--text);
+            border-radius: 0;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .btn-save:hover {
+            background: var(--text);
+            color: var(--bg);
+            text-decoration: none;
+        }
+
+        .btn-save:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
         .generate-hint {
             font-size: 9px;
             letter-spacing: 0.08em;
@@ -733,6 +776,42 @@
             opacity: 0.5;
             line-height: 1.4;
             margin: 0;
+        }
+
+        .mobile-scroll-hint {
+            display: none;
+        }
+
+        .platen-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%) translateY(12px);
+            background: var(--text);
+            color: var(--bg);
+            font-family: inherit;
+            font-size: 11px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            padding: 12px 18px;
+            z-index: 20050;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        .platen-toast.is-on {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .gallery-item-just-saved {
+            outline: 2px solid var(--text);
+            outline-offset: 4px;
+        }
+
+        .params-fold-summary {
+            display: none;
         }
 
         .generate-secondary {
@@ -817,7 +896,9 @@
             .advanced-fold,
             .advanced-fold-body,
             .about-fold,
-            .about-fold-body {
+            .about-fold-body,
+            .params-fold,
+            .params-fold-body {
                 display: contents;
             }
         }
@@ -882,11 +963,43 @@
                 border-bottom: 1px solid var(--border);
             }
 
-            .canvas-generate-strip .btn-generate {
+            .canvas-generate-strip .btn-generate,
+            .canvas-generate-strip .btn-save {
                 flex: 1;
                 min-height: 52px;
                 font-size: 13px;
             }
+
+            .mobile-scroll-hint {
+                display: block;
+                order: 3;
+                text-align: center;
+                font-size: 10px;
+                letter-spacing: 0.12em;
+                text-transform: lowercase;
+                opacity: 0.45;
+                padding: 8px 12px 0;
+                margin: 0;
+            }
+
+            .params-fold-summary {
+                display: flex;
+                list-style: none;
+                cursor: pointer;
+                font-size: 10px;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                opacity: 0.55;
+                min-height: 44px;
+                align-items: center;
+                justify-content: space-between;
+                border-bottom: 1px solid var(--border);
+                user-select: none;
+            }
+
+            .params-fold-summary::-webkit-details-marker { display: none; }
+            .params-fold-summary::after { content: '+'; font-size: 14px; }
+            .params-fold[open] > .params-fold-summary::after { content: '–'; }
 
             .control-grid {
                 grid-template-columns: 1fr;
@@ -3843,9 +3956,11 @@ rawWt.push(baseWt + jitter);
 
             <div class="generate-dock" id="generate-dock">
 
-                <button type="button" id="btn-generate" class="btn-generate" onclick="randomize()" data-tooltip="new piece — randomize parameters and seed">Generate</button>
+                <button type="button" id="btn-generate" class="btn-generate" onclick="randomize()" data-tooltip="new piece — randomize parameters and seed">Generate<span class="btn-generate-sub">randomize</span></button>
 
-                <p class="generate-hint">new piece — randomizes parameters and seed</p>
+                <button type="button" id="btn-curate" class="btn-save" onclick="curateArtwork()" data-tooltip="save this piece">Save</button>
+
+                <p class="generate-hint">Generate makes a new piece. Save keeps this one.</p>
 
                 <div class="generate-secondary">
 
@@ -3860,6 +3975,12 @@ rawWt.push(baseWt + jitter);
                 <p class="generate-legend">Randomize: new parameters. New seed: same parameters, new seed.</p>
 
             </div>
+
+            <details class="params-fold" id="params-fold">
+
+                <summary class="params-fold-summary">Parameters</summary>
+
+                <div class="params-fold-body">
 
             <div class="control-section" id="params-section">
 
@@ -3876,6 +3997,10 @@ rawWt.push(baseWt + jitter);
                 <div class="trait"><span class="trait-label">Engine</span><select class="trait-select" id="t-engine" onchange="TRAITS.engine=this.value; renderAll();"></select></div>
 
             </div>
+
+                </div>
+
+            </details>
 
             <details class="advanced-fold" id="advanced-fold">
 
@@ -3939,9 +4064,7 @@ rawWt.push(baseWt + jitter);
 
                 <div class="control-grid">
 
-                    <button id="btn-curate" onclick="curateArtwork()" data-tooltip="save current artwork to the curated gallery">Save to gallery</button>
-
-                    <button id="btn-gallery-modal" onclick="toggleGalleryModal()" data-tooltip="open curated gallery">Gallery</button>
+                    <button id="btn-gallery-modal" onclick="toggleGalleryModal()" data-tooltip="open saved pieces">Gallery</button>
 
                     <button id="btn-set-seed" onclick="setSeed()" data-tooltip="set custom seed">Set Seed</button>
 
@@ -4234,19 +4357,23 @@ rawWt.push(baseWt + jitter);
 
             <div id="canvas-generate-strip" class="canvas-generate-strip">
 
-                <button type="button" id="btn-generate-canvas" class="btn-generate" onclick="randomize()" aria-label="Generate a new piece">Generate</button>
+                <button type="button" id="btn-generate-canvas" class="btn-generate" onclick="randomize()" aria-label="Generate a new piece">Generate<span class="btn-generate-sub">randomize</span></button>
 
-                <button type="button" id="btn-png-canvas" class="btn-png-secondary" onclick="savePNG()">PNG</button>
+                <button type="button" id="btn-save-canvas" class="btn-save" onclick="curateArtwork()">Save</button>
 
             </div>
 
+            <p class="mobile-scroll-hint" id="mobile-scroll-hint">scroll for parameters</p>
+
     </main>
+
+    <div id="platen-toast" class="platen-toast" role="status" aria-live="polite">Saved</div>
 
     <div id="mobile-generate-bar" class="mobile-generate-bar">
 
-        <button type="button" id="btn-generate-mobile" class="btn-generate" onclick="randomize()" aria-label="Generate a new piece">Generate</button>
+        <button type="button" id="btn-generate-mobile" class="btn-generate" onclick="randomize()" aria-label="Generate a new piece">Generate<span class="btn-generate-sub">randomize</span></button>
 
-        <button type="button" id="btn-png-mobile" class="btn-png-secondary" onclick="savePNG()">PNG</button>
+        <button type="button" id="btn-save-mobile" class="btn-save" onclick="curateArtwork()">Save</button>
 
     </div>
 
@@ -5060,7 +5187,7 @@ rawWt.push(baseWt + jitter);
 
         function syncAdvancedFold() {
             var desktop = window.matchMedia && window.matchMedia('(min-width: 901px)').matches;
-            ['advanced-fold', 'about-fold'].forEach(function(id) {
+            ['advanced-fold', 'about-fold', 'params-fold'].forEach(function(id) {
                 var fold = document.getElementById(id);
                 if (fold) fold.open = desktop;
             });
@@ -5962,6 +6089,7 @@ rawWt.push(baseWt + jitter);
 
             'btn-generate', 'btn-generate-mobile', 'btn-generate-canvas', 'btn-randomize', 'btn-regen',
             'btn-png-dock', 'btn-png-mobile', 'btn-png-canvas',
+            'btn-curate', 'btn-save-canvas', 'btn-save-mobile',
 
             'btn-panel', 'btn-banner', 'btn-banner-sq', 'btn-square',
 
@@ -5979,7 +6107,9 @@ rawWt.push(baseWt + jitter);
             ['btn-generate', 'btn-generate-mobile', 'btn-generate-canvas'].forEach(function(id) {
                 var el = document.getElementById(id);
                 if (!el) return;
-                el.textContent = busy ? 'Generating…' : 'Generate';
+                el.innerHTML = busy
+                    ? 'Generating…'
+                    : 'Generate<span class="btn-generate-sub">randomize</span>';
             });
         }
 
@@ -7190,8 +7320,8 @@ rawWt.push(baseWt + jitter);
         // Chrome Aw, Snap! / error 9 on Randomize was SIGKILL (OOM) from isometric
         // columns: each glyph became dozens of full <path> copies, then
         // XMLSerializer + Image decode of that tree killed the renderer.
-        var MAX_LIVE_SVG_NODES = 8000;
-        var MAX_RASTERIZE_NODES = 2500;
+        var MAX_LIVE_SVG_NODES = 5000;
+        var MAX_RASTERIZE_NODES = 800;
         var MAX_ISO_STEPS_PER_GLYPH = 16;
         var MAX_STACK_LAYERS = 6;
 
@@ -8154,7 +8284,7 @@ rawWt.push(baseWt + jitter);
                             console.warn('[Platen] SVG serialize skipped:', serErr);
                         }
 
-                        if (svgString && svgString.length <= 12000000) {
+                        if (svgString && svgString.length <= 2000000) {
 
                         var svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
 
@@ -14854,7 +14984,7 @@ rawWt.push(baseWt + jitter);
 
             if ((curationDeadline - now) <= 0) {
 
-                alert("Curation window has closed. Artworks cannot be curated or locked further.");
+                alert("Curation window has closed. Pieces cannot be saved or locked further.");
 
                 return;
 
@@ -14886,7 +15016,7 @@ rawWt.push(baseWt + jitter);
 
             if (alreadyCurated) {
 
-                toggleInfoModal("Already Curated", "this artwork configuration has already been curated into your gallery.");
+                toggleInfoModal("Already saved", "this piece is already in your gallery.");
 
                 return;
 
@@ -14895,13 +15025,16 @@ rawWt.push(baseWt + jitter);
 
 
             if (typeof _renderBusy !== 'undefined' && _renderBusy) {
-                alert("Artwork is currently rendering. Please wait until rendering completes before curating.");
+                alert("Artwork is currently rendering. Please wait until rendering completes before saving.");
                 return;
             }
 
             var panels = activePanels();
             var svgs = [];
             var isAnyBlank = false;
+            var MAX_SAVE_MARKS = 800;
+            var MAX_SAVE_NODES = 1200;
+            var MAX_SAVE_CHARS = 1800000;
 
             for (var i = 0; i < panels.length; i++) {
                 var pid = panels[i];
@@ -14910,12 +15043,28 @@ rawWt.push(baseWt + jitter);
                     isAnyBlank = true;
                     break;
                 }
-                var paths = el.querySelectorAll('.platen-artwork path, .platen-artwork text, path, text');
-                if (paths.length === 0) {
+                var marks = el.querySelectorAll('.platen-artwork use, .platen-artwork path, .platen-artwork text, use, path, text');
+                if (marks.length === 0) {
                     isAnyBlank = true;
                     break;
                 }
-                svgs.push(el.outerHTML.replace(/\bmotus-active\b/g, ''));
+                var snap = '';
+                var nodeCount = el.getElementsByTagName('*').length;
+                if (marks.length <= MAX_SAVE_MARKS && nodeCount <= MAX_SAVE_NODES) {
+                    try {
+                        snap = el.outerHTML.replace(/\bmotus-active\b/g, '');
+                    } catch (snapErr) {
+                        console.warn('[Platen] Save snapshot failed:', snapErr);
+                        snap = '';
+                    }
+                    if (snap.length > MAX_SAVE_CHARS) {
+                        console.warn('[Platen] Save snapshot trimmed to protect the tab');
+                        snap = '';
+                    }
+                } else {
+                    console.warn('[Platen] Save snapshot skipped (marks=' + marks.length + ', nodes=' + nodeCount + ')');
+                }
+                svgs.push(snap);
             }
 
             if (isAnyBlank || svgs.length !== panels.length) {
@@ -14923,9 +15072,10 @@ rawWt.push(baseWt + jitter);
                 return;
             }
 
-            var btn = document.getElementById('btn-curate');
-            var oldText = btn.innerHTML;
-            btn.innerHTML = "Curating...";
+            var saveBtns = ['btn-curate', 'btn-save-canvas', 'btn-save-mobile'].map(function(id) {
+                return document.getElementById(id);
+            }).filter(Boolean);
+            saveBtns.forEach(function(b) { b.textContent = 'Saving…'; });
 
 
 
@@ -14986,16 +15136,57 @@ rawWt.push(baseWt + jitter);
             updateLockStatus();
 
             renderGalleryGrid();
+            showPlatenToast('Saved');
+            highlightNewestGalleryCard();
 
-            // Reset button text to give visual feedback and restore it
             setTimeout(function() {
-                btn.innerHTML = "✓ Curated";
+                saveBtns.forEach(function(b) { b.textContent = 'Saved'; });
                 setTimeout(function() {
-                    btn.innerHTML = oldText;
-                }, 1500);
-            }, 300);
+                    saveBtns.forEach(function(b) { b.textContent = 'Save'; });
+                }, 1600);
+            }, 200);
 
         }
+
+        var _platenToastTimer = null;
+        function showPlatenToast(msg) {
+            var toast = document.getElementById('platen-toast');
+            if (!toast) return;
+            toast.textContent = msg || 'Saved';
+            toast.classList.add('is-on');
+            if (_platenToastTimer) clearTimeout(_platenToastTimer);
+            _platenToastTimer = setTimeout(function() {
+                toast.classList.remove('is-on');
+            }, 2400);
+        }
+
+        function highlightNewestGalleryCard() {
+            var grid = document.getElementById('gallery-grid');
+            if (!grid) return;
+            var items = grid.querySelectorAll('.gallery-item');
+            if (!items.length) return;
+            var newest = items[0];
+            newest.classList.add('gallery-item-just-saved');
+            try { newest.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+            setTimeout(function() {
+                newest.classList.remove('gallery-item-just-saved');
+            }, 4000);
+        }
+
+        (function initMobileScrollHint() {
+            var hint = document.getElementById('mobile-scroll-hint');
+            var grid = document.querySelector('.index-grid');
+            if (!hint || !grid) return;
+            var hide = function() {
+                hint.style.display = 'none';
+                grid.removeEventListener('scroll', hide);
+            };
+            grid.addEventListener('scroll', hide, { passive: true });
+            ['btn-generate', 'btn-generate-canvas', 'btn-generate-mobile', 'btn-save-canvas', 'btn-save-mobile', 'btn-curate'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('click', hide);
+            });
+        })();
 
 
 
@@ -15021,7 +15212,7 @@ rawWt.push(baseWt + jitter);
 
             if (curatedGallery.length === 0) {
 
-                grid.innerHTML = '<div style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; height: calc(100dvh - 160px); font-family: inherit; font-size: 11px; letter-spacing: 0.12em; color: var(--dim); text-transform: lowercase;">no curated artworks yet. click curate to save.</div>';
+                grid.innerHTML = '<div style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; height: calc(100dvh - 160px); font-family: inherit; font-size: 11px; letter-spacing: 0.12em; color: var(--dim); text-transform: lowercase;">no saved pieces yet. tap Save to keep one.</div>';
 
                 return;
 
@@ -15088,6 +15279,18 @@ rawWt.push(baseWt + jitter);
                 preview.innerHTML = (art.svgs[0] || '').replace(/\bmotus-active\b/g, '');
 
                 var svgEl = preview.querySelector('svg');
+
+                if (!svgEl) {
+                    preview.style.minHeight = '80px';
+                    preview.style.display = 'flex';
+                    preview.style.alignItems = 'center';
+                    preview.style.justifyContent = 'center';
+                    preview.style.fontSize = '10px';
+                    preview.style.letterSpacing = '0.12em';
+                    preview.style.textTransform = 'uppercase';
+                    preview.style.opacity = '0.55';
+                    preview.textContent = 'seed ' + art.seed;
+                }
 
                 if (svgEl) {
 
