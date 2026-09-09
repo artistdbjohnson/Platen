@@ -11571,8 +11571,8 @@ rawWt.push(baseWt + jitter);
             function _isoField(e, iso_t, stag) {
                 var slicePhase = (e.sliceIdx || 0) * 0.09;
                 var ph = (e.col || 0) * stag + (e.row || 0) * 0.06;
-                var base = 0.5 + 0.5 * Math.sin((e.row || 0) * 0.28 - iso_t * 0.62 + ph + slicePhase);
-                var env = 0.5 + 0.5 * Math.sin((e.col || 0) * 0.31 + iso_t * 0.14);
+                var base = 0.5 + 0.5 * Math.sin((e.row || 0) * 0.28 - iso_t * 0.78 + ph + slicePhase);
+                var env = 0.5 + 0.5 * Math.sin((e.col || 0) * 0.31 + iso_t * 0.18);
                 var raw = (0.38 + 0.62 * base) * (0.58 + 0.42 * env);
                 raw += e.isoHashOffset || 0;
                 if (raw < 0) raw = 0;
@@ -12692,7 +12692,7 @@ rawWt.push(baseWt + jitter);
 
                 var stag = 0.68;
 
-                var iso_t = t * 0.33;
+                var iso_t = t * 0.42;
 
 
 
@@ -12884,11 +12884,11 @@ rawWt.push(baseWt + jitter);
 
 
 
-                        // ~one strike-step of platen travel, centered (no net drift)
+                        // ~1.2 strike-steps of platen travel, centered (no net drift)
 
-                        var elev = (f - 0.5) * 24;
+                        var elev = (f - 0.5) * 34;
 
-                        var drawTx = e.tx + (e.isoRegX || 0) + Math.sin(iso_t * 0.17 + (e.col || 0) * 0.4) * 0.18;
+                        var drawTx = e.tx + (e.isoRegX || 0) + Math.sin(iso_t * 0.21 + (e.col || 0) * 0.4) * 0.28;
 
                         var drawTy = e.ty - elev;
 

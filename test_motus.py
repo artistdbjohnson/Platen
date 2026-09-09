@@ -93,7 +93,7 @@ iso = html.split("} else if (_animMode === 'iso_col') {", 1)[1].split(
     "} else if (false && _animMode === 'plotter')", 1
 )[0]
 ok &= must("* 72" not in iso, "ELEVATE no longer uses the harsh ±36px linear span")
-ok &= must("(f - 0.5) * 24" in iso, "ELEVATE elevation is one strike-step")
+ok &= must("(f - 0.5) * 34" in iso, "ELEVATE elevation is about one strike-step")
 ok &= must("_isoField(e, iso_t, stag)" in iso, "ELEVATE uses the eased mechanical field")
 ok &= must("_isoGlyphKey(f, e.pathKey, e, t, glyphSet)" in iso, "ELEVATE latches glyphs through the 5-band set")
 ok &= must("(f - 0.5) * 0.05" in iso, "ELEVATE scale is a perspective whisper")
