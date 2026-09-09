@@ -58,6 +58,13 @@ ok &= must("about-fold" in html and "Read the manifesto" in html, "manifesto is 
 ok &= must('id="params-fold"' in html and "params-fold-summary" in html, "Parameters collapse on first-visit mobile")
 ok &= must('id="platen-toast"' in html and "function showPlatenToast" in html, "Save confirmation toast exists")
 ok &= must("function highlightNewestGalleryCard" in html, "new Gallery card is highlighted after Save")
+ok &= must("function revealNewestSavedCuration" in html, "Save jumps the viewport to Gallery")
+ok &= must("revealNewestSavedCuration('Saved')" in html, "successful Save calls gallery reveal")
+reveal_fn = html.split("function revealNewestSavedCuration", 1)[1].split("function ", 1)[0]
+ok &= must("openGalleryModal()" in reveal_fn and "highlightNewestGalleryCard()" in reveal_fn, "reveal opens Gallery then reuses card highlight")
+ok &= must("function openGalleryModal" in html and "modal.style.display = 'block'" in html, "Gallery modal can be opened without toggling closed")
+ok &= must("data-newest-save" in html, "newest curated card is marked for scroll/highlight")
+ok &= must("modal.scrollTop = 0" in html and "scrollIntoView" in html, "Save scrolls Gallery to the newest card")
 ok &= must('id="mobile-scroll-hint"' in html and "scroll for parameters" in html, "first-visit mobile has a scroll hint")
 ok &= must("MAX_SAVE_MARKS" in html and "MAX_SAVE_NODES" in html, "Save snapshot is capped so Curate cannot OOM")
 
