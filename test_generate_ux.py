@@ -40,8 +40,8 @@ ok &= must("TRAITS.symmetry = SYMMETRY_OPTS" in html, "randomize still picks new
 ok &= must("RENDER_SEED = Math.floor(Math.random()" in html, "seed roll still happens")
 
 ok &= must("class=\"btn-generate\"" in html or "class='btn-generate'" in html or "class=\"btn-generate\"" in html, "primary generate class present")
-ok &= must("mobile-generate-bar" in html, "sticky mobile generate bar markup present")
-ok &= must("position: fixed" in html and "mobile-generate-bar" in html, "sticky bar CSS present")
+ok &= must("canvas-generate-strip" in html and 'id="btn-generate-canvas"' in html, "canvas-adjacent Generate strip exists")
+ok &= must("position: sticky" in html and "canvas-generate-strip" in html, "phone Generate is sticky-top next to the canvas")
 ok &= must("min-height: 52px" in html, "mobile generate touch target is at least 52px")
 ok &= must("min-height: 44px" in html, "secondary / form controls have 44px targets")
 ok &= must("advanced-fold" in html and "More controls" in html, "advanced controls are secondary on mobile")

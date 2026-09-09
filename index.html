@@ -215,7 +215,7 @@
 
                 overflow-y: auto;
 
-                padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+                padding-bottom: 16px;
 
             }
 
@@ -223,7 +223,11 @@
 
                 order: 1;
 
-                min-height: 70vh;
+                height: auto;
+
+                max-height: 52vh;
+
+                min-height: 0;
 
                 border-bottom: 1px solid var(--border);
 
@@ -231,9 +235,17 @@
 
             }
 
-            .col-controls {
+            .canvas-generate-strip {
 
                 order: 2;
+
+            }
+
+            .col-controls {
+
+                order: 3;
+
+                height: auto;
 
                 border-right: none !important;
 
@@ -245,7 +257,9 @@
 
             .col-about {
 
-                order: 3;
+                order: 4;
+
+                height: auto;
 
                 border-right: none !important;
 
@@ -253,7 +267,7 @@
 
             }
 
-            /* In-flow Generate is replaced by the sticky bar on small screens */
+            /* Desktop Generate dock CTA is replaced by the canvas-adjacent strip */
             .generate-dock .btn-generate,
             .generate-dock .generate-hint {
                 display: none;
@@ -734,7 +748,10 @@
 
         .label-short { display: none; }
 
-        .about-fold-summary,
+        .about-fold-summary {
+            display: none;
+        }
+
         .canvas-generate-strip {
             display: none;
         }
@@ -850,20 +867,22 @@
             }
 
             .mobile-generate-bar {
-                display: flex;
-                position: fixed;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                z-index: 800;
-                gap: 8px;
-                align-items: stretch;
-                padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
-                background: var(--bg);
-                border-top: 1px solid var(--border);
+                display: none;
             }
 
-            .mobile-generate-bar .btn-generate {
+            .canvas-generate-strip {
+                display: flex;
+                position: sticky;
+                top: 0;
+                z-index: 850;
+                gap: 8px;
+                align-items: stretch;
+                padding: 10px 16px;
+                background: var(--bg);
+                border-bottom: 1px solid var(--border);
+            }
+
+            .canvas-generate-strip .btn-generate {
                 flex: 1;
                 min-height: 52px;
                 font-size: 13px;
@@ -895,8 +914,8 @@
             .about-fold-summary::after { content: '+'; font-size: 14px; }
             .about-fold[open] > .about-fold-summary::after { content: '–'; }
 
-            .col-canvas {
-                min-height: 58vh;
+            #canvas-wrap {
+                max-height: 52vh;
             }
         }
 
@@ -3847,9 +3866,11 @@ rawWt.push(baseWt + jitter);
 
             </div>
 
+            <details class="advanced-fold" id="advanced-fold">
 
+                <summary class="advanced-fold-summary">More controls</summary>
 
-                <!-- Palette Lock Status Dashboard -->
+                <div class="advanced-fold-body">
 
                 <div id="palette-lock-status" style="margin-top: 6px; margin-bottom: 12px; padding: 8px 10px; border-radius: 6px; border: 1px dashed var(--border); background: rgba(222, 228, 215, 0.01); font-size: 10px; display: flex; flex-direction: column; gap: 4px; text-transform: lowercase; transition: all 0.2s;">
 
@@ -3868,22 +3889,6 @@ rawWt.push(baseWt + jitter);
                     </div>
 
                 </div>
-
-            </div>
-
-
-
-
-
-
-
-
-
-            <details class="advanced-fold" id="advanced-fold">
-
-                <summary class="advanced-fold-summary">More controls</summary>
-
-                <div class="advanced-fold-body">
 
             <!-- Curation Deadline & Status Banner -->
 
@@ -4210,6 +4215,8 @@ rawWt.push(baseWt + jitter);
 
             </div>
 
+        </section>
+
             <div id="canvas-generate-strip" class="canvas-generate-strip">
 
                 <button type="button" id="btn-generate-canvas" class="btn-generate" onclick="randomize()" aria-label="Generate a new piece">Generate</button>
@@ -4217,8 +4224,6 @@ rawWt.push(baseWt + jitter);
                 <button type="button" id="btn-png-canvas" class="btn-png-secondary" onclick="savePNG()">PNG</button>
 
             </div>
-
-        </section>
 
     </main>
 
