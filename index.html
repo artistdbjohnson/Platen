@@ -808,6 +808,12 @@
         .gallery-item-just-saved {
             outline: 2px solid var(--text);
             outline-offset: 4px;
+            animation: gallery-just-saved-pulse 1.4s ease 2;
+        }
+
+        @keyframes gallery-just-saved-pulse {
+            0%, 100% { outline-color: var(--text); }
+            50% { outline-color: transparent; }
         }
 
         .params-fold-summary {
@@ -1032,6 +1038,17 @@
                 max-height: none;
                 min-height: 0;
                 padding: 8px 12px 4px;
+            }
+
+            #gallery-modal .gallery-topbar {
+                padding: 16px 16px !important;
+                margin-bottom: 20px !important;
+            }
+
+            #gallery-grid {
+                padding: 0 16px !important;
+                gap: 16px !important;
+                grid-template-columns: 1fr !important;
             }
 
             .col-canvas .platen-panel,
@@ -15139,9 +15156,7 @@ rawWt.push(baseWt + jitter);
 
             updateLockStatus();
 
-            renderGalleryGrid();
-            showPlatenToast('Saved');
-            highlightNewestGalleryCard();
+            revealNewestSavedCuration('Saved');
 
             setTimeout(function() {
                 setSaveButtonsState('saved');
@@ -15164,14 +15179,56 @@ rawWt.push(baseWt + jitter);
             }, 2400);
         }
 
+        function isGalleryModalOpen() {
+            var modal = document.getElementById('gallery-modal');
+            return !!(modal && modal.style.display === 'block');
+        }
+
+        function openGalleryModal() {
+            var modal = document.getElementById('gallery-modal');
+            if (!modal) return null;
+            modal.style.display = 'block';
+            return modal;
+        }
+
+        function afterGalleryPaint(fn) {
+            if (typeof requestAnimationFrame === 'function') {
+                requestAnimationFrame(function() {
+                    requestAnimationFrame(fn);
+                });
+            } else {
+                setTimeout(fn, 50);
+            }
+        }
+
+        function revealNewestSavedCuration(toastMsg) {
+            openGalleryModal();
+            renderGalleryGrid();
+            showPlatenToast(toastMsg || 'Saved');
+            afterGalleryPaint(function() {
+                highlightNewestGalleryCard();
+            });
+        }
+
         function highlightNewestGalleryCard() {
             var grid = document.getElementById('gallery-grid');
+            var modal = document.getElementById('gallery-modal');
             if (!grid) return;
-            var items = grid.querySelectorAll('.gallery-item');
-            if (!items.length) return;
-            var newest = items[0];
+            var newest = grid.querySelector('[data-newest-save="true"]') || grid.querySelector('.gallery-item');
+            if (!newest) return;
             newest.classList.add('gallery-item-just-saved');
-            try { newest.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+            if (modal) {
+                try { modal.scrollTop = 0; } catch (e0) {}
+            }
+            try {
+                newest.scrollIntoView({ block: 'nearest', behavior: 'smooth', inline: 'nearest' });
+            } catch (e) {
+                try { newest.scrollIntoView(true); } catch (e2) {}
+            }
+            try {
+                newest.setAttribute('tabindex', '-1');
+                newest.focus({ preventScroll: true });
+            } catch (e3) {}
             setTimeout(function() {
                 newest.classList.remove('gallery-item-just-saved');
             }, 4000);
@@ -15197,10 +15254,15 @@ rawWt.push(baseWt + jitter);
         function toggleGalleryModal() {
 
             var m = document.getElementById('gallery-modal');
+            if (!m) return;
 
-            m.style.display = m.style.display === 'none' ? 'block' : 'none';
+            if (isGalleryModalOpen()) {
+                m.style.display = 'none';
+                return;
+            }
 
-            if(m.style.display === 'block') renderGalleryGrid();
+            openGalleryModal();
+            renderGalleryGrid();
 
         }
 
@@ -15232,6 +15294,10 @@ rawWt.push(baseWt + jitter);
                 var canvasCls = 'canvas-' + (art.traits.canvas || 'black');
 
                 div.className = 'gallery-item ' + canvasCls;
+                if (index === curatedGallery.length - 1) {
+                    div.className += ' gallery-item-newest';
+                    div.setAttribute('data-newest-save', 'true');
+                }
 
                 var bgStyle = getCanvasBackgroundStyle(art);
 
