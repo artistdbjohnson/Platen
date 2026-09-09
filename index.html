@@ -223,15 +223,15 @@
 
                 order: 1;
 
-                height: auto;
+                height: 48vh;
 
-                max-height: 52vh;
+                min-height: 48vh;
 
-                min-height: 0;
+                max-height: 48vh;
 
                 border-bottom: 1px solid var(--border);
 
-                overflow: visible !important;
+                overflow: hidden !important;
 
             }
 
@@ -915,7 +915,14 @@
             .about-fold[open] > .about-fold-summary::after { content: '–'; }
 
             #canvas-wrap {
-                max-height: 52vh;
+                height: 100%;
+                max-height: none;
+                min-height: 0;
+                padding: 8px 12px 4px;
+            }
+
+            .col-canvas .platen-panel {
+                max-height: 100%;
             }
         }
 
