@@ -78,6 +78,13 @@ sampled = sample_iso(tall, 16)
 ok &= must(len(sampled) <= 16 and sampled[0] == 0 and sampled[-1] == 89, "iso sampler keeps first/last and stays at 16 steps")
 
 # The UX pass must not rewrite the engine switch.
+ok &= must('id="btn-out-plot"' in html and "savePlotterSVG()" in html, "Download Plotter SVG is wired in the Export grid")
+ok &= must("function applyArchivalSvgUnits" in html and "PLATEN_PX_PER_IN = 160" in html, "regular SVG export declares inches at 160px/in")
+ok &= must("function platenFileName" in html and "function rasterizePlatenSvg" in html, "named platen-* exports and PNG rasterize helpers exist")
+ok &= must("Plot mode never includes paper" in html or "always excludes paper" in html, "plotter export keeps BG texture off")
+ok &= must("function savePlotterSVG()" in html and "inkscape:groupmode" in html, "plotter Inkscape layers still generated")
+
+# The UX pass must not rewrite the engine switch.
 ok &= must(len(engines) > 50000, "platen-engines.js still a full engine file")
 
 if not ok:

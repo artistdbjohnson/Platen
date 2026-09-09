@@ -921,8 +921,12 @@
                 padding: 8px 12px 4px;
             }
 
-            .col-canvas .platen-panel {
+            .col-canvas .platen-panel,
+            #canvas-wrap.grid_us_letter .platen-panel {
+                height: 100% !important;
+                width: auto !important;
                 max-height: 100%;
+                max-width: 100%;
             }
         }
 
@@ -4008,7 +4012,9 @@ rawWt.push(baseWt + jitter);
 
                     <button id="btn-out-jpg" onclick="saveJPG()" data-tooltip="download hires jpg">Download JPG</button>
 
-                    <button id="btn-out-svg" onclick="saveSVG('full')" data-tooltip="download vector svg">Download SVG</button>
+                    <button id="btn-out-svg" onclick="saveSVG('full')" data-tooltip="download vector svg (declared inches)">Download SVG</button>
+
+                    <button id="btn-out-plot" onclick="savePlotterSVG()" data-tooltip="inkscape layers, stroked pens, no paper texture">Download Plotter SVG</button>
 
                 </div>
 
@@ -4037,6 +4043,8 @@ rawWt.push(baseWt + jitter);
                     <input type="checkbox" id="inc-bg" checked onchange="renderAll()" style="cursor: pointer; accent-color: #000;">
 
                     <label for="inc-bg" style="font-size: 9px; cursor: pointer; text-transform: uppercase; opacity: 0.8; letter-spacing: 0.05em;">Include BG Texture</label>
+
+                    <span style="font-size: 8px; opacity: 0.4; letter-spacing: 0.06em; text-transform: lowercase;">plotter svg always excludes paper</span>
 
                 </div>
 
@@ -5961,7 +5969,7 @@ rawWt.push(baseWt + jitter);
 
             'btn-banner-us-letter', 'btn-grid-39-39', 'btn-banner-39-39',
 
-            'btn-out-svg', 'btn-out-png', 'btn-out-jpg'
+            'btn-out-svg', 'btn-out-plot', 'btn-out-png', 'btn-out-jpg'
 
         ];
 
@@ -8345,6 +8353,125 @@ rawWt.push(baseWt + jitter);
 
 
 
+        var PLATEN_PX_PER_IN = 160; // 10 CPI / 6 LPI letter: 16px per 0.1"
+
+        function getSvgPixelSize(svg) {
+            if (!svg) return { w: 800, h: 1200 };
+            var vb = svg.getAttribute('viewBox');
+            if (vb) {
+                var p = vb.trim().split(/[\s,]+/).map(Number);
+                if (p.length === 4 && p[2] > 0 && p[3] > 0) return { w: p[2], h: p[3] };
+            }
+            var w = parseFloat(svg.getAttribute('width'));
+            var h = parseFloat(svg.getAttribute('height'));
+            return { w: w > 0 ? w : 800, h: h > 0 ? h : 1200 };
+        }
+
+        function applyArchivalSvgUnits(svg) {
+            var dim = getSvgPixelSize(svg);
+            svg.setAttribute('viewBox', '0 0 ' + dim.w + ' ' + dim.h);
+            svg.setAttribute('width', (dim.w / PLATEN_PX_PER_IN).toFixed(4) + 'in');
+            svg.setAttribute('height', (dim.h / PLATEN_PX_PER_IN).toFixed(4) + 'in');
+            return dim;
+        }
+
+        function platenFileName(kind, ext, panelId) {
+            var rt = window.RESOLVED_TRAITS || TRAITS || {};
+            var bits = ['platen', String(RENDER_SEED || 'seed')];
+            if (panelId) bits.push('v' + panelId);
+            if (kind) bits.push(kind);
+            bits.push('sym_' + (rt.symmetry || 'x'));
+            bits.push('space_' + (rt.space || 'x'));
+            bits.push('engine_' + (rt.engine || 'x'));
+            var name = bits.join('-').replace(/[^A-Za-z0-9._-]+/g, '_');
+            if (name.length > 160) name = ['platen', String(RENDER_SEED || 'seed'), kind || 'export'].filter(Boolean).join('-');
+            ext = ext || 'svg';
+            if (ext.charAt(0) !== '.') ext = '.' + ext;
+            return name + ext;
+        }
+
+        function parseSvgTransformOps(t) {
+            var ops = [];
+            if (!t) return ops;
+            var re = /(translate|scale|rotate)\(([^)]*)\)/g;
+            var m;
+            while ((m = re.exec(t))) {
+                ops.push({ type: m[1], args: m[2].split(/[\s,]+/).filter(Boolean).map(Number) });
+            }
+            return ops;
+        }
+
+        function applyCanvasTransformOps(ctx, ops) {
+            for (var i = 0; i < ops.length; i++) {
+                var op = ops[i];
+                var a = op.args;
+                if (op.type === 'translate') ctx.translate(a[0] || 0, a[1] || 0);
+                else if (op.type === 'scale') ctx.scale(a[0] || 1, a.length > 1 ? a[1] : (a[0] || 1));
+                else if (op.type === 'rotate') {
+                    var rad = (a[0] || 0) * Math.PI / 180;
+                    var cx = a[1] || 0, cy = a[2] || 0;
+                    if (cx || cy) { ctx.translate(cx, cy); ctx.rotate(rad); ctx.translate(-cx, -cy); }
+                    else ctx.rotate(rad);
+                }
+            }
+        }
+
+        function resolveUsePath(svg, useEl) {
+            var href = useEl.getAttribute('href') || useEl.getAttributeNS('http://www.w3.org/1999/xlink', 'href') || '';
+            if (!href || href.charAt(0) !== '#') return null;
+            var def = svg.getElementById ? svg.getElementById(href.slice(1)) : svg.querySelector(href);
+            return def && def.getAttribute('d');
+        }
+
+        function rasterizePlatenSvg(svg, outW, outH) {
+            var dim = getSvgPixelSize(svg);
+            var canvas = document.createElement('canvas');
+            canvas.width = outW;
+            canvas.height = outH;
+            var ctx = canvas.getContext('2d');
+            if (!ctx) return canvas;
+            ctx.setTransform(outW / dim.w, 0, 0, outH / dim.h, 0, 0);
+            var nodes = svg.querySelectorAll('use, path, text');
+            for (var i = 0; i < nodes.length; i++) {
+                var el = nodes[i];
+                if (el.closest && el.closest('defs')) continue;
+                var tag = el.tagName.toLowerCase();
+                try {
+                    if (tag === 'text') {
+                        var tx = parseFloat(el.getAttribute('x')) || 0;
+                        var ty = parseFloat(el.getAttribute('y')) || 0;
+                        var fs = parseFloat(el.getAttribute('font-size')) || 12;
+                        ctx.save();
+                        ctx.fillStyle = el.getAttribute('fill') || '#111';
+                        ctx.font = (el.getAttribute('font-weight') || 'normal') + ' ' + fs + 'px ' + (el.getAttribute('font-family') || 'Courier, monospace');
+                        ctx.textAlign = (el.getAttribute('text-anchor') === 'middle') ? 'center' : 'left';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(el.textContent || '', tx, ty);
+                        ctx.restore();
+                        continue;
+                    }
+                    var d = tag === 'use' ? resolveUsePath(svg, el) : el.getAttribute('d');
+                    if (!d) continue;
+                    ctx.save();
+                    applyCanvasTransformOps(ctx, parseSvgTransformOps(el.getAttribute('transform')));
+                    var path = new Path2D(d);
+                    var fill = el.getAttribute('fill');
+                    var stroke = el.getAttribute('stroke');
+                    if (fill && fill !== 'none') {
+                        ctx.fillStyle = fill;
+                        ctx.fill(path, el.getAttribute('fill-rule') === 'evenodd' ? 'evenodd' : 'nonzero');
+                    }
+                    if (stroke && stroke !== 'none') {
+                        ctx.strokeStyle = stroke;
+                        ctx.lineWidth = parseFloat(el.getAttribute('stroke-width')) || 1;
+                        ctx.stroke(path);
+                    }
+                    ctx.restore();
+                } catch (drawErr) { /* keep export alive */ }
+            }
+            return canvas;
+        }
+
         function svgToString(svgEl, overrideCanvasClass) {
 
             if (!svgEl.querySelector('style.export-style')) {
@@ -8391,11 +8518,17 @@ rawWt.push(baseWt + jitter);
 
         function downloadBlob(blob, filename) {
 
+            filename = String(filename || 'platen-export.bin').replace(/[^A-Za-z0-9._-]+/g, '_');
+            if (filename.indexOf('platen-') !== 0) filename = 'platen-' + filename;
+
             var url = URL.createObjectURL(blob);
 
             var a = document.createElement('a');
 
-            a.href = url; a.download = filename;
+            a.href = url;
+            a.setAttribute('download', filename);
+            a.rel = 'noopener';
+            a.style.display = 'none';
 
             document.body.appendChild(a); a.click();
 
@@ -8679,9 +8812,7 @@ rawWt.push(baseWt + jitter);
 
                     
 
-                    var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
-
-                    var baseName = 'platen-' + RENDER_SEED + '-v' + id + tStr;
+                    var baseName = platenFileName(null, '', id).replace(/\.$/, '');
 
 
 
@@ -8747,11 +8878,13 @@ rawWt.push(baseWt + jitter);
 
                     } else {
 
-                        var str = svgToString(svg);
+                        var archival = svg.cloneNode(true);
+                        applyArchivalSvgUnits(archival);
+                        var str = svgToString(archival);
 
                         var blob = new Blob([str], { type: 'image/svg+xml' });
 
-                        downloadBlob(blob, baseName + '.svg');
+                        downloadBlob(blob, platenFileName(null, 'svg', id));
 
                     }
 
@@ -8779,175 +8912,82 @@ rawWt.push(baseWt + jitter);
 
                 if (!srcSvg) return;
 
-
-
-                // Clone to modify structure
-
-                var svg = srcSvg.cloneNode(true);
-
-
-
-                // Add Inkscape namespace
-
-                svg.setAttribute('xmlns:inkscape', 'http://www.inkscape.org/namespaces/inkscape');
-
-
-
-                // Clear existing content container to rebuild with layers
-
-                // The structure is: svg > rect(bg) > g > path...
-
-                // careful not to kill <defs> if any.
-
-                // We know structure: bg rect, g(flowers), t(text).
-
-
-
-                var gEl = svg.querySelector('g'); // flowers
-
-                var tEl = svg.querySelector('g + g') || svg.querySelector('tspan')?.parentNode; // text is usually in tEl appended after gEl
-
-                // My code appends gEl then tEl.
-
-                // Actually tEl is a separate group? No, tEl is a group.
-
-                // Let's find them by content or just generic iter.
-
-
-
-                // Find all paths and text elements
-
-                var pathsAndText = Array.from(srcSvg.querySelectorAll('path, text'));
-
                 var groups = {};
+                var headerNodes = [];
+                var plotNodes = srcSvg.querySelectorAll('path, use, text');
 
-                
-
-                var headerTextEl = null;
-
-
-
-                pathsAndText.forEach(function (el) {
-
-                    // Identify if this is the header text block (usually has tspan children or specific font-size)
-
-                    if (el.tagName.toLowerCase() === 'text' && el.querySelector('tspan')) {
-
-                        headerTextEl = el;
-
-                        return; // Handle header separately
-
+                plotNodes.forEach(function (el) {
+                    if (el.closest && el.closest('defs')) return;
+                    if (el.closest && el.closest('.typewriter-header')) {
+                        headerNodes.push(el);
+                        return;
                     }
-
-
-
-                    var fill = el.getAttribute('fill') || '#000000';
-
-                    if (!groups[fill]) groups[fill] = [];
-
-                    groups[fill].push(el);
-
+                    var color = el.getAttribute('fill') || el.getAttribute('stroke') || '#000000';
+                    if (color === 'none' || color === 'transparent') color = el.getAttribute('stroke') || '#000000';
+                    if (!groups[color]) groups[color] = [];
+                    groups[color].push(el);
                 });
 
-
-
-                // Clear the main group(s)
-
-                var newSvg = srcSvg.cloneNode(false); // shallow clone (attributes only)
-
+                var newSvg = srcSvg.cloneNode(false);
+                newSvg.setAttribute('xmlns', svgNS);
                 newSvg.setAttribute('xmlns:inkscape', 'http://www.inkscape.org/namespaces/inkscape');
+                applyArchivalSvgUnits(newSvg);
 
+                // Plot mode never includes paper / BG texture.
 
-
-                // 1. Header Text Layer (Reference)
-
-                if (headerTextEl) {
-
+                if (headerNodes.length) {
                     var layerT = document.createElementNS(svgNS, 'g');
-
                     layerT.setAttribute('inkscape:groupmode', 'layer');
-
                     layerT.setAttribute('inkscape:label', 'Header Text');
-
-                    layerT.appendChild(headerTextEl.cloneNode(true));
-
+                    headerNodes.forEach(function (el) { layerT.appendChild(el.cloneNode(true)); });
                     newSvg.appendChild(layerT);
-
                 }
 
-
-
-                // 2. Color Layers
-
                 Object.keys(groups).sort().forEach(function (color) {
-
                     var g = document.createElementNS(svgNS, 'g');
-
                     g.setAttribute('inkscape:groupmode', 'layer');
-
                     g.setAttribute('inkscape:label', color);
-
                     g.setAttribute('id', 'layer-' + color.replace('#', ''));
-
-
-
                     groups[color].forEach(function (el) {
-
-                        var p = el.cloneNode(true);
-
-                        // Plotter optimization: Fill=none, Stroke=color
-
-                        p.setAttribute('fill', 'none');
-
-                        p.setAttribute('stroke', color);
-
-                        p.setAttribute('stroke-width', '1'); // 1px stroke (for visibility)
-
+                        var tag = el.tagName.toLowerCase();
+                        var p;
+                        if (tag === 'use') {
+                            p = document.createElementNS(svgNS, 'path');
+                            var d = resolveUsePath(srcSvg, el);
+                            if (!d) return;
+                            p.setAttribute('d', d);
+                            if (el.getAttribute('transform')) p.setAttribute('transform', el.getAttribute('transform'));
+                        } else {
+                            p = el.cloneNode(true);
+                        }
+                        if (p.tagName && p.tagName.toLowerCase() === 'text') {
+                            p.setAttribute('fill', color);
+                            p.setAttribute('stroke', 'none');
+                        } else {
+                            p.setAttribute('fill', 'none');
+                            p.setAttribute('stroke', color);
+                            p.setAttribute('stroke-width', '1');
+                        }
                         g.appendChild(p);
-
                     });
-
                     newSvg.appendChild(g);
-
                 });
-
-
 
                 var str = svgToString(newSvg);
-
                 var blob = new Blob([str], { type: 'image/svg+xml' });
+                downloadBlob(blob, platenFileName('plot', 'svg', pid));
 
-                var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
-
-                var name = 'platen-' + RENDER_SEED + '-v' + pid + tStr + '-plot.svg';
-
-                downloadBlob(blob, name);
-
-
-
-                var penText = "Platen Axidraw Pen Mapping\nSeed: " + RENDER_SEED + "\nPanel: " + pid + "\n\n";
-
+                var penText = "Platen Axidraw Pen Mapping\nSeed: " + RENDER_SEED + "\nPanel: " + pid + "\nBG texture: OFF\n\n";
                 Object.keys(groups).sort().forEach(function (color) {
-
-                    var hex = color.toUpperCase();
-
-                    var penName = PEN_MAP[hex] || "Unknown Pen";
-
+                    var hex = String(color).toUpperCase();
+                    var penName = (typeof PEN_MAP !== 'undefined' && PEN_MAP[hex]) ? PEN_MAP[hex] : "Unknown Pen";
                     penText += "Layer: " + color + " -> " + penName + "\n";
-
                 });
-
-                var txtBlob = new Blob([penText], { type: 'text/plain' });
-
-                var tStr = "-sym_" + TRAITS.symmetry + "-space_" + TRAITS.space + "-motif_" + TRAITS.motif + "-chrome_" + TRAITS.chromes + "-engine_" + TRAITS.engine;
-
-                var txtName = 'platen-' + RENDER_SEED + '-v' + pid + tStr + '-pens.txt';
-
-                downloadBlob(txtBlob, txtName);
+                downloadBlob(new Blob([penText], { type: 'text/plain' }), platenFileName('pens', 'txt', pid));
 
             });
 
-            console.log('[Platen Quine] Saved Plotter SVG(s) and Pen Text map');
+            console.log('[Platen] Saved Plotter SVG(s) and Pen Text map');
 
         }
 
@@ -10399,9 +10439,9 @@ rawWt.push(baseWt + jitter);
 
                     if (!svg) return;
 
-                    var svgW = parseInt(svg.getAttribute('width'));
-
-                    var svgH = parseInt(svg.getAttribute('height'));
+                    var pxSize = getSvgPixelSize(svg);
+                    var svgW = pxSize.w;
+                    var svgH = pxSize.h;
 
 
 
@@ -10449,41 +10489,18 @@ rawWt.push(baseWt + jitter);
 
                     var scaleX = outW / svgW, scaleY = outH / svgH;
 
-
-
-                    // Clone the SVG and shift elements down by 16px to prevent top text clipping
-
-                    var svgClone = svg.cloneNode(true);
-
-                    var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-
-                    g.setAttribute("transform", "translate(0, 16)");
-
-                    while (svgClone.firstChild) {
-
-                        g.appendChild(svgClone.firstChild);
-
+                    var svgImg;
+                    try {
+                        svgImg = rasterizePlatenSvg(svg, outW, outH);
+                    } catch (rasterErr) {
+                        console.warn('[Platen] PNG rasterize fell back:', rasterErr);
+                        svgImg = null;
                     }
 
-                    svgClone.appendChild(g);
-
-
-
-                    // Serialize SVG with transparent background
-
-                    var str = svgToString(svgClone);
-
-                    var blob = new Blob([str], { type: 'image/svg+xml' });
-
-                    var svgUrl = URL.createObjectURL(blob);
-
-
-
-                    var svgImg = new Image();
-
-                    svgImg.onload = function () {
-
-                        // Load texture from data URL (avoids tainted canvas)
+                    if (!svgImg) {
+                        console.warn('[Platen] PNG export skipped to protect the tab.');
+                        return;
+                    }
 
                         function doComposite(texImg) {
 
@@ -10570,17 +10587,13 @@ rawWt.push(baseWt + jitter);
 
 
                             canvas.toBlob(function (imgBlob) {
-
-                                var rt = RESOLVED_TRAITS || TRAITS;
-
-                                var tStr = "-sym_" + rt.symmetry + "-space_" + rt.space + "-motif_" + rt.motif + "-chrome_" + rt.chromes + "-engine_" + rt.engine;
-
-                                var name = 'platen-' + RENDER_SEED + '-v' + id + tStr + '.' + format;
-
+                                if (!imgBlob) {
+                                    console.warn('[Platen] PNG blob failed');
+                                    return;
+                                }
+                                var name = platenFileName(null, format, id);
                                 downloadBlob(imgBlob, name);
-
                                 console.log('[Platen] Saved ' + format.toUpperCase() + ': ' + name + ' (' + outW + 'x' + outH + ')');
-
                             }, mimeType, quality);
 
                         }
@@ -10597,11 +10610,7 @@ rawWt.push(baseWt + jitter);
 
                         }
 
-                    };
-
-                    svgImg.src = svgUrl;
-
-                }, idx * 450);
+                }, idx === 0 ? 0 : idx * 450);
 
             });
 
