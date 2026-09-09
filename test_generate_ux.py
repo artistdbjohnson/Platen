@@ -164,6 +164,14 @@ ok &= must(len(sampled) <= 16 and sampled[0] == 0 and sampled[-1] == 89, "iso sa
 ok &= must('id="btn-out-plot"' in html and "savePlotterSVG()" in html, "Download Plotter SVG is wired in the Export grid")
 ok &= must("function applyArchivalSvgUnits" in html and "PLATEN_PX_PER_IN = 160" in html, "regular SVG export declares inches at 160px/in")
 ok &= must("function platenFileName" in html and "function rasterizePlatenSvg" in html, "named platen-* exports and PNG rasterize helpers exist")
+ok &= must("function getHiResExportSize" in html and "PLATEN_EXPORT_DPI = 300" in html, "Download PNG uses 300 DPI archival size, not a 2560 preview")
+ok &= must("CANVAS_WHITE_HIRES_PATH = 'platen_white.png'" in html and "function withHiresPaper" in html, "PNG export composites the lossless paper scan")
+save_fn = html.split("function saveAsImage(format)", 1)[1].split("function savePNG()", 1)[0]
+ok &= must("getHiResExportSize" in save_fn and "image/png" in save_fn, "saveAsImage PNG path is hi-res and lossless")
+ok &= must("outH = 2560" not in save_fn and "outW = 1440" not in save_fn, "saveAsImage no longer anchors to the 2560 preview edge")
+ok &= must("function savePNG()" in html and "saveAsImage('png')" in html, "dock/out Download PNG still calls saveAsImage('png')")
+back_fn = html.split("window.downloadBackHiRes", 1)[1].split("function startBreathing", 1)[0]
+ok &= must("getHiResExportSize" in back_fn and "toDataURL" not in back_fn, "downloadBackHiRes re-rasters hi-res instead of dumping the 1200 preview canvas")
 ok &= must("Plot mode never includes paper" in html or "always excludes paper" in html, "plotter export keeps BG texture off")
 ok &= must("function savePlotterSVG()" in html and "inkscape:groupmode" in html, "plotter Inkscape layers still generated")
 

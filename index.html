@@ -8697,6 +8697,24 @@ rawWt.push(baseWt + jitter);
 
 
         var PLATEN_PX_PER_IN = 160; // 10 CPI / 6 LPI letter: 16px per 0.1"
+        // Download PNG/JPG used to cap the long edge at 2560 (a 2K screen preset).
+        // That downsampled a normal US Letter plate below the scanned paper
+        // (2040x2640) and below 8.5x11" @ 300 DPI (2550x3300), so the file
+        // felt like a preview instead of an archival raster (~3–7 MB).
+        var PLATEN_EXPORT_DPI = 300;
+        var PLATEN_EXPORT_MAX_EDGE = 4096;
+        var PLATEN_EXPORT_MIN_LONG_EDGE = 3300; // 11" * 300 DPI — normal plate floor
+
+        function parseSvgUserLength(raw, fallback) {
+            if (raw == null || raw === '') return fallback;
+            var s = String(raw).trim();
+            var n = parseFloat(s);
+            if (!(n > 0)) return fallback;
+            if (/in$/i.test(s)) return n * PLATEN_PX_PER_IN;
+            if (/cm$/i.test(s)) return n * PLATEN_PX_PER_IN / 2.54;
+            if (/mm$/i.test(s)) return n * PLATEN_PX_PER_IN / 25.4;
+            return n;
+        }
 
         function getSvgPixelSize(svg) {
             if (!svg) return { w: 800, h: 1200 };
@@ -8705,9 +8723,72 @@ rawWt.push(baseWt + jitter);
                 var p = vb.trim().split(/[\s,]+/).map(Number);
                 if (p.length === 4 && p[2] > 0 && p[3] > 0) return { w: p[2], h: p[3] };
             }
-            var w = parseFloat(svg.getAttribute('width'));
-            var h = parseFloat(svg.getAttribute('height'));
+            var w = parseSvgUserLength(svg.getAttribute('width'), 0);
+            var h = parseSvgUserLength(svg.getAttribute('height'), 0);
             return { w: w > 0 ? w : 800, h: h > 0 ? h : 1200 };
+        }
+
+        function getHiResExportSize(svgW, svgH, texImg) {
+            svgW = Number(svgW);
+            svgH = Number(svgH);
+            if (!(svgW > 1)) svgW = 8.5 * PLATEN_PX_PER_IN;
+            if (!(svgH > 1)) svgH = 11 * PLATEN_PX_PER_IN;
+            var inchW = svgW / PLATEN_PX_PER_IN;
+            var inchH = svgH / PLATEN_PX_PER_IN;
+            var outW = Math.max(1, Math.round(inchW * PLATEN_EXPORT_DPI));
+            var outH = Math.max(1, Math.round(inchH * PLATEN_EXPORT_DPI));
+
+            // Never downsample the scanned paper canvas when it is included.
+            if (texImg) {
+                var tw = texImg.naturalWidth || texImg.width || 0;
+                var th = texImg.naturalHeight || texImg.height || 0;
+                if (tw > 0 && th > 0) {
+                    var cover = Math.max(outW / tw, outH / th);
+                    if (cover < 1) {
+                        outW = Math.round(outW / cover);
+                        outH = Math.round(outH / cover);
+                    }
+                }
+            }
+
+            var longEdge = Math.max(outW, outH);
+            if (longEdge < PLATEN_EXPORT_MIN_LONG_EDGE) {
+                var up = PLATEN_EXPORT_MIN_LONG_EDGE / longEdge;
+                outW = Math.round(outW * up);
+                outH = Math.round(outH * up);
+            }
+            longEdge = Math.max(outW, outH);
+            if (longEdge > PLATEN_EXPORT_MAX_EDGE) {
+                var down = PLATEN_EXPORT_MAX_EDGE / longEdge;
+                outW = Math.round(outW * down);
+                outH = Math.round(outH * down);
+            }
+            return { w: outW, h: outH, dpi: PLATEN_EXPORT_DPI };
+        }
+        window.getHiResExportSize = getHiResExportSize;
+
+        function allocExportCanvas(w, h) {
+            var long0 = Math.max(w, h);
+            var edges = [long0, PLATEN_EXPORT_MIN_LONG_EDGE, 2560];
+            var seen = {};
+            for (var i = 0; i < edges.length; i++) {
+                var longEdge = Math.round(edges[i]);
+                if (!(longEdge > 0) || seen[longEdge]) continue;
+                seen[longEdge] = true;
+                var scale = longEdge / long0;
+                var cw = Math.max(1, Math.round(w * scale));
+                var ch = Math.max(1, Math.round(h * scale));
+                try {
+                    var canvas = document.createElement('canvas');
+                    canvas.width = cw;
+                    canvas.height = ch;
+                    var ctx = canvas.getContext('2d');
+                    if (ctx && canvas.width === cw && canvas.height === ch) {
+                        return { canvas: canvas, ctx: ctx, w: cw, h: ch };
+                    }
+                } catch (allocErr) { /* step down to protect the tab */ }
+            }
+            return null;
         }
 
         function applyArchivalSvgUnits(svg) {
@@ -8983,35 +9064,9 @@ rawWt.push(baseWt + jitter);
 
                         } else if (format === 'png') {
 
-                            var aspect = svgW / svgH;
-
-                            var outW, outH;
-
-                            if (Math.abs(aspect - (9 / 16)) < 0.01) {
-
-                                outW = 1440; outH = 2560;
-
-                            } else if (Math.abs(aspect - 1.0) < 0.01) {
-
-                                outW = 2560; outH = 2560;
-
-                            } else if (Math.abs(aspect - (16 / 9)) < 0.01) {
-
-                                outW = 2560; outH = 1440;
-
-                            } else {
-
-                                if (aspect < 1.0) {
-
-                                    outH = 2560; outW = Math.round(outH * aspect);
-
-                                } else {
-
-                                    outW = 2560; outH = Math.round(outW / aspect);
-
-                                }
-
-                            }
+                            var layerSize = getHiResExportSize(svgW, svgH, _activeCanvasImg);
+                            var outW = layerSize.w;
+                            var outH = layerSize.h;
 
                             
 
@@ -9111,7 +9166,11 @@ rawWt.push(baseWt + jitter);
 
                                 
 
-                                if (_activeCanvasImg) {
+                                if (typeof withHiresPaper === 'function') {
+
+                                    withHiresPaper(doComposite);
+
+                                } else if (_activeCanvasImg) {
 
                                     doComposite(_activeCanvasImg);
 
@@ -10544,6 +10603,10 @@ rawWt.push(baseWt + jitter);
 
         var CANVAS_WHITE_PATH = 'platen_white_b.jpg?v=2';
 
+        var CANVAS_BLACK_HIRES_PATH = 'platen_black.png';
+
+        var CANVAS_WHITE_HIRES_PATH = 'platen_white.png';
+
 
 
         var _activeCanvasImg = null;
@@ -10622,6 +10685,15 @@ rawWt.push(baseWt + jitter);
 
             };
 
+            img.onerror = function () {
+                delete _loadedTextures[url];
+                var callbacks = window._texturePendingCallbacks[url];
+                delete window._texturePendingCallbacks[url];
+                if (callbacks) {
+                    callbacks.forEach(function (cb) { cb(null); });
+                }
+            };
+
             img.src = url;
 
         }
@@ -10686,7 +10758,7 @@ rawWt.push(baseWt + jitter);
 
                 ensureTextureLoaded(url, function(img) {
 
-                    applyTexture(url, img, canvasClass);
+                    if (img) applyTexture(url, img, canvasClass);
 
                 });
 
@@ -10695,6 +10767,32 @@ rawWt.push(baseWt + jitter);
         }
 
 
+
+        function hiresPaperPath() {
+            var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : (TRAITS && TRAITS.canvas);
+            if (activeCanvas === 'black') return CANVAS_BLACK_HIRES_PATH;
+            return CANVAS_WHITE_HIRES_PATH;
+        }
+
+        function withHiresPaper(callback) {
+            var url = hiresPaperPath();
+            var done = false;
+            var finish = function (img) {
+                if (done) return;
+                done = true;
+                callback(img || _activeCanvasImg || null);
+            };
+            var timer = setTimeout(function () { finish(_activeCanvasImg || null); }, 8000);
+            if (typeof ensureTextureLoaded === 'function') {
+                ensureTextureLoaded(url, function (img) {
+                    clearTimeout(timer);
+                    finish(img);
+                });
+                return;
+            }
+            clearTimeout(timer);
+            finish(_activeCanvasImg || null);
+        }
 
         function applyTexture(displayUrl, img, canvasClass) {
 
@@ -10773,6 +10871,8 @@ rawWt.push(baseWt + jitter);
         function saveAsImage(format) {
 
             var panels = activePanels();
+            var includeBGEl = document.getElementById('inc-bg');
+            var includeBG = !includeBGEl || includeBGEl.checked;
 
             panels.forEach(function (id, idx) {
 
@@ -10783,123 +10883,63 @@ rawWt.push(baseWt + jitter);
                     if (!svg) return;
 
                     var pxSize = getSvgPixelSize(svg);
-                    var svgW = pxSize.w;
-                    var svgH = pxSize.h;
 
+                    function doComposite(texImg) {
 
+                        var size = getHiResExportSize(pxSize.w, pxSize.h, includeBG ? texImg : null);
+                        var alloc = allocExportCanvas(size.w, size.h);
+                        if (!alloc) {
+                            console.warn('[Platen] PNG canvas alloc failed');
+                            return;
+                        }
+                        var outW = alloc.w;
+                        var outH = alloc.h;
 
-                    // Smart Aspect Ratio Logic based on actual SVG content
-
-                    var aspect = svgW / svgH;
-
-                    var outW, outH;
-
-                    if (Math.abs(aspect - (9 / 16)) < 0.01) {
-
-                        outW = 1440; outH = 2560;
-
-                    } else if (Math.abs(aspect - 1.0) < 0.01) {
-
-                        outW = 2560; outH = 2560;
-
-                    } else if (Math.abs(aspect - (16 / 9)) < 0.01) {
-
-                        outW = 2560; outH = 1440;
-
-                    } else {
-
-                        // Custom aspect ratio (e.g. 39:51)
-
-                        // Anchor to 2560px on the longest dimension
-
-                        if (aspect < 1.0) {
-
-                            outH = 2560;
-
-                            outW = Math.round(outH * aspect);
-
-                        } else {
-
-                            outW = 2560;
-
-                            outH = Math.round(outW / aspect);
-
+                        var svgImg;
+                        try {
+                            svgImg = rasterizePlatenSvg(svg, outW, outH);
+                        } catch (rasterErr) {
+                            console.warn('[Platen] PNG rasterize fell back:', rasterErr);
+                            svgImg = null;
                         }
 
-                    }
+                        if (!svgImg) {
+                            console.warn('[Platen] PNG export skipped to protect the tab.');
+                            return;
+                        }
 
+                        var canvas = alloc.canvas;
+                        var ctx = alloc.ctx;
 
+                        // Layer 1: lossless paper scan (full res) or solid fill
+                        if (includeBG) {
 
-                    var scaleX = outW / svgW, scaleY = outH / svgH;
+                            if (texImg) {
 
-                    var svgImg;
-                    try {
-                        svgImg = rasterizePlatenSvg(svg, outW, outH);
-                    } catch (rasterErr) {
-                        console.warn('[Platen] PNG rasterize fell back:', rasterErr);
-                        svgImg = null;
-                    }
+                                var imgW = texImg.naturalWidth || texImg.width;
+                                var imgH = texImg.naturalHeight || texImg.height;
 
-                    if (!svgImg) {
-                        console.warn('[Platen] PNG export skipped to protect the tab.');
-                        return;
-                    }
+                                var tScale = Math.max(outW / imgW, outH / imgH);
 
-                        function doComposite(texImg) {
+                                if (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter') tScale *= 1.06;
 
-                            var canvas = document.createElement('canvas');
+                                var newW = imgW * tScale;
 
-                            canvas.width = outW; canvas.height = outH;
+                                var newH = imgH * tScale;
 
-                            var ctx = canvas.getContext('2d');
+                                var dx = (outW - newW) / 2;
 
+                                var dy = (outH - newH) / 2;
 
+                                if (TRAITS.canvas && TRAITS.canvas.indexOf('graph_paper') === 0) {
 
-                            var includeBG = document.getElementById('inc-bg').checked;
-
-
-
-                            // Layer 1: canvas texture (full res) or fallback background color fill for JPEG
-
-                            if (includeBG) {
-
-                                if (texImg) {
-
-                                    var imgW = texImg.width, imgH = texImg.height;
-
-                                    var tScale = Math.max(outW / imgW, outH / imgH);
-
-                                    if (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter') tScale *= 1.06;
-
-                                    var newW = imgW * tScale;
-
-                                    var newH = imgH * tScale;
-
-                                    var dx = (outW - newW) / 2;
-
-                                    var dy = (outH - newH) / 2;
-
-                                    if (TRAITS.canvas && TRAITS.canvas.indexOf('graph_paper') === 0) {
-
-                                        dy = 0; // background-position: center top
-
-                                    }
-
-                                    ctx.drawImage(texImg, 0, 0, imgW, imgH, dx, dy, newW, newH);
-
-                                } else {
-
-                                    var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
-
-                                    ctx.fillStyle = activeCanvas === 'black' ? '#0a0a0a' : '#f5f0e8';
-
-                                    ctx.fillRect(0, 0, outW, outH);
+                                    dy = 0; // background-position: center top
 
                                 }
 
-                            } else if (format === 'jpg') {
+                                ctx.drawImage(texImg, 0, 0, imgW, imgH, dx, dy, newW, newH);
 
-                                // JPEGs must have a solid background color if BG texture is not included
+                            } else {
 
                                 var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
 
@@ -10909,49 +10949,50 @@ rawWt.push(baseWt + jitter);
 
                             }
 
+                        } else if (format === 'jpg') {
 
+                            // JPEGs must have a solid background color if BG texture is not included
 
-                            // Layer 2: SVG pattern scaled to fill
+                            var activeCanvasJpg = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
 
-                            ctx.save();
+                            ctx.fillStyle = activeCanvasJpg === 'black' ? '#0a0a0a' : '#f5f0e8';
 
-                            ctx.globalAlpha = 1.0;
-
-                            ctx.drawImage(svgImg, 0, 0, outW, outH);
-
-                            ctx.restore();
-
-
-
-                            var mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
-
-                            var quality = format === 'png' ? undefined : 0.95;
-
-
-
-                            canvas.toBlob(function (imgBlob) {
-                                if (!imgBlob) {
-                                    console.warn('[Platen] PNG blob failed');
-                                    return;
-                                }
-                                var name = platenFileName(null, format, id);
-                                downloadBlob(imgBlob, name);
-                                console.log('[Platen] Saved ' + format.toUpperCase() + ': ' + name + ' (' + outW + 'x' + outH + ')');
-                            }, mimeType, quality);
+                            ctx.fillRect(0, 0, outW, outH);
 
                         }
 
+                        // Layer 2: SVG ink at the same archival raster size
+                        ctx.save();
+                        ctx.globalAlpha = 1.0;
+                        ctx.drawImage(svgImg, 0, 0, outW, outH);
+                        ctx.restore();
 
+                        var mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+                        var quality = format === 'png' ? undefined : 0.95;
 
-                        if (_activeCanvasImg) {
+                        canvas.toBlob(function (imgBlob) {
+                            if (!imgBlob) {
+                                console.warn('[Platen] PNG blob failed');
+                                return;
+                            }
+                            if (format === 'png' && imgBlob.type && imgBlob.type !== 'image/png') {
+                                console.warn('[Platen] PNG export produced ' + imgBlob.type + '; refusing JPEG-as-PNG.');
+                                return;
+                            }
+                            var name = platenFileName(null, format, id);
+                            downloadBlob(imgBlob, name);
+                            console.log('[Platen] Saved ' + format.toUpperCase() + ': ' + name + ' (' + outW + 'x' + outH + ')');
+                        }, mimeType, quality);
 
-                            doComposite(_activeCanvasImg);
+                    }
 
-                        } else {
-
-                            doComposite(null);
-
-                        }
+                    if (includeBG && typeof withHiresPaper === 'function') {
+                        withHiresPaper(doComposite);
+                    } else if (_activeCanvasImg) {
+                        doComposite(_activeCanvasImg);
+                    } else {
+                        doComposite(null);
+                    }
 
                 }, idx === 0 ? 0 : idx * 450);
 
@@ -16138,31 +16179,94 @@ rawWt.push(baseWt + jitter);
 
             }
 
-            var canvas = document.getElementById('c' + id + '-back');
+            var svg = document.getElementById('s' + id);
+            if (!svg) return;
 
-            if (!canvas) return;
+            function exportBack(texImg) {
+                var px = getSvgPixelSize(svg);
+                var plate = getHiResExportSize(px.w, px.h, texImg);
+                var edge = Math.min(PLATEN_EXPORT_MAX_EDGE, Math.max(plate.w, plate.h));
+                var alloc = allocExportCanvas(edge, edge);
+                if (!alloc) {
+                    console.warn('[Platen] back PNG canvas alloc failed');
+                    return;
+                }
+                var canvas = alloc.canvas;
+                var ctx = alloc.ctx;
+                var size = alloc.w;
 
-            
+                var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
+                if (texImg && (texImg.naturalWidth || texImg.width)) {
+                    var tw = texImg.naturalWidth || texImg.width;
+                    var th = texImg.naturalHeight || texImg.height;
+                    ctx.drawImage(texImg, 0, 0, tw, th, 0, 0, size, size);
+                } else {
+                    ctx.fillStyle = activeCanvas === 'black' ? '#0a0a0a' : '#f5f0e8';
+                    ctx.fillRect(0, 0, size, size);
+                }
 
-            var mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+                var svgClone = svg.cloneNode(true);
+                var headers = svgClone.querySelectorAll('.typewriter-header, .grid-numbers, text, tspan');
+                headers.forEach(function (el) { el.parentNode && el.parentNode.removeChild(el); });
+                var inkW = plate.w;
+                var inkH = plate.h;
+                var ink;
+                try {
+                    ink = rasterizePlatenSvg(svgClone, inkW, inkH);
+                } catch (backErr) {
+                    console.warn('[Platen] back rasterize fell back:', backErr);
+                    ink = null;
+                }
+                if (ink) {
+                    var isGraphPaper = (currentLayout === 'graph_paper' || currentLayout === 'graph_paper_sq' || currentLayout === 'graph_paper_banner' || currentLayout === 'graph_paper_sq_banner');
+                    var sx, sy, cropSize;
+                    if (isGraphPaper) {
+                        cropSize = Math.min(inkW, inkH);
+                        sx = (inkW - cropSize) / 2;
+                        sy = (inkH - cropSize) / 2;
+                    } else {
+                        var sizes = getLayoutSizes(currentLayout);
+                        var sizeX = sizes.sizeX;
+                        var sizeY = sizes.sizeY;
+                        var w = sizes.w;
+                        var h = sizes.h;
+                        var logicalW = (w + 8) * sizeX;
+                        var logicalH = (h + 8) * sizeY;
+                        var scaleX = inkW / logicalW;
+                        var scaleY = inkH / logicalH;
+                        var hasHeader = !!svg.querySelector('.typewriter-header');
+                        var headerRows = hasHeader ? 11 : 0;
+                        var W = w * sizeX * scaleX;
+                        var H = (h - headerRows) * sizeY * scaleY;
+                        cropSize = Math.min(W, H);
+                        sx = 4 * sizeX * scaleX + (W - cropSize) / 2;
+                        sy = (4 + headerRows) * sizeY * scaleY + (H - cropSize) / 2;
+                    }
+                    var padding = Math.round(size * 0.1);
+                    var destSize = size - 2 * padding;
+                    ctx.drawImage(ink, sx, sy, cropSize, cropSize, padding, padding, destSize, destSize);
+                }
 
-            var quality = format === 'png' ? undefined : 0.95;
+                var mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+                var quality = format === 'png' ? undefined : 0.95;
+                canvas.toBlob(function (imgBlob) {
+                    if (!imgBlob) {
+                        console.warn('[Platen] back PNG blob failed');
+                        return;
+                    }
+                    if (format === 'png' && imgBlob.type && imgBlob.type !== 'image/png') {
+                        console.warn('[Platen] back PNG export produced ' + imgBlob.type + '; refusing JPEG-as-PNG.');
+                        return;
+                    }
+                    downloadBlob(imgBlob, platenFileName('back', format, id));
+                }, mimeType, quality);
+            }
 
-            var dataUrl = canvas.toDataURL(mimeType, quality);
-
-            
-
-            var a = document.createElement('a');
-
-            a.href = dataUrl;
-
-            a.download = 'platen-' + RENDER_SEED + '.' + format;
-
-            document.body.appendChild(a);
-
-            a.click();
-
-            document.body.removeChild(a);
+            if (typeof withHiresPaper === 'function') {
+                withHiresPaper(exportBack);
+            } else {
+                exportBack(_activeCanvasImg || null);
+            }
 
         };
 
