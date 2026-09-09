@@ -3972,45 +3972,7 @@
 
 
 
-        /* Light theme overrides for fullscreen HUD */
-
-        html[data-theme="light"] .fs-hud {
-
-            background: rgba(245, 245, 245, 0.75);
-
-            border: 1px solid rgba(0, 0, 0, 0.08);
-
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-
-        }
-
-
-
-        html[data-theme="light"] .fs-hud button {
-
-            color: #000;
-
-            opacity: 0.6;
-
-        }
-
-
-
-        html[data-theme="light"] .fs-hud button:hover {
-
-            background: rgba(0, 0, 0, 0.05);
-
-            opacity: 1;
-
-        }
-
-
-
-        html[data-theme="light"] .fs-hud .fs-divider {
-
-            background: rgba(0, 0, 0, 0.15);
-
-        }
+        /* Light / index HUD — #ffffff / #000000 only, no gray */}
 
         /* Tooltip Styles */
         [data-tooltip] {
@@ -4043,10 +4005,11 @@
             z-index: 10000;
         }
         html[data-theme="light"] [data-tooltip]::after {
-            background: rgba(245, 240, 232, 0.82) !important;
-            color: #1a1a1a !important;
-            border: 1px solid rgba(0, 0, 0, 0.12) !important;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+            background: #ffffff !important;
+            color: #000000 !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
         }
         [data-tooltip]:hover::after {
             opacity: 1;
@@ -4132,14 +4095,14 @@
 
         /* ═══════════════════════════════════════════════════════════
            INDEX / LIGHT MODE
-           Sparse white catalog. Pure #fff / #000. JetBrains Mono.
+           Sparse white catalog. Pure #ffffff / #000000. JetBrains Mono.
            Zero button chrome. No gray. Selected = underline / weight.
            Plate art keeps its own ink and paper.
            ═══════════════════════════════════════════════════════════ */
         html[data-theme="light"],
         html[data-theme="light"] body {
-            background: #fff !important;
-            color: #000 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
         }
         html[data-theme="light"] body,
         html[data-theme="light"] button,
@@ -4176,8 +4139,8 @@
         html[data-theme="light"] .canvas-generate-strip,
         html[data-theme="light"] .mobile-generate-bar,
         html[data-theme="light"] .generate-dock {
-            background: #fff !important;
-            color: #000 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
         }
         html[data-theme="light"] .col-about,
         html[data-theme="light"] .col-controls,
@@ -4224,7 +4187,7 @@
         html[data-theme="light"] #curation-countdown,
         html[data-theme="light"] #stack-export-note,
         html[data-theme="light"] #stack-export-note a {
-            color: #000 !important;
+            color: #000000 !important;
             opacity: 1 !important;
         }
         html[data-theme="light"] .col-controls *,
@@ -4260,7 +4223,7 @@
             -webkit-appearance: none !important;
             background: transparent !important;
             background-color: transparent !important;
-            color: #000 !important;
+            color: #000000 !important;
             border: none !important;
             border-bottom: none !important;
             border-radius: 0 !important;
@@ -4309,7 +4272,7 @@
         html[data-theme="light"] .back-download-links a:hover,
         html[data-theme="light"] a:hover {
             background: transparent !important;
-            color: #000 !important;
+            color: #000000 !important;
             text-decoration: underline !important;
             opacity: 1 !important;
             box-shadow: none !important;
@@ -4325,7 +4288,7 @@
         html[data-theme="light"] .canvas-toggle-btn.active,
         html[data-theme="light"] .fs-hud button.active {
             background: transparent !important;
-            color: #000 !important;
+            color: #000000 !important;
             border: none !important;
             border-bottom: none !important;
             box-shadow: none !important;
@@ -4348,7 +4311,7 @@
         html[data-theme="light"] .btn-generate:disabled,
         html[data-theme="light"] .btn-save:disabled {
             opacity: 1 !important;
-            color: #000 !important;
+            color: #000000 !important;
             text-decoration: line-through !important;
             pointer-events: none !important;
         }
@@ -4357,7 +4320,7 @@
         html[data-theme="light"] .trait-select,
         html[data-theme="light"] .cd-selected {
             background: transparent !important;
-            color: #000 !important;
+            color: #000000 !important;
             border: none !important;
             border-bottom: none !important;
             box-shadow: none !important;
@@ -4371,53 +4334,53 @@
         html[data-theme="light"] .cd-selected:hover {
             border: none !important;
             border-bottom: none !important;
-            color: #000 !important;
+            color: #000000 !important;
         }
         html[data-theme="light"] .cd-items {
-            background: #fff !important;
+            background: #ffffff !important;
             border: none !important;
             box-shadow: none !important;
             border-radius: 0 !important;
         }
         html[data-theme="light"] .cd-item {
-            color: #000 !important;
+            color: #000000 !important;
             opacity: 1 !important;
             padding: 4px 0 !important;
-            background: #fff !important;
+            background: #ffffff !important;
         }
         html[data-theme="light"] .cd-item.is-disabled {
             text-decoration: line-through !important;
             pointer-events: none !important;
         }
         html[data-theme="light"] .trait-select option {
-            background: #fff !important;
-            color: #000 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
         }
 
         html[data-theme="light"] .motus-dropdown-content {
-            background: #fff !important;
+            background: #ffffff !important;
             border: none !important;
             box-shadow: none !important;
             border-radius: 0 !important;
             backdrop-filter: none !important;
         }
         html[data-theme="light"] .motus-dropdown-content div {
-            color: #000 !important;
+            color: #000000 !important;
             opacity: 1 !important;
-            background: #fff !important;
+            background: #ffffff !important;
         }
         html[data-theme="light"] .motus-dropdown-content div:hover {
-            background: #fff !important;
-            color: #000 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
             text-decoration: underline !important;
             opacity: 1 !important;
         }
 
         html[data-theme="light"] .col-about pre {
-            background: #fff !important;
+            background: #ffffff !important;
             border: none !important;
             border-radius: 0 !important;
-            color: #000 !important;
+            color: #000000 !important;
             padding-left: 0 !important;
             padding-right: 0 !important;
         }
@@ -4426,20 +4389,20 @@
         html[data-theme="light"] .code-str,
         html[data-theme="light"] .code-num,
         html[data-theme="light"] .code-fn {
-            color: #000 !important;
+            color: #000000 !important;
             font-style: normal !important;
         }
 
         html[data-theme="light"] #palette-lock-status,
         html[data-theme="light"] #curation-status-banner {
-            background: #fff !important;
+            background: #ffffff !important;
             border: none !important;
             border-radius: 0 !important;
             padding-left: 0 !important;
             padding-right: 0 !important;
         }
         html[data-theme="light"] #curation-status-dot {
-            background: #000 !important;
+            background: #000000 !important;
         }
 
         html[data-theme="light"] #btn-auto {
@@ -4453,7 +4416,7 @@
         }
         html[data-theme="light"] #btn-auto::after {
             content: 'off';
-            color: #000;
+            color: #000000;
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
             letter-spacing: 0.08em;
@@ -4476,30 +4439,30 @@
 
         html[data-theme="light"] #modal-seed,
         html[data-theme="light"] #modal-info {
-            background: #fff !important;
+            background: #ffffff !important;
             backdrop-filter: none !important;
         }
         html[data-theme="light"] #seed-modal-content,
         html[data-theme="light"] #info-modal-content {
-            background: #fff !important;
+            background: #ffffff !important;
             border: none !important;
             box-shadow: none !important;
-            color: #000 !important;
+            color: #000000 !important;
         }
         html[data-theme="light"] #seed-input {
-            background: #fff !important;
+            background: #ffffff !important;
             border: none !important;
-            color: #000 !important;
+            color: #000000 !important;
             box-shadow: none !important;
         }
         html[data-theme="light"] #close-seed-modal,
         html[data-theme="light"] #close-info-modal {
             opacity: 1 !important;
-            color: #000 !important;
+            color: #000000 !important;
         }
 
         html[data-theme="light"] .fs-hud {
-            background: #fff !important;
+            background: #ffffff !important;
             border: none !important;
             box-shadow: none !important;
             border-radius: 0 !important;
@@ -4507,13 +4470,13 @@
             -webkit-backdrop-filter: none !important;
         }
         html[data-theme="light"] .fs-hud .fs-divider {
-            background: #000 !important;
+            background: #000000 !important;
             opacity: 1 !important;
         }
 
         html[data-theme="light"] [data-tooltip]::after {
-            background: #fff !important;
-            color: #000 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
             border: none !important;
             box-shadow: none !important;
             border-radius: 0 !important;
@@ -4522,7 +4485,7 @@
         }
 
         html[data-theme="light"] .saved-solo-backdrop {
-            background: #fff !important;
+            background: #ffffff !important;
         }
         html[data-theme="light"] .gallery-item-just-saved,
         html[data-theme="light"] .gallery-item-newest {
@@ -4533,14 +4496,14 @@
         html[data-theme="light"] .draft-history-row,
         html[data-theme="light"] .draft-history-row:hover,
         html[data-theme="light"] #draft-history-list > div {
-            background: #fff !important;
+            background: #ffffff !important;
             border: none !important;
             border-radius: 0 !important;
-            color: #000 !important;
+            color: #000000 !important;
             box-shadow: none !important;
         }
         html[data-theme="light"] input[type="checkbox"] {
-            accent-color: #000;
+            accent-color: #000000;
         }
         html:not([data-theme="light"]) .ui-mode-link[data-ui-mode="studio"] {
             text-decoration: underline;

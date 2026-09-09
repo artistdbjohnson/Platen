@@ -40,6 +40,13 @@ if light:
     ok &= must("#A0A1A7" not in tokens and "#383A42" not in tokens, "index tokens drop gray syntax colors")
     ok &= must("--code-kw: #000000" in tokens or "--code-kw: #000" in tokens, "index code tokens are black")
 
+index_css = html.split("INDEX / LIGHT MODE", 1)[1].split("</style>", 1)[0] if "INDEX / LIGHT MODE" in html else ""
+ok &= must(bool(index_css), "index CSS block is present")
+if index_css:
+    hexes = set(re.findall(r"#[0-9A-Fa-f]{3,8}", index_css))
+    ok &= must(hexes <= {"#ffffff", "#000000", "#fff", "#000"}, "index CSS uses only #ffffff / #000000")
+    ok &= must("#171717" not in index_css and "#666" not in index_css and "#1a1a1a" not in index_css, "index CSS has no soft gray foreground")
+
 ok &= must("html[data-theme=\"light\"]" in html and "JetBrains Mono" in html, "index mode forces JetBrains Mono")
 ok &= must(
     "html[data-theme=\"light\"] button" in html
