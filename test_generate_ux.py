@@ -31,11 +31,24 @@ ok &= must(html.count('id="btn-regen"') == 1, "Regenerate id is unique")
 
 gen = re.search(r'<button[^>]+id="btn-generate"[^>]*>', html)
 mob = re.search(r'<button[^>]+id="btn-generate-mobile"[^>]*>', html)
-ok &= must(gen and 'onclick="randomize()"' in gen.group(0), "desktop Generate calls randomize()")
-ok &= must(mob and 'onclick="randomize()"' in mob.group(0), "mobile Generate calls randomize()")
+can = re.search(r'<button[^>]+id="btn-generate-canvas"[^>]*>', html)
+ok &= must(gen and 'onclick="generateNewPiece()"' in gen.group(0), "desktop Generate kicks generation then scrolls to studio")
+ok &= must(mob and 'onclick="generateNewPiece()"' in mob.group(0), "mobile Generate kicks generation then scrolls to studio")
+ok &= must(can and 'onclick="generateNewPiece()"' in can.group(0), "sticky canvas Generate kicks generation then scrolls to studio")
 
 ok &= must("function randomize()" in html, "randomize() engine hook unchanged")
 ok &= must("function regenerate()" in html, "regenerate() engine hook unchanged")
+ok &= must("function generateNewPiece()" in html, "Generate buttons go through generateNewPiece()")
+ok &= must("function scrollStudioIntoView()" in html, "studio scroll helper exists")
+gen_new = html.split("function generateNewPiece", 1)[1].split("function ", 1)[0]
+ok &= must("randomize()" in gen_new and "scrollStudioIntoView()" in gen_new, "generateNewPiece randomizes then scrolls")
+ok &= must("openGalleryModal" not in gen_new and "gallery-modal" not in gen_new, "Generate scroll does not open a gallery modal")
+ok &= must("showPlatenToast" not in gen_new, "Generate scroll does not open a toast")
+scroll_studio = html.split("function scrollStudioIntoView", 1)[1].split("function ", 1)[0]
+ok &= must("scrollIntoView" in scroll_studio, "studio helper uses calm scrollIntoView")
+ok &= must("studio-canvas" in scroll_studio or "col-canvas" in scroll_studio, "studio helper targets the canvas / generate chrome")
+ok &= must('id="studio-canvas"' in html, "canvas column is the studio scroll target")
+ok &= must('onclick="generateNewPiece()"' in html and html.count('onclick="generateNewPiece()"') == 3, "exactly the three Generate buttons scroll back to studio")
 ok &= must("TRAITS.symmetry = SYMMETRY_OPTS" in html, "randomize still picks new parameters")
 ok &= must("RENDER_SEED = Math.floor(Math.random()" in html, "seed roll still happens")
 
@@ -130,6 +143,26 @@ if mobile_stack:
         "saved masonry starts after Parameters / More controls",
     )
 ok &= must("position: sticky" in html and "canvas-generate-strip" in html, "Generate/Save strip stays sticky")
+
+# Late mobile repair must win over the desktop 100dvh column heights.
+col_about_100 = list(re.finditer(r'\.col-about\s*\{[^}]*height:\s*100dvh', html, re.S))
+col_controls_100 = list(re.finditer(r'\.col-controls\s*\{[^}]*height:\s*100dvh', html, re.S))
+ok &= must(bool(col_about_100) and bool(col_controls_100), "desktop about/controls still use 100dvh")
+late_mobile_queries = list(re.finditer(r'@media \(max-width: 900px\) \{', html))
+ok &= must(len(late_mobile_queries) >= 3, "a late mobile stack-repair media query exists")
+if late_mobile_queries and col_about_100:
+    last_mobile = html[late_mobile_queries[-1].start(): late_mobile_queries[-1].start() + 2800]
+    last_about_100_at = col_about_100[-1].start()
+    last_mobile_at = late_mobile_queries[-1].start()
+    ok &= must(last_mobile_at > last_about_100_at, "mobile height:auto repair comes after desktop 100dvh")
+    ok &= must(".col-about" in last_mobile and "height: auto" in last_mobile, "late mobile query resets about/controls to height:auto")
+    ok &= must("flex-shrink: 0" in last_mobile, "mobile stack children do not shrink inside the 100dvh scrollport")
+    ok &= must("min-height: 64px" in last_mobile, "sticky Generate has room for the randomize subtitle")
+    ok &= must(".btn-generate-sub" in last_mobile and "line-height: 1.2" in last_mobile, "randomize subtitle has its own line-height")
+    ok &= must(".saved-creations-head" in last_mobile and "background: var(--bg)" in last_mobile, "saved header sits on an opaque background")
+    ok &= must(".about-fold-summary" in last_mobile and "background: var(--bg)" in last_mobile, "About summary sits on an opaque background")
+    ok &= must("[data-tooltip]::after" in last_mobile and "display: none" in last_mobile, "mobile tooltips cannot stick over About")
+ok &= must(".btn-generate-sub" in html and "line-height: 1.2" in html, "Generate subtitle line-height is set")
 ok &= must('id="mobile-scroll-hint"' in html and "scroll for parameters" in html, "first-visit mobile has a scroll hint")
 ok &= must("MAX_SAVE_MARKS" in html and "MAX_SAVE_NODES" in html, "Save snapshot is capped so Curate cannot OOM")
 

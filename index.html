@@ -683,9 +683,11 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 3px;
             width: 100%;
             min-height: 48px;
             padding: 14px 16px;
+            line-height: 1.15;
             background: var(--text);
             color: var(--bg);
             border: 1px solid var(--text);
@@ -743,10 +745,12 @@
             display: block;
             margin-top: 3px;
             font-size: 8px;
+            line-height: 1.2;
             letter-spacing: 0.16em;
             font-weight: 400;
             text-transform: lowercase;
             opacity: 0.75;
+            position: static;
         }
 
         .btn-save {
@@ -1378,6 +1382,92 @@
 
             box-sizing: border-box;
 
+        }
+
+        /*
+          Mobile stack repair — MUST come after the desktop 100dvh column heights.
+          Those later rules were beating the earlier max-width: 900px height:auto
+          overrides, so About / controls / saved shrunk inside a 100dvh flex
+          viewport and painted on top of each other (clear stack ∩ ABOUT,
+          SAVED CREATIONS strike-through).
+        */
+        @media (max-width: 900px) {
+            .index-grid > * {
+                flex-shrink: 0;
+            }
+
+            .col-about,
+            .col-controls {
+                height: auto;
+                min-height: 0;
+                max-height: none;
+                overflow: visible;
+                position: relative;
+                z-index: 1;
+            }
+
+            .col-canvas {
+                height: 48vh;
+                min-height: 48vh;
+                max-height: 48vh;
+            }
+
+            .col-about {
+                padding-top: 16px;
+                isolation: isolate;
+                background: var(--bg);
+            }
+
+            .col-about h2 {
+                position: static;
+                z-index: auto;
+                background: var(--bg);
+            }
+
+            .about-fold,
+            .about-fold-summary {
+                position: relative;
+                z-index: 1;
+                background: var(--bg);
+            }
+
+            .about-fold-summary {
+                margin-top: 4px;
+            }
+
+            .saved-creations {
+                position: relative;
+                z-index: 1;
+                isolation: isolate;
+                background: var(--bg);
+                scroll-margin-top: 72px;
+            }
+
+            .saved-creations-head,
+            .saved-creations-head h2 {
+                position: relative;
+                background: var(--bg);
+                line-height: 1.4;
+                text-decoration: none;
+            }
+
+            .canvas-generate-strip .btn-generate {
+                min-height: 64px;
+                padding: 8px 12px;
+                line-height: 1.15;
+                gap: 4px;
+                overflow: visible;
+            }
+
+            .canvas-generate-strip .btn-generate-sub {
+                margin-top: 0;
+                line-height: 1.2;
+                position: static;
+            }
+
+            [data-tooltip]::after {
+                display: none !important;
+            }
         }
 
 
@@ -4145,7 +4235,7 @@ rawWt.push(baseWt + jitter);
 
             <div class="generate-dock" id="generate-dock">
 
-                <button type="button" id="btn-generate" class="btn-generate" onclick="randomize()" data-tooltip="new piece — randomize parameters and seed">Generate<span class="btn-generate-sub">randomize</span></button>
+                <button type="button" id="btn-generate" class="btn-generate" onclick="generateNewPiece()" data-tooltip="new piece — randomize parameters and seed">Generate<span class="btn-generate-sub">randomize</span></button>
 
                 <button type="button" id="btn-curate" class="btn-save" onclick="curateArtwork()" data-tooltip="save this piece">Save</button>
 
@@ -4410,7 +4500,7 @@ rawWt.push(baseWt + jitter);
 
         <!-- RIGHT COLUMN: CANVAS -->
 
-        <section class="col-canvas">
+        <section class="col-canvas" id="studio-canvas">
 
             <div id="canvas-wrap" class="panel">
 
@@ -4546,7 +4636,7 @@ rawWt.push(baseWt + jitter);
 
             <div id="canvas-generate-strip" class="canvas-generate-strip">
 
-                <button type="button" id="btn-generate-canvas" class="btn-generate" onclick="randomize()" aria-label="Generate a new piece">Generate<span class="btn-generate-sub">randomize</span></button>
+                <button type="button" id="btn-generate-canvas" class="btn-generate" onclick="generateNewPiece()" aria-label="Generate a new piece">Generate<span class="btn-generate-sub">randomize</span></button>
 
                 <button type="button" id="btn-save-canvas" class="btn-save" onclick="curateArtwork()">Save</button>
 
@@ -4584,7 +4674,7 @@ rawWt.push(baseWt + jitter);
 
     <div id="mobile-generate-bar" class="mobile-generate-bar">
 
-        <button type="button" id="btn-generate-mobile" class="btn-generate" onclick="randomize()" aria-label="Generate a new piece">Generate<span class="btn-generate-sub">randomize</span></button>
+        <button type="button" id="btn-generate-mobile" class="btn-generate" onclick="generateNewPiece()" aria-label="Generate a new piece">Generate<span class="btn-generate-sub">randomize</span></button>
 
         <button type="button" id="btn-save-mobile" class="btn-save" onclick="curateArtwork()">Save</button>
 
@@ -15428,6 +15518,24 @@ rawWt.push(baseWt + jitter);
             } catch (e) {
                 try { section.scrollIntoView(true); } catch (e2) {}
             }
+        }
+
+        function scrollStudioIntoView() {
+            var studio = document.getElementById('studio-canvas')
+                || document.querySelector('.col-canvas')
+                || document.getElementById('canvas-generate-strip')
+                || document.getElementById('generate-dock');
+            if (!studio) return;
+            try {
+                studio.scrollIntoView({ block: 'start', behavior: 'smooth' });
+            } catch (e) {
+                try { studio.scrollIntoView(true); } catch (e2) {}
+            }
+        }
+
+        function generateNewPiece() {
+            randomize();
+            scrollStudioIntoView();
         }
 
         function revealNewestSavedCuration(toastMsg) {
