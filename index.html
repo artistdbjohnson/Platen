@@ -8853,7 +8853,8 @@ rawWt.push(baseWt + jitter);
 
         }
 
-        // Locked S2 chamber (2026-09-10): ink chips + blank sign field on the plate SVG.
+        // Locked S2 unboxed (2026-09-10): five engine-ink chips + hairline sign baseline.
+        // No chamber box, register, divider, seal, ribbon, quiet-dots, or SIGN label.
         // Seed / params / date stay on the colophon — do not restate them here.
         function resolvePaletteEntry(chromeName, seed) {
             var palettes = (typeof PALETTES !== 'undefined' && PALETTES) || (window && window.PALETTES) || {};
@@ -8891,7 +8892,7 @@ rawWt.push(baseWt + jitter);
             return inkHexesFromPalette(resolvePaletteEntry(chrome, seed)).slice(0, 5);
         }
 
-        function s2ChamberLayout(headerData, hW, hSizeX, hSizeY, isGraphPaper) {
+        function s2UnboxedLayout(headerData, hW, hSizeX, hSizeY, isGraphPaper) {
             if (!headerData || !headerData.lines || !hW || !hSizeX || !hSizeY) return null;
             var levelMax = 0;
             for (var r = 3; r <= 7; r++) {
@@ -8903,102 +8904,87 @@ rawWt.push(baseWt + jitter);
             var rightCol = hW;
             if (rightCol - leftCol < 10) return null;
 
-            var x, x2, y, y2;
+            var voidLeft, voidRight, y, dateY;
             if (isGraphPaper) {
-                x = 9 + leftCol * hSizeX;
-                x2 = 9 + rightCol * hSizeX;
+                voidLeft = 9 + leftCol * hSizeX;
+                voidRight = 9 + rightCol * hSizeX;
                 y = 38 + (2 - 1) * hSizeY + 6;
-                y2 = 38 + (8 - 1) * hSizeY + hSizeY * 0.55;
+                dateY = 38 + (8 - 1) * hSizeY + hSizeY * 0.55;
             } else {
-                x = (leftCol + 4) * hSizeX;
-                x2 = (rightCol + 4) * hSizeX;
+                voidLeft = (leftCol + 4) * hSizeX;
+                voidRight = (rightCol + 4) * hSizeX;
                 y = 2 * hSizeY + 20;
-                y2 = 8 * hSizeY + 20;
+                dateY = 8 * hSizeY + 20;
             }
-            var width = x2 - x;
-            var height = y2 - y;
-            if (width < 72 || height < 36) return null;
+            if (voidRight - voidLeft < 72) return null;
 
-            var pad = Math.max(4, Math.min(7, width * 0.045));
-            var midY = y + height * 0.46;
-            var chip = Math.min(hSizeX * 1.35, midY - y - pad * 1.6);
+            var title = String(headerData.lines[1] || '');
+            var seedIdx = title.lastIndexOf('SEED');
+            if (seedIdx < 0) seedIdx = title.lastIndexOf('#');
+            if (seedIdx < 0) seedIdx = leftCol;
+
+            var chip = Math.min(hSizeX * 1.2, 20);
             if (chip < 7) return null;
-            var gap = Math.max(2.4, chip * 0.2);
+            var gap = Math.max(2.4, chip * 0.22);
+            var n = 5;
+            var rowW = n * chip + (n - 1) * gap;
+
+            var seedX = isGraphPaper ? (9 + seedIdx * hSizeX) : ((seedIdx + 4) * hSizeX);
+            var x = seedX;
+            if (x < voidLeft) x = voidLeft;
+            if (x + rowW > voidRight) x = voidRight - rowW;
+            if (x < voidLeft) return null;
+
+            var baseGap = Math.max(4, chip * 0.35);
+            var baseY = y + chip + baseGap;
+            if (baseY >= dateY) return null;
+
             return {
                 x: x,
                 y: y,
-                width: width,
-                height: height,
-                pad: pad,
-                midY: midY,
                 chip: chip,
                 gap: gap,
-                baseY: y + height * 0.82
+                rowW: rowW,
+                baseY: baseY,
+                n: n
             };
         }
 
-        function appendS2Chamber(parent, opts) {
+        function appendS2Unboxed(parent, opts) {
             if (!parent || !opts || !opts.dc || !opts.svgNS) return null;
             var hexes = plateInkHexes(opts.traits, opts.seed);
             if (!hexes.length) return null;
-            var box = s2ChamberLayout(opts.headerData, opts.hW, opts.hSizeX, opts.hSizeY, !!opts.isGraphPaper);
+            var box = s2UnboxedLayout(opts.headerData, opts.hW, opts.hSizeX, opts.hSizeY, !!opts.isGraphPaper);
             if (!box) return null;
 
             var dc = opts.dc;
             var svgNS = opts.svgNS;
             var ink = opts.inkColor || '#1a1a1a';
             var g = dc.createElementNS(svgNS, 'g');
-            g.setAttribute('class', 's2-chamber');
-            g.setAttribute('data-s2', 'ink-sign');
+            g.setAttribute('class', 's2-unboxed');
+            g.setAttribute('data-s2', 'unboxed');
 
-            var reg = dc.createElementNS(svgNS, 'rect');
-            reg.setAttribute('class', 's2-register');
-            reg.setAttribute('x', box.x);
-            reg.setAttribute('y', box.y);
-            reg.setAttribute('width', box.width);
-            reg.setAttribute('height', box.height);
-            reg.setAttribute('fill', 'none');
-            reg.setAttribute('stroke', ink);
-            reg.setAttribute('stroke-width', '1');
-            reg.setAttribute('opacity', '0.48');
-            reg.setAttribute('vector-effect', 'non-scaling-stroke');
-            g.appendChild(reg);
-
-            var n = hexes.length;
-            var chipX = box.x + box.pad;
-            var chipY = box.y + box.pad + Math.max(0, (box.midY - box.y - box.pad * 1.4 - box.chip) / 2);
+            var n = Math.min(hexes.length, box.n);
             for (var i = 0; i < n; i++) {
                 var sq = dc.createElementNS(svgNS, 'rect');
                 sq.setAttribute('class', 's2-chip');
                 sq.setAttribute('data-ink', hexes[i]);
-                sq.setAttribute('x', chipX + i * (box.chip + box.gap));
-                sq.setAttribute('y', chipY);
+                sq.setAttribute('x', box.x + i * (box.chip + box.gap));
+                sq.setAttribute('y', box.y);
                 sq.setAttribute('width', box.chip);
                 sq.setAttribute('height', box.chip);
                 sq.setAttribute('fill', hexes[i]);
                 g.appendChild(sq);
             }
 
-            var div = dc.createElementNS(svgNS, 'line');
-            div.setAttribute('class', 's2-divider');
-            div.setAttribute('x1', box.x + box.pad);
-            div.setAttribute('x2', box.x + box.width - box.pad);
-            div.setAttribute('y1', box.midY);
-            div.setAttribute('y2', box.midY);
-            div.setAttribute('stroke', ink);
-            div.setAttribute('stroke-width', '0.75');
-            div.setAttribute('opacity', '0.34');
-            div.setAttribute('vector-effect', 'non-scaling-stroke');
-            g.appendChild(div);
-
             var base = dc.createElementNS(svgNS, 'line');
             base.setAttribute('class', 's2-baseline');
-            base.setAttribute('x1', box.x + box.pad);
-            base.setAttribute('x2', box.x + box.width - box.pad);
+            base.setAttribute('x1', box.x);
+            base.setAttribute('x2', box.x + box.rowW);
             base.setAttribute('y1', box.baseY);
             base.setAttribute('y2', box.baseY);
             base.setAttribute('stroke', ink);
-            base.setAttribute('stroke-width', '0.75');
+            base.setAttribute('stroke-width', '1');
             base.setAttribute('opacity', '0.4');
             base.setAttribute('vector-effect', 'non-scaling-stroke');
             g.appendChild(base);
@@ -9392,7 +9378,7 @@ rawWt.push(baseWt + jitter);
                             headerG.appendChild(textEl);
                         }
                     }
-                    appendS2Chamber(headerG, {
+                    appendS2Unboxed(headerG, {
                         dc: dc,
                         svgNS: svgNS,
                         headerData: headerData,
@@ -10047,7 +10033,7 @@ rawWt.push(baseWt + jitter);
 
                         }
 
-                        appendS2Chamber(headerG, {
+                        appendS2Unboxed(headerG, {
                             dc: dc,
                             svgNS: svgNS,
                             headerData: headerData,
