@@ -71,7 +71,7 @@ ok &= must(
 )
 ok &= must("SEED" not in draw and "DATE" not in draw, "chamber does not restate SEED or DATE")
 ok &= must("ENGINE" not in draw and "SYMMETRY" not in draw, "chamber does not restate params")
-ok &= must("stroke-width', '0.6'" in draw, "register stays a hairline")
+ok &= must("stroke-width', '1'" in draw and "non-scaling-stroke" in draw, "register stays a hairline")
 ok &= must("data-ink" in draw, "each chip records its engine hex")
 
 ok &= must("class=\"s2-chamber\"" not in html.split("<body", 1)[0], "no rosy UI chrome for S2 in the studio markup")

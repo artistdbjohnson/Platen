@@ -8622,9 +8622,9 @@ rawWt.push(baseWt + jitter);
 
             var pad = Math.max(4, Math.min(7, width * 0.045));
             var midY = y + height * 0.46;
-            var chip = Math.min(hSizeX * 1.05, midY - y - pad * 1.6);
+            var chip = Math.min(hSizeX * 1.35, midY - y - pad * 1.6);
             if (chip < 7) return null;
-            var gap = Math.max(2.2, chip * 0.22);
+            var gap = Math.max(2.4, chip * 0.2);
             return {
                 x: x,
                 y: y,
@@ -8660,8 +8660,9 @@ rawWt.push(baseWt + jitter);
             reg.setAttribute('height', box.height);
             reg.setAttribute('fill', 'none');
             reg.setAttribute('stroke', ink);
-            reg.setAttribute('stroke-width', '0.6');
-            reg.setAttribute('opacity', '0.38');
+            reg.setAttribute('stroke-width', '1');
+            reg.setAttribute('opacity', '0.48');
+            reg.setAttribute('vector-effect', 'non-scaling-stroke');
             g.appendChild(reg);
 
             var n = hexes.length;
@@ -8686,8 +8687,9 @@ rawWt.push(baseWt + jitter);
             div.setAttribute('y1', box.midY);
             div.setAttribute('y2', box.midY);
             div.setAttribute('stroke', ink);
-            div.setAttribute('stroke-width', '0.4');
-            div.setAttribute('opacity', '0.26');
+            div.setAttribute('stroke-width', '0.75');
+            div.setAttribute('opacity', '0.34');
+            div.setAttribute('vector-effect', 'non-scaling-stroke');
             g.appendChild(div);
 
             var base = dc.createElementNS(svgNS, 'line');
@@ -8697,8 +8699,9 @@ rawWt.push(baseWt + jitter);
             base.setAttribute('y1', box.baseY);
             base.setAttribute('y2', box.baseY);
             base.setAttribute('stroke', ink);
-            base.setAttribute('stroke-width', '0.45');
-            base.setAttribute('opacity', '0.2');
+            base.setAttribute('stroke-width', '0.75');
+            base.setAttribute('opacity', '0.4');
+            base.setAttribute('vector-effect', 'non-scaling-stroke');
             g.appendChild(base);
 
             parent.appendChild(g);
