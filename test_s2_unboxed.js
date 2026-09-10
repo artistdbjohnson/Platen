@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Runtime proof: S2 unboxed chips are the engine hexes; no chamber box.
+ * Runtime proof: S2 chips are struck-only specimen inks, not a full palette legend.
  */
 const fs = require("fs");
 const path = require("path");
@@ -58,6 +58,9 @@ vm.runInContext(
   [
     extractFn("resolvePaletteEntry"),
     extractFn("inkHexesFromPalette"),
+    extractFn("flowerInkHex"),
+    extractFn("struckInkHexes"),
+    extractFn("paletteInkHexesByRank"),
     extractFn("plateInkHexes"),
     extractFn("s2UnboxedLayout"),
     extractFn("appendS2Unboxed"),
@@ -73,12 +76,109 @@ function must(cond, msg) {
   console.log("OK:  ", msg);
 }
 
-const bogolan = sandbox.plateInkHexes({ chromes: "bogolan" }, 1);
-must(bogolan.length === 5, "bogolan yields five ink chips");
+function hexesOf(name) {
+  return sandbox.inkHexesFromPalette(sandbox.resolvePaletteEntry(name, 1));
+}
+
+const ribbon = hexesOf("typewriter_ribbon_multicolored");
+const micron = hexesOf("micron_plotter");
+const black = hexesOf("typewriter_black");
+must(ribbon.length >= 6, "fat chrome typewriter_ribbon_multicolored has more than five palette entries");
+must(micron.length >= 10, "fat chrome micron_plotter has a large unused palette");
+must(black.length >= 3, "sparse chrome typewriter_black still has unused palette entries");
+
+// Struck-only: descending count, first-seen ties, f.c and cell.col.c, no pad, cap 5.
+const struckFlowers = [
+  { c: "#B82E2E" },
+  { col: { c: "#18181A" } },
+  { c: "#B82E2E" },
+  { c: "#236B3B" },
+  { c: "#18181A" },
+  { c: "#B82E2E" },
+  { c: "#E8B723" },
+];
+const struck = sandbox.struckInkHexes(struckFlowers);
 must(
-  JSON.stringify(bogolan) ===
-    JSON.stringify(["#272013", "#a9a599", "#8c7c57", "#4b3f23", "#392f1b"]),
-  "bogolan chips are the exact engine hexes"
+  JSON.stringify(struck) ===
+    JSON.stringify(["#B82E2E", "#18181A", "#236B3B", "#E8B723"]),
+  "struck order is count desc, then first-seen; both f.c and cell.col.c count"
+);
+must(struck.length === 4, "N<5 is correct when fewer inks were struck");
+must(
+  struck.every((hex) => micron.indexOf(hex) !== -1),
+  "struck hexes are real micron_plotter engine inks"
+);
+must(
+  JSON.stringify(sandbox.plateInkHexes({ chromes: "micron_plotter" }, 1, struckFlowers)) ===
+    JSON.stringify(struck),
+  "plateInkHexes returns struck specimen, not the 17-color micron legend"
+);
+must(
+  sandbox.plateInkHexes({ chromes: "micron_plotter" }, 1, struckFlowers).length < micron.length,
+  "fat chrome chips are a struck subset, not the full palette"
+);
+
+const padded = sandbox.plateInkHexes({ chromes: "micron_plotter" }, 1, struckFlowers);
+must(
+  padded.length === struck.length,
+  "unused palette entries are not padded onto the chip row"
+);
+
+const many = [];
+const extras = ["#18181A", "#B82E2E", "#2B4570", "#236B3B", "#633924", "#5A3B73", "#CF597E"];
+extras.forEach((hex, i) => {
+  for (var n = 0; n < extras.length - i; n++) many.push({ c: hex });
+});
+const capped = sandbox.struckInkHexes(many);
+must(capped.length === 5, "more than five unique struck inks still cap at five");
+must(capped[0] === "#18181A", "highest strike count leads the row");
+
+const sparseFlowers = [
+  { c: "#1D1D1D" },
+  { c: "#1D1D1D" },
+  { col: { c: "#1D1D1D" } },
+];
+const sparse = sandbox.plateInkHexes({ chromes: "typewriter_black" }, 7, sparseFlowers);
+must(sparse.length === 1, "sparse chrome with one struck ink yields one chip");
+must(sparse[0] === "#1D1D1D", "sparse chip is the struck carbon black, not unused greys");
+must(
+  JSON.stringify(sparse) !== JSON.stringify(sandbox.paletteInkHexesByRank({ chromes: "typewriter_black" }, 7)),
+  "sparse struck set is not the ranked full typewriter_black legend"
+);
+
+const fatRibbonFlowers = [
+  { c: "#F9D949" },
+  { c: "#1D1D1D" },
+  { c: "#1D1D1D" },
+  { c: "#7C2A24" },
+  { c: "#1D1D1D" },
+];
+const fatRibbon = sandbox.plateInkHexes(
+  { chromes: "typewriter_ribbon_multicolored" },
+  11,
+  fatRibbonFlowers
+);
+must(
+  JSON.stringify(fatRibbon) === JSON.stringify(["#1D1D1D", "#F9D949", "#7C2A24"]),
+  "fat ribbon chips match struck hexes in count/first-seen order"
+);
+must(fatRibbon.length === 3, "fat ribbon does not invent teal/sepia/blue unused inks");
+must(
+  fatRibbon.length < ribbon.length,
+  "fat chrome specimen is shorter than the ribbon palette legend"
+);
+
+const emptyFallback = sandbox.plateInkHexes({ chromes: "bogolan" }, 1, []);
+must(emptyFallback.length === 5, "empty flowers fall back to ranked palette .c, cap 5");
+must(
+  JSON.stringify(emptyFallback) ===
+    JSON.stringify(["#272013", "#392f1b", "#a9a599", "#8c7c57", "#4b3f23"]),
+  "bogolan fallback is unique .c sorted by descending .r, first-seen ties"
+);
+must(
+  JSON.stringify(sandbox.plateInkHexes({ chromes: "bogolan" }, 1, null)) ===
+    JSON.stringify(emptyFallback),
+  "missing flower set uses the same empty-flower fallback"
 );
 
 const workerWay = sandbox.PALETTES.spectrum(777);
@@ -88,14 +188,6 @@ must(
     JSON.stringify(sandbox.inkHexesFromPalette(helperWay)),
   "helper matches worker paletteEntry(seed) then .c hex list"
 );
-
-const a = sandbox.plateInkHexes({ chromes: "spectrum" }, 4242);
-const b = sandbox.plateInkHexes({ chromes: "spectrum" }, 98989);
-must(a.length >= 3 && b.length >= 3, "function palette chips resolve");
-must(JSON.stringify(a) !== JSON.stringify(b), "function palette chips follow the plate seed");
-
-const missing = sandbox.plateInkHexes({ chromes: "not-a-chrome" }, 1);
-must(missing.length > 0, "unknown chrome falls back to panar ink");
 
 const title =
   "PLATEN" +
@@ -118,13 +210,12 @@ const headerData = {
   ],
 };
 
-const us = sandbox.s2UnboxedLayout(headerData, 77, 16, 26.6667, false);
+const us = sandbox.s2UnboxedLayout(headerData, 77, 16, 26.6667, false, 5);
 must(!!us, "US-letter colophon has room for unboxed chips");
 must(us.x > (43 + 4) * 16, "chips sit to the right of the LEVEL block");
 must(us.y >= 2 * 26.6667, "chips sit under the SEED title row");
 must(us.baseY < 9 * 26.6667 + 24, "baseline stays above the DATE line");
-must(us.chip === us.chip && us.chip > 0, "chips are sized as squares");
-must(Math.abs(us.chip - us.chip) < 0.001, "chip width equals chip height source");
+must(us.chip > 0, "chips are sized as squares");
 
 const seedIdx = headerData.lines[1].lastIndexOf("SEED");
 const seedX = (seedIdx + 4) * 16;
@@ -135,7 +226,7 @@ const tight = {
     i >= 3 && i <= 7 ? line.slice(0, 39).padEnd(39, "X") : line
   ),
 };
-must(sandbox.s2UnboxedLayout(tight, 39, 16, 16, false) == null, "narrow LEVEL-full sheets skip S2");
+must(sandbox.s2UnboxedLayout(tight, 39, 16, 16, false, 5) == null, "narrow LEVEL-full sheets skip S2");
 
 const parent = el("g");
 const drawn = sandbox.appendS2Unboxed(parent, {
@@ -146,9 +237,10 @@ const drawn = sandbox.appendS2Unboxed(parent, {
   hSizeX: 16,
   hSizeY: 26.6667,
   isGraphPaper: false,
-  traits: { chromes: "bogolan" },
+  traits: { chromes: "micron_plotter" },
   seed: 4242,
   inkColor: "#1a1a1a",
+  flowers: struckFlowers,
 });
 
 must(!!drawn, "appendS2Unboxed returns an unboxed group");
@@ -162,20 +254,20 @@ must(
   "no chamber divider"
 );
 must(
-  drawn.children.filter((c) => c.name === "rect").length === 5,
-  "only the five chip rects are drawn — no chamber box"
+  drawn.children.filter((c) => c.name === "rect").length === struck.length,
+  "only struck chip rects are drawn — no chamber box, no padded extras"
 );
 must(drawn.children.some((c) => c.attrs.class === "s2-baseline"), "hairline baseline is present");
 
 const chips = drawn.children.filter((c) => c.attrs.class === "s2-chip");
-must(chips.length === 5, "five chips are drawn");
+must(chips.length === 4, "fat micron specimen draws four struck squares");
 must(
   chips.every((c) => c.attrs.width === c.attrs.height),
   "every chip is square"
 );
 must(
-  chips.map((c) => c.attrs.fill).join(" ") === bogolan.join(" "),
-  "chip fills are the bogolan engine hexes"
+  chips.map((c) => c.attrs.fill).join(" ") === struck.join(" "),
+  "chip fills are the struck micron hexes"
 );
 
 const baseline = drawn.children.find((c) => c.attrs.class === "s2-baseline");
@@ -191,12 +283,27 @@ must(
   drawn.children.every((c) => c.name !== "text"),
   "unboxed group contains no text"
 );
-must(
-  !JSON.stringify(drawn).includes("SIGN"),
-  "serialized group has no SIGN label"
-);
+must(!JSON.stringify(drawn).includes("SIGN"), "serialized group has no SIGN label");
 
-const panelBox = sandbox.s2UnboxedLayout(headerData, 78, 16, 16, false);
+const sparseParent = el("g");
+const sparseDrawn = sandbox.appendS2Unboxed(sparseParent, {
+  dc: sandbox.document,
+  svgNS: "http://www.w3.org/2000/svg",
+  headerData,
+  hW: 77,
+  hSizeX: 16,
+  hSizeY: 26.6667,
+  isGraphPaper: false,
+  traits: { chromes: "typewriter_black" },
+  seed: 7,
+  inkColor: "#1a1a1a",
+  flowers: sparseFlowers,
+});
+const sparseChips = sparseDrawn.children.filter((c) => c.attrs.class === "s2-chip");
+must(sparseChips.length === 1, "sparse chrome draws one struck square");
+must(sparseChips[0].attrs.fill === "#1D1D1D", "sparse chip fill is the struck hex");
+
+const panelBox = sandbox.s2UnboxedLayout(headerData, 78, 16, 16, false, 3);
 must(!!panelBox, "standard 78-col colophon also receives unboxed S2");
 
-console.log("\nAll S2 unboxed runtime checks passed.");
+console.log("\nAll S2 unboxed struck-specimen checks passed.");

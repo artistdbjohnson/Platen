@@ -8853,7 +8853,10 @@ rawWt.push(baseWt + jitter);
 
         }
 
-        // Locked S2 unboxed (2026-09-10): five engine-ink chips + hairline sign baseline.
+        // Locked S2 unboxed (2026-09-10): struck-only ink chips + hairline sign baseline.
+        // Chips are unique hexes actually struck on this render (f.c / cell.col.c),
+        // ordered by descending strike count (ties: first-seen), cap 5, no palette padding.
+        // Fallback only when the flower set is empty: unique palette .c by descending .r.
         // No chamber box, register, divider, seal, ribbon, quiet-dots, or SIGN label.
         // Seed / params / date stay on the colophon — do not restate them here.
         function resolvePaletteEntry(chromeName, seed) {
@@ -8887,12 +8890,87 @@ rawWt.push(baseWt + jitter);
             return colors;
         }
 
-        function plateInkHexes(traits, seed) {
-            var chrome = (traits && traits.chromes) ? traits.chromes : '';
-            return inkHexesFromPalette(resolvePaletteEntry(chrome, seed)).slice(0, 5);
+        function flowerInkHex(item) {
+            if (!item) return null;
+            var hex = null;
+            if (typeof item.c === 'string') hex = item.c;
+            else if (item.col && typeof item.col.c === 'string') hex = item.col.c;
+            if (!hex) return null;
+            hex = String(hex).trim();
+            if (hex.charAt(0) !== '#') return null;
+            return hex;
         }
 
-        function s2UnboxedLayout(headerData, hW, hSizeX, hSizeY, isGraphPaper) {
+        function struckInkHexes(flowers) {
+            if (!flowers || !flowers.length) return [];
+            var counts = {};
+            var firstHex = {};
+            var firstSeen = {};
+            var seenN = 0;
+            for (var i = 0; i < flowers.length; i++) {
+                var hex = flowerInkHex(flowers[i]);
+                if (!hex) continue;
+                var key = hex.toUpperCase();
+                if (counts[key] == null) {
+                    counts[key] = 0;
+                    firstHex[key] = hex;
+                    firstSeen[key] = seenN++;
+                }
+                counts[key] += 1;
+            }
+            var keys = Object.keys(counts);
+            keys.sort(function (a, b) {
+                var d = counts[b] - counts[a];
+                if (d !== 0) return d;
+                return firstSeen[a] - firstSeen[b];
+            });
+            var out = [];
+            for (var k = 0; k < keys.length && out.length < 5; k++) {
+                out.push(firstHex[keys[k]]);
+            }
+            return out;
+        }
+
+        function paletteInkHexesByRank(traits, seed) {
+            var palette = resolvePaletteEntry((traits && traits.chromes) || '', seed);
+            if (!palette) return [];
+            var list = Array.isArray(palette) ? palette : (palette.strokes || palette.colors || []);
+            var seen = {};
+            var items = [];
+            for (var i = 0; i < list.length; i++) {
+                var item = list[i];
+                var hex = null;
+                var rank = 0;
+                if (typeof item === 'string') hex = item;
+                else if (item) {
+                    if (typeof item.c === 'string') hex = item.c;
+                    else if (typeof item.hex === 'string') hex = item.hex;
+                    if (typeof item.r === 'number') rank = item.r;
+                }
+                if (!hex) continue;
+                hex = String(hex).trim();
+                if (hex.charAt(0) !== '#') continue;
+                var key = hex.toUpperCase();
+                if (seen[key]) continue;
+                seen[key] = true;
+                items.push({ hex: hex, rank: rank, seen: items.length });
+            }
+            items.sort(function (a, b) {
+                if (b.rank !== a.rank) return b.rank - a.rank;
+                return a.seen - b.seen;
+            });
+            var hexes = [];
+            for (var j = 0; j < items.length && hexes.length < 5; j++) hexes.push(items[j].hex);
+            return hexes;
+        }
+
+        function plateInkHexes(traits, seed, flowers) {
+            var struck = struckInkHexes(flowers);
+            if (struck.length) return struck;
+            return paletteInkHexesByRank(traits, seed);
+        }
+
+        function s2UnboxedLayout(headerData, hW, hSizeX, hSizeY, isGraphPaper, chipCount) {
             if (!headerData || !headerData.lines || !hW || !hSizeX || !hSizeY) return null;
             var levelMax = 0;
             for (var r = 3; r <= 7; r++) {
@@ -8916,7 +8994,6 @@ rawWt.push(baseWt + jitter);
                 y = 2 * hSizeY + 20;
                 dateY = 8 * hSizeY + 20;
             }
-            if (voidRight - voidLeft < 72) return null;
 
             var title = String(headerData.lines[1] || '');
             var seedIdx = title.lastIndexOf('SEED');
@@ -8926,8 +9003,9 @@ rawWt.push(baseWt + jitter);
             var chip = Math.min(hSizeX * 1.2, 20);
             if (chip < 7) return null;
             var gap = Math.max(2.4, chip * 0.22);
-            var n = 5;
+            var n = Math.max(1, Math.min(5, chipCount || 1));
             var rowW = n * chip + (n - 1) * gap;
+            if (voidRight - voidLeft < rowW) return null;
 
             var seedX = isGraphPaper ? (9 + seedIdx * hSizeX) : ((seedIdx + 4) * hSizeX);
             var x = seedX;
@@ -8952,9 +9030,9 @@ rawWt.push(baseWt + jitter);
 
         function appendS2Unboxed(parent, opts) {
             if (!parent || !opts || !opts.dc || !opts.svgNS) return null;
-            var hexes = plateInkHexes(opts.traits, opts.seed);
+            var hexes = plateInkHexes(opts.traits, opts.seed, opts.flowers);
             if (!hexes.length) return null;
-            var box = s2UnboxedLayout(opts.headerData, opts.hW, opts.hSizeX, opts.hSizeY, !!opts.isGraphPaper);
+            var box = s2UnboxedLayout(opts.headerData, opts.hW, opts.hSizeX, opts.hSizeY, !!opts.isGraphPaper, hexes.length);
             if (!box) return null;
 
             var dc = opts.dc;
@@ -10043,7 +10121,8 @@ rawWt.push(baseWt + jitter);
                             isGraphPaper: typeof isGraphPaper !== 'undefined' && !!isGraphPaper,
                             traits: traits,
                             seed: RENDER_SEED,
-                            inkColor: headerTextColor
+                            inkColor: headerTextColor,
+                            flowers: flowers
                         });
 
                         frag.appendChild(headerG);
