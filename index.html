@@ -1018,7 +1018,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 28px;
+            flex-wrap: wrap;
+            gap: 18px 28px;
             width: 100%;
         }
 
@@ -1042,6 +1043,27 @@
 
         .saved-solo-chrome button[hidden] {
             display: none !important;
+        }
+
+        .motus-download-cue {
+            display: block;
+            margin: 6px 0 0;
+            font-size: 8px;
+            letter-spacing: 0.14em;
+            text-transform: lowercase;
+            color: var(--text);
+            opacity: 0.42;
+            line-height: 1.4;
+        }
+
+        .motus-download-cue[hidden] {
+            display: none !important;
+        }
+
+        .saved-solo-chrome .motus-download-cue {
+            flex: 1 0 100%;
+            text-align: center;
+            margin: 0;
         }
 
         .params-fold-summary {
@@ -4182,6 +4204,7 @@
         html[data-theme="light"] .trait-label,
         html[data-theme="light"] .generate-hint,
         html[data-theme="light"] .generate-legend,
+        html[data-theme="light"] .motus-download-cue,
         html[data-theme="light"] .saved-creations-head h2,
         html[data-theme="light"] .saved-creations-cue,
         html[data-theme="light"] .saved-inline-empty,
@@ -5136,6 +5159,7 @@ rawWt.push(baseWt + jitter);
                     <button type="button" id="btn-png-dock" onclick="savePNG()" data-tooltip="download hires png">Download PNG</button>
 
                 </div>
+                <p class="motus-download-cue" id="motus-download-cue-dock" hidden>pause motus to download</p>
 
                 <p class="generate-legend">Randomize: new parameters. New seed: same parameters, new seed.</p>
 
@@ -5307,6 +5331,7 @@ rawWt.push(baseWt + jitter);
                     <button id="btn-out-plot" onclick="savePlotterSVG()" data-tooltip="inkscape layers, stroked pens, no paper texture">Download Plotter SVG</button>
 
                 </div>
+                <p class="motus-download-cue" id="motus-download-cue-export" hidden>pause motus to download</p>
 
                 
 
@@ -5565,8 +5590,10 @@ rawWt.push(baseWt + jitter);
             <div class="saved-solo-chrome">
                 <button type="button" id="saved-solo-close" onclick="closeSavedSolo()">close</button>
                 <button type="button" id="saved-solo-play-pause" hidden onclick="PlatenHyperspeed.togglePause()" aria-label="Pause Motus">pause</button>
-                <button type="button" id="saved-solo-download">download</button>
+                <button type="button" id="saved-solo-download" aria-label="Download archival PNG">download</button>
+                <button type="button" id="saved-solo-download-svg" hidden aria-label="Download SVG">svg</button>
                 <button type="button" id="saved-solo-remove">remove</button>
+                <p class="motus-download-cue" id="motus-download-cue-solo" hidden>pause motus to download</p>
             </div>
         </div>
     </div>
@@ -8651,9 +8678,14 @@ rawWt.push(baseWt + jitter);
 
 
 
-                id = Math.min(Math.max(id | 0, 1), 3);
+                var offscreenRebuild = (svgId === 's-solo-rebuild');
+                if (!offscreenRebuild) {
+                    id = Math.min(Math.max(id | 0, 1), 3);
+                } else {
+                    id = 1;
+                }
 
-                var panel = dc.getElementById('panel' + id);
+                var panel = offscreenRebuild ? null : dc.getElementById('panel' + id);
 
                 if (panel) panel.classList.add('loading');
 
@@ -8718,7 +8750,7 @@ rawWt.push(baseWt + jitter);
                 svg.setAttribute("height", svgH);
                 svg.setAttribute("viewBox", "0 0 " + svgW + " " + svgH);
                 svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-                svg.parentElement.style.aspectRatio = svgW + " / " + svgH;
+                if (svg.parentElement) svg.parentElement.style.aspectRatio = svgW + " / " + svgH;
 
                 // Clear SVG children instantly
                 while (svg.firstChild) svg.removeChild(svg.firstChild);
@@ -8732,6 +8764,7 @@ rawWt.push(baseWt + jitter);
                 svg.appendChild(bg);
 
                 // Hide canvas and canvas-hs elements instantly
+                if (!offscreenRebuild) {
                 var canvasFront = dc.getElementById('c' + id);
                 if (canvasFront) {
                     canvasFront.style.opacity = '0';
@@ -8743,6 +8776,7 @@ rawWt.push(baseWt + jitter);
                     canvasHS.style.opacity = '0';
                     var ctxHS = canvasHS.getContext('2d');
                     if (ctxHS) ctxHS.clearRect(0, 0, canvasHS.width, canvasHS.height);
+                }
                 }
 
                 // If typewriter, Chopin, etc., render header instantly
@@ -8900,7 +8934,7 @@ rawWt.push(baseWt + jitter);
 
                     var projectedNodes = _budgetIsoExtrusions(flowers);
                     var motifDefs = dc.createElementNS(svgNS, "defs");
-                    motifDefs.setAttribute("id", "platen-motif-defs-" + id);
+                    motifDefs.setAttribute("id", offscreenRebuild ? "platen-motif-defs-solo" : ("platen-motif-defs-" + id));
                     var motifDefIds = {};
                     frag.insertBefore(motifDefs, frag.firstChild);
 
@@ -9251,7 +9285,7 @@ rawWt.push(baseWt + jitter);
                                     if (!mPath) return;
                                     var defKey = mPath;
                                     if (!motifDefIds[defKey]) {
-                                        var defId = "pm-" + id + "-" + Object.keys(motifDefIds).length;
+                                        var defId = (offscreenRebuild ? "pm-solo-" : ("pm-" + id + "-")) + Object.keys(motifDefIds).length;
                                         var defPath = dc.createElementNS(svgNS, "path");
                                         defPath.setAttribute("id", defId);
                                         defPath.setAttribute("d", mPath);
@@ -9484,7 +9518,7 @@ rawWt.push(baseWt + jitter);
 
                     svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
 
-                    svg.parentElement.style.aspectRatio = svgW + " / " + svgH;
+                    if (svg.parentElement) svg.parentElement.style.aspectRatio = svgW + " / " + svgH;
 
 
 
@@ -9539,11 +9573,13 @@ rawWt.push(baseWt + jitter);
 
                     // Render SVG to WebGL Canvas for pure hardware-acceleration
 
-                    var canvas = document.getElementById('c' + id);
-                    var safeToRasterize = canvas && projectedNodes < MAX_RASTERIZE_NODES;
+                    var canvas = offscreenRebuild ? null : document.getElementById('c' + id);
+                    var safeToRasterize = !offscreenRebuild && canvas && projectedNodes < MAX_RASTERIZE_NODES;
 
+                    if (!offscreenRebuild) {
                     _lastFlowers[id] = flowers;
                     window._lastFlowers[id] = flowers;
+                    }
 
                     if (safeToRasterize) {
 
@@ -9652,7 +9688,7 @@ rawWt.push(baseWt + jitter);
 
 
 
-                    if (window.PlatenHyperspeed) {
+                    if (!offscreenRebuild && window.PlatenHyperspeed) {
 
                         PlatenHyperspeed.prepare(id);
 
@@ -9666,6 +9702,7 @@ rawWt.push(baseWt + jitter);
 
                     }
 
+                    if (!offscreenRebuild) {
                     window._lastWGen = window._lastWGen || {};
                     window._lastHGen = window._lastHGen || {};
                     window._lastWGen[id] = w_gen;
@@ -9689,6 +9726,7 @@ rawWt.push(baseWt + jitter);
 
                         drawBackCanvas(id);
 
+                    }
                     }
 
                     resolve({ flowers: data.flowerCount, seed: data.seed, attempts: data.attempts });
@@ -9826,7 +9864,7 @@ rawWt.push(baseWt + jitter);
 
         function allocExportCanvas(w, h) {
             var long0 = Math.max(w, h);
-            var edges = [long0, PLATEN_EXPORT_MIN_LONG_EDGE, 2560];
+            var edges = [long0, PLATEN_EXPORT_MIN_LONG_EDGE, 2560, 2048];
             var seen = {};
             for (var i = 0; i < edges.length; i++) {
                 var longEdge = Math.round(edges[i]);
@@ -9848,6 +9886,38 @@ rawWt.push(baseWt + jitter);
             return null;
         }
 
+        function canvasToExportBlob(canvas, format, quality, cb) {
+            var mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+            var q = format === 'png' ? undefined : (quality == null ? 0.95 : quality);
+            function fail(reason) {
+                if (reason) console.warn('[Platen] PNG blob failed', reason);
+                if (cb) cb(null);
+            }
+            function ok(blob) {
+                if (!blob) return fail('empty blob');
+                if (format === 'png' && blob.type && blob.type !== 'image/png') {
+                    console.warn('[Platen] PNG export produced ' + blob.type + '; refusing JPEG-as-PNG.');
+                    return fail(blob.type);
+                }
+                if (cb) cb(blob);
+            }
+            try {
+                if (canvas && typeof canvas.toBlob === 'function') {
+                    canvas.toBlob(function (blob) { ok(blob); }, mimeType, q);
+                    return;
+                }
+                if (!canvas || typeof canvas.toDataURL !== 'function') return fail('no canvas');
+                var dataUrl = canvas.toDataURL(mimeType, q);
+                var parts = dataUrl.split(',');
+                var bin = atob(parts[1] || '');
+                var arr = new Uint8Array(bin.length);
+                for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+                ok(new Blob([arr], { type: mimeType }));
+            } catch (err) {
+                fail(err);
+            }
+        }
+
         function applyArchivalSvgUnits(svg) {
             var dim = getSvgPixelSize(svg);
             svg.setAttribute('viewBox', '0 0 ' + dim.w + ' ' + dim.h);
@@ -9856,16 +9926,17 @@ rawWt.push(baseWt + jitter);
             return dim;
         }
 
-        function platenFileName(kind, ext, panelId) {
-            var rt = window.RESOLVED_TRAITS || TRAITS || {};
-            var bits = ['platen', String(RENDER_SEED || 'seed')];
+        function platenFileName(kind, ext, panelId, art) {
+            var rt = (art && art.traits) || window.RESOLVED_TRAITS || TRAITS || {};
+            var seed = (art && art.seed != null) ? art.seed : (RENDER_SEED || 'seed');
+            var bits = ['platen', String(seed)];
             if (panelId) bits.push('v' + panelId);
             if (kind) bits.push(kind);
             bits.push('sym_' + (rt.symmetry || 'x'));
             bits.push('space_' + (rt.space || 'x'));
             bits.push('engine_' + (rt.engine || 'x'));
             var name = bits.join('-').replace(/[^A-Za-z0-9._-]+/g, '_');
-            if (name.length > 160) name = ['platen', String(RENDER_SEED || 'seed'), kind || 'export'].filter(Boolean).join('-');
+            if (name.length > 160) name = ['platen', String(seed), kind || 'export'].filter(Boolean).join('-');
             ext = ext || 'svg';
             if (ext.charAt(0) !== '.') ext = '.' + ext;
             return name + ext;
@@ -10022,6 +10093,8 @@ rawWt.push(baseWt + jitter);
 
 
         function saveStackedLayers(format, event) {
+
+            if (typeof guardMotusImageExport === 'function' && guardMotusImageExport()) return;
 
             if (event) {
 
@@ -10257,6 +10330,8 @@ rawWt.push(baseWt + jitter);
 
         function saveSVG(forceMode) {
 
+            if (typeof guardMotusImageExport === 'function' && guardMotusImageExport()) return;
+
             var mode = forceMode || 'full';
 
             var panels = activePanels();
@@ -10360,6 +10435,8 @@ rawWt.push(baseWt + jitter);
         // ── Plotter SVG Export (Inkscape Ready) ─────────────────────────────────────
 
         function savePlotterSVG() {
+
+            if (typeof guardMotusImageExport === 'function' && guardMotusImageExport()) return;
 
             var svgNS = "http://www.w3.org/2000/svg";
 
@@ -11825,14 +11902,14 @@ rawWt.push(baseWt + jitter);
 
 
 
-        function hiresPaperPath() {
-            var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : (TRAITS && TRAITS.canvas);
+        function hiresPaperPath(canvasName) {
+            var activeCanvas = canvasName || ((window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : (TRAITS && TRAITS.canvas));
             if (activeCanvas === 'black') return CANVAS_BLACK_HIRES_PATH;
             return CANVAS_WHITE_HIRES_PATH;
         }
 
-        function withHiresPaper(callback) {
-            var url = hiresPaperPath();
+        function withHiresPaper(callback, canvasName) {
+            var url = hiresPaperPath(canvasName);
             var done = false;
             var finish = function (img) {
                 if (done) return;
@@ -11927,7 +12004,141 @@ rawWt.push(baseWt + jitter);
 
 
 
+        function exportSvgAsArchivalImage(svg, opts) {
+            opts = opts || {};
+            var format = opts.format || 'png';
+            var includeBG = opts.includeBG !== false;
+            var traits = opts.traits || window.RESOLVED_TRAITS || TRAITS || {};
+            var canvasName = opts.canvasName || traits.canvas || 'black';
+            var layout = opts.layout || (typeof currentLayout !== 'undefined' ? currentLayout : '');
+            var filename = opts.filename || platenFileName(opts.kind || null, format, opts.panelId, opts.art);
+            var onDone = opts.onDone;
+            var pxSize = getSvgPixelSize(svg);
+            var finished = false;
+
+            function finish(blob, meta) {
+                if (finished) return;
+                finished = true;
+                if (onDone) onDone(blob, meta || null);
+            }
+
+            function paintAndBlob(texImg, targetW, targetH) {
+                var size = getHiResExportSize(pxSize.w, pxSize.h, includeBG ? texImg : null);
+                var wantW = targetW || size.w;
+                var wantH = targetH || size.h;
+                var alloc = allocExportCanvas(wantW, wantH);
+                if (!alloc) {
+                    console.warn('[Platen] PNG canvas alloc failed');
+                    finish(null);
+                    return;
+                }
+                var outW = alloc.w;
+                var outH = alloc.h;
+                var svgImg;
+                try {
+                    svgImg = rasterizePlatenSvg(svg, outW, outH);
+                } catch (rasterErr) {
+                    console.warn('[Platen] PNG rasterize fell back:', rasterErr);
+                    svgImg = null;
+                }
+                if (!svgImg) {
+                    console.warn('[Platen] PNG export skipped to protect the tab.');
+                    finish(null);
+                    return;
+                }
+
+                var canvas = alloc.canvas;
+                var ctx = alloc.ctx;
+
+                // Layer 1: lossless paper scan (full res) or solid fill
+                if (includeBG) {
+                    if (texImg) {
+                        var imgW = texImg.naturalWidth || texImg.width;
+                        var imgH = texImg.naturalHeight || texImg.height;
+                        var tScale = Math.max(outW / imgW, outH / imgH);
+                        if (layout === 'grid_us_letter' || layout === 'banner_us_letter') tScale *= 1.06;
+                        var newW = imgW * tScale;
+                        var newH = imgH * tScale;
+                        var dx = (outW - newW) / 2;
+                        var dy = (outH - newH) / 2;
+                        if (canvasName && String(canvasName).indexOf('graph_paper') === 0) {
+                            dy = 0; // background-position: center top
+                        }
+                        ctx.drawImage(texImg, 0, 0, imgW, imgH, dx, dy, newW, newH);
+                    } else {
+                        ctx.fillStyle = canvasName === 'black' ? '#0a0a0a' : '#f5f0e8';
+                        ctx.fillRect(0, 0, outW, outH);
+                    }
+                } else if (format === 'jpg') {
+                    ctx.fillStyle = canvasName === 'black' ? '#0a0a0a' : '#f5f0e8';
+                    ctx.fillRect(0, 0, outW, outH);
+                }
+
+                // Layer 2: SVG ink at the same archival raster size
+                ctx.save();
+                ctx.globalAlpha = 1.0;
+                ctx.drawImage(svgImg, 0, 0, outW, outH);
+                ctx.restore();
+
+                canvasToExportBlob(canvas, format, format === 'png' ? undefined : 0.95, function (imgBlob) {
+                    if (!imgBlob && Math.max(outW, outH) > 2560) {
+                        console.warn('[Platen] PNG blob failed at ' + outW + 'x' + outH + '; retrying at 2560');
+                        var down = 2560 / Math.max(outW, outH);
+                        paintAndBlob(texImg, Math.round(outW * down), Math.round(outH * down));
+                        return;
+                    }
+                    if (!imgBlob) {
+                        console.warn('[Platen] PNG blob failed');
+                        finish(null);
+                        return;
+                    }
+                    downloadBlob(imgBlob, filename);
+                    console.log('[Platen] Saved ' + format.toUpperCase() + ': ' + filename + ' (' + outW + 'x' + outH + ')');
+                    finish(imgBlob, { w: outW, h: outH, filename: filename, type: imgBlob.type });
+                });
+            }
+
+            if (includeBG && typeof withHiresPaper === 'function') {
+                withHiresPaper(function (texImg) { paintAndBlob(texImg); }, canvasName);
+            } else if (_activeCanvasImg) {
+                paintAndBlob(_activeCanvasImg);
+            } else {
+                paintAndBlob(null);
+            }
+        }
+        window.exportSvgAsArchivalImage = exportSvgAsArchivalImage;
+
+        function isMotusBlockingExport() {
+            var hs = window.PlatenHyperspeed;
+            var on = !!(hs && typeof hs.isActive === 'function' && hs.isActive());
+            if (!on && document.querySelector && document.querySelector('.platen-anim-canvas.motus-running')) on = true;
+            if (!on) return false;
+            if (hs && typeof hs.isPaused === 'function' && hs.isPaused()) return false;
+            return true;
+        }
+
+        function syncMotusDownloadCues() {
+            var block = isMotusBlockingExport();
+            var cues = document.querySelectorAll('.motus-download-cue');
+            for (var i = 0; i < cues.length; i++) {
+                if (block) cues[i].removeAttribute('hidden');
+                else cues[i].setAttribute('hidden', 'hidden');
+            }
+        }
+
+        function guardMotusImageExport() {
+            syncMotusDownloadCues();
+            if (!isMotusBlockingExport()) return false;
+            console.log('[Platen] download blocked while motus is on');
+            return true;
+        }
+        window.isMotusBlockingExport = isMotusBlockingExport;
+        window.guardMotusImageExport = guardMotusImageExport;
+        window.syncMotusDownloadCues = syncMotusDownloadCues;
+
         function saveAsImage(format) {
+
+            if (guardMotusImageExport()) return;
 
             var panels = activePanels();
             var includeBGEl = document.getElementById('inc-bg');
@@ -11941,117 +12152,12 @@ rawWt.push(baseWt + jitter);
 
                     if (!svg) return;
 
-                    var pxSize = getSvgPixelSize(svg);
-
-                    function doComposite(texImg) {
-
-                        var size = getHiResExportSize(pxSize.w, pxSize.h, includeBG ? texImg : null);
-                        var alloc = allocExportCanvas(size.w, size.h);
-                        if (!alloc) {
-                            console.warn('[Platen] PNG canvas alloc failed');
-                            return;
-                        }
-                        var outW = alloc.w;
-                        var outH = alloc.h;
-
-                        var svgImg;
-                        try {
-                            svgImg = rasterizePlatenSvg(svg, outW, outH);
-                        } catch (rasterErr) {
-                            console.warn('[Platen] PNG rasterize fell back:', rasterErr);
-                            svgImg = null;
-                        }
-
-                        if (!svgImg) {
-                            console.warn('[Platen] PNG export skipped to protect the tab.');
-                            return;
-                        }
-
-                        var canvas = alloc.canvas;
-                        var ctx = alloc.ctx;
-
-                        // Layer 1: lossless paper scan (full res) or solid fill
-                        if (includeBG) {
-
-                            if (texImg) {
-
-                                var imgW = texImg.naturalWidth || texImg.width;
-                                var imgH = texImg.naturalHeight || texImg.height;
-
-                                var tScale = Math.max(outW / imgW, outH / imgH);
-
-                                if (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter') tScale *= 1.06;
-
-                                var newW = imgW * tScale;
-
-                                var newH = imgH * tScale;
-
-                                var dx = (outW - newW) / 2;
-
-                                var dy = (outH - newH) / 2;
-
-                                if (TRAITS.canvas && TRAITS.canvas.indexOf('graph_paper') === 0) {
-
-                                    dy = 0; // background-position: center top
-
-                                }
-
-                                ctx.drawImage(texImg, 0, 0, imgW, imgH, dx, dy, newW, newH);
-
-                            } else {
-
-                                var activeCanvas = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
-
-                                ctx.fillStyle = activeCanvas === 'black' ? '#0a0a0a' : '#f5f0e8';
-
-                                ctx.fillRect(0, 0, outW, outH);
-
-                            }
-
-                        } else if (format === 'jpg') {
-
-                            // JPEGs must have a solid background color if BG texture is not included
-
-                            var activeCanvasJpg = (window.RESOLVED_TRAITS && window.RESOLVED_TRAITS.canvas) ? window.RESOLVED_TRAITS.canvas : TRAITS.canvas;
-
-                            ctx.fillStyle = activeCanvasJpg === 'black' ? '#0a0a0a' : '#f5f0e8';
-
-                            ctx.fillRect(0, 0, outW, outH);
-
-                        }
-
-                        // Layer 2: SVG ink at the same archival raster size
-                        ctx.save();
-                        ctx.globalAlpha = 1.0;
-                        ctx.drawImage(svgImg, 0, 0, outW, outH);
-                        ctx.restore();
-
-                        var mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
-                        var quality = format === 'png' ? undefined : 0.95;
-
-                        canvas.toBlob(function (imgBlob) {
-                            if (!imgBlob) {
-                                console.warn('[Platen] PNG blob failed');
-                                return;
-                            }
-                            if (format === 'png' && imgBlob.type && imgBlob.type !== 'image/png') {
-                                console.warn('[Platen] PNG export produced ' + imgBlob.type + '; refusing JPEG-as-PNG.');
-                                return;
-                            }
-                            var name = platenFileName(null, format, id);
-                            downloadBlob(imgBlob, name);
-                            console.log('[Platen] Saved ' + format.toUpperCase() + ': ' + name + ' (' + outW + 'x' + outH + ')');
-                        }, mimeType, quality);
-
-                    }
-
-                    if (includeBG && typeof withHiresPaper === 'function') {
-                        withHiresPaper(doComposite);
-                    } else if (_activeCanvasImg) {
-                        doComposite(_activeCanvasImg);
-                    } else {
-                        doComposite(null);
-                    }
+                    exportSvgAsArchivalImage(svg, {
+                        format: format,
+                        includeBG: includeBG,
+                        panelId: id,
+                        filename: platenFileName(null, format, id)
+                    });
 
                 }, idx === 0 ? 0 : idx * 450);
 
@@ -12063,6 +12169,8 @@ rawWt.push(baseWt + jitter);
 
         function savePNG() {
 
+            if (guardMotusImageExport()) return;
+
             saveAsImage('png');
 
         }
@@ -12070,6 +12178,8 @@ rawWt.push(baseWt + jitter);
 
 
         function saveJPG() {
+
+            if (guardMotusImageExport()) return;
 
             saveAsImage('jpg');
 
@@ -12787,6 +12897,7 @@ rawWt.push(baseWt + jitter);
                     if (_isGloballyOn) solo.removeAttribute('hidden');
                     else solo.setAttribute('hidden', 'hidden');
                 }
+                if (typeof syncMotusDownloadCues === 'function') syncMotusDownloadCues();
             }
 
             if (typeof document !== 'undefined' && !window._motusVisibilityBound) {
@@ -16524,9 +16635,7 @@ rawWt.push(baseWt + jitter);
             var panels = activePanels();
             var svgs = [];
             var isAnyBlank = false;
-            var MAX_SAVE_MARKS = 800;
-            var MAX_SAVE_NODES = 1200;
-            var MAX_SAVE_CHARS = 1800000;
+            var previewTraitsEarly = JSON.parse(JSON.stringify(RESOLVED_TRAITS || TRAITS));
 
             for (var i = 0; i < panels.length; i++) {
                 var pid = panels[i];
@@ -16542,18 +16651,22 @@ rawWt.push(baseWt + jitter);
                 }
                 var snap = '';
                 var nodeCount = el.getElementsByTagName('*').length;
-                if (marks.length <= MAX_SAVE_MARKS && nodeCount <= MAX_SAVE_NODES) {
-                    try {
-                        snap = el.outerHTML.replace(/\bmotus-active\b/g, '');
-                    } catch (snapErr) {
-                        console.warn('[Platen] Save snapshot failed:', snapErr);
-                        snap = '';
-                    }
-                    if (snap.length > MAX_SAVE_CHARS) {
-                        console.warn('[Platen] Save snapshot trimmed to protect the tab');
-                        snap = '';
-                    }
-                } else {
+                var overBudget = (marks.length > MAX_SAVE_MARKS || nodeCount > MAX_SAVE_NODES);
+                try {
+                    snap = serializePlateSvg(el);
+                } catch (snapErr) {
+                    console.warn('[Platen] Save snapshot failed:', snapErr);
+                    snap = '';
+                }
+                if (snap && snap.length > MAX_SAVE_CHARS) {
+                    console.warn('[Platen] Save snapshot too large for storage; keeping session cache');
+                    cacheSavedPlateSvg({
+                        seed: RENDER_SEED,
+                        traits: previewTraitsEarly,
+                        layout: currentLayout
+                    }, snap);
+                    snap = '';
+                } else if (!snap && overBudget) {
                     console.warn('[Platen] Save snapshot skipped (marks=' + marks.length + ', nodes=' + nodeCount + ')');
                 }
                 svgs.push(snap);
@@ -16576,7 +16689,7 @@ rawWt.push(baseWt + jitter);
                 }
             }
 
-            var previewTraits = JSON.parse(JSON.stringify(RESOLVED_TRAITS || TRAITS));
+            var previewTraits = previewTraitsEarly;
             var previewArt = { traits: previewTraits, layout: currentLayout };
             var previews = [];
             for (var pi = 0; pi < panels.length; pi++) {
@@ -16792,25 +16905,176 @@ rawWt.push(baseWt + jitter);
             }
         }
 
+        var MAX_SAVE_MARKS = 800;
+        var MAX_SAVE_NODES = 1200;
+        var MAX_SAVE_CHARS = 1800000;
+        var SOLO_REBUILD_SVG_ID = 's-solo-rebuild';
+        var _savedVectorCache = {};
+
+        function savedArtKey(art) {
+            if (!art) return '';
+            var traits = art.traits || {};
+            return String(art.seed) + '|' + (art.layout || '') + '|' + (traits.symmetry || '') + '|' + (traits.space || '') + '|' + (traits.motif || '') + '|' + (traits.engine || '') + '|' + (traits.canvas || '') + '|' + (traits.chromes || '');
+        }
+
+        function serializePlateSvg(el) {
+            if (!el) return '';
+            try {
+                var s = new XMLSerializer().serializeToString(el);
+                return String(s || '').replace(/\bmotus-active\b/g, '');
+            } catch (err) {
+                try {
+                    return String(el.outerHTML || '').replace(/\bmotus-active\b/g, '');
+                } catch (err2) {
+                    return '';
+                }
+            }
+        }
+
+        function cacheSavedPlateSvg(art, snap) {
+            if (!art || !snap) return;
+            _savedVectorCache[savedArtKey(art)] = snap;
+        }
+
+        function persistRecoveredSvg(art, snap) {
+            if (!art || !snap) return;
+            cacheSavedPlateSvg(art, snap);
+            art.svgs = art.svgs || [];
+            if (snap.length <= MAX_SAVE_CHARS) {
+                art.svgs[0] = snap;
+                if (window.PlatenDB && typeof PlatenDB.save === 'function') {
+                    PlatenDB.save(art).catch(function () {});
+                }
+            }
+        }
+
+        function resolvedSavedSnap(art, opts) {
+            opts = opts || {};
+            if (opts.snap) return opts.snap;
+            if (art && art.svgs && art.svgs[0]) return art.svgs[0];
+            if (art) return _savedVectorCache[savedArtKey(art)] || '';
+            return '';
+        }
+
+        function parseSvgString(snap) {
+            if (!snap) return null;
+            var wrap = document.createElement('div');
+            wrap.innerHTML = snap;
+            return wrap.querySelector('svg');
+        }
+
+        function liveSvgMatchingArt(art) {
+            if (!art) return null;
+            var liveTraits = window.RESOLVED_TRAITS || TRAITS || {};
+            if (art.seed !== RENDER_SEED) return null;
+            if (JSON.stringify(art.traits || {}) !== JSON.stringify(liveTraits)) return null;
+            var panels = (typeof activePanels === 'function') ? activePanels() : [1];
+            for (var i = 0; i < panels.length; i++) {
+                var el = document.getElementById('s' + panels[i]);
+                if (el && el.querySelector('use, path, text')) return el;
+            }
+            return null;
+        }
+
+        function rebuildSavedPlateSvg(art, cb) {
+            if (!art || typeof renderPlaten !== 'function') {
+                if (cb) cb(null);
+                return;
+            }
+            var host = document.getElementById('solo-rebuild-host');
+            if (!host) {
+                host = document.createElement('div');
+                host.id = 'solo-rebuild-host';
+                host.setAttribute('aria-hidden', 'true');
+                host.style.cssText = 'position:fixed;left:-99999px;top:0;width:8px;height:8px;overflow:hidden;opacity:0;pointer-events:none;';
+                document.body.appendChild(host);
+            }
+            host.innerHTML = '';
+            var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.id = SOLO_REBUILD_SVG_ID;
+            host.appendChild(svg);
+
+            var prevSeed = RENDER_SEED;
+            var prevLayout = currentLayout;
+            var prevResolved = window.RESOLVED_TRAITS;
+            RENDER_SEED = art.seed;
+            if (art.layout) currentLayout = art.layout;
+            var traits = JSON.parse(JSON.stringify(art.traits || {}));
+            var done = false;
+            function finish(el) {
+                if (done) return;
+                done = true;
+                RENDER_SEED = prevSeed;
+                currentLayout = prevLayout;
+                window.RESOLVED_TRAITS = prevResolved;
+                if (cb) cb(el);
+            }
+            try {
+                renderPlaten(SOLO_REBUILD_SVG_ID, 1, traits).then(function () {
+                    var built = document.getElementById(SOLO_REBUILD_SVG_ID);
+                    if (built && built.querySelector('use, path, text')) finish(built);
+                    else finish(null);
+                }).catch(function (err) {
+                    console.warn('[Platen] solo rebuild failed', err);
+                    finish(null);
+                });
+            } catch (err) {
+                console.warn('[Platen] solo rebuild failed', err);
+                finish(null);
+            }
+        }
+
+        function ensureSavedPlateSvg(art, cb) {
+            cb = cb || function () {};
+            if (!art) { cb(null); return; }
+            var snap = (art.svgs && art.svgs[0]) || '';
+            if (snap) {
+                var parsed = parseSvgString(snap);
+                if (parsed) { cb(parsed); return; }
+            }
+            var cached = _savedVectorCache[savedArtKey(art)];
+            if (cached) {
+                var fromCache = parseSvgString(cached);
+                if (fromCache) {
+                    persistRecoveredSvg(art, cached);
+                    cb(fromCache);
+                    return;
+                }
+            }
+            var live = liveSvgMatchingArt(art);
+            if (live) {
+                var liveSnap = serializePlateSvg(live);
+                if (liveSnap) {
+                    persistRecoveredSvg(art, liveSnap);
+                    var fromLive = parseSvgString(liveSnap);
+                    if (fromLive) { cb(fromLive); return; }
+                }
+            }
+            rebuildSavedPlateSvg(art, function (built) {
+                if (!built) { cb(null); return; }
+                var rebuilt = serializePlateSvg(built);
+                if (rebuilt) persistRecoveredSvg(art, rebuilt);
+                cb(parseSvgString(rebuilt) || built);
+            });
+        }
+        window.ensureSavedPlateSvg = ensureSavedPlateSvg;
+        window.serializePlateSvg = serializePlateSvg;
+        window.liveSvgMatchingArt = liveSvgMatchingArt;
+        window.cacheSavedPlateSvg = cacheSavedPlateSvg;
+        window.resolvedSavedSnap = resolvedSavedSnap;
+
         function paintSavedPlate(host, art, opts) {
             opts = opts || {};
             host.innerHTML = '';
-            var snap = (art.svgs && art.svgs[0]) || '';
+            host.style.backgroundImage = '';
+            host.style.backgroundColor = '';
+            host.style.backgroundSize = '';
+            host.style.backgroundPosition = '';
+            var snap = resolvedSavedSnap(art, opts);
             var previewUrl = (art.previews && art.previews[0]) || '';
-            if (previewUrl) {
-                var img = document.createElement('img');
-                img.src = previewUrl;
-                img.alt = 'saved plate ' + art.seed;
-                img.style.width = opts.fillWidth ? '100%' : 'auto';
-                img.style.height = 'auto';
-                img.style.maxWidth = '100%';
-                img.style.objectFit = 'contain';
-                img.style.borderRadius = '0';
-                img.style.display = 'block';
-                host.appendChild(img);
-                return;
-            }
-            if (snap) {
+            var wantVector = !!opts.vector;
+
+            function paintSvg() {
                 host.innerHTML = snap.replace(/\bmotus-active\b/g, '');
                 var svgEl = host.querySelector('svg');
                 if (svgEl) {
@@ -16830,6 +17094,43 @@ rawWt.push(baseWt + jitter);
                         svgEl.insertBefore(thumbStyle, svgEl.firstChild);
                     }
                 }
+                if (wantVector && host.id === 'saved-solo-plate') {
+                    var paperCanvas = (art.traits && art.traits.canvas) || 'black';
+                    var rosy = (paperCanvas === 'white' || paperCanvas === 'tan' || paperCanvas === 'olive');
+                    var paperUrl = rosy ? CANVAS_WHITE_PATH : CANVAS_BLACK_PATH;
+                    host.style.backgroundImage = 'url("' + paperUrl + '")';
+                    host.style.backgroundSize = 'cover';
+                    host.style.backgroundPosition = 'center';
+                    host.style.backgroundColor = rosy ? '#f5f0e8' : '#0a0a0a';
+                }
+            }
+
+            // Solo / full-plate: always prefer the stored SVG so pinch-zoom stays vector.
+            // Masonry keeps the 480 JPEG thumb for scroll performance.
+            if (wantVector) {
+                if (snap) {
+                    paintSvg();
+                    return;
+                }
+                host.textContent = 'seed ' + art.seed;
+                return;
+            }
+            if (previewUrl) {
+                var img = document.createElement('img');
+                img.src = previewUrl;
+                img.alt = 'saved plate ' + art.seed;
+                img.style.width = opts.fillWidth ? '100%' : 'auto';
+                img.style.height = 'auto';
+                img.style.maxWidth = '100%';
+                img.style.objectFit = 'contain';
+                img.style.borderRadius = '0';
+                img.style.display = 'block';
+                host.appendChild(img);
+                return;
+            }
+            if (snap) {
+                paintSvg();
+                return;
             }
             if (!host.querySelector('svg, img')) {
                 host.textContent = 'seed ' + art.seed;
@@ -16934,7 +17235,26 @@ rawWt.push(baseWt + jitter);
             if (!art || !modal || !plate) return;
             _savedSoloIndex = index;
             try { activeGalleryIndex = index; } catch (e0) {}
-            paintSavedPlate(plate, art, { fillWidth: false });
+            var hasSnap = !!(art.svgs && art.svgs[0]);
+            if (hasSnap) {
+                paintSavedPlate(plate, art, { fillWidth: false, vector: true });
+                syncSavedSoloDownloadChrome(art);
+            } else {
+                plate.innerHTML = '';
+                plate.style.backgroundImage = '';
+                plate.textContent = 'preparing plate…';
+                syncSavedSoloDownloadChrome(art);
+                ensureSavedPlateSvg(art, function (svg) {
+                    if (_savedSoloIndex !== index) return;
+                    var recovered = resolvedSavedSnap(art, { snap: svg ? serializePlateSvg(svg) : '' });
+                    if (svg || recovered) {
+                        paintSavedPlate(plate, art, { fillWidth: false, vector: true, snap: recovered });
+                    } else {
+                        plate.textContent = 'seed ' + art.seed;
+                    }
+                    syncSavedSoloDownloadChrome(art);
+                });
+            }
             modal.classList.add('is-open');
             modal.removeAttribute('hidden');
             var closeBtn = document.getElementById('saved-solo-close');
@@ -16944,6 +17264,7 @@ rawWt.push(baseWt + jitter);
             if (window.PlatenHyperspeed && typeof PlatenHyperspeed.syncPlayPauseUI === 'function') {
                 PlatenHyperspeed.syncPlayPauseUI();
             }
+            if (typeof syncMotusDownloadCues === 'function') syncMotusDownloadCues();
         }
 
         function closeSavedSolo() {
@@ -16953,42 +17274,92 @@ rawWt.push(baseWt + jitter);
                 modal.classList.remove('is-open');
                 modal.setAttribute('hidden', 'hidden');
             }
-            if (plate) plate.innerHTML = '';
+            if (plate) {
+                plate.innerHTML = '';
+                plate.style.backgroundImage = '';
+                plate.style.backgroundColor = '';
+                plate.style.backgroundSize = '';
+                plate.style.backgroundPosition = '';
+            }
             _savedSoloIndex = -1;
             try { activeGalleryIndex = -1; } catch (e0) {}
         }
 
-        function downloadSavedSolo() {
+        function parseSavedPlateSvg(art) {
+            var snap = art && art.svgs && art.svgs[0];
+            if (!snap) snap = art ? _savedVectorCache[savedArtKey(art)] : '';
+            return parseSvgString(snap);
+        }
+
+        function syncSavedSoloDownloadChrome(art) {
+            var svgBtn = document.getElementById('saved-solo-download-svg');
+            if (!svgBtn) return;
+            var hasVector = !!(art && ((art.svgs && art.svgs[0]) || _savedVectorCache[savedArtKey(art)] || liveSvgMatchingArt(art)));
+            if (hasVector) svgBtn.removeAttribute('hidden');
+            else svgBtn.setAttribute('hidden', 'hidden');
+        }
+
+        function downloadSavedSoloSvg() {
+            if (typeof guardMotusImageExport === 'function' && guardMotusImageExport()) return;
             var art = curatedGallery[_savedSoloIndex];
             if (!art) return;
-            var url = (art.previews && art.previews[0]) || '';
-            var name = 'platen-' + art.seed;
-            if (url) {
-                var a = document.createElement('a');
-                a.href = url;
-                a.download = name + '.jpg';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                return;
-            }
-            var snap = (art.svgs && art.svgs[0]) || '';
-            if (!snap) return;
-            var blob = new Blob([snap], { type: 'image/svg+xml' });
-            var href = URL.createObjectURL(blob);
-            var link = document.createElement('a');
-            link.href = href;
-            link.download = name + '.svg';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(function() { URL.revokeObjectURL(href); }, 1200);
+            ensureSavedPlateSvg(art, function (svg) {
+                var snap = (art.svgs && art.svgs[0]) || (svg ? serializePlateSvg(svg) : '');
+                if (!snap) {
+                    toggleInfoModal('svg unavailable', 'could not rebuild a vector snapshot for this plate.');
+                    return;
+                }
+                syncSavedSoloDownloadChrome(art);
+                downloadBlob(new Blob([snap], { type: 'image/svg+xml' }), platenFileName(null, 'svg', null, art));
+            });
         }
+
+        function downloadSavedSolo() {
+            if (typeof guardMotusImageExport === 'function' && guardMotusImageExport()) return;
+            var art = curatedGallery[_savedSoloIndex];
+            if (!art) return;
+            var btn = document.getElementById('saved-solo-download');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'preparing…';
+            }
+            ensureSavedPlateSvg(art, function (svg) {
+                if (!svg) {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = 'download';
+                    }
+                    toggleInfoModal('download unavailable', 'could not rebuild a vector to rasterize at archival size.');
+                    return;
+                }
+                syncSavedSoloDownloadChrome(art);
+                exportSvgAsArchivalImage(svg, {
+                    format: 'png',
+                    includeBG: true,
+                    canvasName: (art.traits && art.traits.canvas) || 'black',
+                    layout: art.layout,
+                    traits: art.traits,
+                    art: art,
+                    filename: platenFileName(null, 'png', null, art),
+                    onDone: function () {
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.textContent = 'download';
+                        }
+                    }
+                });
+            });
+        }
+        window.downloadSavedSolo = downloadSavedSolo;
+        window.downloadSavedSoloSvg = downloadSavedSoloSvg;
+        window.parseSavedPlateSvg = parseSavedPlateSvg;
 
         (function bindSavedSoloChrome() {
             var downloadBtn = document.getElementById('saved-solo-download');
+            var svgBtn = document.getElementById('saved-solo-download-svg');
             var removeBtn = document.getElementById('saved-solo-remove');
             if (downloadBtn) downloadBtn.onclick = downloadSavedSolo;
+            if (svgBtn) svgBtn.onclick = downloadSavedSoloSvg;
             if (removeBtn) {
                 removeBtn.onclick = function() {
                     if (_savedSoloIndex < 0) return;
@@ -17386,6 +17757,8 @@ rawWt.push(baseWt + jitter);
 
 
         window.downloadBackHiRes = function (id, format, event) {
+
+            if (typeof guardMotusImageExport === 'function' && guardMotusImageExport()) return;
 
             if (event) {
 

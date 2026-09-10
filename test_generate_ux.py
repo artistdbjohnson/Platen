@@ -113,7 +113,9 @@ ok &= must("openSavedSolo" in render_fn, "clicking a masonry plate opens the sol
 ok &= must("saved-inline-remove" not in render_fn and "✕" not in render_fn, "masonry renderer does not paint delete overlays")
 ok &= must('id="saved-solo"' in html and "function openSavedSolo" in html and "function closeSavedSolo" in html, "solo plate viewer exists")
 ok &= must("saved-solo-backdrop" in html and "saved-solo-plate" in html, "solo viewer is one plate on a dark backdrop")
-ok &= must("saved-solo-download" in html and "saved-solo-remove" in html and "saved-solo-close" in html and "saved-solo-play-pause" in html, "solo chrome is close, play/pause, download, and remove")
+ok &= must("saved-solo-download" in html and "saved-solo-download-svg" in html and "saved-solo-remove" in html and "saved-solo-close" in html and "saved-solo-play-pause" in html, "solo chrome is close, play/pause, download png, svg, and remove")
+ok &= must("vector: true" in html and "function downloadSavedSolo()" in html and "exportSvgAsArchivalImage" in html, "solo opens SVG and downloads archival PNG")
+ok &= must("art.previews" not in html.split("function downloadSavedSolo()", 1)[1].split("window.downloadSavedSolo", 1)[0], "solo download never reads the masonry JPEG")
 ok &= must('id="gallery-modal"' not in html and 'id="gallery-detail-modal"' not in html, "gallery modal and gallery viewer surfaces are removed")
 ok &= must("gallery viewer" not in html, "gallery viewer header chrome is gone")
 ok &= must("function openGalleryModal" not in html and "function toggleGalleryModal" not in html, "Gallery no longer opens a second surface")
@@ -203,9 +205,12 @@ ok &= must("function platenFileName" in html and "function rasterizePlatenSvg" i
 ok &= must("function getHiResExportSize" in html and "PLATEN_EXPORT_DPI = 300" in html, "Download PNG uses 300 DPI archival size, not a 2560 preview")
 ok &= must("CANVAS_WHITE_HIRES_PATH = 'platen_white.png'" in html and "function withHiresPaper" in html, "PNG export composites the lossless paper scan")
 save_fn = html.split("function saveAsImage(format)", 1)[1].split("function savePNG()", 1)[0]
-ok &= must("getHiResExportSize" in save_fn and "image/png" in save_fn, "saveAsImage PNG path is hi-res and lossless")
-ok &= must("outH = 2560" not in save_fn and "outW = 1440" not in save_fn, "saveAsImage no longer anchors to the 2560 preview edge")
+export_fn = html.split("function exportSvgAsArchivalImage", 1)[1].split("function saveAsImage(format)", 1)[0]
+ok &= must("exportSvgAsArchivalImage" in save_fn, "saveAsImage PNG path uses the shared archival helper")
+ok &= must("getHiResExportSize" in export_fn, "archival helper is hi-res")
+ok &= must("outH = 2560" not in export_fn and "outW = 1440" not in export_fn, "archival helper no longer anchors to the 2560 preview edge")
 ok &= must("function savePNG()" in html and "saveAsImage('png')" in html, "dock/out Download PNG still calls saveAsImage('png')")
+ok &= must("guardMotusImageExport" in html and "pause motus to download" in html, "Motus ON blocks image download with an inline cue")
 back_fn = html.split("window.downloadBackHiRes", 1)[1].split("function startBreathing", 1)[0]
 ok &= must("getHiResExportSize" in back_fn and "toDataURL" not in back_fn, "downloadBackHiRes re-rasters hi-res instead of dumping the 1200 preview canvas")
 ok &= must("Plot mode never includes paper" in html or "always excludes paper" in html, "plotter export keeps BG texture off")

@@ -74,24 +74,53 @@ ok &= must("PLATEN_EXPORT_MIN_LONG_EDGE = 3300" in html, "normal plate long edge
 ok &= must("PLATEN_EXPORT_MAX_EDGE = 4096" in html, "export long edge is capped to protect the tab")
 ok &= must("PLATEN_PX_PER_IN = 160" in html, "physical inch conversion is unchanged")
 
+ok &= must("function exportSvgAsArchivalImage" in html, "shared archival composite exists for studio + solo download")
+export_fn = html.split("function exportSvgAsArchivalImage", 1)[1].split("function saveAsImage(format)", 1)[0]
+ok &= must("getHiResExportSize" in export_fn, "archival helper uses the 300 DPI size helper")
+ok &= must("withHiresPaper" in export_fn, "archival helper composites lossless paper, not the JPEG preview tex")
+ok &= must("allocExportCanvas" in export_fn, "archival helper allocates through the OOM-safe helper")
+ok &= must("canvasToExportBlob" in export_fn, "archival helper downloads a PNG blob")
+ok &= must("outH = 2560" not in export_fn and "outW = 1440" not in export_fn, "2K screen presets are gone from archival helper")
+ok &= must("toDataURL" not in export_fn, "archival helper does not dump a preview data URL")
+ok &= must("function canvasToExportBlob" in html and "refusing JPEG-as-PNG" in html, "PNG path refuses a JPEG blob tagged as .png")
 save_fn = html.split("function saveAsImage(format)", 1)[1].split("function savePNG()", 1)[0]
-ok &= must("getHiResExportSize" in save_fn, "saveAsImage uses the archival size helper")
-ok &= must("withHiresPaper" in save_fn, "saveAsImage composites lossless paper, not the JPEG preview tex")
-ok &= must("allocExportCanvas" in save_fn, "saveAsImage allocates through the OOM-safe helper")
-ok &= must("format === 'png' ? 'image/png'" in save_fn, "PNG mime is image/png")
-ok &= must("refusing JPEG-as-PNG" in save_fn, "PNG path refuses a JPEG blob tagged as .png")
-ok &= must("outH = 2560" not in save_fn and "outW = 1440" not in save_fn, "2K screen presets are gone from saveAsImage")
-ok &= must("toDataURL" not in save_fn, "saveAsImage downloads a PNG blob, not a preview data URL")
+ok &= must("exportSvgAsArchivalImage" in save_fn, "saveAsImage forwards to the shared archival helper")
+ok &= must("getHiResExportSize" in save_fn or "exportSvgAsArchivalImage" in save_fn, "saveAsImage stays on the archival path")
 
-# Masonry/solo previews must stay small JPEGs — do not piggyback archival raster there.
+# Masonry thumbs must stay small JPEGs — do not piggyback archival raster there.
 preview_fn = html.split("function captureInlinePlatePreview", 1)[1].split("function paintSavedPlate", 1)[0]
 ok &= must("var w = 480" in preview_fn, "masonry preview raster stays 480px")
 ok &= must("image/jpeg" in preview_fn, "masonry preview remains JPEG")
 ok &= must("getHiResExportSize" not in preview_fn, "masonry preview does not use archival export size")
 
+paint_fn = html.split("function paintSavedPlate", 1)[1].split("function renderSavedInline", 1)[0]
+ok &= must("opts.vector" in paint_fn, "paintSavedPlate distinguishes solo vector from masonry thumbs")
+ok &= must("wantVector" in paint_fn, "solo path prefers the stored SVG")
+ok &= must("previewUrl" in paint_fn, "masonry can still use the JPEG thumb")
+
+open_fn = html.split("function openSavedSolo", 1)[1].split("function closeSavedSolo", 1)[0]
+ok &= must("vector: true" in open_fn, "solo viewer asks paintSavedPlate for the SVG")
+
+solo_dl = html.split("function downloadSavedSolo()", 1)[1].split("window.downloadSavedSolo", 1)[0]
+ok &= must("exportSvgAsArchivalImage" in solo_dl, "solo download re-rasters through the archival helper")
+ok &= must("art.previews" not in solo_dl, "solo download does not ship the 480 JPEG thumb")
+ok &= must(".jpg" not in solo_dl, "solo download is not a JPEG")
+ok &= must("format: 'png'" in solo_dl, "solo download default is PNG")
+ok &= must("function downloadSavedSoloSvg" in html, "solo chrome also exposes Download SVG")
+ok &= must('id="saved-solo-download-svg"' in html, "Download SVG control exists in solo chrome")
+ok &= must("function ensureSavedPlateSvg" in html and "s-solo-rebuild" in html, "empty/dense snaps rebuild a vector instead of dying")
+ok &= must("ensureSavedPlateSvg" in solo_dl, "solo download recovers a vector when art.svgs[0] is empty")
+ok &= must("guardMotusImageExport" in solo_dl, "solo download does not start while Motus is on")
+ok &= must("pause motus to download" in html, "Motus block uses a quiet lowercase cue")
+ok &= must("function isMotusBlockingExport" in html and "isPaused()" in html, "Motus ON blocks; paused Motus may download")
+
 ok &= must("MAX_LIVE_SVG_NODES" in html and "MAX_RASTERIZE_NODES" in html, "OOM guards remain")
 ok &= must("function _budgetIsoExtrusions" in html, "isometric node budget remains")
 ok &= must("function renderSavedInline" in html and "function openSavedSolo" in html, "masonry/solo remain")
+render_fn = html.split("function renderSavedInline", 1)[1].split("function openSavedSolo", 1)[0]
+ok &= must("vector: true" not in render_fn, "masonry renderer does not request the solo SVG path")
+ok &= must("paintSavedPlate(preview, art, { fillWidth: true })" in render_fn, "masonry still paints thumbs via paintSavedPlate")
+ok &= must("svg.classList.remove('motus-active')" in html and "_hideAnimCanvas" in html, "Motus OFF reveals the live studio SVG")
 ok &= must("function randomize()" in html and "function setSaveButtonsState" in html, "Generate/Save remain")
 
 back_fn = html.split("window.downloadBackHiRes", 1)[1].split("function startBreathing", 1)[0]
@@ -132,6 +161,8 @@ if paper_whs:
     print(f"INFO: US Letter 300 DPI over {paper_w}x{paper_h} paper → {out_w}x{out_h}, ~{est / 1024 / 1024:.1f}MB")
     # Live Chrome savePNG() on a generated letter plate (2026-09-09):
     # image/png, 2550x3300, 10.2MB — lossless and above the 3MB floor.
+    # Live Chrome downloadSavedSolo() on a letter-size saved SVG (2026-09-10):
+    # image/png, 2550x3300, 7.88MB — not the 76KB masonry JPEG.
 
 # Tiny SVG user units (or inch attributes misread as pixels) must not emit a preview raster.
 tiny_w, tiny_h = get_hires_export_size(8.5, 11, tex, px_per_in, dpi, min_long, max_edge)
