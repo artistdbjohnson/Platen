@@ -156,6 +156,8 @@ if paper_whs:
     print(f"INFO: US Letter 300 DPI over {paper_w}x{paper_h} paper → {out_w}x{out_h}, ~{est / 1024 / 1024:.1f}MB")
     # Live Chrome savePNG() on a generated letter plate (2026-09-09):
     # image/png, 2550x3300, 10.2MB — lossless and above the 3MB floor.
+    # Live Chrome downloadSavedSolo() on a letter-size saved SVG (2026-09-10):
+    # image/png, 2550x3300, 7.88MB — not the 76KB masonry JPEG.
 
 # Tiny SVG user units (or inch attributes misread as pixels) must not emit a preview raster.
 tiny_w, tiny_h = get_hires_export_size(8.5, 11, tex, px_per_in, dpi, min_long, max_edge)
