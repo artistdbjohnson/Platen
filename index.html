@@ -2,7 +2,7 @@
 
 <!-- Vercel Production Deploy Trigger -->
 
-<html lang="en" translate="no" class="notranslate" data-theme="light" data-ui="index">
+<html lang="en" translate="no" class="notranslate" data-theme="light" data-ui="light">
 
 
 
@@ -16,22 +16,21 @@
 
     <title>Platen</title>
 
-    <!-- Restore index / light mode before first paint to avoid a dark flash.
+    <!-- Restore light / dark chrome before first paint to avoid a theme flash.
          Also mark real phones before CSS viewport inflation can hide max-width: 900px. -->
     <script>
         (function () {
             try {
                 var mode = localStorage.getItem('platen_ui_mode');
-                if (mode === 'studio' || mode === 'dark') {
-                    document.documentElement.removeAttribute('data-theme');
-                    document.documentElement.removeAttribute('data-ui');
-                } else {
-                    document.documentElement.setAttribute('data-theme', 'light');
-                    document.documentElement.setAttribute('data-ui', 'index');
+                var next = (mode === 'studio' || mode === 'dark') ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', next);
+                document.documentElement.setAttribute('data-ui', next);
+                if (mode === 'studio' || mode === 'index') {
+                    localStorage.setItem('platen_ui_mode', next);
                 }
             } catch (e) {
                 document.documentElement.setAttribute('data-theme', 'light');
-                document.documentElement.setAttribute('data-ui', 'index');
+                document.documentElement.setAttribute('data-ui', 'light');
             }
             try {
                 var sw = (window.screen && screen.width) ? screen.width : 0;
@@ -76,39 +75,41 @@
 
         :root {
 
-            --bg: #151515;
+            --bg: #000000;
 
-            --panel: #151515;
+            --panel: #000000;
 
             --dropdown-bg: #000000;
 
-            --border: #2a2c2e;
+            --border: #ffffff;
 
-            --purple: #7d858c;
+            --purple: #ffffff;
 
-            --text: #DEE4D7;
+            --text: #ffffff;
 
-            --dim: rgba(222, 228, 215, 0.35);
+            --dim: #ffffff;
 
-            --canvas-bg: #151515;
+            --canvas-bg: #000000;
 
-            --body-bg: #151515;
+            --body-bg: #000000;
 
-            --shadow: drop-shadow(0 0 10px rgba(0, 0, 0, 0.5));
+            --shadow: none;
 
-            --label-opacity: 0.5;
+            --label-opacity: 1.0;
 
-            --code-kw: #E5C07B;
+            --font-mono: 'JetBrains Mono', monospace;
 
-            --code-comment: #7d858c;
+            --code-kw: #ffffff;
 
-            --code-str: #98C379;
+            --code-comment: #ffffff;
 
-            --code-num: #D19A66;
+            --code-str: #ffffff;
 
-            --code-fn: #61AFEF;
+            --code-num: #ffffff;
 
-            --code-text: #ABB2BF;
+            --code-fn: #ffffff;
+
+            --code-text: #ffffff;
 
         }
 
@@ -151,6 +152,48 @@
             --code-fn: #000000;
 
             --code-text: #000000;
+
+        }
+
+
+
+        [data-theme="dark"] {
+
+            --bg: #000000;
+
+            --panel: #000000;
+
+            --dropdown-bg: #000000;
+
+            --border: #ffffff;
+
+            --purple: #ffffff;
+
+            --text: #ffffff;
+
+            --dim: #ffffff;
+
+            --canvas-bg: #000000;
+
+            --body-bg: #000000;
+
+            --shadow: none;
+
+            --label-opacity: 1.0;
+
+            --font-mono: 'JetBrains Mono', monospace;
+
+            --code-kw: #ffffff;
+
+            --code-comment: #ffffff;
+
+            --code-str: #ffffff;
+
+            --code-num: #ffffff;
+
+            --code-fn: #ffffff;
+
+            --code-text: #ffffff;
 
         }
 
@@ -4046,7 +4089,7 @@
 
 
 
-        /* Light / index HUD — restyled in the INDEX / LIGHT MODE block (#ffffff / #000000). */
+        /* Light / index HUD — restyled in the INDEX / LIGHT MODE block (var(--bg) / var(--text)). */
 
         /* Tooltip Styles */
         [data-tooltip] {
@@ -4061,7 +4104,7 @@
             background: rgba(15, 15, 15, 0.75) !important;
             backdrop-filter: blur(8px) saturate(120%);
             -webkit-backdrop-filter: blur(8px) saturate(120%);
-            color: #ffffff !important;
+            color: var(--bg) !important;
             padding: 5px 10px;
             font-size: 8px;
             letter-spacing: 0.08em;
@@ -4078,9 +4121,9 @@
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
             z-index: 10000;
         }
-        html[data-theme="light"] [data-tooltip]::after {
-            background: #ffffff !important;
-            color: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) [data-tooltip]::after {
+            background: var(--bg) !important;
+            color: var(--text) !important;
             border: none !important;
             box-shadow: none !important;
             border-radius: 0 !important;
@@ -4120,7 +4163,7 @@
             text-decoration: none !important;
         }
 
-        /* ── studio / index toggle (text only, both modes) ── */
+        /* ── dark / light toggle (text only, both modes) ── */
         .ui-mode-nav {
             display: flex;
             align-items: baseline;
@@ -4194,159 +4237,159 @@
 
         /* ═══════════════════════════════════════════════════════════
            INDEX / LIGHT MODE
-           Sparse white catalog. Pure #ffffff / #000000. JetBrains Mono.
+           Sparse white catalog. Pure var(--bg) / var(--text). JetBrains Mono.
            Zero button chrome. No gray. Selected = weight (no underline).
            Plate art keeps its own ink and paper.
            ═══════════════════════════════════════════════════════════ */
-        html[data-theme="light"],
-        html[data-theme="light"] body {
-            background: #ffffff !important;
-            color: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]),
+        :is(html[data-theme="light"], html[data-theme="dark"]) body {
+            background: var(--bg) !important;
+            color: var(--text) !important;
         }
-        html[data-theme="light"] .pull-refresh-cue {
-            color: #000000 !important;
-            background: #ffffff !important;
-            -webkit-text-fill-color: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .pull-refresh-cue {
+            color: var(--text) !important;
+            background: var(--bg) !important;
+            -webkit-text-fill-color: var(--text) !important;
         }
-        html[data-theme="light"] body,
-        html[data-theme="light"] button,
-        html[data-theme="light"] select,
-        html[data-theme="light"] input,
-        html[data-theme="light"] textarea,
-        html[data-theme="light"] a,
-        html[data-theme="light"] summary,
-        html[data-theme="light"] label,
-        html[data-theme="light"] h1,
-        html[data-theme="light"] h2,
-        html[data-theme="light"] h3,
-        html[data-theme="light"] h4,
-        html[data-theme="light"] p,
-        html[data-theme="light"] pre,
-        html[data-theme="light"] nav,
-        html[data-theme="light"] span,
-        html[data-theme="light"] li,
-        html[data-theme="light"] div,
-        html[data-theme="light"] .c,
-        html[data-theme="light"] .btn-flip,
-        html[data-theme="light"] .back-btn-flip,
-        html[data-theme="light"] .back-download-links,
-        html[data-theme="light"] .cd-selected,
-        html[data-theme="light"] .cd-item,
-        html[data-theme="light"] .trait-select,
-        html[data-theme="light"] .motus-dropdown-btn {
+        :is(html[data-theme="light"], html[data-theme="dark"]) body,
+        :is(html[data-theme="light"], html[data-theme="dark"]) button,
+        :is(html[data-theme="light"], html[data-theme="dark"]) select,
+        :is(html[data-theme="light"], html[data-theme="dark"]) input,
+        :is(html[data-theme="light"], html[data-theme="dark"]) textarea,
+        :is(html[data-theme="light"], html[data-theme="dark"]) a,
+        :is(html[data-theme="light"], html[data-theme="dark"]) summary,
+        :is(html[data-theme="light"], html[data-theme="dark"]) label,
+        :is(html[data-theme="light"], html[data-theme="dark"]) h1,
+        :is(html[data-theme="light"], html[data-theme="dark"]) h2,
+        :is(html[data-theme="light"], html[data-theme="dark"]) h3,
+        :is(html[data-theme="light"], html[data-theme="dark"]) h4,
+        :is(html[data-theme="light"], html[data-theme="dark"]) p,
+        :is(html[data-theme="light"], html[data-theme="dark"]) pre,
+        :is(html[data-theme="light"], html[data-theme="dark"]) nav,
+        :is(html[data-theme="light"], html[data-theme="dark"]) span,
+        :is(html[data-theme="light"], html[data-theme="dark"]) li,
+        :is(html[data-theme="light"], html[data-theme="dark"]) div,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .c,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-flip,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .back-btn-flip,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .back-download-links,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .cd-selected,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .cd-item,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .trait-select,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .motus-dropdown-btn {
             font-family: 'JetBrains Mono', monospace !important;
-            color: #000000 !important;
-            -webkit-text-fill-color: #000000 !important;
+            color: var(--text) !important;
+            -webkit-text-fill-color: var(--text) !important;
         }
-        html[data-theme="light"] .platen-panel,
-        html[data-theme="light"] .platen-panel svg,
-        html[data-theme="light"] .platen-panel text,
-        html[data-theme="light"] .platen-panel tspan,
-        html[data-theme="light"] .platen-face {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .platen-panel,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .platen-panel svg,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .platen-panel text,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .platen-panel tspan,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .platen-face {
             -webkit-text-fill-color: unset !important;
             color: unset !important;
         }
-        /* Index plate sits flush on white. Studio keeps its US Letter paper shadow. */
-        html[data-theme="light"] #canvas-wrap,
-        html[data-theme="light"] .platen-panel,
-        html[data-theme="light"] .platen-face {
+        /* Plate sits flush in both sparse themes. No drop shadow. */
+        :is(html[data-theme="light"], html[data-theme="dark"]) #canvas-wrap,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .platen-panel,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .platen-face {
             box-shadow: none !important;
             filter: none !important;
         }
-        html[data-theme="light"] .index-grid,
-        html[data-theme="light"] .col-about,
-        html[data-theme="light"] .col-controls,
-        html[data-theme="light"] .col-canvas,
-        html[data-theme="light"] .saved-creations,
-        html[data-theme="light"] .canvas-generate-strip,
-        html[data-theme="light"] .mobile-generate-bar,
-        html[data-theme="light"] .generate-dock {
-            background: #ffffff !important;
-            color: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .index-grid,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-about,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-controls,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-canvas,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .saved-creations,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .canvas-generate-strip,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .mobile-generate-bar,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .generate-dock {
+            background: var(--bg) !important;
+            color: var(--text) !important;
         }
-        html[data-theme="light"] .col-about,
-        html[data-theme="light"] .col-controls,
-        html[data-theme="light"] .col-canvas,
-        html[data-theme="light"] .control-section,
-        html[data-theme="light"] .saved-creations,
-        html[data-theme="light"] .generate-dock,
-        html[data-theme="light"] .about-fold-summary,
-        html[data-theme="light"] .advanced-fold-summary,
-        html[data-theme="light"] .params-fold-summary,
-        html[data-theme="light"] .canvas-generate-strip,
-        html[data-theme="light"] #seed-modal-content,
-        html[data-theme="light"] #info-modal-content,
-        html[data-theme="light"] #seed-modal-content h2,
-        html[data-theme="light"] #info-modal-content h2 {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-about,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-controls,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-canvas,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .control-section,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .saved-creations,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .generate-dock,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .about-fold-summary,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .advanced-fold-summary,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .params-fold-summary,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .canvas-generate-strip,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #seed-modal-content,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #info-modal-content,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #seed-modal-content h2,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #info-modal-content h2 {
             border: none !important;
             border-right: none !important;
             border-bottom: none !important;
             border-top: none !important;
         }
-        html[data-theme="light"] .col-about h2,
-        html[data-theme="light"] .col-about h3,
-        html[data-theme="light"] .col-about p,
-        html[data-theme="light"] .control-section h3,
-        html[data-theme="light"] .trait-label,
-        html[data-theme="light"] .generate-hint,
-        html[data-theme="light"] .generate-legend,
-        html[data-theme="light"] .motus-download-cue,
-        html[data-theme="light"] .saved-creations-head h2,
-        html[data-theme="light"] .saved-creations-cue,
-        html[data-theme="light"] .saved-inline-empty,
-        html[data-theme="light"] .mobile-scroll-hint,
-        html[data-theme="light"] .about-fold-summary,
-        html[data-theme="light"] .advanced-fold-summary,
-        html[data-theme="light"] .params-fold-summary,
-        html[data-theme="light"] #st-info,
-        html[data-theme="light"] .status-section #st-info,
-        html[data-theme="light"] .btn-generate-sub,
-        html[data-theme="light"] .ui-mode-link,
-        html[data-theme="light"] .ui-mode-sep,
-        html[data-theme="light"] #auto-guide,
-        html[data-theme="light"] #palette-lock-text,
-        html[data-theme="light"] #palette-lock-details,
-        html[data-theme="light"] #curation-deadline-label,
-        html[data-theme="light"] #curation-countdown,
-        html[data-theme="light"] #stack-export-note,
-        html[data-theme="light"] #stack-export-note a {
-            color: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-about h2,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-about h3,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-about p,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .control-section h3,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .trait-label,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .generate-hint,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .generate-legend,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .motus-download-cue,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .saved-creations-head h2,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .saved-creations-cue,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .saved-inline-empty,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .mobile-scroll-hint,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .about-fold-summary,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .advanced-fold-summary,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .params-fold-summary,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #st-info,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .status-section #st-info,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-generate-sub,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .ui-mode-link,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .ui-mode-sep,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #auto-guide,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #palette-lock-text,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #palette-lock-details,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #curation-deadline-label,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #curation-countdown,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #stack-export-note,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #stack-export-note a {
+            color: var(--text) !important;
             opacity: 1 !important;
         }
-        html[data-theme="light"] .col-controls *,
-        html[data-theme="light"] .col-about *,
-        html[data-theme="light"] .saved-creations-head *,
-        html[data-theme="light"] .canvas-generate-strip *,
-        html[data-theme="light"] .mobile-generate-bar *,
-        html[data-theme="light"] .ui-mode-nav * {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-controls *,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-about *,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .saved-creations-head *,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .canvas-generate-strip *,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .mobile-generate-bar *,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .ui-mode-nav * {
             opacity: 1 !important;
         }
 
         /* Actions, Generate, Save, export — text links, never pills */
-        html[data-theme="light"] button,
-        html[data-theme="light"] .btn-generate,
-        html[data-theme="light"] .btn-save,
-        html[data-theme="light"] .btn-png-secondary,
-        html[data-theme="light"] .control-section button,
-        html[data-theme="light"] .generate-dock .btn-generate,
-        html[data-theme="light"] .generate-dock .btn-save,
-        html[data-theme="light"] .generate-secondary button,
-        html[data-theme="light"] .canvas-generate-strip .btn-generate,
-        html[data-theme="light"] .canvas-generate-strip .btn-save,
-        html[data-theme="light"] .mobile-generate-bar .btn-generate,
-        html[data-theme="light"] .mobile-generate-bar .btn-save,
-        html[data-theme="light"] .motus-dropdown-btn,
-        html[data-theme="light"] .canvas-toggle-btn,
-        html[data-theme="light"] .btn-flip,
-        html[data-theme="light"] .back-btn-flip,
-        html[data-theme="light"] .saved-solo-chrome button,
-        html[data-theme="light"] #btn-seed-confirm,
-        html[data-theme="light"] .fs-hud button {
+        :is(html[data-theme="light"], html[data-theme="dark"]) button,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-generate,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-save,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-png-secondary,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .control-section button,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .generate-dock .btn-generate,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .generate-dock .btn-save,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .generate-secondary button,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .canvas-generate-strip .btn-generate,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .canvas-generate-strip .btn-save,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .mobile-generate-bar .btn-generate,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .mobile-generate-bar .btn-save,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .motus-dropdown-btn,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .canvas-toggle-btn,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-flip,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .back-btn-flip,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .saved-solo-chrome button,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #btn-seed-confirm,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .fs-hud button {
             appearance: none !important;
             -webkit-appearance: none !important;
             background: transparent !important;
             background-color: transparent !important;
-            color: #000000 !important;
+            color: var(--text) !important;
             border: none !important;
             border-bottom: none !important;
             border-radius: 0 !important;
@@ -4363,16 +4406,16 @@
             text-decoration: none !important;
             opacity: 1 !important;
         }
-        html[data-theme="light"] .btn-generate,
-        html[data-theme="light"] .btn-save,
-        html[data-theme="light"] .canvas-generate-strip .btn-generate,
-        html[data-theme="light"] .canvas-generate-strip .btn-save {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-generate,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-save,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .canvas-generate-strip .btn-generate,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .canvas-generate-strip .btn-save {
             display: inline-flex !important;
             flex-direction: row !important;
             align-items: baseline !important;
             justify-content: flex-start !important;
         }
-        html[data-theme="light"] .btn-generate-sub {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-generate-sub {
             display: inline !important;
             margin: 0 0 0 0.6em !important;
             font-size: inherit !important;
@@ -4380,38 +4423,38 @@
             font-weight: 400 !important;
             text-transform: lowercase !important;
         }
-        html[data-theme="light"] button:hover,
-        html[data-theme="light"] .btn-generate:hover,
-        html[data-theme="light"] .btn-save:hover,
-        html[data-theme="light"] .control-section button:hover,
-        html[data-theme="light"] .generate-secondary button:hover,
-        html[data-theme="light"] .motus-dropdown-btn:hover,
-        html[data-theme="light"] .canvas-toggle-btn:hover,
-        html[data-theme="light"] .btn-flip:hover,
-        html[data-theme="light"] .back-btn-flip:hover,
-        html[data-theme="light"] .saved-solo-chrome button:hover,
-        html[data-theme="light"] #btn-seed-confirm:hover,
-        html[data-theme="light"] .fs-hud button:hover,
-        html[data-theme="light"] .back-download-links a:hover,
-        html[data-theme="light"] a:hover {
+        :is(html[data-theme="light"], html[data-theme="dark"]) button:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-generate:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-save:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .control-section button:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .generate-secondary button:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .motus-dropdown-btn:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .canvas-toggle-btn:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-flip:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .back-btn-flip:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .saved-solo-chrome button:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #btn-seed-confirm:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .fs-hud button:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .back-download-links a:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) a:hover {
             background: transparent !important;
-            color: #000000 !important;
+            color: var(--text) !important;
             text-decoration: underline !important;
             opacity: 1 !important;
             box-shadow: none !important;
             border: none !important;
         }
-        html[data-theme="light"] button.active,
-        html[data-theme="light"] button.active:hover,
-        html[data-theme="light"] .control-section button.active,
-        html[data-theme="light"] .control-section button.active:hover,
-        html[data-theme="light"] .generate-secondary button.active,
-        html[data-theme="light"] .generate-secondary button.active:hover,
-        html[data-theme="light"] .btn-generate.active,
-        html[data-theme="light"] .canvas-toggle-btn.active,
-        html[data-theme="light"] .fs-hud button.active {
+        :is(html[data-theme="light"], html[data-theme="dark"]) button.active,
+        :is(html[data-theme="light"], html[data-theme="dark"]) button.active:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .control-section button.active,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .control-section button.active:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .generate-secondary button.active,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .generate-secondary button.active:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-generate.active,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .canvas-toggle-btn.active,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .fs-hud button.active {
             background: transparent !important;
-            color: #000000 !important;
+            color: var(--text) !important;
             border: none !important;
             border-bottom: none !important;
             box-shadow: none !important;
@@ -4420,30 +4463,30 @@
             font-weight: 500 !important;
             opacity: 1 !important;
         }
-        html[data-theme="light"] button:focus,
-        html[data-theme="light"] button:focus-visible,
-        html[data-theme="light"] .trait-select:focus,
-        html[data-theme="light"] .cd-selected:focus,
-        html[data-theme="light"] input:focus {
+        :is(html[data-theme="light"], html[data-theme="dark"]) button:focus,
+        :is(html[data-theme="light"], html[data-theme="dark"]) button:focus-visible,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .trait-select:focus,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .cd-selected:focus,
+        :is(html[data-theme="light"], html[data-theme="dark"]) input:focus {
             outline: none !important;
             box-shadow: none !important;
             border: none !important;
             background: transparent !important;
         }
-        html[data-theme="light"] button[data-disabled="true"],
-        html[data-theme="light"] .btn-generate:disabled,
-        html[data-theme="light"] .btn-save:disabled {
+        :is(html[data-theme="light"], html[data-theme="dark"]) button[data-disabled="true"],
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-generate:disabled,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-save:disabled {
             opacity: 1 !important;
-            color: #000000 !important;
+            color: var(--text) !important;
             text-decoration: line-through !important;
             pointer-events: none !important;
         }
 
         /* Parameters: selected value is slightly bold text, no underline / box */
-        html[data-theme="light"] .trait-select,
-        html[data-theme="light"] .cd-selected {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .trait-select,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .cd-selected {
             background: transparent !important;
-            color: #000000 !important;
+            color: var(--text) !important;
             border: none !important;
             border-bottom: none !important;
             box-shadow: none !important;
@@ -4454,85 +4497,85 @@
             width: 100% !important;
             max-width: 100% !important;
         }
-        html[data-theme="light"] .trait-select:hover,
-        html[data-theme="light"] .trait-select:focus,
-        html[data-theme="light"] .cd-selected:hover {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .trait-select:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .trait-select:focus,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .cd-selected:hover {
             border: none !important;
             border-bottom: none !important;
-            color: #000000 !important;
+            color: var(--text) !important;
             text-decoration: none !important;
             font-weight: 500 !important;
         }
-        html[data-theme="light"] .cd-items {
-            background: #ffffff !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .cd-items {
+            background: var(--bg) !important;
             border: none !important;
             box-shadow: none !important;
             border-radius: 0 !important;
         }
-        html[data-theme="light"] .cd-item {
-            color: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .cd-item {
+            color: var(--text) !important;
             opacity: 1 !important;
             padding: 4px 0 !important;
-            background: #ffffff !important;
+            background: var(--bg) !important;
         }
-        html[data-theme="light"] .cd-item.is-disabled {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .cd-item.is-disabled {
             text-decoration: line-through !important;
             pointer-events: none !important;
         }
-        html[data-theme="light"] .trait-select option {
-            background: #ffffff !important;
-            color: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .trait-select option {
+            background: var(--bg) !important;
+            color: var(--text) !important;
         }
 
-        html[data-theme="light"] .motus-dropdown-content {
-            background: #ffffff !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .motus-dropdown-content {
+            background: var(--bg) !important;
             border: none !important;
             box-shadow: none !important;
             border-radius: 0 !important;
             backdrop-filter: none !important;
         }
-        html[data-theme="light"] .motus-dropdown-content div {
-            color: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .motus-dropdown-content div {
+            color: var(--text) !important;
             opacity: 1 !important;
-            background: #ffffff !important;
+            background: var(--bg) !important;
         }
-        html[data-theme="light"] .motus-dropdown-content div:hover {
-            background: #ffffff !important;
-            color: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .motus-dropdown-content div:hover {
+            background: var(--bg) !important;
+            color: var(--text) !important;
             text-decoration: underline !important;
             opacity: 1 !important;
         }
 
-        html[data-theme="light"] .col-about pre {
-            background: #ffffff !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-about pre {
+            background: var(--bg) !important;
             border: none !important;
             border-radius: 0 !important;
-            color: #000000 !important;
+            color: var(--text) !important;
             padding-left: 0 !important;
             padding-right: 0 !important;
         }
-        html[data-theme="light"] .code-kw,
-        html[data-theme="light"] .code-comment,
-        html[data-theme="light"] .code-str,
-        html[data-theme="light"] .code-num,
-        html[data-theme="light"] .code-fn {
-            color: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .code-kw,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .code-comment,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .code-str,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .code-num,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .code-fn {
+            color: var(--text) !important;
             font-style: normal !important;
         }
 
-        html[data-theme="light"] #palette-lock-status,
-        html[data-theme="light"] #curation-status-banner {
-            background: #ffffff !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) #palette-lock-status,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #curation-status-banner {
+            background: var(--bg) !important;
             border: none !important;
             border-radius: 0 !important;
             padding-left: 0 !important;
             padding-right: 0 !important;
         }
-        html[data-theme="light"] #curation-status-dot {
-            background: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) #curation-status-dot {
+            background: var(--text) !important;
         }
 
-        html[data-theme="light"] #btn-auto {
+        :is(html[data-theme="light"], html[data-theme="dark"]) #btn-auto {
             width: auto !important;
             height: auto !important;
             min-height: 0 !important;
@@ -4541,69 +4584,69 @@
             background: transparent !important;
             box-shadow: none !important;
         }
-        html[data-theme="light"] #btn-auto::after {
+        :is(html[data-theme="light"], html[data-theme="dark"]) #btn-auto::after {
             content: 'off';
-            color: #000000;
+            color: var(--text);
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
             letter-spacing: 0.08em;
         }
-        html[data-theme="light"] #btn-auto.auto-on {
+        :is(html[data-theme="light"], html[data-theme="dark"]) #btn-auto.auto-on {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
         }
-        html[data-theme="light"] #btn-auto.auto-on::after {
+        :is(html[data-theme="light"], html[data-theme="dark"]) #btn-auto.auto-on::after {
             content: 'on';
             text-decoration: underline;
             font-weight: 500;
         }
 
-        html[data-theme="light"] .toggle-track,
-        html[data-theme="light"] .toggle-thumb {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .toggle-track,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .toggle-thumb {
             display: none !important;
         }
 
-        html[data-theme="light"] #modal-seed,
-        html[data-theme="light"] #modal-info {
-            background: #ffffff !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) #modal-seed,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #modal-info {
+            background: var(--bg) !important;
             backdrop-filter: none !important;
         }
-        html[data-theme="light"] #seed-modal-content,
-        html[data-theme="light"] #info-modal-content {
-            background: #ffffff !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) #seed-modal-content,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #info-modal-content {
+            background: var(--bg) !important;
             border: none !important;
             box-shadow: none !important;
-            color: #000000 !important;
+            color: var(--text) !important;
         }
-        html[data-theme="light"] #seed-input {
-            background: #ffffff !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) #seed-input {
+            background: var(--bg) !important;
             border: none !important;
-            color: #000000 !important;
+            color: var(--text) !important;
             box-shadow: none !important;
         }
-        html[data-theme="light"] #close-seed-modal,
-        html[data-theme="light"] #close-info-modal {
+        :is(html[data-theme="light"], html[data-theme="dark"]) #close-seed-modal,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #close-info-modal {
             opacity: 1 !important;
-            color: #000000 !important;
+            color: var(--text) !important;
         }
 
-        html[data-theme="light"] .fs-hud {
-            background: #ffffff !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .fs-hud {
+            background: var(--bg) !important;
             border: none !important;
             box-shadow: none !important;
             border-radius: 0 !important;
             backdrop-filter: none !important;
             -webkit-backdrop-filter: none !important;
         }
-        html[data-theme="light"] .fs-hud .fs-divider {
-            background: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .fs-hud .fs-divider {
+            background: var(--text) !important;
             opacity: 1 !important;
         }
 
-        html[data-theme="light"] [data-tooltip]::after {
-            background: #ffffff !important;
-            color: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) [data-tooltip]::after {
+            background: var(--bg) !important;
+            color: var(--text) !important;
             border: none !important;
             box-shadow: none !important;
             border-radius: 0 !important;
@@ -4611,58 +4654,107 @@
             -webkit-backdrop-filter: none !important;
         }
 
-        html[data-theme="light"] .saved-solo-backdrop {
-            background: #ffffff !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .saved-solo-backdrop {
+            background: var(--bg) !important;
         }
-        html[data-theme="light"] .gallery-item-just-saved,
-        html[data-theme="light"] .gallery-item-newest {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .gallery-item-just-saved,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .gallery-item-newest {
             outline: none !important;
             box-shadow: none !important;
         }
 
-        html[data-theme="light"] .draft-history-row,
-        html[data-theme="light"] .draft-history-row:hover,
-        html[data-theme="light"] #draft-history-list > div {
-            background: #ffffff !important;
+        .draft-history-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px 0;
+            margin: 0;
+            cursor: pointer;
+            font-size: 9px;
+            letter-spacing: 0.03em;
+            text-transform: lowercase;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+        }
+        .draft-history-top,
+        .draft-history-detail {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .draft-history-seed {
+            font-weight: 500;
+        }
+        .draft-history-time,
+        .draft-history-traits {
+            font-weight: 400;
+        }
+        .draft-history-ink {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .draft-history-dot {
+            display: block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .draft-history-row:hover .draft-history-seed {
+            text-decoration: underline;
+        }
+        :is(html[data-theme="light"], html[data-theme="dark"]) .draft-history-row,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .draft-history-row:hover,
+        :is(html[data-theme="light"], html[data-theme="dark"]) #draft-history-list > div {
+            background: var(--bg) !important;
             border: none !important;
             border-radius: 0 !important;
-            color: #000000 !important;
+            color: var(--text) !important;
             box-shadow: none !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
         }
-        html[data-theme="light"] input[type="checkbox"] {
-            accent-color: #000000;
+        :is(html[data-theme="light"], html[data-theme="dark"]) input[type="checkbox"] {
+            accent-color: var(--text);
         }
-        html:not([data-theme="light"]) .ui-mode-link[data-ui-mode="studio"] {
-            text-decoration: underline;
-            font-weight: 500;
-            opacity: 1;
-            pointer-events: none;
+        html[data-theme="dark"] .ui-mode-link[data-ui-mode="dark"],
+        html[data-ui="dark"] .ui-mode-link[data-ui-mode="dark"] {
+            text-decoration: underline !important;
+            font-weight: 500 !important;
+            opacity: 1 !important;
+            pointer-events: none !important;
         }
-        html[data-theme="light"] .ui-mode-link[data-ui-mode="index"],
-        html[data-ui="index"] .ui-mode-link[data-ui-mode="index"] {
+        html[data-theme="light"] .ui-mode-link[data-ui-mode="light"],
+        html[data-ui="light"] .ui-mode-link[data-ui-mode="light"] {
             text-decoration: underline !important;
             font-weight: 500 !important;
             pointer-events: none !important;
         }
-        html[data-theme="light"] .ui-mode-link[data-ui-mode="studio"],
-        html[data-ui="index"] .ui-mode-link[data-ui-mode="studio"] {
+        html[data-theme="dark"] .ui-mode-link[data-ui-mode="light"],
+        html[data-ui="dark"] .ui-mode-link[data-ui-mode="light"],
+        html[data-theme="light"] .ui-mode-link[data-ui-mode="dark"],
+        html[data-ui="light"] .ui-mode-link[data-ui-mode="dark"] {
             text-decoration: none !important;
             font-weight: 400 !important;
             pointer-events: auto !important;
         }
 
         @media (max-width: 900px), (max-device-width: 900px) {
-            html[data-theme="light"] .canvas-generate-strip {
+            :is(html[data-theme="light"], html[data-theme="dark"]) .canvas-generate-strip {
                 flex-wrap: wrap;
                 gap: 8px 16px !important;
                 padding: 10px 16px !important;
             }
-            html[data-theme="light"] .ui-mode-nav--strip {
+            :is(html[data-theme="light"], html[data-theme="dark"]) .ui-mode-nav--strip {
                 width: 100%;
                 order: -1;
                 margin: 0 0 4px !important;
             }
-            html[data-theme="light"] button:not(.btn-flip):not(.back-btn-flip) {
+            :is(html[data-theme="light"], html[data-theme="dark"]) button:not(.btn-flip):not(.back-btn-flip) {
                 padding: 2px 0 !important;
                 min-height: 0 !important;
             }
@@ -4716,7 +4808,7 @@
           Mobile stack repair — MUST come after the desktop 100dvh column heights
           and after index-mode's mobile query so this remains the last
           max-width: 900px block (tests + cascade). Index chrome still wins
-          via html[data-theme="light"] !important.
+          via :is(html[data-theme="light"], html[data-theme="dark"]) !important.
 
           max-device-width covers iOS Safari after it expands the layout
           viewport to fit leftover 480px tracks (max-width then misses).
@@ -4836,15 +4928,15 @@
             .col-about > .ui-mode-nav,
             .generate-dock > .ui-mode-nav,
             .ui-mode-section,
-            html[data-theme="light"] .col-about > .ui-mode-nav,
-            html[data-theme="light"] .generate-dock > .ui-mode-nav,
-            html[data-theme="light"] .ui-mode-section {
+            :is(html[data-theme="light"], html[data-theme="dark"]) .col-about > .ui-mode-nav,
+            :is(html[data-theme="light"], html[data-theme="dark"]) .generate-dock > .ui-mode-nav,
+            :is(html[data-theme="light"], html[data-theme="dark"]) .ui-mode-section {
                 display: none !important;
             }
 
-            html[data-theme="light"] .generate-dock > .btn-generate,
-            html[data-theme="light"] .generate-dock > .btn-save,
-            html[data-theme="light"] .generate-dock > .generate-hint {
+            :is(html[data-theme="light"], html[data-theme="dark"]) .generate-dock > .btn-generate,
+            :is(html[data-theme="light"], html[data-theme="dark"]) .generate-dock > .btn-save,
+            :is(html[data-theme="light"], html[data-theme="dark"]) .generate-dock > .generate-hint {
                 display: none !important;
             }
 
@@ -4954,8 +5046,8 @@
 
         /* Brand lockup is the only chrome that keeps authored caps. */
         .brand-lockup,
-        html[data-theme="light"] .brand-lockup,
-        html[data-theme="light"] .col-about > h2.brand-lockup {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .brand-lockup,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .col-about > h2.brand-lockup {
             text-transform: none !important;
             letter-spacing: 0.12em !important;
         }
@@ -4965,43 +5057,43 @@
         .about-fold-body p,
         .about-fold-body h3,
         .about-fold-body pre,
-        html[data-theme="light"] .about-fold-body,
-        html[data-theme="light"] .about-fold-body p,
-        html[data-theme="light"] .about-fold-body h3 {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .about-fold-body,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .about-fold-body p,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .about-fold-body h3 {
             text-transform: none !important;
         }
         .btn-flip,
         .back-btn-flip,
-        html[data-theme="light"] .btn-flip,
-        html[data-theme="light"] .back-btn-flip {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .btn-flip,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .back-btn-flip {
             text-transform: lowercase !important;
         }
 
-        html[data-theme="light"] .trait,
-        html[data-theme="light"] .trait-label,
-        html[data-theme="light"] .trait-select,
-        html[data-theme="light"] .cd-selected {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .trait,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .trait-label,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .trait-select,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .cd-selected {
             text-transform: lowercase !important;
             letter-spacing: 0.03em !important;
             line-height: 1.35 !important;
             font-size: 8px !important;
         }
-        html[data-theme="light"] #st-info,
-        html[data-theme="light"] .status-section #st-info {
+        :is(html[data-theme="light"], html[data-theme="dark"]) #st-info,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .status-section #st-info {
             text-transform: lowercase !important;
             letter-spacing: 0.04em !important;
         }
-        html[data-theme="light"] .control-section h3,
-        html[data-theme="light"] .saved-creations-head h2,
-        html[data-theme="light"] .about-fold-summary,
-        html[data-theme="light"] .advanced-fold-summary,
-        html[data-theme="light"] .params-fold-summary {
+        :is(html[data-theme="light"], html[data-theme="dark"]) .control-section h3,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .saved-creations-head h2,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .about-fold-summary,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .advanced-fold-summary,
+        :is(html[data-theme="light"], html[data-theme="dark"]) .params-fold-summary {
             text-transform: lowercase !important;
             letter-spacing: 0.04em !important;
             line-height: 1.4 !important;
         }
 
-        /* Desktop: one studio/index — the generate dock. */
+        /* Desktop: one dark/light — the generate dock. */
         @media (min-width: 901px) {
             .col-about > .ui-mode-nav,
             .ui-mode-section {
@@ -5030,8 +5122,8 @@
             color: var(--text);
             flex-shrink: 0;
         }
-        html[data-theme="light"] .lock-mark {
-            color: #000000 !important;
+        :is(html[data-theme="light"], html[data-theme="dark"]) .lock-mark {
+            color: var(--text) !important;
         }
         #palette-lock-text {
             font-size: 9px;
@@ -5044,17 +5136,173 @@
             line-height: 1.35;
             opacity: 0.5;
         }
-        html[data-theme="light"] #palette-lock-text {
+        :is(html[data-theme="light"], html[data-theme="dark"]) #palette-lock-text {
             font-size: 9px !important;
             letter-spacing: 0.03em !important;
         }
-        html[data-theme="light"] #palette-lock-details {
+        :is(html[data-theme="light"], html[data-theme="dark"]) #palette-lock-details {
             font-size: 8px !important;
             letter-spacing: 0.03em !important;
             line-height: 1.35 !important;
             opacity: 0.5 !important;
         }
-    </style>
+    
+        html[data-theme="light"] .btn-generate-sub,
+        html[data-theme="dark"] .btn-generate-sub {
+            display: none !important;
+        }
+        html[data-theme="light"] .generate-hint,
+        html[data-theme="dark"] .generate-hint,
+        html[data-theme="light"] .generate-legend,
+        html[data-theme="dark"] .generate-legend {
+            display: none !important;
+        }
+
+        /* Super-minimal generate-info mark */
+        .btn-generate-info {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: auto;
+            min-width: 0;
+            min-height: 0;
+            padding: 2px 0;
+            margin: 0;
+            background: transparent;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            font: inherit;
+            line-height: 1;
+            text-transform: lowercase;
+        }
+        .generate-info-mark {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 13px;
+            height: 13px;
+            color: inherit;
+        }
+        .generate-info-mark svg {
+            display: block;
+            width: 13px;
+            height: 13px;
+        }
+        .generate-info-i {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8px;
+            font-weight: 400;
+            font-style: normal;
+            line-height: 1;
+            letter-spacing: 0;
+            text-transform: lowercase;
+        }
+        html[data-theme="light"] .btn-generate-info,
+        html[data-theme="dark"] .btn-generate-info {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: var(--text) !important;
+            -webkit-text-fill-color: var(--text) !important;
+            width: auto !important;
+            min-height: 0 !important;
+            padding: 2px 0 !important;
+        }
+        html[data-theme="light"] .canvas-generate-strip .btn-generate-info,
+        html[data-theme="dark"] .canvas-generate-strip .btn-generate-info {
+            flex: 0 0 auto !important;
+            align-self: center !important;
+            width: auto !important;
+        }
+
+        /* Pretty sparse generate-info sheet */
+        #modal-generate-info {
+            position: fixed;
+            inset: 0;
+            z-index: 11000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 20px;
+        }
+        #modal-generate-info.is-open {
+            display: flex;
+        }
+        .generate-info-backdrop {
+            position: absolute;
+            inset: 0;
+            background: var(--bg);
+            opacity: 0.92;
+        }
+        .generate-info-sheet {
+            position: relative;
+            z-index: 1;
+            width: min(420px, 100%);
+            background: var(--bg);
+            color: var(--text);
+            padding: 36px 8px 28px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .generate-info-title {
+            font-size: 10px;
+            font-weight: 400;
+            letter-spacing: 0.14em;
+            text-transform: lowercase;
+            margin: 0 0 28px;
+        }
+        .generate-info-line {
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+            line-height: 1.7;
+            text-transform: lowercase;
+            margin: 0 0 18px;
+        }
+        .generate-info-line em {
+            font-style: normal;
+            font-weight: 500;
+        }
+        .generate-info-close {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 0;
+            background: none;
+            border: none;
+            color: inherit;
+            font-family: inherit;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: lowercase;
+            cursor: pointer;
+        }
+        html[data-theme="light"] #modal-generate-info,
+        html[data-theme="dark"] #modal-generate-info,
+        html[data-theme="light"] .generate-info-backdrop,
+        html[data-theme="dark"] .generate-info-backdrop,
+        html[data-theme="light"] .generate-info-sheet,
+        html[data-theme="dark"] .generate-info-sheet {
+            background: var(--bg) !important;
+            color: var(--text) !important;
+            border: none !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+        }
+        html[data-theme="light"] .generate-info-close,
+        html[data-theme="dark"] .generate-info-close {
+            background: transparent !important;
+            border: none !important;
+            color: var(--text) !important;
+            -webkit-text-fill-color: var(--text) !important;
+        }
+
+</style>
 
 </head>
 
@@ -5115,9 +5363,9 @@
             <h2 class="brand-lockup">PLATEN BY DGLXSS</h2>
 
             <nav class="ui-mode-nav" aria-label="interface mode">
-                <button type="button" class="ui-mode-link" data-ui-mode="studio" onclick="applyTheme('studio')">studio</button>
+                <button type="button" class="ui-mode-link" data-ui-mode="dark" onclick="applyTheme('dark')">dark</button>
                 <span class="ui-mode-sep" aria-hidden="true">/</span>
-                <button type="button" class="ui-mode-link" data-ui-mode="index" onclick="applyTheme('index')">index</button>
+                <button type="button" class="ui-mode-link" data-ui-mode="light" onclick="applyTheme('light')">light</button>
             </nav>
 
             <details class="about-fold" id="about-fold">
@@ -5231,14 +5479,16 @@ rawWt.push(baseWt + jitter);
             <div class="generate-dock" id="generate-dock">
 
                 <nav class="ui-mode-nav" aria-label="interface mode">
-                    <button type="button" class="ui-mode-link" data-ui-mode="studio" onclick="applyTheme('studio')">studio</button>
+                    <button type="button" class="ui-mode-link" data-ui-mode="dark" onclick="applyTheme('dark')">dark</button>
                     <span class="ui-mode-sep" aria-hidden="true">/</span>
-                    <button type="button" class="ui-mode-link" data-ui-mode="index" onclick="applyTheme('index')">index</button>
+                    <button type="button" class="ui-mode-link" data-ui-mode="light" onclick="applyTheme('light')">light</button>
                 </nav>
 
-                <button type="button" id="btn-generate" class="btn-generate" onclick="generateNewPiece()" data-tooltip="new piece — randomize parameters and seed">Generate<span class="btn-generate-sub">randomize</span></button>
+                <button type="button" id="btn-generate" class="btn-generate" onclick="generateNewPiece()" data-tooltip="draw the current parameters and seed">Generate<span class="btn-generate-sub">randomize</span></button>
 
                 <button type="button" id="btn-curate" class="btn-save" onclick="curateArtwork()" data-tooltip="save this piece">Save</button>
+
+                <button type="button" class="btn-generate-info" id="btn-generate-info" onclick="openGenerateInfo()" aria-label="what randomize, generate, new seed, and save do"><span class="generate-info-mark" aria-hidden="true"><svg viewBox="0 0 16 16" width="13" height="13"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1"/></svg><span class="generate-info-i">i</span></span></button>
 
                 <p class="generate-hint">Generate makes a new piece. Save keeps this one.</p>
 
@@ -5492,9 +5742,9 @@ rawWt.push(baseWt + jitter);
             <div class="control-section ui-mode-section">
 
                 <nav class="ui-mode-nav" aria-label="interface mode">
-                    <button type="button" class="ui-mode-link" data-ui-mode="studio" onclick="applyTheme('studio')">studio</button>
+                    <button type="button" class="ui-mode-link" data-ui-mode="dark" onclick="applyTheme('dark')">dark</button>
                     <span class="ui-mode-sep" aria-hidden="true">/</span>
-                    <button type="button" id="btn-theme" class="ui-mode-link" data-ui-mode="index" onclick="applyTheme('index')">index</button>
+                    <button type="button" id="btn-theme" class="ui-mode-link" data-ui-mode="light" onclick="applyTheme('light')">light</button>
                 </nav>
 
             </div>
@@ -5646,14 +5896,16 @@ rawWt.push(baseWt + jitter);
             <div id="canvas-generate-strip" class="canvas-generate-strip">
 
                 <nav class="ui-mode-nav ui-mode-nav--strip" aria-label="interface mode">
-                    <button type="button" class="ui-mode-link" data-ui-mode="studio" onclick="applyTheme('studio')">studio</button>
+                    <button type="button" class="ui-mode-link" data-ui-mode="dark" onclick="applyTheme('dark')">dark</button>
                     <span class="ui-mode-sep" aria-hidden="true">/</span>
-                    <button type="button" class="ui-mode-link" data-ui-mode="index" onclick="applyTheme('index')">index</button>
+                    <button type="button" class="ui-mode-link" data-ui-mode="light" onclick="applyTheme('light')">light</button>
                 </nav>
 
-                <button type="button" id="btn-generate-canvas" class="btn-generate" onclick="generateNewPiece()" aria-label="Generate a new piece">Generate<span class="btn-generate-sub">randomize</span></button>
+                <button type="button" id="btn-generate-canvas" class="btn-generate" onclick="generateNewPiece()" aria-label="Draw the current parameters and seed">Generate<span class="btn-generate-sub">randomize</span></button>
 
                 <button type="button" id="btn-save-canvas" class="btn-save" onclick="curateArtwork()">Save</button>
+
+                <button type="button" class="btn-generate-info" id="btn-generate-info-strip" onclick="openGenerateInfo()" aria-label="what randomize, generate, new seed, and save do"><span class="generate-info-mark" aria-hidden="true"><svg viewBox="0 0 16 16" width="13" height="13"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1"/></svg><span class="generate-info-i">i</span></span></button>
 
             </div>
 
@@ -5744,6 +5996,30 @@ rawWt.push(baseWt + jitter);
 
 
 
+    <div id="modal-generate-info" hidden>
+
+        <div class="generate-info-backdrop" onclick="closeGenerateInfo()"></div>
+
+        <div class="generate-info-sheet" role="dialog" aria-modal="true" aria-labelledby="generate-info-title" onclick="event.stopPropagation()">
+
+            <h2 id="generate-info-title" class="generate-info-title">actions</h2>
+
+            <p class="generate-info-line"><em>randomize</em> — new parameters and seed; a totally new piece</p>
+
+            <p class="generate-info-line"><em>generate</em> — draw the current parameters and seed; press again for the same plate</p>
+
+            <p class="generate-info-line"><em>new seed</em> — same parameters, new seed</p>
+
+            <p class="generate-info-line"><em>save</em> — hold in your saved list (up to 12)</p>
+
+            <button type="button" class="generate-info-close" onclick="closeGenerateInfo()">close</button>
+
+        </div>
+
+    </div>
+
+
+
     <script src="js/platen-core.js?v=chopin"></script>
 
     <script src="js/platen-motifs.js"></script>
@@ -5780,22 +6056,31 @@ rawWt.push(baseWt + jitter);
 
 
 
+        function normalizeUiMode(mode) {
+
+            if (mode === 'studio' || mode === 'dark') return 'dark';
+
+            return 'light';
+
+        }
+
         function isIndexMode() {
 
             return document.documentElement.getAttribute('data-theme') === 'light'
-                || document.documentElement.getAttribute('data-ui') === 'index';
+                || document.documentElement.getAttribute('data-ui') === 'index'
+                || document.documentElement.getAttribute('data-ui') === 'light';
 
         }
 
         function syncThemeToggle() {
 
-            var index = isIndexMode();
+            var light = isIndexMode();
 
             document.querySelectorAll('.ui-mode-link').forEach(function (link) {
 
                 var mode = link.getAttribute('data-ui-mode');
 
-                var active = (mode === 'index' && index) || (mode === 'studio' && !index);
+                var active = (mode === 'light' && light) || (mode === 'dark' && !light);
 
                 if (active) link.classList.add('is-active');
 
@@ -5809,21 +6094,11 @@ rawWt.push(baseWt + jitter);
 
             var el = document.documentElement;
 
-            var next = mode === 'index' || mode === 'light' ? 'index' : 'studio';
+            var next = normalizeUiMode(mode);
 
-            if (next === 'index') {
+            el.setAttribute('data-theme', next);
 
-                el.setAttribute('data-theme', 'light');
-
-                el.setAttribute('data-ui', 'index');
-
-            } else {
-
-                el.removeAttribute('data-theme');
-
-                el.removeAttribute('data-ui');
-
-            }
+            el.setAttribute('data-ui', next);
 
             try {
 
@@ -5849,7 +6124,31 @@ rawWt.push(baseWt + jitter);
 
         function toggleTheme() {
 
-            applyTheme(isIndexMode() ? 'studio' : 'index');
+            applyTheme(isIndexMode() ? 'dark' : 'light');
+
+        }
+
+        function openGenerateInfo() {
+
+            var modal = document.getElementById('modal-generate-info');
+
+            if (!modal) return;
+
+            modal.hidden = false;
+
+            modal.classList.add('is-open');
+
+        }
+
+        function closeGenerateInfo() {
+
+            var modal = document.getElementById('modal-generate-info');
+
+            if (!modal) return;
+
+            modal.classList.remove('is-open');
+
+            modal.hidden = true;
 
         }
 
@@ -12233,15 +12532,13 @@ rawWt.push(baseWt + jitter);
 
                 var isUsLetter = (currentLayout === 'grid_us_letter' || currentLayout === 'banner_us_letter');
 
-                var indexPlate = (typeof isIndexMode === 'function' && isIndexMode());
-
                 if (isUsLetter) {
 
                     targetEl.style.backgroundSize = '106%';
 
                     targetEl.style.backgroundColor = 'transparent';
 
-                    targetEl.style.boxShadow = indexPlate ? 'none' : '0 8px 24px rgba(0,0,0,0.06)';
+                    targetEl.style.boxShadow = 'none';
 
                 } else {
 
@@ -16435,9 +16732,95 @@ rawWt.push(baseWt + jitter);
 
         // ── Draft History System ──
 
+        function resolvePaletteEntry(chromeName, seed) {
+
+            var palettes = window.PALETTES || {};
+
+            var paletteEntry = palettes[chromeName] || palettes.panar;
+
+            if (typeof paletteEntry === 'function') {
+
+                try {
+
+                    paletteEntry = paletteEntry(seed);
+
+                } catch (err) {
+
+                    paletteEntry = palettes.panar;
+
+                }
+
+            }
+
+            return paletteEntry;
+
+        }
+
+        function inkHexesFromPalette(palette) {
+
+            var colors = [];
+
+            if (!palette) return colors;
+
+            var list = Array.isArray(palette) ? palette : (palette.strokes || palette.colors || []);
+
+            for (var i = 0; i < list.length; i++) {
+
+                var item = list[i];
+
+                var hex = null;
+
+                if (typeof item === 'string') hex = item;
+
+                else if (item && typeof item.c === 'string') hex = item.c;
+
+                else if (item && typeof item.hex === 'string') hex = item.hex;
+
+                if (!hex) continue;
+
+                hex = String(hex).trim();
+
+                if (hex.charAt(0) !== '#') continue;
+
+                if (colors.indexOf(hex) === -1) colors.push(hex);
+
+            }
+
+            return colors;
+
+        }
+
+        function resolveDraftInkHexes(draft) {
+
+            if (draft && Array.isArray(draft.ink) && draft.ink.length) return draft.ink.slice();
+
+            var chromeName = draft && draft.traits ? draft.traits.chromes : '';
+
+            var seed = draft ? draft.seed : RENDER_SEED;
+
+            return inkHexesFromPalette(resolvePaletteEntry(chromeName, seed));
+
+        }
+
+        var _loadingDraft = false;
+
         function checkAndSaveDraft() {
 
-            var traits = JSON.parse(JSON.stringify(TRAITS));
+            if (_loadingDraft) {
+
+                _loadingDraft = false;
+
+                return;
+
+            }
+
+            var source = window.RESOLVED_TRAITS || TRAITS;
+
+            if (!source || source.chromes === 'random' || source.motif === 'random') return;
+
+            var traits = JSON.parse(JSON.stringify(source));
+
+            var ink = inkHexesFromPalette(resolvePaletteEntry(traits.chromes, RENDER_SEED));
 
             var currentDraft = {
 
@@ -16446,6 +16829,8 @@ rawWt.push(baseWt + jitter);
                 traits: traits,
 
                 layout: currentLayout,
+
+                ink: ink,
 
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
@@ -16505,7 +16890,7 @@ rawWt.push(baseWt + jitter);
 
             if (history.length === 0) {
 
-                listEl.innerHTML = '<div style="font-size: 8px; opacity: 0.3; text-transform: lowercase; text-align: center; margin-top: 20px;">no drafts yet. try randomizing or changing parameters.</div>';
+                listEl.innerHTML = '<div class="draft-history-empty">no drafts yet. try randomizing or changing parameters.</div>';
 
                 return;
 
@@ -16519,71 +16904,31 @@ rawWt.push(baseWt + jitter);
 
                 row.className = 'draft-history-row';
 
-                row.style.padding = '8px';
+                row.setAttribute('role', 'button');
 
-                row.style.border = '1px solid var(--border)';
-
-                row.style.borderRadius = '4px';
-
-                row.style.cursor = 'pointer';
-
-                row.style.fontSize = '9px';
-
-                row.style.display = 'flex';
-
-                row.style.flexDirection = 'column';
-
-                row.style.gap = '4px';
-
-                row.style.background = 'rgba(255,255,255,0.01)';
-
-                row.style.transition = 'all 0.2s';
-
-                row.style.textTransform = 'lowercase';
-
-                
-
-                row.onmouseover = function() {
-
-                    row.style.background = 'rgba(255,255,255,0.04)';
-
-                    row.style.borderColor = 'var(--text)';
-
-                };
-
-                row.onmouseout = function() {
-
-                    row.style.background = 'rgba(255,255,255,0.01)';
-
-                    row.style.borderColor = 'var(--border)';
-
-                };
+                row.tabIndex = 0;
 
                 
 
                 var topRow = document.createElement('div');
 
-                topRow.style.display = 'flex';
-
-                topRow.style.justifyContent = 'space-between';
-
-                topRow.style.alignItems = 'center';
+                topRow.className = 'draft-history-top';
 
                 
 
                 var seedLabel = document.createElement('span');
 
-                seedLabel.style.fontWeight = 'bold';
+                seedLabel.className = 'draft-history-seed';
 
-                seedLabel.innerHTML = '#' + draft.seed;
+                seedLabel.textContent = '#' + draft.seed;
 
                 
 
                 var timeLabel = document.createElement('span');
 
-                timeLabel.style.opacity = '0.4';
+                timeLabel.className = 'draft-history-time';
 
-                timeLabel.innerHTML = draft.timestamp;
+                timeLabel.textContent = draft.timestamp || '';
 
                 
 
@@ -16597,71 +16942,39 @@ rawWt.push(baseWt + jitter);
 
                 var detailRow = document.createElement('div');
 
-                detailRow.style.display = 'flex';
-
-                detailRow.style.justifyContent = 'space-between';
-
-                detailRow.style.alignItems = 'center';
-
-                detailRow.style.opacity = '0.7';
+                detailRow.className = 'draft-history-detail';
 
                 
 
                 var traitsLabel = document.createElement('span');
 
-                traitsLabel.innerHTML = (draft.traits.motif || 'platen') + ' · ' + (draft.traits.symmetry || 'none');
+                traitsLabel.className = 'draft-history-traits';
+
+                var motifName = (draft.traits && draft.traits.motif) ? draft.traits.motif : 'platen';
+
+                var symName = (draft.traits && draft.traits.symmetry) ? draft.traits.symmetry : 'none';
+
+                traitsLabel.textContent = motifName + ' · ' + symName;
 
                 
-
-                // Visual Color preview bar
 
                 var colorBar = document.createElement('div');
 
-                colorBar.style.display = 'flex';
+                colorBar.className = 'draft-history-ink';
 
-                colorBar.style.gap = '2px';
+                var colors = resolveDraftInkHexes(draft);
 
-                
+                colors.slice(0, 4).forEach(function(col) {
 
-                var chromeName = draft.traits.chromes;
+                    var dot = document.createElement('span');
 
-                var palette = window.PALETTES[chromeName];
+                    dot.className = 'draft-history-dot';
 
-                if (palette) {
+                    dot.style.background = col;
 
-                    var colors = [];
+                    colorBar.appendChild(dot);
 
-                    if (Array.isArray(palette)) {
-
-                        colors = palette;
-
-                    } else if (palette.strokes) {
-
-                        colors = palette.strokes;
-
-                    }
-
-                    if (colors.length > 0) {
-
-                        colors.slice(0, 4).forEach(function(col) {
-
-                            var dot = document.createElement('div');
-
-                            dot.style.width = '6px';
-
-                            dot.style.height = '6px';
-
-                            dot.style.borderRadius = '50%';
-
-                            dot.style.background = col;
-
-                            colorBar.appendChild(dot);
-
-                        });
-
-                    }
-
-                }
+                });
 
                 
 
@@ -16679,6 +16992,20 @@ rawWt.push(baseWt + jitter);
 
                 };
 
+                row.onkeydown = function(e) {
+
+                    if (!e) return;
+
+                    if (e.key === 'Enter' || e.key === ' ') {
+
+                        e.preventDefault();
+
+                        loadDraftIntoWorkspace(draft);
+
+                    }
+
+                };
+
                 
 
                 listEl.appendChild(row);
@@ -16691,15 +17018,17 @@ rawWt.push(baseWt + jitter);
 
         function loadDraftIntoWorkspace(draft) {
 
+            if (!draft || !draft.traits) return;
+
+            _loadingDraft = true;
+
+            if (typeof _lastRenderState !== 'undefined') _lastRenderState = null;
+
             RENDER_SEED = draft.seed;
 
             TRAITS = JSON.parse(JSON.stringify(draft.traits));
 
-            if (window.RESOLVED_TRAITS) {
-
-                window.RESOLVED_TRAITS = JSON.parse(JSON.stringify(draft.traits));
-
-            }
+            window.RESOLVED_TRAITS = JSON.parse(JSON.stringify(draft.traits));
 
             currentLayout = draft.layout;
 
@@ -17069,7 +17398,11 @@ rawWt.push(baseWt + jitter);
         }
 
         function generateNewPiece() {
-            randomize();
+            if (typeof _lastRenderState !== 'undefined') _lastRenderState = null;
+            if (typeof renderAll === 'function') {
+                if (window.RESOLVED_TRAITS) renderAll(true);
+                else renderAll();
+            }
             scrollStudioIntoView();
         }
 
@@ -17645,6 +17978,11 @@ rawWt.push(baseWt + jitter);
             }
             document.addEventListener('keydown', function(e) {
                 if (!e || e.key !== 'Escape') return;
+                var info = document.getElementById('modal-generate-info');
+                if (info && info.classList.contains('is-open')) {
+                    closeGenerateInfo();
+                    return;
+                }
                 var modal = document.getElementById('saved-solo');
                 if (modal && modal.classList.contains('is-open')) closeSavedSolo();
             });
@@ -17691,6 +18029,8 @@ rawWt.push(baseWt + jitter);
                 if (seed && seed.classList.contains('active')) return true;
                 var info = document.getElementById('modal-info');
                 if (info && info.classList.contains('active')) return true;
+                var genInfo = document.getElementById('modal-generate-info');
+                if (genInfo && genInfo.classList.contains('is-open')) return true;
                 var confirm = document.getElementById('gallery-remove-confirm');
                 if (confirm && confirm.style.display && confirm.style.display !== 'none') return true;
                 if (document.querySelector('.motus-dropdown.open')) return true;
