@@ -128,7 +128,8 @@ def css_order(block, selector):
     return int(m.group(1)) if m else None
 
 
-mobile_stack = re.search(r'@media \(max-width: 900px\) \{(.*?)\n        \}', html, re.S)
+MOBILE_MQ = r'@media \(max-width: 900px\)(?:,\s*\(max-device-width: 900px\))? \{'
+mobile_stack = re.search(MOBILE_MQ + r'(.*?)\n        \}', html, re.S)
 ok &= must(bool(mobile_stack), "mobile stack media query exists")
 if mobile_stack:
     stack = mobile_stack.group(1)
@@ -148,10 +149,10 @@ ok &= must("position: sticky" in html and "canvas-generate-strip" in html, "Gene
 col_about_100 = list(re.finditer(r'\.col-about\s*\{[^}]*height:\s*100dvh', html, re.S))
 col_controls_100 = list(re.finditer(r'\.col-controls\s*\{[^}]*height:\s*100dvh', html, re.S))
 ok &= must(bool(col_about_100) and bool(col_controls_100), "desktop about/controls still use 100dvh")
-late_mobile_queries = list(re.finditer(r'@media \(max-width: 900px\) \{', html))
+late_mobile_queries = list(re.finditer(MOBILE_MQ, html))
 ok &= must(len(late_mobile_queries) >= 3, "a late mobile stack-repair media query exists")
 if late_mobile_queries and col_about_100:
-    last_mobile = html[late_mobile_queries[-1].start(): late_mobile_queries[-1].start() + 2800]
+    last_mobile = html[late_mobile_queries[-1].start(): late_mobile_queries[-1].start() + 5000]
     last_about_100_at = col_about_100[-1].start()
     last_mobile_at = late_mobile_queries[-1].start()
     ok &= must(last_mobile_at > last_about_100_at, "mobile height:auto repair comes after desktop 100dvh")
@@ -162,6 +163,8 @@ if late_mobile_queries and col_about_100:
     ok &= must(".saved-creations-head" in last_mobile and "background: var(--bg)" in last_mobile, "saved header sits on an opaque background")
     ok &= must(".about-fold-summary" in last_mobile and "background: var(--bg)" in last_mobile, "About summary sits on an opaque background")
     ok &= must("[data-tooltip]::after" in last_mobile and "display: none" in last_mobile, "mobile tooltips cannot stick over About")
+    ok &= must("grid-template-columns: none" in last_mobile, "late mobile query kills the 480px desktop tracks")
+    ok &= must("display: flex !important" in last_mobile, "late mobile query forces a single-column flex stack")
 ok &= must(".btn-generate-sub" in html and "line-height: 1.2" in html, "Generate subtitle line-height is set")
 ok &= must('id="mobile-scroll-hint"' in html and "scroll for parameters" in html, "first-visit mobile has a scroll hint")
 ok &= must("MAX_SAVE_MARKS" in html and "MAX_SAVE_NODES" in html, "Save snapshot is capped so Curate cannot OOM")

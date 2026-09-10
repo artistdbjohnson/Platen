@@ -26,6 +26,59 @@ ok &= must('localStorage.setItem(\'platen_ui_mode\'' in html or 'localStorage.se
 ok &= must("localStorage.getItem('platen_ui_mode')" in html, "boot script reads platen_ui_mode before paint")
 ok &= must('data-ui' in html and "setAttribute('data-ui', 'index')" in html, "index mode sets data-ui=index")
 ok &= must("setAttribute('data-theme', 'light')" in html, "index mode keeps data-theme=light for existing night checks")
+boot = html.split("<script>", 1)[1].split("</script>", 1)[0]
+ok &= must(
+    "mode === 'studio'" in boot or 'mode === "studio"' in boot,
+    "pre-paint boot defaults to index/light unless studio is already saved",
+)
+ok &= must(
+    "mode === 'index'" not in boot.split("platen_ui_mode")[1][:400]
+    or ("mode === 'studio'" in boot and "setAttribute('data-theme', 'light')" in boot),
+    "missing platen_ui_mode boots index, not dark studio",
+)
+ok &= must(
+    'data-theme="light"' in html.split("<head>", 1)[0] and 'data-ui="index"' in html.split("<head>", 1)[0],
+    "html tag paints index/light before any script so first visit has no dark flash",
+)
+ok &= must("class=\"brand-lockup\"" in html and "PLATEN BY DGLXSS" in html, "brand lockup keeps exact PLATEN BY DGLXSS casing")
+ok &= must(
+    '">auto cycle</span>' in html and "text-transform: uppercase" not in html.split('">auto cycle</span>')[0][-180:],
+    "auto cycle label has no inline uppercase",
+)
+ok &= must(
+    "include bg texture" in html
+    and "text-transform: uppercase" not in html.split("include bg texture")[0][-180:],
+    "include bg texture label is lowercase",
+)
+ok &= must(">verso</button>" in html and ">recto</button>" in html, "flip labels are verso/recto")
+ok &= must("btn.textContent = 'verso'" in html and "btn.textContent = 'recto'" in html, "layout sync keeps flip labels lowercase")
+ok &= must(
+    "html[data-theme=\"light\"] .btn-flip" in html
+    and "text-transform: lowercase !important" in html.split("html[data-theme=\"light\"] .btn-flip")[-1][:200],
+    "index flip chrome is forced lowercase, not exempted",
+)
+ok &= must(
+    "text-transform: lowercase !important" in html
+    and "html[data-theme=\"light\"] .brand-lockup" in html,
+    "index chrome is lowercase with a brand-lockup exception",
+)
+ok &= must(
+    ".generate-dock > .ui-mode-nav" in html
+    and "html[data-theme=\"light\"] .generate-dock > .btn-generate" in html,
+    "mobile hides the duplicate dock generate / studio-index block",
+)
+ok &= must("function thinLockMarkup" in html and "lock-mark" in html, "palette lock uses a thin line mark, not emoji")
+ok &= must("🔒" not in html and "🔓" not in html and "💎" not in html, "rosy chrome has no lock/gem emoji")
+ok &= must(
+    re.search(r'\.trait-label\s*\{[^}]*font-size:\s*8px', html)
+    and re.search(r'\.trait-select\s*\{[^}]*font-size:\s*8px', html),
+    "parameter labels and values are 8px, smaller than primary actions",
+)
+ok &= must(
+    "html[data-theme=\"light\"] #palette-lock-details" in html
+    and "font-size: 8px !important" in html,
+    "lock helper copy is secondary 8px",
+)
 ok &= must("class=\"ui-mode-nav\"" in html and 'data-ui-mode="studio"' in html and 'data-ui-mode="index"' in html, "studio / index text toggle is in the markup")
 ok &= must(html.count('data-ui-mode="index"') >= 3, "index toggle is available in more than one column")
 ok &= must("☀︎ Toggle Theme" not in html, "sun-pill theme button copy is gone")

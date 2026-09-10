@@ -2,7 +2,7 @@
 
 <!-- Vercel Production Deploy Trigger -->
 
-<html lang="en" translate="no" class="notranslate">
+<html lang="en" translate="no" class="notranslate" data-theme="light" data-ui="index">
 
 
 
@@ -16,14 +16,30 @@
 
     <title>Platen</title>
 
-    <!-- Restore index / light mode before first paint to avoid a dark flash -->
+    <!-- Restore index / light mode before first paint to avoid a dark flash.
+         Also mark real phones before CSS viewport inflation can hide max-width: 900px. -->
     <script>
         (function () {
             try {
                 var mode = localStorage.getItem('platen_ui_mode');
-                if (mode === 'index' || mode === 'light') {
+                if (mode === 'studio' || mode === 'dark') {
+                    document.documentElement.removeAttribute('data-theme');
+                    document.documentElement.removeAttribute('data-ui');
+                } else {
                     document.documentElement.setAttribute('data-theme', 'light');
                     document.documentElement.setAttribute('data-ui', 'index');
+                }
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+                document.documentElement.setAttribute('data-ui', 'index');
+            }
+            try {
+                var sw = (window.screen && screen.width) ? screen.width : 0;
+                var iw = window.innerWidth || 0;
+                // CSS width ≤900 is the layout rule. screen.width ≤500 only
+                // catches a real phone after iOS inflates the layout viewport.
+                if ((iw && iw <= 900) || (sw && sw <= 500)) {
+                    document.documentElement.classList.add('is-phone');
                 }
             } catch (e) {}
         })();
@@ -146,7 +162,13 @@
 
             height: 100%;
 
+            width: 100%;
+
+            max-width: 100%;
+
             overflow: hidden;
+
+            overflow-x: hidden;
 
         }
 
@@ -198,19 +220,22 @@
 
 
 
-        /* ── 3-Column Index Layout ── */
+        /* Default = phone stack. The 480px + 480px desktop grid is ONLY
+           applied inside min-width: 901px. Leaving those tracks in the
+           default rule lets iOS expand the layout viewport past 900px,
+           after which every max-width: 900px query silently fails. */
 
         .index-grid {
 
-            display: grid;
+            display: flex;
 
-            grid-template-columns: 480px 480px 1fr;
-
-            grid-template-rows: 100dvh auto;
+            flex-direction: column;
 
             height: 100dvh;
 
-            width: 100vw;
+            width: 100%;
+
+            max-width: 100%;
 
             overflow-x: hidden;
 
@@ -224,13 +249,21 @@
 
         /* Responsive stack for mobile */
 
-        @media (max-width: 900px) {
+        @media (max-width: 900px), (max-device-width: 900px) {
 
             .index-grid {
 
                 display: flex;
 
                 flex-direction: column;
+
+                grid-template-columns: none;
+
+                grid-template-rows: none;
+
+                width: 100%;
+
+                max-width: 100%;
 
                 overflow-y: auto;
 
@@ -320,7 +353,9 @@
 
             gap: 10px;
 
-            height: 100dvh;
+            height: auto;
+
+            min-height: 0;
 
             box-sizing: border-box;
 
@@ -328,15 +363,16 @@
 
 
 
-        .col-about h2 {
+        .col-about h2,
+        .brand-lockup {
 
             font-size: 11px;
 
             font-weight: 500;
 
-            letter-spacing: 0.1em;
+            letter-spacing: 0.12em;
 
-            text-transform: uppercase;
+            text-transform: none;
 
             margin-bottom: 16px;
 
@@ -486,7 +522,9 @@
 
             flex-direction: column;
 
-            height: 100dvh;
+            height: auto;
+
+            min-height: 0;
 
             box-sizing: border-box;
 
@@ -518,9 +556,9 @@
 
             font-weight: 500;
 
-            letter-spacing: 0.15em;
+            letter-spacing: 0.04em;
 
-            text-transform: uppercase;
+            text-transform: lowercase;
 
             opacity: 0.5;
 
@@ -710,8 +748,8 @@
             font-family: inherit;
             font-size: 12px;
             font-weight: 500;
-            letter-spacing: 0.22em;
-            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            text-transform: lowercase;
             text-align: center;
             cursor: pointer;
             opacity: 1;
@@ -724,7 +762,7 @@
         .generate-dock .btn-generate {
             width: 100%;
             text-align: center;
-            text-transform: uppercase;
+            text-transform: lowercase;
             opacity: 1;
             border-bottom: 1px solid var(--text);
             padding: 14px 16px;
@@ -782,8 +820,8 @@
             font-family: inherit;
             font-size: 12px;
             font-weight: 500;
-            letter-spacing: 0.22em;
-            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            text-transform: lowercase;
             cursor: pointer;
             touch-action: manipulation;
         }
@@ -845,10 +883,11 @@
         }
 
         .saved-creations-head h2 {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 500;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            text-transform: lowercase;
+            line-height: 1.4;
             margin: 0;
         }
 
@@ -1031,11 +1070,12 @@
             display: flex;
             list-style: none;
             cursor: pointer;
-            font-size: 10px;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.04em;
+            text-transform: lowercase;
+            line-height: 1.4;
             opacity: 0.55;
-            min-height: 44px;
+            min-height: 40px;
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid var(--border);
@@ -1138,15 +1178,16 @@
             display: none;
             list-style: none;
             cursor: pointer;
-            font-size: 10px;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.04em;
+            text-transform: lowercase;
+            line-height: 1.4;
             opacity: 0.55;
-            min-height: 44px;
+            min-height: 40px;
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid var(--border);
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             user-select: none;
         }
 
@@ -1168,7 +1209,7 @@
             display: none;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 900px), (max-device-width: 900px) {
             .advanced-fold-summary {
                 display: flex;
             }
@@ -1225,11 +1266,12 @@
                 display: flex;
                 list-style: none;
                 cursor: pointer;
-                font-size: 10px;
-                letter-spacing: 0.14em;
-                text-transform: uppercase;
+                font-size: 11px;
+                letter-spacing: 0.04em;
+                text-transform: lowercase;
+                line-height: 1.4;
                 opacity: 0.55;
-                min-height: 44px;
+                min-height: 40px;
                 align-items: center;
                 justify-content: space-between;
                 border-bottom: 1px solid var(--border);
@@ -1267,15 +1309,19 @@
 
         .trait {
 
-            display: flex;
+            display: grid;
 
-            flex-direction: row;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
 
-            justify-content: space-between;
+            column-gap: 16px;
 
-            align-items: center;
+            align-items: baseline;
 
-            margin-bottom: 6px;
+            min-height: 36px;
+
+            margin: 0;
+
+            padding: 5px 0;
 
         }
 
@@ -1283,13 +1329,15 @@
 
         .trait-label {
 
-            font-size: 9px;
+            font-size: 8px;
 
-            opacity: 0.5;
+            line-height: 1.35;
 
-            text-transform: uppercase;
+            opacity: 0.7;
 
-            letter-spacing: 0.05em;
+            text-transform: lowercase;
+
+            letter-spacing: 0.03em;
 
         }
 
@@ -1307,15 +1355,17 @@
 
             font-family: inherit;
 
-            font-size: 10px;
+            font-size: 8px;
 
-            letter-spacing: 0.05em;
+            line-height: 1.35;
+
+            letter-spacing: 0.03em;
 
             padding: 2px 0px;
 
             cursor: pointer;
 
-            text-transform: uppercase;
+            text-transform: lowercase;
 
             -webkit-appearance: none;
 
@@ -1397,7 +1447,11 @@
 
             position: relative;
 
-            height: 100dvh;
+            height: 48vh;
+
+            min-height: 48vh;
+
+            max-height: 48vh;
 
             box-sizing: border-box;
 
@@ -2609,7 +2663,7 @@
 
             padding: 4px 0px;
 
-            text-transform: uppercase;
+            text-transform: lowercase;
 
             opacity: 0.3;
 
@@ -2657,7 +2711,7 @@
 
             padding: 4px 0px;
 
-            text-transform: uppercase;
+            text-transform: lowercase;
 
             opacity: 0.3;
 
@@ -3479,7 +3533,7 @@
 
             .trait-label {
 
-                font-size: 7px;
+                font-size: 8px;
 
             }
 
@@ -3487,11 +3541,11 @@
 
             .trait-select {
 
-                font-size: 14px;
+                font-size: 8px;
 
-                padding: 10px 6px;
+                padding: 2px 0;
 
-                min-height: 44px;
+                min-height: 0;
 
                 height: auto;
 
@@ -4195,8 +4249,8 @@
             width: auto !important;
             text-align: left !important;
             font-weight: 400 !important;
-            letter-spacing: 0.02em !important;
-            text-transform: none !important;
+            letter-spacing: 0.04em !important;
+            text-transform: lowercase !important;
             text-decoration: none !important;
             opacity: 1 !important;
         }
@@ -4215,7 +4269,7 @@
             font-size: inherit !important;
             letter-spacing: inherit !important;
             font-weight: 400 !important;
-            text-transform: none !important;
+            text-transform: lowercase !important;
         }
         html[data-theme="light"] button:hover,
         html[data-theme="light"] .btn-generate:hover,
@@ -4484,7 +4538,7 @@
             pointer-events: auto !important;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 900px), (max-device-width: 900px) {
             html[data-theme="light"] .canvas-generate-strip {
                 flex-wrap: wrap;
                 gap: 8px 16px !important;
@@ -4502,12 +4556,71 @@
         }
 
         /*
+          Desktop 3-column shell. Applied only when the CSS viewport is
+          actually ≥901px. 100dvh column heights live here — not in the
+          default rules — so a phone cannot inherit a 960px-wide grid.
+        */
+        @media (min-width: 901px) {
+            .index-grid {
+                display: grid;
+                grid-template-columns: 480px 480px 1fr;
+                grid-template-rows: 100dvh auto;
+                height: 100dvh;
+                width: 100%;
+            }
+
+            .col-about {
+                height: 100dvh;
+                min-height: 0;
+                max-height: none;
+                order: initial;
+                overflow-y: auto;
+            }
+
+            .col-controls {
+                height: 100dvh;
+                min-height: 0;
+                max-height: none;
+                order: initial;
+                overflow-y: auto;
+            }
+
+            .col-canvas {
+                height: 100dvh;
+                min-height: 0;
+                max-height: none;
+                order: initial;
+            }
+
+            .canvas-generate-strip,
+            .mobile-scroll-hint,
+            .saved-creations {
+                order: initial;
+            }
+        }
+
+        /*
           Mobile stack repair — MUST come after the desktop 100dvh column heights
           and after index-mode's mobile query so this remains the last
           max-width: 900px block (tests + cascade). Index chrome still wins
           via html[data-theme="light"] !important.
+
+          max-device-width covers iOS Safari after it expands the layout
+          viewport to fit leftover 480px tracks (max-width then misses).
         */
-        @media (max-width: 900px) {
+        @media (max-width: 900px), (max-device-width: 900px) {
+            .index-grid {
+                display: flex !important;
+                flex-direction: column !important;
+                grid-template-columns: none !important;
+                grid-template-rows: none !important;
+                height: 100dvh;
+                width: 100%;
+                max-width: 100%;
+                overflow-x: hidden;
+                overflow-y: auto;
+            }
+
             .index-grid > * {
                 flex-shrink: 0;
             }
@@ -4526,12 +4639,42 @@
                 height: 48vh;
                 min-height: 48vh;
                 max-height: 48vh;
+                order: 1;
+            }
+
+            .canvas-generate-strip {
+                display: flex;
+                order: 2;
+            }
+
+            .mobile-scroll-hint {
+                order: 3;
+            }
+
+            .col-controls {
+                order: 4;
             }
 
             .col-about {
+                order: 5;
                 padding-top: 16px;
                 isolation: isolate;
                 background: var(--bg);
+            }
+
+            .saved-creations {
+                order: 6;
+                position: relative;
+                z-index: 1;
+                isolation: isolate;
+                background: var(--bg);
+                scroll-margin-top: 72px;
+            }
+
+            .generate-dock .btn-generate,
+            .generate-dock .btn-save,
+            .generate-dock .generate-hint {
+                display: none;
             }
 
             .col-about h2 {
@@ -4549,14 +4692,6 @@
 
             .about-fold-summary {
                 margin-top: 4px;
-            }
-
-            .saved-creations {
-                position: relative;
-                z-index: 1;
-                isolation: isolate;
-                background: var(--bg);
-                scroll-margin-top: 72px;
             }
 
             .saved-creations-head,
@@ -4584,6 +4719,227 @@
             [data-tooltip]::after {
                 display: none !important;
             }
+
+            .col-about > .ui-mode-nav,
+            .generate-dock > .ui-mode-nav,
+            .ui-mode-section,
+            html[data-theme="light"] .col-about > .ui-mode-nav,
+            html[data-theme="light"] .generate-dock > .ui-mode-nav,
+            html[data-theme="light"] .ui-mode-section {
+                display: none !important;
+            }
+
+            html[data-theme="light"] .generate-dock > .btn-generate,
+            html[data-theme="light"] .generate-dock > .btn-save,
+            html[data-theme="light"] .generate-dock > .generate-hint {
+                display: none !important;
+            }
+
+            #params-section > h3 {
+                display: none;
+            }
+
+            .generate-dock {
+                gap: 4px;
+                padding-bottom: 8px;
+                margin-bottom: 8px;
+            }
+
+            .col-controls {
+                padding: 12px 16px 20px;
+            }
+
+            .col-about {
+                padding: 12px 16px 20px;
+            }
+
+            .control-section {
+                padding-bottom: 8px;
+                margin-bottom: 8px;
+                gap: 2px;
+            }
+
+            .trait {
+                min-height: 26px;
+                padding: 3px 0;
+            }
+
+            .trait-label,
+            .trait-select {
+                font-size: 8px;
+            }
+
+            .trait-select {
+                padding: 2px 0;
+                min-height: 0;
+                height: auto;
+            }
+
+            .canvas-generate-strip {
+                align-items: baseline;
+                gap: 12px 16px;
+            }
+        }
+
+        /*
+          html.is-phone is set from screen.width before first paint so an
+          already-inflated CSS viewport (innerWidth > 900 on a 390px phone)
+          cannot keep the desktop 480+480 grid.
+        */
+        html.is-phone .index-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            grid-template-columns: none !important;
+            grid-template-rows: none !important;
+            height: 100dvh !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+        }
+        html.is-phone .index-grid > * {
+            flex-shrink: 0;
+        }
+        html.is-phone .col-about,
+        html.is-phone .col-controls {
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow: visible !important;
+        }
+        html.is-phone .col-canvas {
+            height: 48vh !important;
+            min-height: 48vh !important;
+            max-height: 48vh !important;
+            order: 1 !important;
+        }
+        html.is-phone .canvas-generate-strip {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            order: 2 !important;
+            position: sticky;
+            top: 0;
+            z-index: 850;
+        }
+        html.is-phone .mobile-scroll-hint {
+            order: 3 !important;
+        }
+        html.is-phone .col-controls {
+            order: 4 !important;
+        }
+        html.is-phone .col-about {
+            order: 5 !important;
+        }
+        html.is-phone .saved-creations {
+            order: 6 !important;
+        }
+        html.is-phone .generate-dock .btn-generate,
+        html.is-phone .generate-dock .btn-save,
+        html.is-phone .generate-dock .generate-hint {
+            display: none !important;
+        }
+
+        /* Brand lockup is the only chrome that keeps authored caps. */
+        .brand-lockup,
+        html[data-theme="light"] .brand-lockup,
+        html[data-theme="light"] .col-about > h2.brand-lockup {
+            text-transform: none !important;
+            letter-spacing: 0.12em !important;
+        }
+
+        /* About essay stays as authored. Flip chrome is lowercase like the rest. */
+        .about-fold-body,
+        .about-fold-body p,
+        .about-fold-body h3,
+        .about-fold-body pre,
+        html[data-theme="light"] .about-fold-body,
+        html[data-theme="light"] .about-fold-body p,
+        html[data-theme="light"] .about-fold-body h3 {
+            text-transform: none !important;
+        }
+        .btn-flip,
+        .back-btn-flip,
+        html[data-theme="light"] .btn-flip,
+        html[data-theme="light"] .back-btn-flip {
+            text-transform: lowercase !important;
+        }
+
+        html[data-theme="light"] .trait,
+        html[data-theme="light"] .trait-label,
+        html[data-theme="light"] .trait-select,
+        html[data-theme="light"] .cd-selected {
+            text-transform: lowercase !important;
+            letter-spacing: 0.03em !important;
+            line-height: 1.35 !important;
+            font-size: 8px !important;
+        }
+        html[data-theme="light"] #st-info,
+        html[data-theme="light"] .status-section #st-info {
+            text-transform: lowercase !important;
+            letter-spacing: 0.04em !important;
+        }
+        html[data-theme="light"] .control-section h3,
+        html[data-theme="light"] .saved-creations-head h2,
+        html[data-theme="light"] .about-fold-summary,
+        html[data-theme="light"] .advanced-fold-summary,
+        html[data-theme="light"] .params-fold-summary {
+            text-transform: lowercase !important;
+            letter-spacing: 0.04em !important;
+            line-height: 1.4 !important;
+        }
+
+        /* Desktop: one studio/index — the generate dock. */
+        @media (min-width: 901px) {
+            .col-about > .ui-mode-nav,
+            .ui-mode-section {
+                display: none;
+            }
+        }
+
+        html.is-phone .col-about > .ui-mode-nav,
+        html.is-phone .generate-dock > .ui-mode-nav,
+        html.is-phone .ui-mode-section {
+            display: none !important;
+        }
+        html.is-phone #params-section > h3 {
+            display: none;
+        }
+
+        .lock-mark-wrap {
+            display: inline-flex;
+            align-items: center;
+            line-height: 0;
+        }
+        .lock-mark {
+            display: block;
+            width: 10px;
+            height: 12px;
+            color: var(--text);
+            flex-shrink: 0;
+        }
+        html[data-theme="light"] .lock-mark {
+            color: #000000 !important;
+        }
+        #palette-lock-text {
+            font-size: 9px;
+            letter-spacing: 0.03em;
+            line-height: 1.35;
+        }
+        #palette-lock-details {
+            font-size: 8px;
+            letter-spacing: 0.03em;
+            line-height: 1.35;
+            opacity: 0.5;
+        }
+        html[data-theme="light"] #palette-lock-text {
+            font-size: 9px !important;
+            letter-spacing: 0.03em !important;
+        }
+        html[data-theme="light"] #palette-lock-details {
+            font-size: 8px !important;
+            letter-spacing: 0.03em !important;
+            line-height: 1.35 !important;
+            opacity: 0.5 !important;
         }
     </style>
 
@@ -4641,7 +4997,7 @@
 
         <section class="col-about">
 
-            <h2>PLATEN by DGLXSS</h2>
+            <h2 class="brand-lockup">PLATEN BY DGLXSS</h2>
 
             <nav class="ui-mode-nav" aria-label="interface mode">
                 <button type="button" class="ui-mode-link" data-ui-mode="studio" onclick="applyTheme('studio')">studio</button>
@@ -4821,13 +5177,13 @@ rawWt.push(baseWt + jitter);
 
                     <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
 
-                        <span id="palette-lock-icon">🔓</span>
+                        <span id="palette-lock-icon" class="lock-mark-wrap" aria-hidden="true"><svg class="lock-mark lock-mark--open" viewBox="0 0 12 14" width="10" height="12" aria-hidden="true"><rect x="2.35" y="6" width="7.3" height="6.2" fill="none" stroke="currentColor" stroke-width="1"/><path d="M4 6.15V3.7A2.15 2.15 0 0 1 8.3 3.7V3.15" fill="none" stroke="currentColor" stroke-width="1"/></svg></span>
 
                         <span id="palette-lock-text">checking palette lock...</span>
 
                     </div>
 
-                    <div id="palette-lock-details" style="font-size: 9px; opacity: 0.5;">
+                    <div id="palette-lock-details">
 
                         this composition structure is available to lock.
 
@@ -4924,7 +5280,7 @@ rawWt.push(baseWt + jitter);
 
                 <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; width: 100%; justify-content: space-between;" onclick="toggleAuto()">
 
-                    <span style="font-size: 9px; text-transform: uppercase; user-select: none; opacity: 0.8; letter-spacing: 0.05em;">auto cycle</span>
+                    <span style="font-size: 9px; user-select: none; opacity: 0.8; letter-spacing: 0.05em;">auto cycle</span>
 
                     <div id="btn-auto"></div>
 
@@ -4976,7 +5332,7 @@ rawWt.push(baseWt + jitter);
 
                     <input type="checkbox" id="inc-bg" checked onchange="renderAll()" style="cursor: pointer; accent-color: #000;">
 
-                    <label for="inc-bg" style="font-size: 9px; cursor: pointer; text-transform: uppercase; opacity: 0.8; letter-spacing: 0.05em;">Include BG Texture</label>
+                    <label for="inc-bg" style="font-size: 9px; cursor: pointer; text-transform: lowercase; opacity: 0.8; letter-spacing: 0.05em;">include bg texture</label>
 
                     <span style="font-size: 8px; opacity: 0.4; letter-spacing: 0.06em; text-transform: lowercase;">plotter svg always excludes paper</span>
 
@@ -5062,7 +5418,7 @@ rawWt.push(baseWt + jitter);
 
                                 <canvas id="c1-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
 
-                                <button class="back-btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">RECTO</button>
+                                <button class="back-btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">recto</button>
 
                                 <div class="back-download-links">
 
@@ -5078,7 +5434,7 @@ rawWt.push(baseWt + jitter);
 
                     </div>
 
-                    <button class="btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">VERSO</button>
+                    <button class="btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">verso</button>
 
                 </div>
 
@@ -5104,7 +5460,7 @@ rawWt.push(baseWt + jitter);
 
                                 <canvas id="c2-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
 
-                                <button class="back-btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">RECTO</button>
+                                <button class="back-btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">recto</button>
 
                                 <div class="back-download-links">
 
@@ -5120,7 +5476,7 @@ rawWt.push(baseWt + jitter);
 
                     </div>
 
-                    <button class="btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">VERSO</button>
+                    <button class="btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">verso</button>
 
                 </div>
 
@@ -5146,7 +5502,7 @@ rawWt.push(baseWt + jitter);
 
                                 <canvas id="c3-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
 
-                                <button class="back-btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">RECTO</button>
+                                <button class="back-btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">recto</button>
 
                                 <div class="back-download-links">
 
@@ -5162,7 +5518,7 @@ rawWt.push(baseWt + jitter);
 
                     </div>
 
-                    <button class="btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">VERSO</button>
+                    <button class="btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">verso</button>
 
                 </div>
 
@@ -6076,8 +6432,16 @@ rawWt.push(baseWt + jitter);
 
         }
 
+        function syncPhoneLayoutClass() {
+            var sw = (window.screen && screen.width) ? screen.width : 0;
+            var iw = window.innerWidth || 0;
+            var phone = (iw && iw <= 900) || (sw && sw <= 500);
+            document.documentElement.classList.toggle('is-phone', !!phone);
+        }
+
         function syncAdvancedFold() {
             var desktop = window.matchMedia && window.matchMedia('(min-width: 901px)').matches;
+            if (document.documentElement.classList.contains('is-phone')) desktop = false;
             ['advanced-fold', 'params-fold'].forEach(function(id) {
                 var fold = document.getElementById(id);
                 if (fold) fold.open = desktop;
@@ -6085,11 +6449,22 @@ rawWt.push(baseWt + jitter);
         }
 
         (function initAdvancedFold() {
+            syncPhoneLayoutClass();
             syncAdvancedFold();
+            window.addEventListener('resize', function() {
+                syncPhoneLayoutClass();
+                syncAdvancedFold();
+            });
             if (!window.matchMedia) return;
             var mq = window.matchMedia('(min-width: 901px)');
-            if (mq.addEventListener) mq.addEventListener('change', syncAdvancedFold);
-            else if (mq.addListener) mq.addListener(syncAdvancedFold);
+            if (mq.addEventListener) mq.addEventListener('change', function() {
+                syncPhoneLayoutClass();
+                syncAdvancedFold();
+            });
+            else if (mq.addListener) mq.addListener(function() {
+                syncPhoneLayoutClass();
+                syncAdvancedFold();
+            });
         })();
 
 
@@ -6328,17 +6703,17 @@ rawWt.push(baseWt + jitter);
 
 
 
-            // Maintain the VERSO/RECTO labels
+            // Maintain the verso/recto labels
 
             document.querySelectorAll('.btn-flip').forEach(function(btn) {
 
-                btn.textContent = 'VERSO';
+                btn.textContent = 'verso';
 
             });
 
             document.querySelectorAll('.back-btn-flip').forEach(function(btn) {
 
-                btn.textContent = 'RECTO';
+                btn.textContent = 'recto';
 
             });
 
@@ -15338,7 +15713,7 @@ rawWt.push(baseWt + jitter);
                 saving: 'Saving…',
                 saved: 'Saved',
                 already: '✓ Saved',
-                closed: '🔒 closed',
+                closed: 'closed',
                 locked: 'locked'
             };
             var tooltips = {
@@ -15505,6 +15880,17 @@ rawWt.push(baseWt + jitter);
 
 
 
+        function thinLockMarkup(state) {
+            var open = state === 'open';
+            var shackle = open
+                ? '<path d="M4 6.15V3.7A2.15 2.15 0 0 1 8.3 3.7V3.15" fill="none" stroke="currentColor" stroke-width="1"/>'
+                : '<path d="M4 6.15V3.7A2.15 2.15 0 0 1 8.3 3.7V6.15" fill="none" stroke="currentColor" stroke-width="1"/>';
+            return '<svg class="lock-mark lock-mark--' + (open ? 'open' : 'closed') + '" viewBox="0 0 12 14" width="10" height="12" aria-hidden="true">'
+                + '<rect x="2.35" y="6" width="7.3" height="6.2" fill="none" stroke="currentColor" stroke-width="1"/>'
+                + shackle
+                + '</svg>';
+        }
+
         function updateLockStatus() {
 
             var key = getCompositionKey();
@@ -15543,7 +15929,7 @@ rawWt.push(baseWt + jitter);
 
                 }
 
-                if (statusIcon) statusIcon.innerHTML = "🔒";
+                if (statusIcon) statusIcon.innerHTML = thinLockMarkup('closed');
 
                 if (statusText) statusText.innerHTML = "curation closed";
 
@@ -15585,7 +15971,7 @@ rawWt.push(baseWt + jitter);
 
                     }
 
-                    if (statusIcon) statusIcon.innerHTML = "💎";
+                    if (statusIcon) statusIcon.innerHTML = thinLockMarkup('closed');
 
                     if (statusText) statusText.innerHTML = "locked by you";
 
@@ -15603,7 +15989,7 @@ rawWt.push(baseWt + jitter);
 
                     }
 
-                    if (statusIcon) statusIcon.innerHTML = "🔒";
+                    if (statusIcon) statusIcon.innerHTML = thinLockMarkup('closed');
 
                     if (statusText) statusText.innerHTML = "locked by " + lock.owner;
 
@@ -15645,7 +16031,7 @@ rawWt.push(baseWt + jitter);
 
                 }
 
-                if (statusIcon) statusIcon.innerHTML = "🔓";
+                if (statusIcon) statusIcon.innerHTML = thinLockMarkup('open');
 
                 if (statusText) statusText.innerHTML = "available to lock";
 
@@ -16313,6 +16699,7 @@ rawWt.push(baseWt + jitter);
 
         function savedMasonryColumnCount() {
             if (typeof window === 'undefined') return 2;
+            if (document.documentElement.classList.contains('is-phone')) return 2;
             if (window.innerWidth >= 901) return 3;
             return 2;
         }
