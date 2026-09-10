@@ -4170,12 +4170,12 @@
         /* Quiet pull-from-top reload cue. Hidden until a top-of-page pull. */
         .pull-refresh-cue {
             position: fixed;
-            top: 10px;
+            top: 0;
             left: 0;
             right: 0;
             z-index: 12000;
             margin: 0;
-            padding: 0;
+            padding: 8px 12px 6px;
             text-align: center;
             font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
             font-size: 10px;
@@ -4184,7 +4184,7 @@
             line-height: 1;
             text-transform: lowercase;
             color: var(--text);
-            background: transparent;
+            background: var(--bg);
             pointer-events: none;
             user-select: none;
         }
@@ -4202,6 +4202,11 @@
         html[data-theme="light"] body {
             background: #ffffff !important;
             color: #000000 !important;
+        }
+        html[data-theme="light"] .pull-refresh-cue {
+            color: #000000 !important;
+            background: #ffffff !important;
+            -webkit-text-fill-color: #000000 !important;
         }
         html[data-theme="light"] body,
         html[data-theme="light"] button,
@@ -4286,7 +4291,6 @@
         html[data-theme="light"] .generate-hint,
         html[data-theme="light"] .generate-legend,
         html[data-theme="light"] .motus-download-cue,
-        html[data-theme="light"] .pull-refresh-cue,
         html[data-theme="light"] .saved-creations-head h2,
         html[data-theme="light"] .saved-creations-cue,
         html[data-theme="light"] .saved-inline-empty,
@@ -17546,7 +17550,9 @@ rawWt.push(baseWt + jitter);
             function reloadPage() {
                 refreshing = true;
                 showCue('refreshing');
-                window.location.reload();
+                requestAnimationFrame(function () {
+                    window.location.reload();
+                });
             }
 
             function onStart(e) {

@@ -60,8 +60,9 @@ if cue:
     ok &= must("10px" in body or "11px" in body, "cue is a thin type size")
 
 ok &= must(
-    "html[data-theme=\"light\"] .pull-refresh-cue" in style,
-    "index mode restyles the cue",
+    "html[data-theme=\"light\"] .pull-refresh-cue" in style
+    and "background: #ffffff !important" in style.split('html[data-theme="light"] .pull-refresh-cue', 1)[-1][:220],
+    "index cue is #000 on #fff so it stays readable over a black plate",
 )
 ok &= must("animation:" not in (cue.group(1) if cue else ""), "cue has no spinner animation")
 
