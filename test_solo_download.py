@@ -42,6 +42,15 @@ ok &= must("img" not in vector_branch and "previewUrl" not in vector_branch, "so
 ok &= must("PLATEN_EXPORT_DPI = 300" in html and "PLATEN_EXPORT_MIN_LONG_EDGE = 3300" in html, "printable size floor remains")
 ok &= must("saveAsImage('png')" in html, "Export Download PNG still uses saveAsImage")
 ok &= must("svg.classList.remove('motus-active')" in html, "Motus OFF leaves the live SVG visible")
+ok &= must("function isMotusBlockingExport" in html and "function guardMotusImageExport" in html, "Motus ON blocks image export")
+ok &= must("pause motus to download" in html and "motus-download-cue" in html, "quiet inline cue explains the block")
+ok &= must("isActive()" in html.split("function isMotusBlockingExport", 1)[1].split("function saveAsImage", 1)[0], "block uses PlatenHyperspeed.isActive")
+ok &= must("isPaused()" in html.split("function isMotusBlockingExport", 1)[1].split("function saveAsImage", 1)[0], "paused Motus is allowed to download")
+ok &= must("guardMotusImageExport" in html.split("function savePNG()", 1)[1].split("function saveJPG()", 1)[0], "savePNG guards while Motus is on")
+ok &= must("guardMotusImageExport" in html.split("function saveJPG()", 1)[1].split("function saveTriptych", 1)[0], "saveJPG guards while Motus is on")
+ok &= must("guardMotusImageExport" in html.split("function saveAsImage(format)", 1)[1].split("function savePNG()", 1)[0], "saveAsImage guards while Motus is on")
+ok &= must("guardMotusImageExport" in html.split("function downloadSavedSolo()", 1)[1].split("window.downloadSavedSolo", 1)[0], "solo archival download guards while Motus is on")
+ok &= must("ensureSavedPlateSvg" in html and "s-solo-rebuild" in html, "Slug empty-snap recovery remains")
 
 if not ok:
     sys.exit(1)

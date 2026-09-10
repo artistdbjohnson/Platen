@@ -173,6 +173,23 @@ async function main() {
         setTimeout(function () { resolve({ error: 'timeout' }); }, 25000);
       });
 
+      const hs = window.PlatenHyperspeed || (window.PlatenHyperspeed = {});
+      const prevActive = hs.isActive;
+      const prevPaused = hs.isPaused;
+      hs.isActive = function () { return true; };
+      hs.isPaused = function () { return false; };
+      let blockedCalls = 0;
+      const origBlob = window.downloadBlob;
+      window.downloadBlob = function () { blockedCalls += 1; };
+      const blocked = !!(window.guardMotusImageExport && guardMotusImageExport());
+      const cueVisible = !document.getElementById('motus-download-cue-solo').hasAttribute('hidden');
+      downloadSavedSolo();
+      savePNG();
+      window.downloadBlob = origBlob;
+      hs.isActive = prevActive;
+      hs.isPaused = prevPaused;
+      if (typeof syncMotusDownloadCues === 'function') syncMotusDownloadCues();
+
       return {
         masonryHasImg: !!(masonryImg && String(masonryImg.src).indexOf('image/jpeg') !== -1),
         masonryHasSvg: !!masonrySvg,
@@ -187,6 +204,9 @@ async function main() {
         emptySnapSoloImg: !!emptySoloImg,
         emptySnapSoloText: emptySoloText.slice(0, 80),
         emptySnapDownload: recovered,
+        motusBlocked: blocked,
+        motusBlockedCalls: blockedCalls,
+        motusCueVisible: cueVisible,
       };
     });
 
@@ -209,6 +229,8 @@ async function main() {
     must(result.emptySnapDownload && result.emptySnapDownload.type === 'image/png', 'empty-snap download mime is image/png');
     must(result.emptySnapDownload && Math.max(result.emptySnapDownload.w, result.emptySnapDownload.h) >= 2550, 'empty-snap download is archival');
     must(result.emptySnapDownload && result.emptySnapDownload.size > 50 * 1024, 'empty-snap download is not the 76KB thumb');
+    must(result.motusBlocked && result.motusBlockedCalls === 0, 'Motus ON blocks image download and does not start a blob');
+    must(result.motusCueVisible, 'Motus ON shows the pause-motus cue');
   } finally {
     await browser.close().catch(() => {});
     server.close();

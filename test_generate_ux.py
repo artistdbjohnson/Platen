@@ -210,6 +210,7 @@ ok &= must("exportSvgAsArchivalImage" in save_fn, "saveAsImage PNG path uses the
 ok &= must("getHiResExportSize" in export_fn, "archival helper is hi-res")
 ok &= must("outH = 2560" not in export_fn and "outW = 1440" not in export_fn, "archival helper no longer anchors to the 2560 preview edge")
 ok &= must("function savePNG()" in html and "saveAsImage('png')" in html, "dock/out Download PNG still calls saveAsImage('png')")
+ok &= must("guardMotusImageExport" in html and "pause motus to download" in html, "Motus ON blocks image download with an inline cue")
 back_fn = html.split("window.downloadBackHiRes", 1)[1].split("function startBreathing", 1)[0]
 ok &= must("getHiResExportSize" in back_fn and "toDataURL" not in back_fn, "downloadBackHiRes re-rasters hi-res instead of dumping the 1200 preview canvas")
 ok &= must("Plot mode never includes paper" in html or "always excludes paper" in html, "plotter export keeps BG texture off")

@@ -1045,6 +1045,27 @@
             display: none !important;
         }
 
+        .motus-download-cue {
+            display: block;
+            margin: 6px 0 0;
+            font-size: 8px;
+            letter-spacing: 0.14em;
+            text-transform: lowercase;
+            color: var(--text);
+            opacity: 0.42;
+            line-height: 1.4;
+        }
+
+        .motus-download-cue[hidden] {
+            display: none !important;
+        }
+
+        .saved-solo-chrome .motus-download-cue {
+            flex: 1 0 100%;
+            text-align: center;
+            margin: 0;
+        }
+
         .params-fold-summary {
             display: none;
         }
@@ -4183,6 +4204,7 @@
         html[data-theme="light"] .trait-label,
         html[data-theme="light"] .generate-hint,
         html[data-theme="light"] .generate-legend,
+        html[data-theme="light"] .motus-download-cue,
         html[data-theme="light"] .saved-creations-head h2,
         html[data-theme="light"] .saved-creations-cue,
         html[data-theme="light"] .saved-inline-empty,
@@ -5137,6 +5159,7 @@ rawWt.push(baseWt + jitter);
                     <button type="button" id="btn-png-dock" onclick="savePNG()" data-tooltip="download hires png">Download PNG</button>
 
                 </div>
+                <p class="motus-download-cue" id="motus-download-cue-dock" hidden>pause motus to download</p>
 
                 <p class="generate-legend">Randomize: new parameters. New seed: same parameters, new seed.</p>
 
@@ -5308,6 +5331,7 @@ rawWt.push(baseWt + jitter);
                     <button id="btn-out-plot" onclick="savePlotterSVG()" data-tooltip="inkscape layers, stroked pens, no paper texture">Download Plotter SVG</button>
 
                 </div>
+                <p class="motus-download-cue" id="motus-download-cue-export" hidden>pause motus to download</p>
 
                 
 
@@ -5569,6 +5593,7 @@ rawWt.push(baseWt + jitter);
                 <button type="button" id="saved-solo-download" aria-label="Download archival PNG">download</button>
                 <button type="button" id="saved-solo-download-svg" hidden aria-label="Download SVG">svg</button>
                 <button type="button" id="saved-solo-remove">remove</button>
+                <p class="motus-download-cue" id="motus-download-cue-solo" hidden>pause motus to download</p>
             </div>
         </div>
     </div>
@@ -10069,6 +10094,8 @@ rawWt.push(baseWt + jitter);
 
         function saveStackedLayers(format, event) {
 
+            if (typeof guardMotusImageExport === 'function' && guardMotusImageExport()) return;
+
             if (event) {
 
                 event.preventDefault();
@@ -10303,6 +10330,8 @@ rawWt.push(baseWt + jitter);
 
         function saveSVG(forceMode) {
 
+            if (typeof guardMotusImageExport === 'function' && guardMotusImageExport()) return;
+
             var mode = forceMode || 'full';
 
             var panels = activePanels();
@@ -10406,6 +10435,8 @@ rawWt.push(baseWt + jitter);
         // ── Plotter SVG Export (Inkscape Ready) ─────────────────────────────────────
 
         function savePlotterSVG() {
+
+            if (typeof guardMotusImageExport === 'function' && guardMotusImageExport()) return;
 
             var svgNS = "http://www.w3.org/2000/svg";
 
@@ -12077,7 +12108,37 @@ rawWt.push(baseWt + jitter);
         }
         window.exportSvgAsArchivalImage = exportSvgAsArchivalImage;
 
+        function isMotusBlockingExport() {
+            var hs = window.PlatenHyperspeed;
+            var on = !!(hs && typeof hs.isActive === 'function' && hs.isActive());
+            if (!on && document.querySelector && document.querySelector('.platen-anim-canvas.motus-running')) on = true;
+            if (!on) return false;
+            if (hs && typeof hs.isPaused === 'function' && hs.isPaused()) return false;
+            return true;
+        }
+
+        function syncMotusDownloadCues() {
+            var block = isMotusBlockingExport();
+            var cues = document.querySelectorAll('.motus-download-cue');
+            for (var i = 0; i < cues.length; i++) {
+                if (block) cues[i].removeAttribute('hidden');
+                else cues[i].setAttribute('hidden', 'hidden');
+            }
+        }
+
+        function guardMotusImageExport() {
+            syncMotusDownloadCues();
+            if (!isMotusBlockingExport()) return false;
+            console.log('[Platen] download blocked while motus is on');
+            return true;
+        }
+        window.isMotusBlockingExport = isMotusBlockingExport;
+        window.guardMotusImageExport = guardMotusImageExport;
+        window.syncMotusDownloadCues = syncMotusDownloadCues;
+
         function saveAsImage(format) {
+
+            if (guardMotusImageExport()) return;
 
             var panels = activePanels();
             var includeBGEl = document.getElementById('inc-bg');
@@ -12108,6 +12169,8 @@ rawWt.push(baseWt + jitter);
 
         function savePNG() {
 
+            if (guardMotusImageExport()) return;
+
             saveAsImage('png');
 
         }
@@ -12115,6 +12178,8 @@ rawWt.push(baseWt + jitter);
 
 
         function saveJPG() {
+
+            if (guardMotusImageExport()) return;
 
             saveAsImage('jpg');
 
@@ -12832,6 +12897,7 @@ rawWt.push(baseWt + jitter);
                     if (_isGloballyOn) solo.removeAttribute('hidden');
                     else solo.setAttribute('hidden', 'hidden');
                 }
+                if (typeof syncMotusDownloadCues === 'function') syncMotusDownloadCues();
             }
 
             if (typeof document !== 'undefined' && !window._motusVisibilityBound) {
@@ -17188,6 +17254,7 @@ rawWt.push(baseWt + jitter);
             if (window.PlatenHyperspeed && typeof PlatenHyperspeed.syncPlayPauseUI === 'function') {
                 PlatenHyperspeed.syncPlayPauseUI();
             }
+            if (typeof syncMotusDownloadCues === 'function') syncMotusDownloadCues();
         }
 
         function closeSavedSolo() {
@@ -17223,6 +17290,7 @@ rawWt.push(baseWt + jitter);
         }
 
         function downloadSavedSoloSvg() {
+            if (typeof guardMotusImageExport === 'function' && guardMotusImageExport()) return;
             var art = curatedGallery[_savedSoloIndex];
             if (!art) return;
             ensureSavedPlateSvg(art, function (svg) {
@@ -17237,6 +17305,7 @@ rawWt.push(baseWt + jitter);
         }
 
         function downloadSavedSolo() {
+            if (typeof guardMotusImageExport === 'function' && guardMotusImageExport()) return;
             var art = curatedGallery[_savedSoloIndex];
             if (!art) return;
             var btn = document.getElementById('saved-solo-download');
@@ -17678,6 +17747,8 @@ rawWt.push(baseWt + jitter);
 
 
         window.downloadBackHiRes = function (id, format, event) {
+
+            if (typeof guardMotusImageExport === 'function' && guardMotusImageExport()) return;
 
             if (event) {
 
