@@ -4167,6 +4167,31 @@
             margin-bottom: 0 !important;
         }
 
+        /* Quiet pull-from-top reload cue. Hidden until a top-of-page pull. */
+        .pull-refresh-cue {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 12000;
+            margin: 0;
+            padding: 8px 12px 6px;
+            text-align: center;
+            font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            font-weight: 400;
+            letter-spacing: 0.04em;
+            line-height: 1;
+            text-transform: lowercase;
+            color: var(--text);
+            background: var(--bg);
+            pointer-events: none;
+            user-select: none;
+        }
+        .pull-refresh-cue[hidden] {
+            display: none !important;
+        }
+
         /* ═══════════════════════════════════════════════════════════
            INDEX / LIGHT MODE
            Sparse white catalog. Pure #ffffff / #000000. JetBrains Mono.
@@ -4177,6 +4202,11 @@
         html[data-theme="light"] body {
             background: #ffffff !important;
             color: #000000 !important;
+        }
+        html[data-theme="light"] .pull-refresh-cue {
+            color: #000000 !important;
+            background: #ffffff !important;
+            -webkit-text-fill-color: #000000 !important;
         }
         html[data-theme="light"] body,
         html[data-theme="light"] button,
@@ -5031,6 +5061,8 @@
 
 
 <body class="notranslate">
+
+    <p id="pull-refresh-cue" class="pull-refresh-cue" hidden aria-live="polite">release to refresh</p>
 
     <!-- Fullscreen Autocycle HUD -->
 
@@ -17446,6 +17478,144 @@ rawWt.push(baseWt + jitter);
                     renderSavedInline();
                 }, 180);
             });
+        })();
+
+        // Nested .index-grid (and overflow:hidden on html/body) blocks native
+        // browser pull-to-refresh. Arm a quiet reload only at page top.
+        (function bindPullToRefresh() {
+            var THRESHOLD = 72;
+            var ARM = 10;
+            var HORIZ = 12;
+            var cue = document.getElementById('pull-refresh-cue');
+            var armed = false;
+            var pulling = false;
+            var refreshing = false;
+            var startX = 0;
+            var startY = 0;
+            var pull = 0;
+
+            function showCue(text) {
+                if (!cue) return;
+                cue.textContent = text;
+                cue.hidden = false;
+            }
+
+            function hideCue() {
+                if (!cue) return;
+                cue.hidden = true;
+                cue.textContent = 'release to refresh';
+            }
+
+            function overlayOpen() {
+                if (document.body.classList.contains('fullscreen-active')) return true;
+                var solo = document.getElementById('saved-solo');
+                if (solo && solo.classList.contains('is-open')) return true;
+                var seed = document.getElementById('modal-seed');
+                if (seed && seed.classList.contains('active')) return true;
+                var info = document.getElementById('modal-info');
+                if (info && info.classList.contains('active')) return true;
+                var confirm = document.getElementById('gallery-remove-confirm');
+                if (confirm && confirm.style.display && confirm.style.display !== 'none') return true;
+                if (document.querySelector('.motus-dropdown.open')) return true;
+                var items = document.querySelectorAll('.cd-items');
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].style.display === 'block') return true;
+                }
+                return false;
+            }
+
+            function scrollersAtTop(from) {
+                var node = from;
+                if (node && node.nodeType === 3) node = node.parentNode;
+                while (node && node !== document.documentElement) {
+                    if (node.nodeType === 1 && node.scrollHeight - node.clientHeight > 2) {
+                        var st = node.scrollTop;
+                        if (st > 2) return false;
+                    }
+                    node = node.parentElement || (node === document.body ? document.documentElement : null);
+                }
+                var grid = document.querySelector('.index-grid');
+                if (grid && grid.scrollTop > 2) return false;
+                if ((window.pageYOffset || window.scrollY || document.documentElement.scrollTop || 0) > 2) return false;
+                return true;
+            }
+
+            function resetGesture() {
+                armed = false;
+                pulling = false;
+                pull = 0;
+                if (!refreshing) hideCue();
+            }
+
+            function reloadPage() {
+                refreshing = true;
+                showCue('refreshing');
+                requestAnimationFrame(function () {
+                    window.location.reload();
+                });
+            }
+
+            function onStart(e) {
+                if (refreshing || !e.touches || e.touches.length !== 1) {
+                    armed = false;
+                    return;
+                }
+                if (overlayOpen() || !scrollersAtTop(e.target)) {
+                    armed = false;
+                    return;
+                }
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                pull = 0;
+                armed = true;
+                pulling = false;
+            }
+
+            function onMove(e) {
+                if (!armed || refreshing || !e.touches || e.touches.length !== 1) return;
+                var dx = e.touches[0].clientX - startX;
+                var dy = e.touches[0].clientY - startY;
+                if (!pulling) {
+                    if (Math.abs(dx) > HORIZ && Math.abs(dx) > Math.abs(dy)) {
+                        resetGesture();
+                        return;
+                    }
+                    if (dy < ARM) return;
+                    if (overlayOpen() || !scrollersAtTop(e.target)) {
+                        resetGesture();
+                        return;
+                    }
+                    pulling = true;
+                }
+                if (dy <= 0) {
+                    pull = 0;
+                    hideCue();
+                    pulling = false;
+                    return;
+                }
+                pull = dy;
+                if (e.cancelable) e.preventDefault();
+                if (pull >= THRESHOLD) showCue('release to refresh');
+                else hideCue();
+            }
+
+            function onEnd() {
+                if (!armed) return;
+                var shouldReload = pulling && pull >= THRESHOLD && !overlayOpen();
+                armed = false;
+                pulling = false;
+                if (shouldReload) {
+                    reloadPage();
+                    return;
+                }
+                pull = 0;
+                hideCue();
+            }
+
+            document.addEventListener('touchstart', onStart, { passive: true });
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onEnd, { passive: true });
+            document.addEventListener('touchcancel', onEnd, { passive: true });
         })();
 
         function showConfirmRemovePopup(index) {
