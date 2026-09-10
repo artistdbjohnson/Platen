@@ -42,6 +42,22 @@ ok &= must(
 )
 ok &= must("class=\"brand-lockup\"" in html and "PLATEN BY DGLXSS" in html, "brand lockup keeps exact PLATEN BY DGLXSS casing")
 ok &= must(
+    '">auto cycle</span>' in html and "text-transform: uppercase" not in html.split('">auto cycle</span>')[0][-180:],
+    "auto cycle label has no inline uppercase",
+)
+ok &= must(
+    "include bg texture" in html
+    and "text-transform: uppercase" not in html.split("include bg texture")[0][-180:],
+    "include bg texture label is lowercase",
+)
+ok &= must(">verso</button>" in html and ">recto</button>" in html, "flip labels are verso/recto")
+ok &= must("btn.textContent = 'verso'" in html and "btn.textContent = 'recto'" in html, "layout sync keeps flip labels lowercase")
+ok &= must(
+    "html[data-theme=\"light\"] .btn-flip" in html
+    and "text-transform: lowercase !important" in html.split("html[data-theme=\"light\"] .btn-flip")[-1][:200],
+    "index flip chrome is forced lowercase, not exempted",
+)
+ok &= must(
     "text-transform: lowercase !important" in html
     and "html[data-theme=\"light\"] .brand-lockup" in html,
     "index chrome is lowercase with a brand-lockup exception",

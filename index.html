@@ -2663,7 +2663,7 @@
 
             padding: 4px 0px;
 
-            text-transform: uppercase;
+            text-transform: lowercase;
 
             opacity: 0.3;
 
@@ -2711,7 +2711,7 @@
 
             padding: 4px 0px;
 
-            text-transform: uppercase;
+            text-transform: lowercase;
 
             opacity: 0.3;
 
@@ -4847,19 +4847,21 @@
             letter-spacing: 0.12em !important;
         }
 
-        /* Plate flip labels and About essay stay as authored. */
-        .btn-flip,
-        .back-btn-flip,
+        /* About essay stays as authored. Flip chrome is lowercase like the rest. */
         .about-fold-body,
         .about-fold-body p,
         .about-fold-body h3,
         .about-fold-body pre,
-        html[data-theme="light"] .btn-flip,
-        html[data-theme="light"] .back-btn-flip,
         html[data-theme="light"] .about-fold-body,
         html[data-theme="light"] .about-fold-body p,
         html[data-theme="light"] .about-fold-body h3 {
             text-transform: none !important;
+        }
+        .btn-flip,
+        .back-btn-flip,
+        html[data-theme="light"] .btn-flip,
+        html[data-theme="light"] .back-btn-flip {
+            text-transform: lowercase !important;
         }
 
         html[data-theme="light"] .trait,
@@ -5278,7 +5280,7 @@ rawWt.push(baseWt + jitter);
 
                 <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; width: 100%; justify-content: space-between;" onclick="toggleAuto()">
 
-                    <span style="font-size: 9px; text-transform: uppercase; user-select: none; opacity: 0.8; letter-spacing: 0.05em;">auto cycle</span>
+                    <span style="font-size: 9px; user-select: none; opacity: 0.8; letter-spacing: 0.05em;">auto cycle</span>
 
                     <div id="btn-auto"></div>
 
@@ -5330,7 +5332,7 @@ rawWt.push(baseWt + jitter);
 
                     <input type="checkbox" id="inc-bg" checked onchange="renderAll()" style="cursor: pointer; accent-color: #000;">
 
-                    <label for="inc-bg" style="font-size: 9px; cursor: pointer; text-transform: uppercase; opacity: 0.8; letter-spacing: 0.05em;">Include BG Texture</label>
+                    <label for="inc-bg" style="font-size: 9px; cursor: pointer; text-transform: lowercase; opacity: 0.8; letter-spacing: 0.05em;">include bg texture</label>
 
                     <span style="font-size: 8px; opacity: 0.4; letter-spacing: 0.06em; text-transform: lowercase;">plotter svg always excludes paper</span>
 
@@ -5416,7 +5418,7 @@ rawWt.push(baseWt + jitter);
 
                                 <canvas id="c1-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
 
-                                <button class="back-btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">RECTO</button>
+                                <button class="back-btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">recto</button>
 
                                 <div class="back-download-links">
 
@@ -5432,7 +5434,7 @@ rawWt.push(baseWt + jitter);
 
                     </div>
 
-                    <button class="btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">VERSO</button>
+                    <button class="btn-flip" onclick="toggleFlip(1, event)" aria-label="Flip artwork">verso</button>
 
                 </div>
 
@@ -5458,7 +5460,7 @@ rawWt.push(baseWt + jitter);
 
                                 <canvas id="c2-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
 
-                                <button class="back-btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">RECTO</button>
+                                <button class="back-btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">recto</button>
 
                                 <div class="back-download-links">
 
@@ -5474,7 +5476,7 @@ rawWt.push(baseWt + jitter);
 
                     </div>
 
-                    <button class="btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">VERSO</button>
+                    <button class="btn-flip" onclick="toggleFlip(2, event)" aria-label="Flip artwork">verso</button>
 
                 </div>
 
@@ -5500,7 +5502,7 @@ rawWt.push(baseWt + jitter);
 
                                 <canvas id="c3-back" style="width: 100%; height: 100%; object-fit: contain; display: block;"></canvas>
 
-                                <button class="back-btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">RECTO</button>
+                                <button class="back-btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">recto</button>
 
                                 <div class="back-download-links">
 
@@ -5516,7 +5518,7 @@ rawWt.push(baseWt + jitter);
 
                     </div>
 
-                    <button class="btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">VERSO</button>
+                    <button class="btn-flip" onclick="toggleFlip(3, event)" aria-label="Flip artwork">verso</button>
 
                 </div>
 
@@ -6701,17 +6703,17 @@ rawWt.push(baseWt + jitter);
 
 
 
-            // Maintain the VERSO/RECTO labels
+            // Maintain the verso/recto labels
 
             document.querySelectorAll('.btn-flip').forEach(function(btn) {
 
-                btn.textContent = 'VERSO';
+                btn.textContent = 'verso';
 
             });
 
             document.querySelectorAll('.back-btn-flip').forEach(function(btn) {
 
-                btn.textContent = 'RECTO';
+                btn.textContent = 'recto';
 
             });
 
