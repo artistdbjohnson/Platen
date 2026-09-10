@@ -17222,7 +17222,10 @@ rawWt.push(baseWt + jitter);
 
         function generateNewPiece() {
             if (typeof _lastRenderState !== 'undefined') _lastRenderState = null;
-            if (typeof renderAll === 'function') renderAll();
+            if (typeof renderAll === 'function') {
+                if (window.RESOLVED_TRAITS) renderAll(true);
+                else renderAll();
+            }
             scrollStudioIntoView();
         }
 

@@ -42,8 +42,22 @@ ok &= must("function generateNewPiece()" in html, "Generate buttons go through g
 ok &= must("function scrollStudioIntoView()" in html, "studio scroll helper exists")
 gen_new = html.split("function generateNewPiece", 1)[1].split("function ", 1)[0]
 ok &= must("randomize()" not in gen_new, "generateNewPiece does not call randomize()")
-ok &= must("renderAll()" in gen_new and "scrollStudioIntoView()" in gen_new, "generateNewPiece draws current traits+seed then scrolls")
-ok &= must("_lastRenderState = null" in gen_new, "generate can replay the same plate deterministically")
+ok &= must("scrollStudioIntoView()" in gen_new, "generateNewPiece scrolls back to studio after draw")
+ok &= must("RESOLVED_TRAITS" in gen_new, "generate checks for already-resolved traits")
+ok &= must("renderAll(true)" in gen_new, "generate preserves RESOLVED_TRAITS instead of re-rolling random")
+ok &= must("renderAll()" in gen_new, "first generate still resolves once when no RESOLVED_TRAITS exist")
+ok &= must("_lastRenderState = null" in gen_new, "generate can force a redraw of the same plate")
+ok &= must("SYMMETRY_OPTS" not in gen_new, "generate does not re-pick symmetry")
+ok &= must("CHROME_OPTS" not in gen_new and "MOTIF_OPTS" not in gen_new, "generate does not re-pick chrome or motif")
+ok &= must("RENDER_SEED =" not in gen_new, "generate does not roll a new seed")
+rand_fn = html.split("function randomize()", 1)[1].split("function regenerate()", 1)[0]
+ok &= must("renderAll(true)" not in rand_fn, "randomize does not preserve prior resolved traits")
+ok &= must("renderAll()" in rand_fn, "randomize still renders after rolling params")
+ok &= must("TRAITS.symmetry = SYMMETRY_OPTS" in rand_fn, "randomize still picks new parameters")
+regen_fn = html.split("function regenerate()", 1)[1].split("function setSeed()", 1)[0]
+ok &= must("renderAll(true)" not in regen_fn, "new seed path is unchanged (no preserveTraits)")
+ok &= must("RENDER_SEED = Math.floor(Math.random()" in regen_fn, "new seed still rolls the seed")
+ok &= must("TRAITS.symmetry" not in regen_fn, "new seed does not re-pick parameters")
 ok &= must("openGalleryModal" not in gen_new and "gallery-modal" not in gen_new, "Generate scroll does not open a gallery modal")
 ok &= must("showPlatenToast" not in gen_new, "Generate scroll does not open a toast")
 scroll_studio = html.split("function scrollStudioIntoView", 1)[1].split("function ", 1)[0]
