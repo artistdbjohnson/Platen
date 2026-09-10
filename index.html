@@ -8554,7 +8554,156 @@ rawWt.push(baseWt + jitter);
 
         }
 
+        // Locked S2 chamber (2026-09-10): ink chips + blank sign field on the plate SVG.
+        // Seed / params / date stay on the colophon — do not restate them here.
+        function resolvePaletteEntry(chromeName, seed) {
+            var palettes = (typeof PALETTES !== 'undefined' && PALETTES) || (window && window.PALETTES) || {};
+            var paletteEntry = palettes[chromeName] || palettes.panar;
+            if (typeof paletteEntry === 'function') {
+                try {
+                    paletteEntry = paletteEntry(seed);
+                } catch (err) {
+                    paletteEntry = palettes.panar;
+                }
+            }
+            return paletteEntry;
+        }
 
+        function inkHexesFromPalette(palette) {
+            var colors = [];
+            if (!palette) return colors;
+            var list = Array.isArray(palette) ? palette : (palette.strokes || palette.colors || []);
+            for (var i = 0; i < list.length; i++) {
+                var item = list[i];
+                var hex = null;
+                if (typeof item === 'string') hex = item;
+                else if (item && typeof item.c === 'string') hex = item.c;
+                else if (item && typeof item.hex === 'string') hex = item.hex;
+                if (!hex) continue;
+                hex = String(hex).trim();
+                if (hex.charAt(0) !== '#') continue;
+                if (colors.indexOf(hex) === -1) colors.push(hex);
+            }
+            return colors;
+        }
+
+        function plateInkHexes(traits, seed) {
+            var chrome = (traits && traits.chromes) ? traits.chromes : '';
+            return inkHexesFromPalette(resolvePaletteEntry(chrome, seed)).slice(0, 5);
+        }
+
+        function s2ChamberLayout(headerData, hW, hSizeX, hSizeY, isGraphPaper) {
+            if (!headerData || !headerData.lines || !hW || !hSizeX || !hSizeY) return null;
+            var levelMax = 0;
+            for (var r = 3; r <= 7; r++) {
+                var line = String(headerData.lines[r] || '').replace(/\s+$/g, '');
+                if (line.length > levelMax) levelMax = line.length;
+            }
+            var gapCols = 2;
+            var leftCol = levelMax + gapCols;
+            var rightCol = hW;
+            if (rightCol - leftCol < 10) return null;
+
+            var x, x2, y, y2;
+            if (isGraphPaper) {
+                x = 9 + leftCol * hSizeX;
+                x2 = 9 + rightCol * hSizeX;
+                y = 38 + (2 - 1) * hSizeY + 6;
+                y2 = 38 + (8 - 1) * hSizeY + hSizeY * 0.55;
+            } else {
+                x = (leftCol + 4) * hSizeX;
+                x2 = (rightCol + 4) * hSizeX;
+                y = 2 * hSizeY + 20;
+                y2 = 8 * hSizeY + 20;
+            }
+            var width = x2 - x;
+            var height = y2 - y;
+            if (width < 72 || height < 36) return null;
+
+            var pad = Math.max(4, Math.min(7, width * 0.045));
+            var midY = y + height * 0.46;
+            var chip = Math.min(hSizeX * 1.05, midY - y - pad * 1.6);
+            if (chip < 7) return null;
+            var gap = Math.max(2.2, chip * 0.22);
+            return {
+                x: x,
+                y: y,
+                width: width,
+                height: height,
+                pad: pad,
+                midY: midY,
+                chip: chip,
+                gap: gap,
+                baseY: y + height * 0.82
+            };
+        }
+
+        function appendS2Chamber(parent, opts) {
+            if (!parent || !opts || !opts.dc || !opts.svgNS) return null;
+            var hexes = plateInkHexes(opts.traits, opts.seed);
+            if (!hexes.length) return null;
+            var box = s2ChamberLayout(opts.headerData, opts.hW, opts.hSizeX, opts.hSizeY, !!opts.isGraphPaper);
+            if (!box) return null;
+
+            var dc = opts.dc;
+            var svgNS = opts.svgNS;
+            var ink = opts.inkColor || '#1a1a1a';
+            var g = dc.createElementNS(svgNS, 'g');
+            g.setAttribute('class', 's2-chamber');
+            g.setAttribute('data-s2', 'ink-sign');
+
+            var reg = dc.createElementNS(svgNS, 'rect');
+            reg.setAttribute('class', 's2-register');
+            reg.setAttribute('x', box.x);
+            reg.setAttribute('y', box.y);
+            reg.setAttribute('width', box.width);
+            reg.setAttribute('height', box.height);
+            reg.setAttribute('fill', 'none');
+            reg.setAttribute('stroke', ink);
+            reg.setAttribute('stroke-width', '0.6');
+            reg.setAttribute('opacity', '0.38');
+            g.appendChild(reg);
+
+            var n = hexes.length;
+            var chipX = box.x + box.pad;
+            var chipY = box.y + box.pad + Math.max(0, (box.midY - box.y - box.pad * 1.4 - box.chip) / 2);
+            for (var i = 0; i < n; i++) {
+                var sq = dc.createElementNS(svgNS, 'rect');
+                sq.setAttribute('class', 's2-chip');
+                sq.setAttribute('data-ink', hexes[i]);
+                sq.setAttribute('x', chipX + i * (box.chip + box.gap));
+                sq.setAttribute('y', chipY);
+                sq.setAttribute('width', box.chip);
+                sq.setAttribute('height', box.chip);
+                sq.setAttribute('fill', hexes[i]);
+                g.appendChild(sq);
+            }
+
+            var div = dc.createElementNS(svgNS, 'line');
+            div.setAttribute('class', 's2-divider');
+            div.setAttribute('x1', box.x + box.pad);
+            div.setAttribute('x2', box.x + box.width - box.pad);
+            div.setAttribute('y1', box.midY);
+            div.setAttribute('y2', box.midY);
+            div.setAttribute('stroke', ink);
+            div.setAttribute('stroke-width', '0.4');
+            div.setAttribute('opacity', '0.26');
+            g.appendChild(div);
+
+            var base = dc.createElementNS(svgNS, 'line');
+            base.setAttribute('class', 's2-baseline');
+            base.setAttribute('x1', box.x + box.pad);
+            base.setAttribute('x2', box.x + box.width - box.pad);
+            base.setAttribute('y1', box.baseY);
+            base.setAttribute('y2', box.baseY);
+            base.setAttribute('stroke', ink);
+            base.setAttribute('stroke-width', '0.45');
+            base.setAttribute('opacity', '0.2');
+            g.appendChild(base);
+
+            parent.appendChild(g);
+            return g;
+        }
 
         function drawToWebGL(canvas, foregroundImg, backgroundImg) {
 
@@ -8941,6 +9090,18 @@ rawWt.push(baseWt + jitter);
                             headerG.appendChild(textEl);
                         }
                     }
+                    appendS2Chamber(headerG, {
+                        dc: dc,
+                        svgNS: svgNS,
+                        headerData: headerData,
+                        hW: hW,
+                        hSizeX: hSizeX,
+                        hSizeY: hSizeY,
+                        isGraphPaper: typeof isGraphPaper !== 'undefined' && !!isGraphPaper,
+                        traits: traits,
+                        seed: RENDER_SEED,
+                        inkColor: headerTextColor
+                    });
                     svg.appendChild(headerG);
                 }
 
@@ -9583,6 +9744,19 @@ rawWt.push(baseWt + jitter);
                             }
 
                         }
+
+                        appendS2Chamber(headerG, {
+                            dc: dc,
+                            svgNS: svgNS,
+                            headerData: headerData,
+                            hW: hW,
+                            hSizeX: hSizeX,
+                            hSizeY: hSizeY,
+                            isGraphPaper: typeof isGraphPaper !== 'undefined' && !!isGraphPaper,
+                            traits: traits,
+                            seed: RENDER_SEED,
+                            inkColor: headerTextColor
+                        });
 
                         frag.appendChild(headerG);
 
