@@ -36,7 +36,9 @@
             try {
                 var sw = (window.screen && screen.width) ? screen.width : 0;
                 var iw = window.innerWidth || 0;
-                if ((sw && sw <= 900) || (iw && iw <= 900)) {
+                // CSS width ≤900 is the layout rule. screen.width ≤500 only
+                // catches a real phone after iOS inflates the layout viewport.
+                if ((iw && iw <= 900) || (sw && sw <= 500)) {
                     document.documentElement.classList.add('is-phone');
                 }
             } catch (e) {}
@@ -6431,7 +6433,7 @@ rawWt.push(baseWt + jitter);
         function syncPhoneLayoutClass() {
             var sw = (window.screen && screen.width) ? screen.width : 0;
             var iw = window.innerWidth || 0;
-            var phone = (iw && iw <= 900) || (sw && sw <= 900);
+            var phone = (iw && iw <= 900) || (sw && sw <= 500);
             document.documentElement.classList.toggle('is-phone', !!phone);
         }
 
