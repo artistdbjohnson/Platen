@@ -16938,15 +16938,22 @@ rawWt.push(baseWt + jitter);
 
         function persistRecoveredSvg(art, snap) {
             if (!art || !snap) return;
+            cacheSavedPlateSvg(art, snap);
             art.svgs = art.svgs || [];
             if (snap.length <= MAX_SAVE_CHARS) {
                 art.svgs[0] = snap;
                 if (window.PlatenDB && typeof PlatenDB.save === 'function') {
                     PlatenDB.save(art).catch(function () {});
                 }
-            } else {
-                cacheSavedPlateSvg(art, snap);
             }
+        }
+
+        function resolvedSavedSnap(art, opts) {
+            opts = opts || {};
+            if (opts.snap) return opts.snap;
+            if (art && art.svgs && art.svgs[0]) return art.svgs[0];
+            if (art) return _savedVectorCache[savedArtKey(art)] || '';
+            return '';
         }
 
         function parseSvgString(snap) {
@@ -17053,6 +17060,8 @@ rawWt.push(baseWt + jitter);
         window.ensureSavedPlateSvg = ensureSavedPlateSvg;
         window.serializePlateSvg = serializePlateSvg;
         window.liveSvgMatchingArt = liveSvgMatchingArt;
+        window.cacheSavedPlateSvg = cacheSavedPlateSvg;
+        window.resolvedSavedSnap = resolvedSavedSnap;
 
         function paintSavedPlate(host, art, opts) {
             opts = opts || {};
@@ -17061,7 +17070,7 @@ rawWt.push(baseWt + jitter);
             host.style.backgroundColor = '';
             host.style.backgroundSize = '';
             host.style.backgroundPosition = '';
-            var snap = (art.svgs && art.svgs[0]) || '';
+            var snap = resolvedSavedSnap(art, opts);
             var previewUrl = (art.previews && art.previews[0]) || '';
             var wantVector = !!opts.vector;
 
@@ -17237,8 +17246,9 @@ rawWt.push(baseWt + jitter);
                 syncSavedSoloDownloadChrome(art);
                 ensureSavedPlateSvg(art, function (svg) {
                     if (_savedSoloIndex !== index) return;
-                    if (svg) {
-                        paintSavedPlate(plate, art, { fillWidth: false, vector: true });
+                    var recovered = resolvedSavedSnap(art, { snap: svg ? serializePlateSvg(svg) : '' });
+                    if (svg || recovered) {
+                        paintSavedPlate(plate, art, { fillWidth: false, vector: true, snap: recovered });
                     } else {
                         plate.textContent = 'seed ' + art.seed;
                     }

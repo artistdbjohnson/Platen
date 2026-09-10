@@ -51,6 +51,9 @@ ok &= must("guardMotusImageExport" in html.split("function saveJPG()", 1)[1].spl
 ok &= must("guardMotusImageExport" in html.split("function saveAsImage(format)", 1)[1].split("function savePNG()", 1)[0], "saveAsImage guards while Motus is on")
 ok &= must("guardMotusImageExport" in html.split("function downloadSavedSolo()", 1)[1].split("window.downloadSavedSolo", 1)[0], "solo archival download guards while Motus is on")
 ok &= must("ensureSavedPlateSvg" in html and "s-solo-rebuild" in html, "Slug empty-snap recovery remains")
+ok &= must("function resolvedSavedSnap" in html and "opts.snap" in html, "solo paint can use a recovered snap, not only art.svgs[0]")
+ok &= must("cacheSavedPlateSvg" in html.split("function persistRecoveredSvg", 1)[1].split("function resolvedSavedSnap", 1)[0], "oversized recoveries stay in the session cache")
+ok &= must("snap: recovered" in html.split("function openSavedSolo", 1)[1].split("function closeSavedSolo", 1)[0], "openSavedSolo paints the recovered markup after ensure")
 
 if not ok:
     sys.exit(1)

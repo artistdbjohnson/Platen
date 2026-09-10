@@ -173,6 +173,26 @@ async function main() {
         setTimeout(function () { resolve({ error: 'timeout' }); }, 25000);
       });
 
+      // Slug FAIL: recovered snap is cache-only (too big for art.svgs[0]).
+      const cacheArt = {
+        id: 107466,
+        seed: 107466,
+        traits: { canvas: 'black', symmetry: 'quad', space: 'isometric', engine: 'radial', motif: 'typewriter', chromes: 'x' },
+        layout: 'grid_us_letter',
+        svgs: [''],
+        previews: [tinyJpg],
+      };
+      window.RENDER_SEED = 1;
+      window.RESOLVED_TRAITS = { canvas: 'white' };
+      cacheSavedPlateSvg(cacheArt, svg);
+      window.curatedGallery = [cacheArt];
+      renderSavedInline();
+      openSavedSolo(0);
+      await new Promise(function (r) { setTimeout(r, 40); });
+      const cacheSolo = document.getElementById('saved-solo-plate');
+      const cacheSoloSvg = cacheSolo && cacheSolo.querySelector('svg');
+      const cacheSoloText = ((cacheSolo && cacheSolo.textContent) || '').replace(/\s+/g, ' ').trim();
+
       const hs = window.PlatenHyperspeed || (window.PlatenHyperspeed = {});
       const prevActive = hs.isActive;
       const prevPaused = hs.isPaused;
@@ -207,6 +227,9 @@ async function main() {
         motusBlocked: blocked,
         motusBlockedCalls: blockedCalls,
         motusCueVisible: cueVisible,
+        cacheOnlySoloSvg: !!(cacheSoloSvg && cacheSoloSvg.querySelector('text, path')),
+        cacheOnlySoloSeedText: cacheSoloText === ('seed ' + 107466),
+        cacheOnlyHasSeedPrefix: /^seed 107466/.test(cacheSoloText),
       };
     });
 
@@ -231,6 +254,7 @@ async function main() {
     must(result.emptySnapDownload && result.emptySnapDownload.size > 50 * 1024, 'empty-snap download is not the 76KB thumb');
     must(result.motusBlocked && result.motusBlockedCalls === 0, 'Motus ON blocks image download and does not start a blob');
     must(result.motusCueVisible, 'Motus ON shows the pause-motus cue');
+    must(result.cacheOnlySoloSvg && !result.cacheOnlyHasSeedPrefix, 'cache-only recovered snap paints SVG in #saved-solo-plate, not seed text');
   } finally {
     await browser.close().catch(() => {});
     server.close();
