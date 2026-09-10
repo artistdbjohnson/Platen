@@ -104,6 +104,8 @@ ok &= must(
 )
 boot = html.split("<script>", 1)[1].split("</script>", 1)[0]
 ok &= must("mode === 'studio'" in boot, "first visit with no platen_ui_mode boots index/light")
+ok &= must("🔒" not in html and "function thinLockMarkup" in html, "thin lock mark replaces emoji locks")
+ok &= must(re.search(r'\.trait-label\s*\{[^}]*font-size:\s*8px', style), "parameter row type is smaller than generate/save")
 
 if not ok:
     sys.exit(1)

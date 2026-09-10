@@ -1327,15 +1327,15 @@
 
         .trait-label {
 
-            font-size: 11px;
+            font-size: 8px;
 
-            line-height: 1.4;
+            line-height: 1.35;
 
             opacity: 0.7;
 
             text-transform: lowercase;
 
-            letter-spacing: 0.04em;
+            letter-spacing: 0.03em;
 
         }
 
@@ -1353,11 +1353,11 @@
 
             font-family: inherit;
 
-            font-size: 11px;
+            font-size: 8px;
 
-            line-height: 1.4;
+            line-height: 1.35;
 
-            letter-spacing: 0.04em;
+            letter-spacing: 0.03em;
 
             padding: 2px 0px;
 
@@ -3531,7 +3531,7 @@
 
             .trait-label {
 
-                font-size: 7px;
+                font-size: 8px;
 
             }
 
@@ -3539,11 +3539,11 @@
 
             .trait-select {
 
-                font-size: 14px;
+                font-size: 8px;
 
-                padding: 10px 6px;
+                padding: 2px 0;
 
-                min-height: 44px;
+                min-height: 0;
 
                 height: auto;
 
@@ -4758,8 +4758,19 @@
             }
 
             .trait {
-                min-height: 32px;
-                padding: 4px 0;
+                min-height: 26px;
+                padding: 3px 0;
+            }
+
+            .trait-label,
+            .trait-select {
+                font-size: 8px;
+            }
+
+            .trait-select {
+                padding: 2px 0;
+                min-height: 0;
+                height: auto;
             }
 
             .canvas-generate-strip {
@@ -4854,8 +4865,9 @@
         html[data-theme="light"] .trait-select,
         html[data-theme="light"] .cd-selected {
             text-transform: lowercase !important;
-            letter-spacing: 0.04em !important;
-            line-height: 1.4 !important;
+            letter-spacing: 0.03em !important;
+            line-height: 1.35 !important;
+            font-size: 8px !important;
         }
         html[data-theme="light"] #st-info,
         html[data-theme="light"] .status-section #st-info {
@@ -4887,6 +4899,43 @@
         }
         html.is-phone #params-section > h3 {
             display: none;
+        }
+
+        .lock-mark-wrap {
+            display: inline-flex;
+            align-items: center;
+            line-height: 0;
+        }
+        .lock-mark {
+            display: block;
+            width: 10px;
+            height: 12px;
+            color: var(--text);
+            flex-shrink: 0;
+        }
+        html[data-theme="light"] .lock-mark {
+            color: #000000 !important;
+        }
+        #palette-lock-text {
+            font-size: 9px;
+            letter-spacing: 0.03em;
+            line-height: 1.35;
+        }
+        #palette-lock-details {
+            font-size: 8px;
+            letter-spacing: 0.03em;
+            line-height: 1.35;
+            opacity: 0.5;
+        }
+        html[data-theme="light"] #palette-lock-text {
+            font-size: 9px !important;
+            letter-spacing: 0.03em !important;
+        }
+        html[data-theme="light"] #palette-lock-details {
+            font-size: 8px !important;
+            letter-spacing: 0.03em !important;
+            line-height: 1.35 !important;
+            opacity: 0.5 !important;
         }
     </style>
 
@@ -5124,13 +5173,13 @@ rawWt.push(baseWt + jitter);
 
                     <div style="display: flex; align-items: center; gap: 6px; font-weight: 500;">
 
-                        <span id="palette-lock-icon">🔓</span>
+                        <span id="palette-lock-icon" class="lock-mark-wrap" aria-hidden="true"><svg class="lock-mark lock-mark--open" viewBox="0 0 12 14" width="10" height="12" aria-hidden="true"><rect x="2.35" y="6" width="7.3" height="6.2" fill="none" stroke="currentColor" stroke-width="1"/><path d="M4 6.15V3.7A2.15 2.15 0 0 1 8.3 3.7V3.15" fill="none" stroke="currentColor" stroke-width="1"/></svg></span>
 
                         <span id="palette-lock-text">checking palette lock...</span>
 
                     </div>
 
-                    <div id="palette-lock-details" style="font-size: 9px; opacity: 0.5;">
+                    <div id="palette-lock-details">
 
                         this composition structure is available to lock.
 
@@ -15660,7 +15709,7 @@ rawWt.push(baseWt + jitter);
                 saving: 'Saving…',
                 saved: 'Saved',
                 already: '✓ Saved',
-                closed: '🔒 closed',
+                closed: 'closed',
                 locked: 'locked'
             };
             var tooltips = {
@@ -15827,6 +15876,17 @@ rawWt.push(baseWt + jitter);
 
 
 
+        function thinLockMarkup(state) {
+            var open = state === 'open';
+            var shackle = open
+                ? '<path d="M4 6.15V3.7A2.15 2.15 0 0 1 8.3 3.7V3.15" fill="none" stroke="currentColor" stroke-width="1"/>'
+                : '<path d="M4 6.15V3.7A2.15 2.15 0 0 1 8.3 3.7V6.15" fill="none" stroke="currentColor" stroke-width="1"/>';
+            return '<svg class="lock-mark lock-mark--' + (open ? 'open' : 'closed') + '" viewBox="0 0 12 14" width="10" height="12" aria-hidden="true">'
+                + '<rect x="2.35" y="6" width="7.3" height="6.2" fill="none" stroke="currentColor" stroke-width="1"/>'
+                + shackle
+                + '</svg>';
+        }
+
         function updateLockStatus() {
 
             var key = getCompositionKey();
@@ -15865,7 +15925,7 @@ rawWt.push(baseWt + jitter);
 
                 }
 
-                if (statusIcon) statusIcon.innerHTML = "🔒";
+                if (statusIcon) statusIcon.innerHTML = thinLockMarkup('closed');
 
                 if (statusText) statusText.innerHTML = "curation closed";
 
@@ -15907,7 +15967,7 @@ rawWt.push(baseWt + jitter);
 
                     }
 
-                    if (statusIcon) statusIcon.innerHTML = "💎";
+                    if (statusIcon) statusIcon.innerHTML = thinLockMarkup('closed');
 
                     if (statusText) statusText.innerHTML = "locked by you";
 
@@ -15925,7 +15985,7 @@ rawWt.push(baseWt + jitter);
 
                     }
 
-                    if (statusIcon) statusIcon.innerHTML = "🔒";
+                    if (statusIcon) statusIcon.innerHTML = thinLockMarkup('closed');
 
                     if (statusText) statusText.innerHTML = "locked by " + lock.owner;
 
@@ -15967,7 +16027,7 @@ rawWt.push(baseWt + jitter);
 
                 }
 
-                if (statusIcon) statusIcon.innerHTML = "🔓";
+                if (statusIcon) statusIcon.innerHTML = thinLockMarkup('open');
 
                 if (statusText) statusText.innerHTML = "available to lock";
 

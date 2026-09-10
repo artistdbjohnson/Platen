@@ -51,6 +51,18 @@ ok &= must(
     and "html[data-theme=\"light\"] .generate-dock > .btn-generate" in html,
     "mobile hides the duplicate dock generate / studio-index block",
 )
+ok &= must("function thinLockMarkup" in html and "lock-mark" in html, "palette lock uses a thin line mark, not emoji")
+ok &= must("🔒" not in html and "🔓" not in html and "💎" not in html, "rosy chrome has no lock/gem emoji")
+ok &= must(
+    re.search(r'\.trait-label\s*\{[^}]*font-size:\s*8px', html)
+    and re.search(r'\.trait-select\s*\{[^}]*font-size:\s*8px', html),
+    "parameter labels and values are 8px, smaller than primary actions",
+)
+ok &= must(
+    "html[data-theme=\"light\"] #palette-lock-details" in html
+    and "font-size: 8px !important" in html,
+    "lock helper copy is secondary 8px",
+)
 ok &= must("class=\"ui-mode-nav\"" in html and 'data-ui-mode="studio"' in html and 'data-ui-mode="index"' in html, "studio / index text toggle is in the markup")
 ok &= must(html.count('data-ui-mode="index"') >= 3, "index toggle is available in more than one column")
 ok &= must("☀︎ Toggle Theme" not in html, "sun-pill theme button copy is gone")
