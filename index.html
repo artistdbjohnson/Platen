@@ -1341,6 +1341,8 @@
 
             min-height: 36px;
 
+            min-width: 0;
+
             margin: 0;
 
             padding: 5px 0;
@@ -1440,6 +1442,60 @@
         .trait-select {
 
             scrollbar-width: none;
+
+        }
+
+
+
+        /* Trait value column: fill the grid cell. A fixed 240px width
+
+           overflows ~390px phones and clips short right-aligned values. */
+
+        .custom-dropdown {
+
+            position: relative;
+
+            width: 100%;
+
+            max-width: 100%;
+
+            min-width: 0;
+
+            box-sizing: border-box;
+
+        }
+
+
+
+        .cd-selected {
+
+            width: 100%;
+
+            max-width: 100%;
+
+            min-width: 0;
+
+            box-sizing: border-box;
+
+            text-align: right;
+
+            overflow-wrap: anywhere;
+
+            word-break: break-word;
+
+            font-weight: 500;
+
+        }
+
+
+
+        .cd-items {
+
+            width: 100%;
+
+            max-width: 100%;
+
+            box-sizing: border-box;
 
         }
 
@@ -4114,7 +4170,7 @@
         /* ═══════════════════════════════════════════════════════════
            INDEX / LIGHT MODE
            Sparse white catalog. Pure #ffffff / #000000. JetBrains Mono.
-           Zero button chrome. No gray. Selected = underline / weight.
+           Zero button chrome. No gray. Selected = weight (no underline).
            Plate art keeps its own ink and paper.
            ═══════════════════════════════════════════════════════════ */
         html[data-theme="light"],
@@ -4353,7 +4409,7 @@
             pointer-events: none !important;
         }
 
-        /* Parameters: selected value is underlined text, no box */
+        /* Parameters: selected value is slightly bold text, no underline / box */
         html[data-theme="light"] .trait-select,
         html[data-theme="light"] .cd-selected {
             background: transparent !important;
@@ -4362,9 +4418,11 @@
             border-bottom: none !important;
             box-shadow: none !important;
             outline: none !important;
-            text-decoration: underline !important;
+            text-decoration: none !important;
             font-weight: 500 !important;
             text-align: right !important;
+            width: 100% !important;
+            max-width: 100% !important;
         }
         html[data-theme="light"] .trait-select:hover,
         html[data-theme="light"] .trait-select:focus,
@@ -4372,6 +4430,8 @@
             border: none !important;
             border-bottom: none !important;
             color: #000000 !important;
+            text-decoration: none !important;
+            font-weight: 500 !important;
         }
         html[data-theme="light"] .cd-items {
             background: #ffffff !important;
@@ -6928,7 +6988,11 @@ rawWt.push(baseWt + jitter);
 
                 wrapper.style.position = 'relative';
 
-                wrapper.style.width = '240px';
+                wrapper.style.width = '100%';
+
+                wrapper.style.maxWidth = '100%';
+
+                wrapper.style.minWidth = '0';
 
                 
 
@@ -6941,6 +7005,10 @@ rawWt.push(baseWt + jitter);
                 selectedDiv.style.padding = '3px 0px';
 
                 selectedDiv.style.userSelect = 'none';
+
+                selectedDiv.style.width = '100%';
+
+                selectedDiv.style.textAlign = 'right';
 
                 
 
