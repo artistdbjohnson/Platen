@@ -122,6 +122,31 @@ ok &= must(
     and "html[data-theme=\"light\"] .cd-items" in html,
     "index mode restyles parameter dropdowns as text",
 )
+
+# Selected parameter values: slightly bold, not underlined.
+param_selected = None
+for m in re.finditer(
+    r'html\[data-theme="light"\] \.trait-select,\s*html\[data-theme="light"\] \.cd-selected\s*\{([^}]+)\}',
+    html,
+):
+    block = m.group(1)
+    if "font-weight" in block:
+        param_selected = block
+        break
+ok &= must(param_selected is not None, "index parameter selected-value rule exists")
+if param_selected:
+    ok &= must(
+        "text-decoration: none" in param_selected,
+        "index selected parameter values are not underlined",
+    )
+    ok &= must(
+        "text-decoration: underline" not in param_selected,
+        "index selected parameter values do not use underline chrome",
+    )
+    ok &= must(
+        "font-weight: 500" in param_selected or "font-weight: 600" in param_selected,
+        "index selected parameter values are slightly bold",
+    )
 ok &= must(
     "html[data-theme=\"light\"] .fs-hud" in html
     and "html[data-theme=\"light\"] .saved-solo-backdrop" in html,
