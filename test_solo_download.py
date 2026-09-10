@@ -30,6 +30,15 @@ ok &= must("exportSvgAsArchivalImage" in solo_dl and "format: 'png'" in solo_dl,
 ok &= must("art.previews" not in solo_dl and ".jpg" not in solo_dl, "solo download never uses the thumb JPEG")
 ok &= must("function downloadSavedSoloSvg" in html and 'id="saved-solo-download-svg"' in html, "Download SVG remains a separate control")
 ok &= must("function exportSvgAsArchivalImage" in html and "function canvasToExportBlob" in html, "shared printable PNG pipeline exists")
+ok &= must("function ensureSavedPlateSvg" in html and "function liveSvgMatchingArt" in html, "empty snaps recover a vector from live plate or rebuild")
+ok &= must("function rebuildSavedPlateSvg" in html and "s-solo-rebuild" in html, "dense plates re-render into an offscreen SVG")
+ok &= must("serializePlateSvg" in html.split("function curateArtwork", 1)[1].split("function generateNewPiece", 1)[0], "Save tries to serialize even when over the mark budget")
+ok &= must("ensureSavedPlateSvg" in html.split("function openSavedSolo", 1)[1].split("function closeSavedSolo", 1)[0], "solo open recovers a vector when the stored snap is empty")
+ok &= must("ensureSavedPlateSvg" in html.split("function downloadSavedSolo()", 1)[1].split("window.downloadSavedSolo", 1)[0], "solo download recovers a vector before archival PNG")
+paint_fn = html.split("function paintSavedPlate", 1)[1].split("function renderSavedInline", 1)[0]
+ok &= must("if (wantVector)" in paint_fn and "previewUrl" in paint_fn.split("if (wantVector)", 1)[1], "vector branch is explicit")
+vector_branch = paint_fn.split("if (wantVector)", 1)[1].split("if (previewUrl)", 1)[0]
+ok &= must("img" not in vector_branch and "previewUrl" not in vector_branch, "solo vector path never paints the 480 JPEG")
 ok &= must("PLATEN_EXPORT_DPI = 300" in html and "PLATEN_EXPORT_MIN_LONG_EDGE = 3300" in html, "printable size floor remains")
 ok &= must("saveAsImage('png')" in html, "Export Download PNG still uses saveAsImage")
 ok &= must("svg.classList.remove('motus-active')" in html, "Motus OFF leaves the live SVG visible")

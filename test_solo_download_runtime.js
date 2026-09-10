@@ -127,6 +127,52 @@ async function main() {
         setTimeout(function () { resolve({ error: 'timeout' }); }, 25000);
       });
 
+      // Slug FAIL path: Save stored '' in svgs[] but the live plate is still on screen.
+      const denseArt = {
+        id: 992735,
+        seed: 992735,
+        traits: { canvas: 'black', symmetry: 'quad', space: 'isometric', engine: 'radial', motif: 'typewriter', chromes: 'x' },
+        layout: 'grid_us_letter',
+        svgs: [''],
+        previews: [tinyJpg],
+      };
+      window.RENDER_SEED = 992735;
+      RENDER_SEED = 992735;
+      window.RESOLVED_TRAITS = denseArt.traits;
+      const live = document.getElementById('s1');
+      if (live) live.outerHTML = svg.replace('<svg', '<svg id="s1"');
+      window.curatedGallery = [denseArt];
+      renderSavedInline();
+      const emptyMasonryImg = !!document.querySelector('#saved-inline-grid img');
+      const emptyMasonrySvg = !!document.querySelector('#saved-inline-grid svg');
+      openSavedSolo(0);
+      await new Promise(function (r) { setTimeout(r, 80); });
+      const emptySolo = document.getElementById('saved-solo-plate');
+      const emptySoloSvg = emptySolo && emptySolo.querySelector('svg');
+      const emptySoloImg = emptySolo && emptySolo.querySelector('img');
+      const emptySoloText = (emptySolo && emptySolo.textContent) || '';
+
+      const recovered = await new Promise((resolve) => {
+        const orig = window.downloadBlob;
+        window.downloadBlob = function (blob, filename) {
+          const reader = new FileReader();
+          reader.onload = function () {
+            const bytes = new Uint8Array(reader.result);
+            resolve({
+              filename: filename,
+              type: blob.type,
+              size: blob.size,
+              w: (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19],
+              h: (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23],
+            });
+            window.downloadBlob = orig;
+          };
+          reader.readAsArrayBuffer(blob);
+        };
+        downloadSavedSolo();
+        setTimeout(function () { resolve({ error: 'timeout' }); }, 25000);
+      });
+
       return {
         masonryHasImg: !!(masonryImg && String(masonryImg.src).indexOf('image/jpeg') !== -1),
         masonryHasSvg: !!masonrySvg,
@@ -135,6 +181,12 @@ async function main() {
         soloTag: soloSvg ? soloSvg.tagName.toLowerCase() : null,
         svgBtnHidden: document.getElementById('saved-solo-download-svg').hasAttribute('hidden'),
         download: captured,
+        emptySnapMasonryImg: emptyMasonryImg,
+        emptySnapMasonrySvg: emptyMasonrySvg,
+        emptySnapSoloSvg: !!(emptySoloSvg && emptySoloSvg.querySelector('text, path')),
+        emptySnapSoloImg: !!emptySoloImg,
+        emptySnapSoloText: emptySoloText.slice(0, 80),
+        emptySnapDownload: recovered,
       };
     });
 
@@ -151,6 +203,12 @@ async function main() {
     must(result.download && Math.max(result.download.w, result.download.h) >= 2550, 'long edge is archival (>= 2550)');
     must(result.download && result.download.size > 50 * 1024, 'blob is larger than the 76KB thumb');
     must(result.download && /\.png$/i.test(result.download.filename), 'filename ends in .png');
+    must(result.emptySnapMasonryImg && !result.emptySnapMasonrySvg, 'dense/empty-snap masonry still uses the JPEG');
+    must(result.emptySnapSoloSvg && !result.emptySnapSoloImg, 'empty snap recovers a live SVG in solo, not seed text or JPEG');
+    must(result.emptySnapDownload && !result.emptySnapDownload.error, 'empty-snap solo download produced a blob');
+    must(result.emptySnapDownload && result.emptySnapDownload.type === 'image/png', 'empty-snap download mime is image/png');
+    must(result.emptySnapDownload && Math.max(result.emptySnapDownload.w, result.emptySnapDownload.h) >= 2550, 'empty-snap download is archival');
+    must(result.emptySnapDownload && result.emptySnapDownload.size > 50 * 1024, 'empty-snap download is not the 76KB thumb');
   } finally {
     await browser.close().catch(() => {});
     server.close();

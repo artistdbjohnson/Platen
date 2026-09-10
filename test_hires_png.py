@@ -108,6 +108,8 @@ ok &= must(".jpg" not in solo_dl, "solo download is not a JPEG")
 ok &= must("format: 'png'" in solo_dl, "solo download default is PNG")
 ok &= must("function downloadSavedSoloSvg" in html, "solo chrome also exposes Download SVG")
 ok &= must('id="saved-solo-download-svg"' in html, "Download SVG control exists in solo chrome")
+ok &= must("function ensureSavedPlateSvg" in html and "s-solo-rebuild" in html, "empty/dense snaps rebuild a vector instead of dying")
+ok &= must("ensureSavedPlateSvg" in solo_dl, "solo download recovers a vector when art.svgs[0] is empty")
 
 ok &= must("MAX_LIVE_SVG_NODES" in html and "MAX_RASTERIZE_NODES" in html, "OOM guards remain")
 ok &= must("function _budgetIsoExtrusions" in html, "isometric node budget remains")
