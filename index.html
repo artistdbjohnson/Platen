@@ -8898,6 +8898,8 @@ rawWt.push(baseWt + jitter);
             if (!hex) return null;
             hex = String(hex).trim();
             if (hex.charAt(0) !== '#') return null;
+            if (typeof getRenderColor === 'function') hex = getRenderColor(hex);
+            if (!hex || String(hex).charAt(0) !== '#') return null;
             return hex;
         }
 
@@ -8966,7 +8968,16 @@ rawWt.push(baseWt + jitter);
 
         function plateInkHexes(traits, seed, flowers) {
             var struck = struckInkHexes(flowers);
-            if (struck.length) return struck;
+            if (struck.length) {
+                var allowed = inkHexesFromPalette(resolvePaletteEntry((traits && traits.chromes) || '', seed));
+                var allowKey = {};
+                for (var a = 0; a < allowed.length; a++) allowKey[String(allowed[a]).toUpperCase()] = true;
+                var live = [];
+                for (var s = 0; s < struck.length; s++) {
+                    if (allowKey[String(struck[s]).toUpperCase()]) live.push(struck[s]);
+                }
+                if (live.length) return live;
+            }
             return paletteInkHexesByRank(traits, seed);
         }
 

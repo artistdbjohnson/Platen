@@ -57,6 +57,7 @@ ok &= must("palettes.panar" in resolve, "unknown chrome falls back to panar")
 flower = fn_body("flowerInkHex")
 ok &= must("item.c" in flower, "struck helper takes f.c")
 ok &= must("item.col.c" in flower, "struck helper also takes cell.col.c")
+ok &= must("getRenderColor" in flower, "struck hexes pass through the glyph paint helper")
 
 struck = fn_body("struckInkHexes")
 ok &= must("counts[key]" in struck, "struck helper tallies strike counts")
@@ -70,7 +71,9 @@ ok &= must("hexes.length < 5" in rank, "fallback chips cap at five")
 
 plate = fn_body("plateInkHexes")
 ok &= must("struckInkHexes(flowers)" in plate, "plate chips prefer the struck flower set")
+ok &= must("inkHexesFromPalette(resolvePaletteEntry" in plate, "struck chips are gated by the live PALETTES helpers")
 ok &= must("paletteInkHexesByRank" in plate, "empty flowers fall back to ranked palette .c")
+ok &= must("slice(0, 5)" not in plate, "does not use full unique palette + slice(0,5)")
 
 layout = fn_body("s2UnboxedLayout")
 ok &= must("for (var r = 3; r <= 7; r++)" in layout, "void starts after LEVEL 1–5 text")

@@ -114,6 +114,10 @@ must(
   "plateInkHexes returns struck specimen, not the 17-color micron legend"
 );
 must(
+  struck.every((hex) => micron.some((p) => p.toUpperCase() === hex.toUpperCase())),
+  "struck micron chips are .c hexes from resolvePaletteEntry / inkHexesFromPalette"
+);
+must(
   sandbox.plateInkHexes({ chromes: "micron_plotter" }, 1, struckFlowers).length < micron.length,
   "fat chrome chips are a struck subset, not the full palette"
 );
@@ -166,6 +170,24 @@ must(fatRibbon.length === 3, "fat ribbon does not invent teal/sepia/blue unused 
 must(
   fatRibbon.length < ribbon.length,
   "fat chrome specimen is shorter than the ribbon palette legend"
+);
+must(
+  fatRibbon.every((hex) => ribbon.some((p) => p.toUpperCase() === hex.toUpperCase())),
+  "fat ribbon chips are .c hexes from the live PALETTES helpers"
+);
+must(
+  sparse.every((hex) => black.some((p) => p.toUpperCase() === hex.toUpperCase())),
+  "sparse chips are .c hexes from the live PALETTES helpers"
+);
+
+const alien = sandbox.plateInkHexes(
+  { chromes: "typewriter_black" },
+  7,
+  [{ c: "#FF00AA" }, { c: "#1D1D1D" }]
+);
+must(
+  JSON.stringify(alien) === JSON.stringify(["#1D1D1D"]),
+  "non-palette hexes are dropped; chips stay on the engine .c path"
 );
 
 const emptyFallback = sandbox.plateInkHexes({ chromes: "bogolan" }, 1, []);
