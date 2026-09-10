@@ -190,6 +190,21 @@ must(
   "non-palette hexes are dropped; chips stay on the engine .c path"
 );
 
+const accent = sandbox.plateInkHexes(
+  { chromes: "chopin" },
+  3,
+  [{ c: "#543355" }, { c: "#543355" }, { col: { c: "#543355" } }]
+);
+must(
+  JSON.stringify(accent) === JSON.stringify(["#543355"]),
+  "chopin overlap purple still chips when struck — variant flag does not gate ink"
+);
+const chopinFallback = sandbox.paletteInkHexesByRank({ chromes: "chopin" }, 3);
+must(
+  chopinFallback.indexOf("#543355") !== -1,
+  "empty-flower fallback still includes variant-flagged .c when ranked by .r"
+);
+
 const emptyFallback = sandbox.plateInkHexes({ chromes: "bogolan" }, 1, []);
 must(emptyFallback.length === 5, "empty flowers fall back to ranked palette .c, cap 5");
 must(

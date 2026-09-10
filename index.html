@@ -8948,6 +8948,7 @@ rawWt.push(baseWt + jitter);
                     if (typeof item.c === 'string') hex = item.c;
                     else if (typeof item.hex === 'string') hex = item.hex;
                     if (typeof item.r === 'number') rank = item.r;
+                    // variant flag is metadata only — never skip or prefer an ink because of it
                 }
                 if (!hex) continue;
                 hex = String(hex).trim();

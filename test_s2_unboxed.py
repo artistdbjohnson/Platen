@@ -68,6 +68,8 @@ ok &= must("pad" not in struck.lower(), "struck helper does not pad unused palet
 rank = fn_body("paletteInkHexesByRank")
 ok &= must("item.r" in rank, "empty-flower fallback sorts palette .c by .r")
 ok &= must("hexes.length < 5" in rank, "fallback chips cap at five")
+ok &= must("item.v" not in rank, ".v is metadata and does not gate fallback ink")
+ok &= must("item.v" not in struck, ".v is metadata and does not gate struck ink")
 
 plate = fn_body("plateInkHexes")
 ok &= must("struckInkHexes(flowers)" in plate, "plate chips prefer the struck flower set")
