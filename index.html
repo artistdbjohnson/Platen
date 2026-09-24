@@ -8854,9 +8854,13 @@ rawWt.push(baseWt + jitter);
         }
 
         // Locked S2 unboxed (2026-09-10): struck-only ink chips + hairline sign baseline.
-        // Chips are unique hexes actually struck on this render (f.c / cell.col.c),
-        // ordered by descending strike count (ties: first-seen), cap 5, no palette padding.
-        // Fallback only when the flower set is empty: unique palette .c by descending .r.
+        // Chips are the exact unique hexes struck on this render (f.c / cell.col.c),
+        // ordered by descending strike count (ties: first-seen). No Kur hard max is
+        // defined anywhere in the engine, so nothing truncates the row: 1 struck ink
+        // draws 1 chip and N draws N. Shrink or wrap the row so it still fits; never
+        // drop a struck color. Palette colors that were not struck are never shown.
+        // Zero strikes → zero chips. A struck hex outside the resolved palette is
+        // omitted and is never replaced with an unused ink.
         // No chamber box, register, divider, seal, ribbon, quiet-dots, or SIGN label.
         // Seed / params / date stay on the colophon — do not restate them here.
         function resolvePaletteEntry(chromeName, seed) {
@@ -8927,59 +8931,33 @@ rawWt.push(baseWt + jitter);
                 return firstSeen[a] - firstSeen[b];
             });
             var out = [];
-            for (var k = 0; k < keys.length && out.length < 5; k++) {
-                out.push(firstHex[keys[k]]);
-            }
+            for (var k = 0; k < keys.length; k++) out.push(firstHex[keys[k]]);
             return out;
-        }
-
-        function paletteInkHexesByRank(traits, seed) {
-            var palette = resolvePaletteEntry((traits && traits.chromes) || '', seed);
-            if (!palette) return [];
-            var list = Array.isArray(palette) ? palette : (palette.strokes || palette.colors || []);
-            var seen = {};
-            var items = [];
-            for (var i = 0; i < list.length; i++) {
-                var item = list[i];
-                var hex = null;
-                var rank = 0;
-                if (typeof item === 'string') hex = item;
-                else if (item) {
-                    if (typeof item.c === 'string') hex = item.c;
-                    else if (typeof item.hex === 'string') hex = item.hex;
-                    if (typeof item.r === 'number') rank = item.r;
-                    // variant flag is metadata only — never skip or prefer an ink because of it
-                }
-                if (!hex) continue;
-                hex = String(hex).trim();
-                if (hex.charAt(0) !== '#') continue;
-                var key = hex.toUpperCase();
-                if (seen[key]) continue;
-                seen[key] = true;
-                items.push({ hex: hex, rank: rank, seen: items.length });
-            }
-            items.sort(function (a, b) {
-                if (b.rank !== a.rank) return b.rank - a.rank;
-                return a.seen - b.seen;
-            });
-            var hexes = [];
-            for (var j = 0; j < items.length && hexes.length < 5; j++) hexes.push(items[j].hex);
-            return hexes;
         }
 
         function plateInkHexes(traits, seed, flowers) {
             var struck = struckInkHexes(flowers);
-            if (struck.length) {
-                var allowed = inkHexesFromPalette(resolvePaletteEntry((traits && traits.chromes) || '', seed));
-                var allowKey = {};
-                for (var a = 0; a < allowed.length; a++) allowKey[String(allowed[a]).toUpperCase()] = true;
-                var live = [];
-                for (var s = 0; s < struck.length; s++) {
-                    if (allowKey[String(struck[s]).toUpperCase()]) live.push(struck[s]);
-                }
-                if (live.length) return live;
+            if (!struck.length) return [];
+            var allowed = inkHexesFromPalette(resolvePaletteEntry((traits && traits.chromes) || '', seed));
+            var allowKey = {};
+            for (var a = 0; a < allowed.length; a++) allowKey[String(allowed[a]).toUpperCase()] = true;
+            var live = [];
+            for (var s = 0; s < struck.length; s++) {
+                if (allowKey[String(struck[s]).toUpperCase()]) live.push(struck[s]);
             }
-            return paletteInkHexesByRank(traits, seed);
+            return live;
+        }
+
+        // PNG / plotter export must paint this exact string — the same hex the glyph used.
+        function s2ChipFill(el) {
+            if (!el || typeof el.getAttribute !== 'function') return null;
+            var cls = String(el.getAttribute('class') || '');
+            if ((' ' + cls + ' ').indexOf(' s2-chip ') === -1) return null;
+            var ink = el.getAttribute('data-ink');
+            if (ink && String(ink).charAt(0) === '#') return String(ink);
+            var fill = el.getAttribute('fill');
+            if (fill && String(fill).charAt(0) === '#') return String(fill);
+            return null;
         }
 
         function s2UnboxedLayout(headerData, hW, hSizeX, hSizeY, isGraphPaper, chipCount) {
@@ -9007,36 +8985,89 @@ rawWt.push(baseWt + jitter);
                 dateY = 8 * hSizeY + 20;
             }
 
+            var n = chipCount | 0;
+            if (n < 1) return null;
+
+            var availW = voidRight - voidLeft;
             var title = String(headerData.lines[1] || '');
             var seedIdx = title.lastIndexOf('SEED');
             if (seedIdx < 0) seedIdx = title.lastIndexOf('#');
             if (seedIdx < 0) seedIdx = leftCol;
 
-            var chip = Math.min(hSizeX * 1.2, 20);
-            if (chip < 7) return null;
-            var gap = Math.max(2.4, chip * 0.22);
-            var n = Math.max(1, Math.min(5, chipCount || 1));
-            var rowW = n * chip + (n - 1) * gap;
-            if (voidRight - voidLeft < rowW) return null;
+            function gapFor(chipSize) {
+                var scaled = chipSize * 0.22;
+                if (chipSize >= 10) return Math.max(2.4, scaled);
+                return Math.max(1.2, scaled);
+            }
+            function measure(chipSize, cols) {
+                var gap = gapFor(chipSize);
+                var rowGap = Math.max(chipSize >= 10 ? 2 : 1.2, chipSize * 0.18);
+                var rows = Math.ceil(n / cols);
+                var rowW = cols * chipSize + (cols - 1) * gap;
+                var blockH = rows * chipSize + (rows - 1) * rowGap;
+                var baseGap = Math.max(chipSize >= 10 ? 4 : 2, chipSize * 0.35);
+                return {
+                    chip: chipSize,
+                    gap: gap,
+                    rowGap: rowGap,
+                    rows: rows,
+                    cols: cols,
+                    rowW: rowW,
+                    baseY: y + blockH + baseGap
+                };
+            }
+            function maxCols(chipSize) {
+                var gap = gapFor(chipSize);
+                if (!(chipSize > 0) || chipSize > availW) return 0;
+                var cols = Math.floor((availW + gap) / (chipSize + gap));
+                if (cols < 1) return 0;
+                return Math.min(cols, n);
+            }
+            // Largest chip that still shows every struck color. Single row first,
+            // then wrap, then shrink under the readable floor. Never truncate n.
+            function descend(from, to, allowWrap) {
+                if (!(from >= to)) return null;
+                var size = from;
+                var guard = 0;
+                while (guard < 64) {
+                    guard++;
+                    var cols = allowWrap ? maxCols(size) : n;
+                    if (cols >= 1) {
+                        var m = measure(size, cols);
+                        if (m.rowW <= availW + 0.01 && m.baseY < dateY) return m;
+                    }
+                    if (size <= to + 0.001) return null;
+                    var next = size - 0.5;
+                    if (next < to) next = to;
+                    if (!(next < size)) return null;
+                    size = next;
+                }
+                return null;
+            }
+
+            var preferred = Math.min(hSizeX * 1.2, 20);
+            var chosen = descend(preferred, 7, false);
+            if (!chosen) chosen = descend(preferred, 7, true);
+            if (!chosen) chosen = descend(Math.min(preferred, 6.5), 3, true);
+            if (!chosen) return null;
 
             var seedX = isGraphPaper ? (9 + seedIdx * hSizeX) : ((seedIdx + 4) * hSizeX);
             var x = seedX;
             if (x < voidLeft) x = voidLeft;
-            if (x + rowW > voidRight) x = voidRight - rowW;
+            if (x + chosen.rowW > voidRight) x = voidRight - chosen.rowW;
             if (x < voidLeft) return null;
-
-            var baseGap = Math.max(4, chip * 0.35);
-            var baseY = y + chip + baseGap;
-            if (baseY >= dateY) return null;
 
             return {
                 x: x,
                 y: y,
-                chip: chip,
-                gap: gap,
-                rowW: rowW,
-                baseY: baseY,
-                n: n
+                chip: chosen.chip,
+                gap: chosen.gap,
+                rowGap: chosen.rowGap,
+                rowW: chosen.rowW,
+                baseY: chosen.baseY,
+                n: n,
+                cols: chosen.cols,
+                rows: chosen.rows
             };
         }
 
@@ -9054,13 +9085,16 @@ rawWt.push(baseWt + jitter);
             g.setAttribute('class', 's2-unboxed');
             g.setAttribute('data-s2', 'unboxed');
 
-            var n = Math.min(hexes.length, box.n);
-            for (var i = 0; i < n; i++) {
+            var cols = box.cols > 0 ? box.cols : hexes.length;
+            var rowPitch = box.chip + (box.rowGap || 0);
+            for (var i = 0; i < hexes.length; i++) {
+                var col = i % cols;
+                var row = (i / cols) | 0;
                 var sq = dc.createElementNS(svgNS, 'rect');
                 sq.setAttribute('class', 's2-chip');
                 sq.setAttribute('data-ink', hexes[i]);
-                sq.setAttribute('x', box.x + i * (box.chip + box.gap));
-                sq.setAttribute('y', box.y);
+                sq.setAttribute('x', box.x + col * (box.chip + box.gap));
+                sq.setAttribute('y', box.y + row * rowPitch);
                 sq.setAttribute('width', box.chip);
                 sq.setAttribute('height', box.chip);
                 sq.setAttribute('fill', hexes[i]);
@@ -10741,6 +10775,10 @@ rawWt.push(baseWt + jitter);
         }
 
         function svgPaint(el, attr) {
+            if (attr === 'fill') {
+                var chipInk = s2ChipFill(el);
+                if (chipInk) return chipInk;
+            }
             var raw = el.getAttribute(attr);
             var tag = (el.tagName || '').toLowerCase();
             var inHeader = el.closest && el.closest('.typewriter-header');
@@ -10814,7 +10852,8 @@ rawWt.push(baseWt + jitter);
                         var rh = parseFloat(el.getAttribute('height')) || 0;
                         if (!(rw > 0) || !(rh > 0)) continue;
                         if (rw >= dim.w * 0.9 && rh >= dim.h * 0.9) continue;
-                        var rectFill = svgPaint(el, 'fill');
+                        // Struck swatches keep the glyph hex. Header ink correction must not recolor them.
+                        var rectFill = s2ChipFill(el) || svgPaint(el, 'fill');
                         if (!rectFill || rectFill === 'none' || rectFill === 'transparent') continue;
                         ctx.save();
                         applyCanvasTransformOps(ctx, parseSvgTransformOps(el.getAttribute('transform')));
@@ -11353,7 +11392,12 @@ rawWt.push(baseWt + jitter);
                     });
                     chipNodes.forEach(function (el) {
                         var chipCopy = el.cloneNode(true);
-                        if (chipCopy.getAttribute('class') === 's2-baseline') chipCopy.setAttribute('stroke', plotInk);
+                        if (chipCopy.getAttribute('class') === 's2-baseline') {
+                            chipCopy.setAttribute('stroke', plotInk);
+                        } else if (chipCopy.getAttribute('class') === 's2-chip') {
+                            var struckFill = s2ChipFill(chipCopy);
+                            if (struckFill) chipCopy.setAttribute('fill', struckFill);
+                        }
                         layerT.appendChild(chipCopy);
                     });
                     newSvg.appendChild(layerT);
