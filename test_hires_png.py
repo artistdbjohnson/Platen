@@ -126,7 +126,14 @@ ok &= must("function randomize()" in html and "function setSaveButtonsState" in 
 back_fn = html.split("window.downloadBackHiRes", 1)[1].split("function startBreathing", 1)[0]
 ok &= must("getHiResExportSize" in back_fn, "downloadBackHiRes uses archival size")
 ok &= must("rasterizePlatenSvg" in back_fn, "downloadBackHiRes re-rasters instead of the 1200 back canvas")
+ok &= must("glyphs only" in back_fn, "verso square is documented as glyphs-only")
 ok &= must("toDataURL" not in back_fn, "downloadBackHiRes no longer dumps the on-screen canvas")
+raster_fn = html.split("function rasterizePlatenSvg", 1)[1].split("function svgToString", 1)[0]
+ink_fn = html.split("function platePaperIsLight", 1)[1].split("function svgToString", 1)[0]
+ok &= must("rect" in raster_fn and "line" in raster_fn, "rasterizer paints chips and the sign baseline")
+ok &= must("typewriter-header" in ink_fn and "correctHeaderInk" in ink_fn and "getComputedStyle" in ink_fn, "header ink follows the on-screen plate color")
+ok &= must("function markupForArchivalSvg" in html, "SVG download builds an archival sheet with the header")
+ok &= must("display:none" not in html.split("function downloadBlob", 1)[1].split("function saveStackedLayers", 1)[0], "download anchor is not display:none")
 ok &= must("image/png" in back_fn, "back PNG mime is lossless")
 
 dpi = const_int("PLATEN_EXPORT_DPI")
